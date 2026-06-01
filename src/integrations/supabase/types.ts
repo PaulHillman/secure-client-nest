@@ -14,16 +14,366 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      company_focus: {
+        Row: {
+          company_name: string
+          contact_job_title: string
+          contact_person: string
+          email: string
+          employee_count: string | null
+          hq_address: string | null
+          id: string
+          industry: string
+          team_id: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          company_name: string
+          contact_job_title?: string
+          contact_person?: string
+          email?: string
+          employee_count?: string | null
+          hq_address?: string | null
+          id?: string
+          industry?: string
+          team_id: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          company_name?: string
+          contact_job_title?: string
+          contact_person?: string
+          email?: string
+          employee_count?: string | null
+          hq_address?: string | null
+          id?: string
+          industry?: string
+          team_id?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_focus_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: true
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      file_tags: {
+        Row: {
+          created_at: string
+          file_id: string
+          id: string
+          tag: string
+        }
+        Insert: {
+          created_at?: string
+          file_id: string
+          id?: string
+          tag: string
+        }
+        Update: {
+          created_at?: string
+          file_id?: string
+          id?: string
+          tag?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_tags_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      file_versions: {
+        Row: {
+          file_id: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          storage_path: string
+          uploaded_at: string
+          uploaded_by: string
+          version_number: number
+        }
+        Insert: {
+          file_id: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          storage_path: string
+          uploaded_at?: string
+          uploaded_by: string
+          version_number: number
+        }
+        Update: {
+          file_id?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          storage_path?: string
+          uploaded_at?: string
+          uploaded_by?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_versions_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "files"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      files: {
+        Row: {
+          category: string
+          created_at: string
+          current_version_id: string | null
+          description: string | null
+          file_name: string
+          id: string
+          team_id: string
+          updated_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          current_version_id?: string | null
+          description?: string | null
+          file_name: string
+          id?: string
+          team_id: string
+          updated_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          current_version_id?: string | null
+          description?: string | null
+          file_name?: string
+          id?: string
+          team_id?: string
+          updated_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "files_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_norms: {
+        Row: {
+          document_path: string
+          id: string
+          is_locked: boolean
+          locked_at: string | null
+          team_id: string
+          uploaded_at: string
+        }
+        Insert: {
+          document_path: string
+          id?: string
+          is_locked?: boolean
+          locked_at?: string | null
+          team_id: string
+          uploaded_at?: string
+        }
+        Update: {
+          document_path?: string
+          id?: string
+          is_locked?: boolean
+          locked_at?: string | null
+          team_id?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_norms_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: true
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_norms_signatures: {
+        Row: {
+          group_norms_id: string
+          id: string
+          signed_at: string
+          user_id: string
+        }
+        Insert: {
+          group_norms_id: string
+          id?: string
+          signed_at?: string
+          user_id: string
+        }
+        Update: {
+          group_norms_id?: string
+          id?: string
+          signed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_norms_signatures_group_norms_id_fkey"
+            columns: ["group_norms_id"]
+            isOneToOne: false
+            referencedRelation: "group_norms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          section: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id: string
+          name?: string
+          section?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          section?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      team_members: {
+        Row: {
+          id: string
+          job_title: Database["public"]["Enums"]["team_job"]
+          joined_at: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          job_title: Database["public"]["Enums"]["team_job"]
+          joined_at?: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          job_title?: Database["public"]["Enums"]["team_job"]
+          joined_at?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          section: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          section?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          section?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_team_member: {
+        Args: { _team_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "student"
+      team_job:
+        | "PM"
+        | "Communication Specialist"
+        | "Video Specialist"
+        | "Company Liaison"
+        | "Researcher"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +500,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "student"],
+      team_job: [
+        "PM",
+        "Communication Specialist",
+        "Video Specialist",
+        "Company Liaison",
+        "Researcher",
+      ],
+    },
   },
 } as const
