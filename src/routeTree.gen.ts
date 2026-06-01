@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppTeamsRouteImport } from './routes/app.teams'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
+import { Route as AppTeamsTeamIdRouteImport } from './routes/app.teams.$teamId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -40,20 +41,27 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTeamsTeamIdRoute = AppTeamsTeamIdRouteImport.update({
+  id: '/$teamId',
+  path: '/$teamId',
+  getParentRoute: () => AppTeamsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/app/dashboard': typeof AppDashboardRoute
-  '/app/teams': typeof AppTeamsRoute
+  '/app/teams': typeof AppTeamsRouteWithChildren
+  '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/app/dashboard': typeof AppDashboardRoute
-  '/app/teams': typeof AppTeamsRoute
+  '/app/teams': typeof AppTeamsRouteWithChildren
+  '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -61,14 +69,34 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/app/dashboard': typeof AppDashboardRoute
-  '/app/teams': typeof AppTeamsRoute
+  '/app/teams': typeof AppTeamsRouteWithChildren
+  '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/login' | '/app/dashboard' | '/app/teams'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/login'
+    | '/app/dashboard'
+    | '/app/teams'
+    | '/app/teams/$teamId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app' | '/login' | '/app/dashboard' | '/app/teams'
-  id: '__root__' | '/' | '/app' | '/login' | '/app/dashboard' | '/app/teams'
+  to:
+    | '/'
+    | '/app'
+    | '/login'
+    | '/app/dashboard'
+    | '/app/teams'
+    | '/app/teams/$teamId'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/login'
+    | '/app/dashboard'
+    | '/app/teams'
+    | '/app/teams/$teamId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -114,17 +142,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/teams/$teamId': {
+      id: '/app/teams/$teamId'
+      path: '/$teamId'
+      fullPath: '/app/teams/$teamId'
+      preLoaderRoute: typeof AppTeamsTeamIdRouteImport
+      parentRoute: typeof AppTeamsRoute
+    }
   }
 }
 
+interface AppTeamsRouteChildren {
+  AppTeamsTeamIdRoute: typeof AppTeamsTeamIdRoute
+}
+
+const AppTeamsRouteChildren: AppTeamsRouteChildren = {
+  AppTeamsTeamIdRoute: AppTeamsTeamIdRoute,
+}
+
+const AppTeamsRouteWithChildren = AppTeamsRoute._addFileChildren(
+  AppTeamsRouteChildren,
+)
+
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
-  AppTeamsRoute: typeof AppTeamsRoute
+  AppTeamsRoute: typeof AppTeamsRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
-  AppTeamsRoute: AppTeamsRoute,
+  AppTeamsRoute: AppTeamsRouteWithChildren,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
