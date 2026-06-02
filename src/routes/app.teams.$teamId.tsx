@@ -30,10 +30,10 @@ function initials(name: string) {
 function TeamDetail() {
   const { teamId } = Route.useParams();
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["team", teamId],
     queryFn: async () => {
-      const [{ data: team, error: tErr }, { data: cf }, { data: tm, error: mErr }] =
+      const [{ data: team, error: tErr }, { data: cf, error: cfErr }, { data: tm, error: mErr }] =
         await Promise.all([
           supabase.from("teams").select("*").eq("id", teamId).single(),
           supabase.from("company_focus").select("*").eq("team_id", teamId).maybeSingle(),
@@ -43,6 +43,7 @@ function TeamDetail() {
             .eq("team_id", teamId),
         ]);
       if (tErr) throw tErr;
+      if (cfErr) throw cfErr;
       if (mErr) throw mErr;
 
       const userIds = (tm ?? []).map((m) => m.user_id);
@@ -139,18 +140,18 @@ function TeamDetail() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {members.map((m) => {
               const p = (m as any).profiles;
-              if (!p) return null;
+              const displayName = p?.name ?? "Unlinked team member";
               return (
                 <Card key={m.id} className="border-border/60">
                   <CardContent className="p-4 flex items-center gap-3">
                     <Avatar className="h-14 w-14">
-                      <AvatarImage src={p.avatar_url ?? undefined} alt={p.name} />
-                      <AvatarFallback>{initials(p.name)}</AvatarFallback>
+                      <AvatarImage src={p?.avatar_url ?? undefined} alt={displayName} />
+                      <AvatarFallback>{initials(displayName)}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <div className="font-medium truncate">{p.name}</div>
+                      <div className="font-medium truncate">{displayName}</div>
                       <div className="text-xs text-gold">{m.job_title}</div>
-                      {p.email && (
+                      {p?.email && (
                         <a href={`mailto:${p.email}`} className="text-xs text-muted-foreground truncate block hover:text-foreground">
                           {p.email}
                         </a>
@@ -163,6 +164,14 @@ function TeamDetail() {
           </div>
         )}
       </section>
+
+      {error && (
+        <Card className="mt-6 border-destructive/30">
+          <CardContent className="py-6 text-sm text-muted-foreground">
+            Could not load this team roster. <button className="text-foreground underline underline-offset-4" onClick={() => refetch()}>Try again</button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
