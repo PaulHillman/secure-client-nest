@@ -33,18 +33,31 @@ function TeamDetail() {
   const { data, isLoading } = useQuery({
     queryKey: ["team", teamId],
     queryFn: async () => {
-      const [{ data: team, error: tErr }, { data: cf }, { data: members, error: mErr }] =
+      const [{ data: team, error: tErr }, { data: cf }, { data: tm, error: mErr }] =
         await Promise.all([
           supabase.from("teams").select("*").eq("id", teamId).single(),
           supabase.from("company_focus").select("*").eq("team_id", teamId).maybeSingle(),
           supabase
             .from("team_members")
-            .select("id, job_title, profiles:user_id(id, name, email, avatar_url, section)")
+            .select("id, job_title, user_id")
             .eq("team_id", teamId),
         ]);
       if (tErr) throw tErr;
       if (mErr) throw mErr;
-      return { team, companyFocus: cf, members: members ?? [] };
+
+      const userIds = (tm ?? []).map((m) => m.user_id);
+      let profiles: any[] = [];
+      if (userIds.length) {
+        const { data: pData, error: pErr } = await supabase
+          .from("profiles")
+          .select("id, name, email, avatar_url, section")
+          .in("id", userIds);
+        if (pErr) throw pErr;
+        profiles = pData ?? [];
+      }
+      const profileMap = new Map(profiles.map((p) => [p.id, p]));
+      const members = (tm ?? []).map((m) => ({ ...m, profiles: profileMap.get(m.user_id) }));
+      return { team, companyFocus: cf, members };
     },
   });
 
