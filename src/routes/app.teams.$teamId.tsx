@@ -128,7 +128,13 @@ function TeamDetail() {
           <span className="text-sm text-muted-foreground">({members.length})</span>
         </div>
 
-        {isLoading ? (
+        {error ? (
+          <Card className="border-destructive/30">
+            <CardContent className="py-8 text-center text-muted-foreground text-sm">
+              Could not load this team roster. <button className="text-foreground underline underline-offset-4" onClick={() => refetch()}>Try again</button>
+            </CardContent>
+          </Card>
+        ) : isLoading ? (
           <p className="text-sm text-muted-foreground">Loading members…</p>
         ) : members.length === 0 ? (
           <Card className="border-dashed">
@@ -165,13 +171,6 @@ function TeamDetail() {
         )}
       </section>
 
-      {error && (
-        <Card className="mt-6 border-destructive/30">
-          <CardContent className="py-6 text-sm text-muted-foreground">
-            Could not load this team roster. <button className="text-foreground underline underline-offset-4" onClick={() => refetch()}>Try again</button>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
