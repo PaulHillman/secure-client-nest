@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,7 @@ export const Route = createFileRoute("/app/teams")({
 });
 
 function Teams() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { data: teams } = useQuery({
     queryKey: ["teams"],
     queryFn: async () => {
@@ -21,6 +22,10 @@ function Teams() {
       return data;
     },
   });
+
+  if (pathname !== "/app/teams") {
+    return <Outlet />;
+  }
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -41,8 +46,8 @@ function Teams() {
         {teams?.map((t) => {
           const cf = Array.isArray(t.company_focus) ? t.company_focus[0] : t.company_focus;
           return (
-            <Link key={t.id} to="/app/teams/$teamId" params={{ teamId: t.id }}>
-              <Card className="h-full border-border/60 hover:border-gold/50 hover:shadow-md transition">
+            <Link key={t.id} to="/app/teams/$teamId" params={{ teamId: t.id }} aria-label={`View ${t.name} members`}>
+              <Card className="h-full cursor-pointer border-border/60 hover:border-gold/50 hover:shadow-md transition">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <CardTitle className="font-display text-xl">{t.name}</CardTitle>
