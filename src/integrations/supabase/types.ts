@@ -142,6 +142,7 @@ export type Database = {
           description: string | null
           file_name: string
           id: string
+          is_template: boolean
           team_id: string
           updated_at: string
           uploaded_by: string
@@ -153,6 +154,7 @@ export type Database = {
           description?: string | null
           file_name: string
           id?: string
+          is_template?: boolean
           team_id: string
           updated_at?: string
           uploaded_by: string
@@ -164,6 +166,7 @@ export type Database = {
           description?: string | null
           file_name?: string
           id?: string
+          is_template?: boolean
           team_id?: string
           updated_at?: string
           uploaded_by?: string
