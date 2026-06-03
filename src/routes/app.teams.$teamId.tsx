@@ -172,6 +172,8 @@ function TeamDetail() {
         )}
       </section>
 
+      <FileVault teamId={teamId} />
+
     </div>
   );
 }
