@@ -22,9 +22,9 @@ function LoginPage() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
 
-  if (user) {
-    navigate({ to: "/app/dashboard", replace: true });
-  }
+  useEffect(() => {
+    if (user) navigate({ to: "/app/dashboard", replace: true });
+  }, [user, navigate]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
