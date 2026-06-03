@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -22,9 +22,9 @@ function LoginPage() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
 
-  if (user) {
-    navigate({ to: "/app/dashboard", replace: true });
-  }
+  useEffect(() => {
+    if (user) navigate({ to: "/app/dashboard", replace: true });
+  }, [user, navigate]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
