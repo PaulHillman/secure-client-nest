@@ -59,7 +59,7 @@ function Teams() {
                     <div className="flex items-center gap-2">
                       <Building2 className="h-4 w-4 text-gold" />
                       <span className="text-foreground">{cf.company_name}</span>
-                      <span className="text-xs">· {cf.industry}</span>
+                      {cf.industry && <span className="text-xs">· {cf.industry}</span>}
                     </div>
                   ) : (
                     <span className="italic">No company focus yet</span>
