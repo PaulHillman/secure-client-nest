@@ -31,7 +31,7 @@ function VaultPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("teams")
-        .select("id, name, section, company_focus(company_name)")
+        .select("id, name, section")
         .order("name");
       if (error) throw error;
       return data ?? [];
@@ -69,7 +69,7 @@ function VaultPage() {
           <h1 className="font-display text-4xl">File Vault</h1>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
-          Browse files across every team and company.
+          Browse files across every team.
         </p>
       </header>
 
