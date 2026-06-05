@@ -16,7 +16,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Briefcase, Plus, Trash2, ExternalLink } from "lucide-react";
+import { Briefcase, Plus, Trash2, ExternalLink, Pencil } from "lucide-react";
 
 type Submission = {
   id: string;
@@ -31,6 +31,15 @@ type Submission = {
   admin_notes: string | null;
   created_at: string;
   submitted_by: string;
+};
+
+type FormValues = {
+  manager_first_name: string;
+  manager_last_name: string;
+  company_name: string;
+  company_website: string;
+  industry: string;
+  num_employees: number;
 };
 
 function statusBadge(status: string) {
@@ -56,8 +65,13 @@ export function ManagerSubmissions({ teamId }: { teamId: string }) {
     },
   });
 
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["manager-submissions", teamId] });
+    qc.invalidateQueries({ queryKey: ["manager-submissions-all"] });
+  };
+
   const create = useMutation({
-    mutationFn: async (v: Omit<Submission, "id" | "status" | "admin_notes" | "created_at" | "submitted_by" | "team_id">) => {
+    mutationFn: async (v: FormValues) => {
       const { error } = await supabase.from("manager_submissions").insert({
         ...v,
         team_id: teamId,
@@ -67,8 +81,22 @@ export function ManagerSubmissions({ teamId }: { teamId: string }) {
     },
     onSuccess: () => {
       toast.success("Manager submitted for approval");
-      qc.invalidateQueries({ queryKey: ["manager-submissions", teamId] });
-      qc.invalidateQueries({ queryKey: ["manager-submissions-all"] });
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const update = useMutation({
+    mutationFn: async (v: { id: string; values: FormValues }) => {
+      const { error } = await supabase
+        .from("manager_submissions")
+        .update(v.values)
+        .eq("id", v.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Submission updated");
+      invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -80,8 +108,7 @@ export function ManagerSubmissions({ teamId }: { teamId: string }) {
     },
     onSuccess: () => {
       toast.success("Submission removed");
-      qc.invalidateQueries({ queryKey: ["manager-submissions", teamId] });
-      qc.invalidateQueries({ queryKey: ["manager-submissions-all"] });
+      invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -94,7 +121,15 @@ export function ManagerSubmissions({ teamId }: { teamId: string }) {
           <h2 className="font-display text-2xl">Manager submissions</h2>
           <span className="text-sm text-muted-foreground">({subs?.length ?? 0})</span>
         </div>
-        <SubmitDialog onSubmit={(v) => create.mutate(v)} />
+        <ManagerFormDialog
+          mode="create"
+          trigger={
+            <Button size="sm">
+              <Plus className="h-4 w-4 mr-1" /> Submit manager
+            </Button>
+          }
+          onSubmit={(v) => create.mutate(v)}
+        />
       </div>
 
       {isLoading ? (
@@ -107,87 +142,125 @@ export function ManagerSubmissions({ teamId }: { teamId: string }) {
         </Card>
       ) : (
         <div className="grid sm:grid-cols-2 gap-4">
-          {subs?.map((s) => (
-            <Card key={s.id} className="border-border/60">
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="font-display text-lg">
-                    {s.manager_first_name} {s.manager_last_name}
-                  </CardTitle>
-                  {statusBadge(s.status)}
-                </div>
-              </CardHeader>
-              <CardContent className="text-sm space-y-1">
-                <div className="font-medium">{s.company_name}</div>
-                <div className="text-muted-foreground">{s.industry} · {s.num_employees} employees</div>
-                <a
-                  href={s.company_website.startsWith("http") ? s.company_website : `https://${s.company_website}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  <ExternalLink className="h-3 w-3" /> {s.company_website}
-                </a>
-                {s.admin_notes && (
-                  <p className="text-xs italic text-muted-foreground pt-1 border-t mt-2">
-                    Note: {s.admin_notes}
-                  </p>
-                )}
-                {(s.submitted_by === user?.id || isAdmin) && s.status === "pending" && (
-                  <div className="pt-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        if (confirm("Remove this submission?")) remove.mutate(s.id);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" /> Remove
-                    </Button>
+          {subs?.map((s) => {
+            const canEdit = s.submitted_by === user?.id || isAdmin;
+            return (
+              <Card key={s.id} className="border-border/60">
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="font-display text-lg">
+                      {s.manager_first_name} {s.manager_last_name}
+                    </CardTitle>
+                    {statusBadge(s.status)}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent className="text-sm space-y-1">
+                  <div className="font-medium">{s.company_name}</div>
+                  <div className="text-muted-foreground">
+                    {s.industry} · {s.num_employees} employees
+                  </div>
+                  <a
+                    href={
+                      s.company_website.startsWith("http")
+                        ? s.company_website
+                        : `https://${s.company_website}`
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    <ExternalLink className="h-3 w-3" /> {s.company_website}
+                  </a>
+                  {s.admin_notes && (
+                    <p className="text-xs italic text-muted-foreground pt-1 border-t mt-2">
+                      Note: {s.admin_notes}
+                    </p>
+                  )}
+                  {canEdit && (
+                    <div className="pt-2 flex gap-2">
+                      <ManagerFormDialog
+                        mode="edit"
+                        initial={s}
+                        trigger={
+                          <Button size="sm" variant="outline">
+                            <Pencil className="h-4 w-4 mr-1" /> Edit
+                          </Button>
+                        }
+                        onSubmit={(values) => update.mutate({ id: s.id, values })}
+                      />
+                      {s.status === "pending" && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            if (confirm("Remove this submission?")) remove.mutate(s.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" /> Remove
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </section>
   );
 }
 
-function SubmitDialog({
+function ManagerFormDialog({
+  mode,
+  initial,
+  trigger,
   onSubmit,
 }: {
-  onSubmit: (v: {
-    manager_first_name: string;
-    manager_last_name: string;
-    company_name: string;
-    company_website: string;
-    industry: string;
-    num_employees: number;
-  }) => void;
+  mode: "create" | "edit";
+  initial?: Partial<FormValues>;
+  trigger: React.ReactNode;
+  onSubmit: (v: FormValues) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [first, setFirst] = useState("");
-  const [last, setLast] = useState("");
-  const [company, setCompany] = useState("");
-  const [website, setWebsite] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [employees, setEmployees] = useState("");
+  const [first, setFirst] = useState(initial?.manager_first_name ?? "");
+  const [last, setLast] = useState(initial?.manager_last_name ?? "");
+  const [company, setCompany] = useState(initial?.company_name ?? "");
+  const [website, setWebsite] = useState(initial?.company_website ?? "");
+  const [industry, setIndustry] = useState(initial?.industry ?? "");
+  const [employees, setEmployees] = useState(
+    initial?.num_employees != null ? String(initial.num_employees) : "",
+  );
 
   const valid =
-    first.trim() && last.trim() && company.trim() && website.trim() && industry.trim() && Number(employees) > 0;
+    first.trim() &&
+    last.trim() &&
+    company.trim() &&
+    website.trim() &&
+    industry.trim() &&
+    Number(employees) > 0;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm">
-          <Plus className="h-4 w-4 mr-1" /> Submit manager
-        </Button>
-      </DialogTrigger>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) {
+          setFirst(initial?.manager_first_name ?? "");
+          setLast(initial?.manager_last_name ?? "");
+          setCompany(initial?.company_name ?? "");
+          setWebsite(initial?.company_website ?? "");
+          setIndustry(initial?.industry ?? "");
+          setEmployees(initial?.num_employees != null ? String(initial.num_employees) : "");
+        }
+      }}
+    >
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-display text-xl">Submit a manager for approval</DialogTitle>
+          <DialogTitle className="font-display text-xl">
+            {mode === "create" ? "Submit a manager for approval" : "Edit manager submission"}
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
@@ -241,16 +314,10 @@ function SubmitDialog({
                 industry: industry.trim(),
                 num_employees: Number(employees),
               });
-              setFirst("");
-              setLast("");
-              setCompany("");
-              setWebsite("");
-              setIndustry("");
-              setEmployees("");
               setOpen(false);
             }}
           >
-            Submit for approval
+            {mode === "create" ? "Submit for approval" : "Save changes"}
           </Button>
         </DialogFooter>
       </DialogContent>
