@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Building2, Mail, Globe, MapPin, Users } from "lucide-react";
 import { FileVault } from "@/components/file-vault";
 import { ManagerSubmissions } from "@/components/manager-submissions";
+import { CompanyFocusCard } from "@/components/company-focus-card";
 
 export const Route = createFileRoute("/app/teams/$teamId")({
   head: () => ({ meta: [{ title: "Team — ClientVault" }] }),
