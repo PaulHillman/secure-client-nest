@@ -118,29 +118,9 @@ function TeamDetail() {
           </Card>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {members.map((m) => {
-              const p = (m as any).profiles;
-              const displayName = p?.name ?? "Unlinked team member";
-              return (
-                <Card key={m.id} className="border-border/60">
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <Avatar className="h-14 w-14">
-                      <AvatarImage src={p?.avatar_url ?? undefined} alt={displayName} />
-                      <AvatarFallback>{initials(displayName)}</AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <div className="font-medium truncate">{displayName}</div>
-                      <div className="text-xs text-gold">{m.job_title}</div>
-                      {p?.email && (
-                        <a href={`mailto:${p.email}`} className="text-xs text-muted-foreground truncate block hover:text-foreground">
-                          {p.email}
-                        </a>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {members.map((m) => (
+              <MemberCard key={m.id} member={m} teamId={teamId} />
+            ))}
           </div>
         )}
       </section>
