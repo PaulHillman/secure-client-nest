@@ -31,7 +31,7 @@ function VaultPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("teams")
-        .select("id, name, section, company_focus(company_name)")
+        .select("id, name, section")
         .order("name");
       if (error) throw error;
       return data ?? [];
@@ -40,10 +40,8 @@ function VaultPage() {
 
   const options = useMemo(() => {
     const rows = (teams ?? []).map((t) => {
-      const cf = Array.isArray(t.company_focus) ? t.company_focus[0] : t.company_focus;
-      const company = cf?.company_name ?? "";
-      const label = company ? `${company} — ${t.name}` : t.name;
-      const sortKey = (company || t.name).toLowerCase();
+      const label = t.name;
+      const sortKey = t.name.toLowerCase();
       return { id: t.id, label, section: t.section ?? "", sortKey };
     });
     const filtered = section === "all" ? rows : rows.filter((r) => r.section === section);
@@ -71,13 +69,13 @@ function VaultPage() {
           <h1 className="font-display text-4xl">File Vault</h1>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
-          Browse files across every team and company.
+          Browse files across every team.
         </p>
       </header>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end max-w-3xl">
         <div>
-          <label className="text-sm font-medium mb-2 block">Select company / team</label>
+          <label className="text-sm font-medium mb-2 block">Select team</label>
           <Select value={teamId} onValueChange={setTeamId}>
             <SelectTrigger>
               <SelectValue placeholder={isLoading ? "Loading…" : "Pick a team"} />
