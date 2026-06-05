@@ -60,12 +60,16 @@ function Admin() {
         <TabsList>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="teams">Teams</TabsTrigger>
+          <TabsTrigger value="submissions">Submissions</TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="mt-6">
           <UsersPanel />
         </TabsContent>
         <TabsContent value="teams" className="mt-6">
           <TeamsPanel />
+        </TabsContent>
+        <TabsContent value="submissions" className="mt-6">
+          <SubmissionsPanel />
         </TabsContent>
       </Tabs>
     </div>
