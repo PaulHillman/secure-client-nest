@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { FileVault } from "@/components/file-vault";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,8 +18,13 @@ export const Route = createFileRoute("/app/vault")({
   component: VaultPage,
 });
 
+type SortKey = "az" | "za";
+type SectionFilter = "all" | "03" | "04";
+
 function VaultPage() {
   const [teamId, setTeamId] = useState<string | undefined>();
+  const [sort, setSort] = useState<SortKey>("az");
+  const [section, setSection] = useState<SectionFilter>("all");
 
   const { data: teams, isLoading } = useQuery({
     queryKey: ["vault-teams"],
@@ -33,9 +38,30 @@ function VaultPage() {
     },
   });
 
+  const options = useMemo(() => {
+    const rows = (teams ?? []).map((t) => {
+      const cf = Array.isArray(t.company_focus) ? t.company_focus[0] : t.company_focus;
+      const company = cf?.company_name ?? "";
+      const label = company ? `${company} — ${t.name}` : t.name;
+      const sortKey = (company || t.name).toLowerCase();
+      return { id: t.id, label, section: t.section ?? "", sortKey };
+    });
+    const filtered = section === "all" ? rows : rows.filter((r) => r.section === section);
+    filtered.sort((a, b) =>
+      sort === "az" ? a.sortKey.localeCompare(b.sortKey) : b.sortKey.localeCompare(a.sortKey),
+    );
+    return filtered;
+  }, [teams, sort, section]);
+
   useEffect(() => {
-    if (!teamId && teams && teams.length > 0) setTeamId(teams[0].id);
-  }, [teams, teamId]);
+    if (options.length === 0) {
+      if (teamId) setTeamId(undefined);
+      return;
+    }
+    if (!teamId || !options.some((o) => o.id === teamId)) {
+      setTeamId(options[0].id);
+    }
+  }, [options, teamId]);
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -49,27 +75,50 @@ function VaultPage() {
         </p>
       </header>
 
-      <div className="mb-6 max-w-md">
-        <label className="text-sm font-medium mb-2 block">Select company / team</label>
-        <Select value={teamId} onValueChange={setTeamId}>
-          <SelectTrigger>
-            <SelectValue placeholder={isLoading ? "Loading…" : "Pick a team"} />
-          </SelectTrigger>
-          <SelectContent>
-            {teams?.map((t) => {
-              const cf = Array.isArray(t.company_focus) ? t.company_focus[0] : t.company_focus;
-              const label = cf?.company_name
-                ? `${cf.company_name} — ${t.name}`
-                : t.name;
-              return (
-                <SelectItem key={t.id} value={t.id}>
-                  {label}
-                  {t.section ? ` (§${t.section})` : ""}
+      <div className="mb-6 grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end max-w-3xl">
+        <div>
+          <label className="text-sm font-medium mb-2 block">Select company / team</label>
+          <Select value={teamId} onValueChange={setTeamId}>
+            <SelectTrigger>
+              <SelectValue placeholder={isLoading ? "Loading…" : "Pick a team"} />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((o) => (
+                <SelectItem key={o.id} value={o.id}>
+                  {o.label}
+                  {o.section ? ` (§${o.section})` : ""}
                 </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium mb-2 block">Section</label>
+          <Select value={section} onValueChange={(v) => setSection(v as SectionFilter)}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All sections</SelectItem>
+              <SelectItem value="03">§03 only</SelectItem>
+              <SelectItem value="04">§04 only</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium mb-2 block">Sort</label>
+          <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="az">A → Z</SelectItem>
+              <SelectItem value="za">Z → A</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {teamId ? (
@@ -78,7 +127,7 @@ function VaultPage() {
         !isLoading && (
           <Card className="border-dashed">
             <CardContent className="py-12 text-center text-muted-foreground">
-              No teams available.
+              No teams match these filters.
             </CardContent>
           </Card>
         )
