@@ -362,15 +362,24 @@ function TeamCard({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("team_members")
-        .select("id, user_id, job_title, profiles:profiles!inner(name, email)")
+        .select("id, user_id, job_title")
         .eq("team_id", team.id);
       if (error) throw error;
-      return data as Array<{
-        id: string;
-        user_id: string;
-        job_title: TeamJob;
-        profiles: { name: string; email: string | null };
-      }>;
+      const ids = (data ?? []).map((m) => m.user_id);
+      let profMap = new Map<string, { name: string; email: string | null }>();
+      if (ids.length) {
+        const { data: profs, error: pErr } = await supabase
+          .from("profiles")
+          .select("id, name, email")
+          .in("id", ids);
+        if (pErr) throw pErr;
+        profs?.forEach((p) => profMap.set(p.id, { name: p.name, email: p.email }));
+      }
+      return (data ?? []).map((m) => ({
+        ...m,
+        job_title: m.job_title as TeamJob,
+        profiles: profMap.get(m.user_id) ?? { name: "", email: null },
+      }));
     },
   });
 
