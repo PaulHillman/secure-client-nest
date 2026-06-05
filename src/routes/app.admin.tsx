@@ -384,14 +384,26 @@ function TeamCard({
   });
 
   const { data: allProfiles } = useQuery({
-    queryKey: ["admin", "users-min"],
+    queryKey: ["admin", "assignable-users", team.section ?? "_none"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, name, email")
-        .order("name");
+      let q = supabase.from("profiles").select("id, name, email, section").order("name");
+      if (team.section) q = q.eq("section", team.section);
+      else q = q.is("section", null);
+      const { data: profs, error } = await q;
       if (error) throw error;
-      return data;
+
+      const ids = (profs ?? []).map((p) => p.id);
+      if (!ids.length) return [];
+
+      const [{ data: assigned }, { data: roles }] = await Promise.all([
+        supabase.from("team_members").select("user_id").in("user_id", ids),
+        supabase.from("user_roles").select("user_id, role").in("user_id", ids),
+      ]);
+      const assignedSet = new Set((assigned ?? []).map((a) => a.user_id));
+      const adminSet = new Set(
+        (roles ?? []).filter((r) => r.role === "admin").map((r) => r.user_id),
+      );
+      return (profs ?? []).filter((p) => !assignedSet.has(p.id) && !adminSet.has(p.id));
     },
   });
 
