@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Building2, Mail, Globe, MapPin, Users } from "lucide-react";
 import { FileVault } from "@/components/file-vault";
 import { ManagerSubmissions } from "@/components/manager-submissions";
+import { CompanyFocusCard } from "@/components/company-focus-card";
 
 export const Route = createFileRoute("/app/teams/$teamId")({
   head: () => ({ meta: [{ title: "Team — ClientVault" }] }),
@@ -87,41 +88,7 @@ function TeamDetail() {
         </div>
       </header>
 
-      {cf && (
-        <Card className="mt-6 border-border/60">
-          <CardHeader>
-            <CardTitle className="font-display text-xl flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-gold" />
-              {cf.company_name}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">{cf.industry}</p>
-          </CardHeader>
-          <CardContent className="text-sm grid sm:grid-cols-2 gap-3">
-            {cf.contact_person && (
-              <div>
-                <div className="text-foreground">{cf.contact_person}</div>
-                <div className="text-muted-foreground">{cf.contact_job_title}</div>
-              </div>
-            )}
-            {cf.email && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Mail className="h-4 w-4" /> <a href={`mailto:${cf.email}`} className="hover:text-foreground">{cf.email}</a>
-              </div>
-            )}
-            {cf.website && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Globe className="h-4 w-4" />
-                <a href={cf.website} target="_blank" rel="noreferrer" className="hover:text-foreground">{cf.website}</a>
-              </div>
-            )}
-            {cf.hq_address && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="h-4 w-4" /> {cf.hq_address}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      <CompanyFocusCard teamId={teamId} cf={cf as any} queryKey={["team", teamId]} />
 
       <section className="mt-8">
         <div className="flex items-center gap-2 mb-4">
