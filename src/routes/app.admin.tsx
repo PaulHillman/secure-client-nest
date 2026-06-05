@@ -26,7 +26,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Trash2, Plus, UserCog } from "lucide-react";
+import { Trash2, Plus, UserCog, Briefcase, Check, X, ExternalLink } from "lucide-react";
 
 export const Route = createFileRoute("/app/admin")({
   head: () => ({ meta: [{ title: "Admin — ClientVault" }] }),
