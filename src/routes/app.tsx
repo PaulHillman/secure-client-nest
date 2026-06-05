@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, Navigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
-import { Vault, LayoutDashboard, Users, FolderLock, LogOut } from "lucide-react";
+import { Vault, LayoutDashboard, Users, FolderLock, LogOut, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/app")({
@@ -17,6 +17,7 @@ function AppLayout() {
   const nav = [
     { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/app/teams", label: "Teams", icon: Users },
+    { to: "/app/vault", label: "File Vault", icon: FolderOpen },
     ...(isAdmin ? [{ to: "/app/admin", label: "Admin", icon: FolderLock }] : []),
   ];
 
