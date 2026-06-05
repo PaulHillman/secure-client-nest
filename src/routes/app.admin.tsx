@@ -613,3 +613,151 @@ function TeamCard({
     </Card>
   );
 }
+
+/* ---------------- Submissions ---------------- */
+
+function SubmissionsPanel() {
+  const qc = useQueryClient();
+  const { data: subs, isLoading } = useQuery({
+    queryKey: ["manager-submissions-all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("manager_submissions")
+        .select("*, teams(name, section)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  const review = useMutation({
+    mutationFn: async (v: { id: string; status: "approved" | "rejected"; notes?: string }) => {
+      const { error } = await supabase
+        .from("manager_submissions")
+        .update({ status: v.status, admin_notes: v.notes ?? null })
+        .eq("id", v.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Submission updated");
+      qc.invalidateQueries({ queryKey: ["manager-submissions-all"] });
+      qc.invalidateQueries({ queryKey: ["manager-submissions"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("manager_submissions").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Removed");
+      qc.invalidateQueries({ queryKey: ["manager-submissions-all"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-display text-xl flex items-center gap-2">
+          <Briefcase className="h-5 w-5 text-gold" /> Manager submissions ({subs?.length ?? 0})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Loading…</p>
+        ) : subs?.length === 0 ? (
+          <p className="text-sm text-muted-foreground italic">No submissions yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {subs?.map((s) => (
+              <SubmissionRow
+                key={s.id}
+                sub={s}
+                onApprove={(notes) => review.mutate({ id: s.id, status: "approved", notes })}
+                onReject={(notes) => review.mutate({ id: s.id, status: "rejected", notes })}
+                onDelete={() => remove.mutate(s.id)}
+              />
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function SubmissionRow({
+  sub,
+  onApprove,
+  onReject,
+  onDelete,
+}: {
+  sub: any;
+  onApprove: (notes?: string) => void;
+  onReject: (notes?: string) => void;
+  onDelete: () => void;
+}) {
+  const [notes, setNotes] = useState(sub.admin_notes ?? "");
+  return (
+    <div className="border rounded-lg p-4">
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <div>
+          <div className="font-display text-lg">
+            {sub.manager_first_name} {sub.manager_last_name}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {sub.teams?.name}
+            {sub.teams?.section && ` · §${sub.teams.section}`}
+          </div>
+        </div>
+        {sub.status === "approved" ? (
+          <Badge className="bg-green-600 text-white">approved</Badge>
+        ) : sub.status === "rejected" ? (
+          <Badge variant="destructive">rejected</Badge>
+        ) : (
+          <Badge variant="secondary">pending</Badge>
+        )}
+      </div>
+      <div className="grid sm:grid-cols-2 gap-2 text-sm mb-3">
+        <div>
+          <span className="text-muted-foreground">Company:</span> {sub.company_name}
+        </div>
+        <div>
+          <span className="text-muted-foreground">Industry:</span> {sub.industry}
+        </div>
+        <div>
+          <span className="text-muted-foreground">Employees:</span> {sub.num_employees}
+        </div>
+        <div className="truncate">
+          <a
+            href={sub.company_website.startsWith("http") ? sub.company_website : `https://${sub.company_website}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 hover:underline"
+          >
+            <ExternalLink className="h-3 w-3" /> {sub.company_website}
+          </a>
+        </div>
+      </div>
+      <Input
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Notes (optional)"
+        className="h-8 mb-2"
+      />
+      <div className="flex gap-2 justify-end">
+        <Button size="sm" variant="ghost" onClick={onDelete}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => onReject(notes || undefined)}>
+          <X className="h-4 w-4 mr-1" /> Reject
+        </Button>
+        <Button size="sm" onClick={() => onApprove(notes || undefined)}>
+          <Check className="h-4 w-4 mr-1" /> Approve
+        </Button>
+      </div>
+    </div>
+  );
+}
