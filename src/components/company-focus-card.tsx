@@ -42,12 +42,12 @@ export function CompanyFocusCard({
   const save = useMutation({
     mutationFn: async (v: Partial<CompanyFocus>) => {
       if (cf?.id) {
-        const { error } = await supabase.from("company_focus").update(v).eq("id", cf.id);
+        const { error } = await supabase.from("company_focus").update(v as any).eq("id", cf.id);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("company_focus")
-          .insert({ ...v, team_id: teamId });
+          .insert({ ...v, team_id: teamId } as any);
         if (error) throw error;
       }
     },
