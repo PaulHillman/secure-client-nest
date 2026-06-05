@@ -59,7 +59,7 @@ function TeamDetail() {
       if (userIds.length) {
         const { data: pData, error: pErr } = await supabase
           .from("profiles")
-          .select("id, name, email, avatar_url, section")
+          .select("id, name, email, avatar_url, section, phone_number")
           .in("id", userIds);
         if (pErr) throw pErr;
         profiles = pData ?? [];
