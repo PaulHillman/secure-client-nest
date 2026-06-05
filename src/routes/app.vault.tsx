@@ -40,10 +40,8 @@ function VaultPage() {
 
   const options = useMemo(() => {
     const rows = (teams ?? []).map((t) => {
-      const cf = Array.isArray(t.company_focus) ? t.company_focus[0] : t.company_focus;
-      const company = cf?.company_name ?? "";
-      const label = company ? `${company} — ${t.name}` : t.name;
-      const sortKey = (company || t.name).toLowerCase();
+      const label = t.name;
+      const sortKey = t.name.toLowerCase();
       return { id: t.id, label, section: t.section ?? "", sortKey };
     });
     const filtered = section === "all" ? rows : rows.filter((r) => r.section === section);
@@ -77,7 +75,7 @@ function VaultPage() {
 
       <div className="mb-6 grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end max-w-3xl">
         <div>
-          <label className="text-sm font-medium mb-2 block">Select company / team</label>
+          <label className="text-sm font-medium mb-2 block">Select team</label>
           <Select value={teamId} onValueChange={setTeamId}>
             <SelectTrigger>
               <SelectValue placeholder={isLoading ? "Loading…" : "Pick a team"} />
