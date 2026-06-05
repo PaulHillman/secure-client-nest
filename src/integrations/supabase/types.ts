@@ -245,6 +245,62 @@ export type Database = {
           },
         ]
       }
+      manager_submissions: {
+        Row: {
+          admin_notes: string | null
+          company_name: string
+          company_website: string
+          created_at: string
+          id: string
+          industry: string
+          manager_first_name: string
+          manager_last_name: string
+          num_employees: number
+          status: string
+          submitted_by: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          company_name: string
+          company_website: string
+          created_at?: string
+          id?: string
+          industry: string
+          manager_first_name: string
+          manager_last_name: string
+          num_employees: number
+          status?: string
+          submitted_by: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          company_name?: string
+          company_website?: string
+          created_at?: string
+          id?: string
+          industry?: string
+          manager_first_name?: string
+          manager_last_name?: string
+          num_employees?: number
+          status?: string
+          submitted_by?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manager_submissions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
