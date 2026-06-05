@@ -60,7 +60,7 @@ function Admin() {
         <TabsList>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="teams">Teams</TabsTrigger>
-          <TabsTrigger value="submissions">Submissions</TabsTrigger>
+          <TabsTrigger value="submissions">Manager</TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="mt-6">
           <UsersPanel />
