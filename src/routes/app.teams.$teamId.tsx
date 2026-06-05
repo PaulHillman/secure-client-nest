@@ -173,6 +173,8 @@ function TeamDetail() {
         )}
       </section>
 
+      <ManagerSubmissions teamId={teamId} />
+
       <FileVault teamId={teamId} />
 
     </div>
