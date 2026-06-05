@@ -451,6 +451,7 @@ function TeamCard({
     onSuccess: () => {
       toast.success("Member removed");
       qc.invalidateQueries({ queryKey: ["admin", "team-members", team.id] });
+      qc.invalidateQueries({ queryKey: ["admin", "assignable-users"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
