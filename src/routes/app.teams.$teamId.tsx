@@ -132,3 +132,124 @@ function TeamDetail() {
     </div>
   );
 }
+
+function MemberCard({
+  member,
+  teamId,
+}: {
+  member: any;
+  teamId: string;
+}) {
+  const { user, isAdmin } = useAuth();
+  const qc = useQueryClient();
+  const p = member.profiles;
+  const displayName = p?.name ?? "Unlinked team member";
+  const canEdit = !!p && (p.id === user?.id || isAdmin);
+
+  const [editing, setEditing] = useState(false);
+  const [phone, setPhone] = useState(p?.phone_number ?? "");
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ phone_number: phone.trim() || null })
+        .eq("id", p.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Phone updated");
+      setEditing(false);
+      qc.invalidateQueries({ queryKey: ["team", teamId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  function initials(name: string) {
+    return name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((s) => s[0]?.toUpperCase() ?? "")
+      .join("");
+  }
+
+  return (
+    <Card className="border-border/60">
+      <CardContent className="p-4 flex items-start gap-3">
+        <Avatar className="h-14 w-14">
+          <AvatarImage src={p?.avatar_url ?? undefined} alt={displayName} />
+          <AvatarFallback>{initials(displayName)}</AvatarFallback>
+        </Avatar>
+        <div className="min-w-0 flex-1">
+          <div className="font-medium truncate">{displayName}</div>
+          <div className="text-xs text-gold">{member.job_title}</div>
+          {p?.email && (
+            <a
+              href={`mailto:${p.email}`}
+              className="text-xs text-muted-foreground truncate block hover:text-foreground"
+            >
+              {p.email}
+            </a>
+          )}
+          <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+            <Phone className="h-3 w-3" />
+            {editing ? (
+              <div className="flex items-center gap-1 flex-1">
+                <Input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="555-555-5555"
+                  className="h-7 text-xs"
+                  maxLength={30}
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6"
+                  onClick={() => save.mutate()}
+                  aria-label="Save"
+                >
+                  <Check className="h-3 w-3" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6"
+                  onClick={() => {
+                    setPhone(p?.phone_number ?? "");
+                    setEditing(false);
+                  }}
+                  aria-label="Cancel"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <>
+                {p?.phone_number ? (
+                  <a href={`tel:${p.phone_number}`} className="hover:text-foreground">
+                    {p.phone_number}
+                  </a>
+                ) : (
+                  <span className="italic">No phone</span>
+                )}
+                {canEdit && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-5 w-5 ml-1"
+                    onClick={() => setEditing(true)}
+                    aria-label="Edit phone"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
