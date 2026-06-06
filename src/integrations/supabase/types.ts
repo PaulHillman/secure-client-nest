@@ -136,6 +136,7 @@ export type Database = {
       }
       files: {
         Row: {
+          assigned_to: string | null
           category: string
           created_at: string
           current_version_id: string | null
@@ -143,11 +144,15 @@ export type Database = {
           file_name: string
           id: string
           is_template: boolean
+          section: string
+          status: Database["public"]["Enums"]["vault_status"]
+          subsection: string
           team_id: string
           updated_at: string
           uploaded_by: string
         }
         Insert: {
+          assigned_to?: string | null
           category?: string
           created_at?: string
           current_version_id?: string | null
@@ -155,11 +160,15 @@ export type Database = {
           file_name: string
           id?: string
           is_template?: boolean
+          section?: string
+          status?: Database["public"]["Enums"]["vault_status"]
+          subsection?: string
           team_id: string
           updated_at?: string
           uploaded_by: string
         }
         Update: {
+          assigned_to?: string | null
           category?: string
           created_at?: string
           current_version_id?: string | null
@@ -167,6 +176,9 @@ export type Database = {
           file_name?: string
           id?: string
           is_template?: boolean
+          section?: string
+          status?: Database["public"]["Enums"]["vault_status"]
+          subsection?: string
           team_id?: string
           updated_at?: string
           uploaded_by?: string
@@ -437,6 +449,13 @@ export type Database = {
         | "Video Specialist"
         | "Company Liaison"
         | "Researcher"
+      vault_status:
+        | "Submitted"
+        | "Awaiting Review"
+        | "Reviewed"
+        | "Needs Revision"
+        | "Resolved"
+        | "Missing"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -571,6 +590,14 @@ export const Constants = {
         "Video Specialist",
         "Company Liaison",
         "Researcher",
+      ],
+      vault_status: [
+        "Submitted",
+        "Awaiting Review",
+        "Reviewed",
+        "Needs Revision",
+        "Resolved",
+        "Missing",
       ],
     },
   },
