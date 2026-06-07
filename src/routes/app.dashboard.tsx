@@ -61,6 +61,12 @@ function Dashboard() {
         ))}
       </div>
 
+      <div className="mt-6">
+        <ProjectArchCard />
+      </div>
+
+
+
       <Card className="mt-8 border-border/60">
         <CardHeader>
           <CardTitle className="font-display text-2xl">Getting started</CardTitle>
