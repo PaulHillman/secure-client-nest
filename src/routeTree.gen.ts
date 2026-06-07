@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppVaultOverviewRouteImport } from './routes/app.vault-overview'
 import { Route as AppVaultRouteImport } from './routes/app.vault'
 import { Route as AppTeamsRouteImport } from './routes/app.teams'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
@@ -32,6 +33,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppVaultOverviewRoute = AppVaultOverviewRouteImport.update({
+  id: '/vault-overview',
+  path: '/vault-overview',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppVaultRoute = AppVaultRouteImport.update({
   id: '/vault',
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/app/dashboard': typeof AppDashboardRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
+  '/app/vault-overview': typeof AppVaultOverviewRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/app/dashboard': typeof AppDashboardRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
+  '/app/vault-overview': typeof AppVaultOverviewRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
 }
 export interface FileRoutesById {
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/app/dashboard': typeof AppDashboardRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
+  '/app/vault-overview': typeof AppVaultOverviewRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/app/dashboard'
     | '/app/teams'
     | '/app/vault'
+    | '/app/vault-overview'
     | '/app/teams/$teamId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/app/dashboard'
     | '/app/teams'
     | '/app/vault'
+    | '/app/vault-overview'
     | '/app/teams/$teamId'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/app/dashboard'
     | '/app/teams'
     | '/app/vault'
+    | '/app/vault-overview'
     | '/app/teams/$teamId'
   fileRoutesById: FileRoutesById
 }
@@ -151,6 +163,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/app/vault-overview': {
+      id: '/app/vault-overview'
+      path: '/vault-overview'
+      fullPath: '/app/vault-overview'
+      preLoaderRoute: typeof AppVaultOverviewRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/vault': {
       id: '/app/vault'
@@ -207,6 +226,7 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppTeamsRoute: typeof AppTeamsRouteWithChildren
   AppVaultRoute: typeof AppVaultRoute
+  AppVaultOverviewRoute: typeof AppVaultOverviewRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -214,6 +234,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppTeamsRoute: AppTeamsRouteWithChildren,
   AppVaultRoute: AppVaultRoute,
+  AppVaultOverviewRoute: AppVaultOverviewRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
