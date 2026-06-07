@@ -226,6 +226,7 @@ export function FileVault({ teamId }: { teamId: string }) {
                         onDownload={download}
                         onDelete={remove}
                         onSetStatus={setStatus}
+                        onOpenComments={openComments}
                         onRefresh={() => qc.invalidateQueries({ queryKey: ["vault", teamId] })}
                       />
                     );
@@ -235,6 +236,18 @@ export function FileVault({ teamId }: { teamId: string }) {
             );
           })}
         </Accordion>
+      )}
+
+      {commentTarget && user && (
+        <CommentsDialog
+          file={commentTarget.file}
+          members={members}
+          userId={user.id}
+          isAdmin={isAdmin}
+          presetStatus={commentTarget.preset}
+          onClose={() => setCommentTarget(null)}
+          onAfterSave={() => qc.invalidateQueries({ queryKey: ["vault", teamId] })}
+        />
       )}
     </section>
   );
