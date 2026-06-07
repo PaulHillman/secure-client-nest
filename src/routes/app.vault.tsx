@@ -57,6 +57,10 @@ function VaultPage() {
   }, [teams, sort, section]);
 
   useEffect(() => {
+    if (teamFromUrl) setTeamId(teamFromUrl);
+  }, [teamFromUrl]);
+
+  useEffect(() => {
     if (options.length === 0) {
       if (teamId) setTeamId(undefined);
       return;
