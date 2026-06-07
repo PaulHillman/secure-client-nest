@@ -64,6 +64,57 @@ export type Database = {
           },
         ]
       }
+      file_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          file_id: string
+          id: string
+          recipient_ids: string[]
+          related_status: Database["public"]["Enums"]["vault_status"] | null
+          team_id: string
+          to_entire_team: boolean
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          file_id: string
+          id?: string
+          recipient_ids?: string[]
+          related_status?: Database["public"]["Enums"]["vault_status"] | null
+          team_id: string
+          to_entire_team?: boolean
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          file_id?: string
+          id?: string
+          recipient_ids?: string[]
+          related_status?: Database["public"]["Enums"]["vault_status"] | null
+          team_id?: string
+          to_entire_team?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_comments_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_comments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       file_tags: {
         Row: {
           created_at: string
