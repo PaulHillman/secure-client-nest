@@ -158,6 +158,10 @@ export function FileVault({ teamId }: { teamId: string }) {
     qc.invalidateQueries({ queryKey: ["vault", teamId] });
   };
 
+  const [commentTarget, setCommentTarget] = useState<{ file: FileRow; preset?: VaultStatus } | null>(null);
+  const openComments = (file: FileRow, preset?: VaultStatus) =>
+    setCommentTarget({ file, preset });
+
   return (
     <section className="mt-8">
       <div className="flex items-center justify-between gap-2 mb-4">
