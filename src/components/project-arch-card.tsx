@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
-import { Maximize2, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Maximize2, FileText, ExternalLink } from "lucide-react";
 import projectArch from "@/assets/project-arch.pdf.asset.json";
+import projectArchThumb from "@/assets/project-arch-thumb.png.asset.json";
 
 type Props = {
   className?: string;
-  /** Compact thumbnail vs. larger embed */
   variant?: "thumb" | "wide";
 };
 
 export function ProjectArchCard({ className, variant = "thumb" }: Props) {
   const [open, setOpen] = useState(false);
-  const url = projectArch.url;
+  const pdfUrl = projectArch.url;
+  const thumbUrl = projectArchThumb.url;
 
   return (
     <>
@@ -30,25 +32,34 @@ export function ProjectArchCard({ className, variant = "thumb" }: Props) {
           </div>
           <Maximize2 className="h-4 w-4 text-muted-foreground group-hover:text-gold transition-colors" />
         </div>
-        <div className={`relative ${variant === "wide" ? "h-[420px]" : "h-56"} bg-muted`}>
-          <iframe
-            src={`${url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-            title="Project Arch preview"
-            className="w-full h-full border-0"
+        <div className={`relative ${variant === "wide" ? "h-[520px]" : "h-64"} bg-muted overflow-hidden flex items-start justify-center`}>
+          <img
+            src={thumbUrl}
+            alt="Semester Project Architecture of Activities — page 1 preview"
+            className="w-full h-full object-contain object-top"
+            loading="lazy"
           />
-          {/* Transparent click-catcher so the card's onClick fires instead of the iframe swallowing clicks */}
-          <div className="absolute inset-0" aria-hidden="true" />
         </div>
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-[95vw] w-[95vw] h-[92vh] p-0 overflow-hidden">
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[92vh] p-0 overflow-hidden flex flex-col">
           <DialogTitle className="sr-only">Semester Project Architecture of Activities</DialogTitle>
-          <iframe
-            src={`${url}#view=FitH`}
-            title="Semester Project Architecture of Activities"
-            className="w-full h-full border-0"
-          />
+          <div className="flex items-center justify-between px-4 py-2 border-b">
+            <p className="text-sm font-medium">Semester Project Arch</p>
+            <Button asChild size="sm" variant="outline">
+              <a href={pdfUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="h-3.5 w-3.5 mr-1" /> Open in new tab
+              </a>
+            </Button>
+          </div>
+          <div className="flex-1 overflow-auto bg-muted p-4 flex justify-center">
+            <img
+              src={thumbUrl}
+              alt="Semester Project Architecture of Activities"
+              className="max-w-full h-auto shadow-lg"
+            />
+          </div>
         </DialogContent>
       </Dialog>
     </>
