@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, Navigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
-import { Vault, LayoutDashboard, Users, FolderLock, LogOut, FolderOpen } from "lucide-react";
+import { Vault, LayoutDashboard, Users, FolderLock, LogOut, FolderOpen, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/notifications-bell";
 
