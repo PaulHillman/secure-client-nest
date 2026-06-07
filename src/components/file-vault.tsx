@@ -25,6 +25,7 @@ import {
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   FileText,
@@ -33,6 +34,8 @@ import {
   History,
   Trash2,
   FolderOpen,
+  MessageSquare,
+  Users,
 } from "lucide-react";
 import {
   VAULT_STRUCTURE,
