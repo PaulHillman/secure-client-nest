@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, Link, Navigate, useRouterState } from "@tansta
 import { useAuth } from "@/lib/auth-context";
 import { Vault, LayoutDashboard, Users, FolderLock, LogOut, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NotificationsBell } from "@/components/notifications-bell";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -49,7 +50,12 @@ function AppLayout() {
           </Button>
         </div>
       </aside>
-      <main className="flex-1 overflow-auto"><Outlet /></main>
+      <main className="flex-1 overflow-auto">
+        <div className="flex items-center justify-end gap-2 px-4 py-2 border-b border-border/40 bg-background/60 backdrop-blur sticky top-0 z-10">
+          <NotificationsBell />
+        </div>
+        <Outlet />
+      </main>
     </div>
   );
 }

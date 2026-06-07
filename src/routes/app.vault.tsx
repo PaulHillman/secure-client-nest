@@ -15,6 +15,10 @@ import { FolderOpen } from "lucide-react";
 
 export const Route = createFileRoute("/app/vault")({
   head: () => ({ meta: [{ title: "File Vault — ClientVault" }] }),
+  validateSearch: (search: Record<string, unknown>) => ({
+    team: typeof search.team === "string" ? search.team : undefined,
+    file: typeof search.file === "string" ? search.file : undefined,
+  }),
   component: VaultPage,
 });
 
@@ -22,7 +26,8 @@ type SortKey = "az" | "za";
 type SectionFilter = "all" | "03" | "04";
 
 function VaultPage() {
-  const [teamId, setTeamId] = useState<string | undefined>();
+  const { team: teamFromUrl } = Route.useSearch();
+  const [teamId, setTeamId] = useState<string | undefined>(teamFromUrl);
   const [sort, setSort] = useState<SortKey>("az");
   const [section, setSection] = useState<SectionFilter>("all");
 
@@ -50,6 +55,10 @@ function VaultPage() {
     );
     return filtered;
   }, [teams, sort, section]);
+
+  useEffect(() => {
+    if (teamFromUrl) setTeamId(teamFromUrl);
+  }, [teamFromUrl]);
 
   useEffect(() => {
     if (options.length === 0) {
