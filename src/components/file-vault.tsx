@@ -279,6 +279,7 @@ function SubsectionBlock({
   onDownload,
   onDelete,
   onSetStatus,
+  onOpenComments,
   onRefresh,
 }: {
   sectionName: string;
@@ -294,6 +295,7 @@ function SubsectionBlock({
   onDownload: (versionId: string | null, fileName: string) => void;
   onDelete: (f: FileRow) => void;
   onSetStatus: (f: FileRow, s: VaultStatus) => void;
+  onOpenComments: (f: FileRow, preset?: VaultStatus) => void;
   onRefresh: () => void;
 }) {
   // Build slot list: per-member slots (one per member) + compiled + free-form extras
@@ -311,6 +313,11 @@ function SubsectionBlock({
       otherFiles.push(f);
     }
   }
+
+  const commonProps = {
+    verMap, isAdmin, userId,
+    onDownload, onDelete, onSetStatus, onOpenComments, onRefresh,
+  };
 
   return (
     <div className="rounded-md border border-border/60 bg-card/30 p-3">
@@ -332,28 +339,12 @@ function SubsectionBlock({
                 key={m.user_id}
                 label={m.name || m.email || "Member"}
                 files={mf}
-                verMap={verMap}
-                isAdmin={isAdmin}
-                userId={userId}
-                onDownload={onDownload}
-                onDelete={onDelete}
-                onSetStatus={onSetStatus}
-                onRefresh={onRefresh}
+                {...commonProps}
               />
             );
           })}
           {expectsCompiled && (
-            <SlotRow
-              label="Final Compiled"
-              files={compiledFiles}
-              verMap={verMap}
-              isAdmin={isAdmin}
-              userId={userId}
-              onDownload={onDownload}
-              onDelete={onDelete}
-              onSetStatus={onSetStatus}
-              onRefresh={onRefresh}
-            />
+            <SlotRow label="Final Compiled" files={compiledFiles} {...commonProps} />
           )}
           {otherFiles.length > 0 && (
             <div className="pt-2 space-y-2">
@@ -364,12 +355,7 @@ function SubsectionBlock({
                   file={f}
                   versions={verMap.get(f.id) ?? []}
                   canManage={isAdmin || f.uploaded_by === userId}
-                  isAdmin={isAdmin}
-                  userId={userId}
-                  onDownload={onDownload}
-                  onDelete={onDelete}
-                  onSetStatus={onSetStatus}
-                  onRefresh={onRefresh}
+                  {...commonProps}
                 />
               ))}
             </div>
@@ -387,12 +373,7 @@ function SubsectionBlock({
               file={f}
               versions={verMap.get(f.id) ?? []}
               canManage={isAdmin || f.uploaded_by === userId}
-              isAdmin={isAdmin}
-              userId={userId}
-              onDownload={onDownload}
-              onDelete={onDelete}
-              onSetStatus={onSetStatus}
-              onRefresh={onRefresh}
+              {...commonProps}
             />
           ))}
         </div>
@@ -404,6 +385,17 @@ function SubsectionBlock({
   );
 }
 
+type RowCommonProps = {
+  verMap: Map<string, VersionRow[]>;
+  isAdmin: boolean;
+  userId?: string;
+  onDownload: (versionId: string | null, fileName: string) => void;
+  onDelete: (f: FileRow) => void;
+  onSetStatus: (f: FileRow, s: VaultStatus) => void;
+  onOpenComments: (f: FileRow, preset?: VaultStatus) => void;
+  onRefresh: () => void;
+};
+
 function SlotRow({
   label,
   files,
@@ -413,18 +405,9 @@ function SlotRow({
   onDownload,
   onDelete,
   onSetStatus,
+  onOpenComments,
   onRefresh,
-}: {
-  label: string;
-  files: FileRow[];
-  verMap: Map<string, VersionRow[]>;
-  isAdmin: boolean;
-  userId?: string;
-  onDownload: (versionId: string | null, fileName: string) => void;
-  onDelete: (f: FileRow) => void;
-  onSetStatus: (f: FileRow, s: VaultStatus) => void;
-  onRefresh: () => void;
-}) {
+}: { label: string; files: FileRow[] } & RowCommonProps) {
   return (
     <div className="rounded border border-dashed border-border/60 p-2">
       <div className="text-xs font-medium mb-1">{label}</div>
@@ -438,11 +421,13 @@ function SlotRow({
               file={f}
               versions={verMap.get(f.id) ?? []}
               canManage={isAdmin || f.uploaded_by === userId}
+              verMap={verMap}
               isAdmin={isAdmin}
               userId={userId}
               onDownload={onDownload}
               onDelete={onDelete}
               onSetStatus={onSetStatus}
+              onOpenComments={onOpenComments}
               onRefresh={onRefresh}
             />
           ))}
@@ -461,19 +446,25 @@ function FileLine({
   onDownload,
   onDelete,
   onSetStatus,
+  onOpenComments,
   onRefresh,
 }: {
   file: FileRow;
   versions: VersionRow[];
   canManage: boolean;
-  isAdmin: boolean;
-  userId?: string;
-  onDownload: (versionId: string | null, fileName: string) => void;
-  onDelete: (f: FileRow) => void;
-  onSetStatus: (f: FileRow, s: VaultStatus) => void;
-  onRefresh: () => void;
-}) {
+} & RowCommonProps) {
   const current = versions.find((v) => v.id === file.current_version_id) ?? versions[0];
+
+  const handleStatusChange = (v: string) => {
+    const next = v as VaultStatus;
+    if (next === "Needs Revision") {
+      // Open the comment dialog; status will be saved together with the comment
+      onOpenComments(file, next);
+      return;
+    }
+    onSetStatus(file, next);
+  };
+
   return (
     <Card className="border-border/60">
       <CardContent className="p-2.5 flex items-start gap-2">
@@ -497,7 +488,7 @@ function FileLine({
         </div>
         <div className="flex items-center gap-0.5 shrink-0">
           {isAdmin && (
-            <Select value={file.status} onValueChange={(v) => onSetStatus(file, v as VaultStatus)}>
+            <Select value={file.status} onValueChange={handleStatusChange}>
               <SelectTrigger className="h-7 w-[130px] text-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -508,6 +499,14 @@ function FileLine({
               </SelectContent>
             </Select>
           )}
+          <Button
+            variant="ghost" size="icon"
+            onClick={() => onOpenComments(file)}
+            aria-label="Comments"
+            title="Comments"
+          >
+            <MessageSquare className="h-4 w-4" />
+          </Button>
           <Button
             variant="ghost" size="icon"
             onClick={() => onDownload(file.current_version_id, file.file_name)}
