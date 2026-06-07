@@ -810,3 +810,257 @@ function UploadDialog({
     </Dialog>
   );
 }
+
+type CommentRow = {
+  id: string;
+  file_id: string;
+  team_id: string;
+  author_id: string;
+  body: string;
+  recipient_ids: string[];
+  to_entire_team: boolean;
+  related_status: VaultStatus | null;
+  created_at: string;
+};
+
+function CommentsDialog({
+  file,
+  members,
+  userId,
+  isAdmin,
+  presetStatus,
+  onClose,
+  onAfterSave,
+}: {
+  file: FileRow;
+  members: MemberRow[];
+  userId: string;
+  isAdmin: boolean;
+  presetStatus?: VaultStatus;
+  onClose: () => void;
+  onAfterSave: () => void;
+}) {
+  const qc = useQueryClient();
+  const [body, setBody] = useState("");
+  const [toAll, setToAll] = useState(true);
+  const [recipients, setRecipients] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  const { data: comments } = useQuery({
+    queryKey: ["file-comments", file.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("file_comments" as any)
+        .select("*")
+        .eq("file_id", file.id)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as CommentRow[];
+    },
+  });
+
+  const memberLookup = useMemo(() => {
+    const m = new Map<string, MemberRow>();
+    members.forEach((x) => m.set(x.user_id, x));
+    return m;
+  }, [members]);
+
+  const toggleRecipient = (id: string) => {
+    setRecipients((r) => (r.includes(id) ? r.filter((x) => x !== id) : [...r, id]));
+    setToAll(false);
+  };
+
+  const submit = async () => {
+    const trimmed = body.trim();
+    if (!trimmed) return toast.error("Add a message first");
+    if (!toAll && recipients.length === 0)
+      return toast.error("Pick at least one recipient or send to the entire team");
+    setBusy(true);
+    try {
+      const { error: cErr } = await supabase.from("file_comments" as any).insert({
+        file_id: file.id,
+        team_id: file.team_id,
+        author_id: userId,
+        body: trimmed,
+        recipient_ids: toAll ? [] : recipients,
+        to_entire_team: toAll,
+        related_status: presetStatus ?? null,
+      });
+      if (cErr) throw cErr;
+
+      if (presetStatus) {
+        const { error: sErr } = await supabase
+          .from("files")
+          .update({ status: presetStatus } as any)
+          .eq("id", file.id);
+        if (sErr) throw sErr;
+      }
+
+      toast.success(presetStatus ? `Marked ${presetStatus} and comment sent` : "Comment sent");
+      setBody("");
+      qc.invalidateQueries({ queryKey: ["file-comments", file.id] });
+      onAfterSave();
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message ?? "Could not save comment");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const canDelete = (c: CommentRow) => isAdmin || c.author_id === userId;
+  const deleteComment = async (c: CommentRow) => {
+    if (!confirm("Delete this comment?")) return;
+    const { error } = await supabase.from("file_comments" as any).delete().eq("id", c.id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["file-comments", file.id] });
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-display flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-gold" /> Comments
+          </DialogTitle>
+          <DialogDescription>
+            {file.file_name}
+            {presetStatus && (
+              <span className="ml-2">
+                <Badge variant="outline" className={`text-[10px] ${STATUS_TONE[presetStatus]}`}>
+                  Will set: {presetStatus}
+                </Badge>
+              </span>
+            )}
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Thread */}
+        <div className="max-h-56 overflow-y-auto space-y-2 border rounded-md p-2 bg-muted/20">
+          {(comments ?? []).length === 0 ? (
+            <p className="text-xs text-muted-foreground italic">No comments yet.</p>
+          ) : (
+            (comments ?? []).map((c) => {
+              const author = memberLookup.get(c.author_id);
+              const recipientLabels = c.to_entire_team
+                ? ["Entire team"]
+                : c.recipient_ids.map(
+                    (id) =>
+                      memberLookup.get(id)?.name ||
+                      memberLookup.get(id)?.email ||
+                      "Unknown",
+                  );
+              return (
+                <div key={c.id} className="rounded border bg-background p-2 text-sm">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="text-xs font-medium">
+                      {author?.name || author?.email || "User"}
+                      <span className="text-muted-foreground font-normal">
+                        {" · "}
+                        {new Date(c.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    {canDelete(c) && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => deleteComment(c)}
+                        aria-label="Delete comment"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                  <p className="whitespace-pre-wrap text-sm">{c.body}</p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {recipientLabels.map((l) => (
+                      <Badge key={l} variant="secondary" className="text-[10px]">
+                        {l}
+                      </Badge>
+                    ))}
+                    {c.related_status && (
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] ${STATUS_TONE[c.related_status]}`}
+                      >
+                        {c.related_status}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Compose */}
+        <div className="space-y-3">
+          <div>
+            <Label htmlFor="cd-body">Message</Label>
+            <Textarea
+              id="cd-body"
+              value={body}
+              onChange={(e) => setBody(e.target.value.slice(0, 2000))}
+              rows={3}
+              placeholder={
+                presetStatus === "Needs Revision"
+                  ? "What needs to be fixed?"
+                  : "Add a comment…"
+              }
+            />
+          </div>
+
+          <div>
+            <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+              Send to
+            </Label>
+            <div className="mt-1 rounded border p-2 space-y-1.5">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={toAll}
+                  onCheckedChange={(v) => {
+                    const next = !!v;
+                    setToAll(next);
+                    if (next) setRecipients([]);
+                  }}
+                />
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                <span>Entire team</span>
+              </label>
+              {members.length === 0 ? (
+                <p className="text-xs text-muted-foreground italic">
+                  No team members to direct this to.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-1.5 pt-1 border-t">
+                  {members.map((m) => (
+                    <label
+                      key={m.user_id}
+                      className="flex items-center gap-2 text-sm cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={recipients.includes(m.user_id)}
+                        onCheckedChange={() => toggleRecipient(m.user_id)}
+                      />
+                      <span className="truncate">{m.name || m.email || "Member"}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={submit} disabled={busy || !body.trim()}>
+            {busy ? "Sending…" : presetStatus ? `Send & mark ${presetStatus}` : "Send comment"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
