@@ -19,7 +19,12 @@ function AppLayout() {
     { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/app/teams", label: "Teams", icon: Users },
     { to: "/app/vault", label: "File Vault", icon: FolderOpen },
-    ...(isAdmin ? [{ to: "/app/admin", label: "Admin", icon: FolderLock }] : []),
+    ...(isAdmin
+      ? [
+          { to: "/app/vault-overview", label: "Vault Overview", icon: ClipboardList },
+          { to: "/app/admin", label: "Admin", icon: FolderLock },
+        ]
+      : []),
   ];
 
   return (
