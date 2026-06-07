@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, FileText, ShieldCheck, Building2 } from "lucide-react";
+import { ProjectArchCard } from "@/components/project-arch-card";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ClientVault" }] }),
@@ -59,6 +60,12 @@ function Dashboard() {
           </Card>
         ))}
       </div>
+
+      <div className="mt-6">
+        <ProjectArchCard />
+      </div>
+
+
 
       <Card className="mt-8 border-border/60">
         <CardHeader>

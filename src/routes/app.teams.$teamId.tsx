@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { FileVault } from "@/components/file-vault";
 import { ManagerSubmissions } from "@/components/manager-submissions";
 import { CompanyFocusCard } from "@/components/company-focus-card";
+import { ProjectArchCard } from "@/components/project-arch-card";
 
 export const Route = createFileRoute("/app/teams/$teamId")({
   head: () => ({ meta: [{ title: "Team — ClientVault" }] }),
@@ -94,6 +95,10 @@ function TeamDetail() {
       </header>
 
       <CompanyFocusCard teamId={teamId} cf={cf as any} queryKey={["team", teamId]} />
+
+      <div className="mt-6">
+        <ProjectArchCard variant="wide" />
+      </div>
 
       <section className="mt-8">
         <div className="flex items-center gap-2 mb-4">
