@@ -30,17 +30,14 @@ export function ProjectArchCard({ className, variant = "thumb" }: Props) {
           </div>
           <Maximize2 className="h-4 w-4 text-muted-foreground group-hover:text-gold transition-colors" />
         </div>
-        <div className={variant === "wide" ? "h-[420px] bg-muted" : "h-56 bg-muted"}>
-          <object
-            data={`${url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-            type="application/pdf"
-            className="w-full h-full pointer-events-none"
-            aria-label="Project Arch preview"
-          >
-            <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
-              Preview unavailable
-            </div>
-          </object>
+        <div className={`relative ${variant === "wide" ? "h-[420px]" : "h-56"} bg-muted`}>
+          <iframe
+            src={`${url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+            title="Project Arch preview"
+            className="w-full h-full border-0"
+          />
+          {/* Transparent click-catcher so the card's onClick fires instead of the iframe swallowing clicks */}
+          <div className="absolute inset-0" aria-hidden="true" />
         </div>
       </Card>
 
