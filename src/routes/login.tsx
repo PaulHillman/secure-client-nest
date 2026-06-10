@@ -54,8 +54,8 @@ function LoginPage() {
       <div className="hidden lg:flex flex-col justify-between p-12 bg-sidebar text-sidebar-foreground relative overflow-hidden">
         <div className="flex items-center gap-3 relative z-10">
           <img src={logoAsset.url} alt="" className="h-10 w-10 object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" />
-          <span className="font-display text-2xl tracking-tight">
-            <span className="text-sidebar-foreground">Client</span><span className="text-gold">Vault</span>
+          <span className="font-display text-2xl tracking-tight overflow-hidden">
+            <span className="vault-client-slide text-sidebar-foreground">Client</span><span className="text-gold">Vault</span>
           </span>
         </div>
         <div className="relative z-10 flex flex-col items-center text-center">
