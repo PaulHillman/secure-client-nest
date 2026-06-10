@@ -1,8 +1,9 @@
 import { createFileRoute, Outlet, Link, Navigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
-import { Vault, LayoutDashboard, Users, FolderLock, LogOut, FolderOpen, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Users, FolderLock, LogOut, FolderOpen, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/notifications-bell";
+import logoAsset from "@/assets/clientvault-logo.png.asset.json";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -30,9 +31,8 @@ function AppLayout() {
   return (
     <div className="min-h-screen flex bg-background">
       <aside className="hidden md:flex w-60 flex-col bg-sidebar text-sidebar-foreground p-4">
-        <Link to="/app/dashboard" className="flex items-center gap-2 px-2 py-3">
-          <Vault className="h-5 w-5 text-gold" />
-          <span className="font-display text-xl">ClientVault</span>
+        <Link to="/app/dashboard" className="flex items-center justify-center px-2 py-3">
+          <img src={logoAsset.url} alt="ClientVault" className="h-20 w-auto" />
         </Link>
         <nav className="mt-6 flex-1 space-y-1">
           {nav.map((n) => {
