@@ -59,7 +59,7 @@ function LoginPage() {
           </span>
         </div>
         <div className="relative z-10 flex flex-col items-center text-center">
-          <img src={logoAsset.url} alt="" className="h-72 w-72 object-contain mb-8 drop-shadow-[0_20px_50px_rgba(0,0,0,0.6)]" />
+          <img src={logoAsset.url} alt="" className="vault-door-swing h-72 w-72 object-contain mb-8 drop-shadow-[0_20px_50px_rgba(0,0,0,0.6)]" />
           <h1 className="font-display text-5xl leading-tight">
             The workspace for <span className="text-gold italic">MGT 331</span> consulting teams.
           </h1>
