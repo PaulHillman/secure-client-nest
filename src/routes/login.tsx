@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import logoAsset from "@/assets/clientvault-logo.png.asset.json";
+import logoAsset from "@/assets/clientvault-safe.png.asset.json";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Sign in — ClientVault" }] }),
@@ -52,9 +52,14 @@ function LoginPage() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
       <div className="hidden lg:flex flex-col justify-between p-12 bg-sidebar text-sidebar-foreground relative overflow-hidden">
-        <img src={logoAsset.url} alt="ClientVault" className="h-16 w-auto" />
+        <div className="flex items-center gap-3 relative z-10">
+          <img src={logoAsset.url} alt="" className="h-10 w-10 object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]" />
+          <span className="font-display text-2xl tracking-tight">
+            <span className="text-sidebar-foreground">Client</span><span className="text-gold">Vault</span>
+          </span>
+        </div>
         <div className="relative z-10 flex flex-col items-center text-center">
-          <img src={logoAsset.url} alt="" className="h-56 w-auto mb-6 drop-shadow-2xl" />
+          <img src={logoAsset.url} alt="" className="h-72 w-72 object-contain mb-8 drop-shadow-[0_20px_50px_rgba(0,0,0,0.6)]" />
           <h1 className="font-display text-5xl leading-tight">
             The workspace for <span className="text-gold italic">MGT 331</span> consulting teams.
           </h1>
@@ -62,7 +67,7 @@ function LoginPage() {
             Team rosters, company focus briefs, signed group norms, and a versioned file vault — all in one place.
           </p>
         </div>
-        <div className="text-xs text-sidebar-foreground/50">
+        <div className="text-xs text-sidebar-foreground/50 relative z-10">
           Seidman College of Business · Grand Valley State University
         </div>
         <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-gold/10 blur-3xl" />
@@ -70,8 +75,11 @@ function LoginPage() {
 
       <div className="flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
-          <div className="lg:hidden mb-8 flex justify-center">
-            <img src={logoAsset.url} alt="ClientVault" className="h-16 w-auto" />
+          <div className="lg:hidden mb-8 flex items-center justify-center gap-3">
+            <img src={logoAsset.url} alt="" className="h-12 w-12 object-contain" />
+            <span className="font-display text-2xl tracking-tight">
+              <span className="text-foreground">Client</span><span className="text-gold">Vault</span>
+            </span>
           </div>
           <h2 className="font-display text-3xl">{mode === "signin" ? "Welcome back" : "Create your account"}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
