@@ -33,8 +33,8 @@ function AppLayout() {
       <aside className="hidden md:flex w-60 flex-col bg-sidebar text-sidebar-foreground p-4">
         <Link to="/app/dashboard" className="flex items-center gap-3 px-2 py-3">
           <img src={logoAsset.url} alt="" className="vault-door-swing h-12 w-12 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]" />
-          <span className="font-display text-xl tracking-tight">
-            <span className="text-sidebar-foreground">Client</span><span className="text-gold">Vault</span>
+          <span className="font-display text-xl tracking-tight overflow-hidden">
+            <span className="vault-client-slide text-sidebar-foreground">Client</span><span className="text-gold">Vault</span>
           </span>
         </Link>
         <nav className="mt-6 flex-1 space-y-1">
