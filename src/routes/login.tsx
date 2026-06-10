@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Vault } from "lucide-react";
+import logoAsset from "@/assets/clientvault-logo.png.asset.json";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Sign in — ClientVault" }] }),
@@ -52,11 +52,9 @@ function LoginPage() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
       <div className="hidden lg:flex flex-col justify-between p-12 bg-sidebar text-sidebar-foreground relative overflow-hidden">
-        <div className="flex items-center gap-2">
-          <Vault className="h-6 w-6 text-gold" />
-          <span className="font-display text-2xl">ClientVault</span>
-        </div>
-        <div className="relative z-10">
+        <img src={logoAsset.url} alt="ClientVault" className="h-16 w-auto" />
+        <div className="relative z-10 flex flex-col items-center text-center">
+          <img src={logoAsset.url} alt="" className="h-56 w-auto mb-6 drop-shadow-2xl" />
           <h1 className="font-display text-5xl leading-tight">
             The workspace for <span className="text-gold italic">MGT 331</span> consulting teams.
           </h1>
@@ -72,9 +70,8 @@ function LoginPage() {
 
       <div className="flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
-          <div className="lg:hidden mb-8 flex items-center gap-2">
-            <Vault className="h-6 w-6 text-primary" />
-            <span className="font-display text-2xl">ClientVault</span>
+          <div className="lg:hidden mb-8 flex justify-center">
+            <img src={logoAsset.url} alt="ClientVault" className="h-16 w-auto" />
           </div>
           <h2 className="font-display text-3xl">{mode === "signin" ? "Welcome back" : "Create your account"}</h2>
           <p className="mt-1 text-sm text-muted-foreground">

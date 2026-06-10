@@ -56,6 +56,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [{ rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" },
+      { rel: "icon", type: "image/png", href: "/__l5e/assets-v1/3efbb0fb-ee7d-428c-82c4-2c952fc851ff/clientvault-logo.png" },
+      { rel: "apple-touch-icon", href: "/__l5e/assets-v1/3efbb0fb-ee7d-428c-82c4-2c952fc851ff/clientvault-logo.png" },
       { rel: "stylesheet", href: appCss }],
   }),
   shellComponent: RootShell,
