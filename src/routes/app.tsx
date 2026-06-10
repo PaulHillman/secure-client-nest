@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth-context";
 import { LayoutDashboard, Users, FolderLock, LogOut, FolderOpen, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/notifications-bell";
-import logoAsset from "@/assets/clientvault-logo.png.asset.json";
+import logoAsset from "@/assets/clientvault-safe.png.asset.json";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -31,8 +31,11 @@ function AppLayout() {
   return (
     <div className="min-h-screen flex bg-background">
       <aside className="hidden md:flex w-60 flex-col bg-sidebar text-sidebar-foreground p-4">
-        <Link to="/app/dashboard" className="flex items-center justify-center px-2 py-3">
-          <img src={logoAsset.url} alt="ClientVault" className="h-20 w-auto" />
+        <Link to="/app/dashboard" className="flex items-center gap-3 px-2 py-3">
+          <img src={logoAsset.url} alt="" className="h-12 w-12 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]" />
+          <span className="font-display text-xl tracking-tight">
+            <span className="text-sidebar-foreground">Client</span><span className="text-gold">Vault</span>
+          </span>
         </Link>
         <nav className="mt-6 flex-1 space-y-1">
           {nav.map((n) => {
