@@ -17,6 +17,17 @@ export type VaultSection = {
 
 export const VAULT_STRUCTURE: VaultSection[] = [
   {
+    name: "Team Documents",
+    subsections: [
+      { name: "Group Norms" },
+      { name: "Contact Info" },
+      { name: "Agendas" },
+      { name: "Minutes" },
+      { name: "Other" },
+      { name: "Mid-Semester Peer Reviews" },
+    ],
+  },
+  {
     name: "Semester Long Project",
     subsections: [
       { name: "Client research" },
@@ -29,15 +40,7 @@ export const VAULT_STRUCTURE: VaultSection[] = [
       { name: "Organizational Chart" },
     ],
   },
-  {
-    name: "Team Documents",
-    subsections: [
-      { name: "Group Norms" },
-      { name: "Contact Info" },
-      { name: "Other" },
-      { name: "Mid-Semester Peer Reviews" },
-    ],
-  },
+
 
   {
     name: "Video",
