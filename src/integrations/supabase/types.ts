@@ -64,6 +64,51 @@ export type Database = {
           },
         ]
       }
+      file_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          changed_fields: string[] | null
+          created_at: string
+          file_id: string | null
+          file_name: string | null
+          id: number
+          new_data: Json | null
+          old_data: Json | null
+          section: string | null
+          subsection: string | null
+          team_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          changed_fields?: string[] | null
+          created_at?: string
+          file_id?: string | null
+          file_name?: string | null
+          id?: number
+          new_data?: Json | null
+          old_data?: Json | null
+          section?: string | null
+          subsection?: string | null
+          team_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          changed_fields?: string[] | null
+          created_at?: string
+          file_id?: string | null
+          file_name?: string | null
+          id?: number
+          new_data?: Json | null
+          old_data?: Json | null
+          section?: string | null
+          subsection?: string | null
+          team_id?: string | null
+        }
+        Relationships: []
+      }
       file_comments: {
         Row: {
           author_id: string
