@@ -269,10 +269,12 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
               </ul>
             </div>
 
-            {/* My response */}
-            {me && proposal && !isPM && (
+            {/* My response — every member including PM signs off with initials */}
+            {me && proposal && (
               <div className="rounded-md border p-3 space-y-2">
-                <div className="text-xs font-medium uppercase tracking-wide">Your response</div>
+                <div className="text-xs font-medium uppercase tracking-wide">
+                  {isPM ? "Confirm your own proposal" : "Your response"}
+                </div>
                 <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
                   <div className="flex-1">
                     <Label className="text-xs">Your initials (2–4 letters)</Label>
@@ -287,25 +289,21 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                     <Button onClick={() => respond.mutate("agreed")} disabled={respond.isPending}>
                       <Check className="h-4 w-4 mr-1" /> Agree
                     </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => respond.mutate("declined")}
-                      disabled={respond.isPending}
-                    >
-                      <X className="h-4 w-4 mr-1" /> Decline
-                    </Button>
+                    {!isPM && (
+                      <Button
+                        variant="outline"
+                        onClick={() => respond.mutate("declined")}
+                        disabled={respond.isPending}
+                      >
+                        <X className="h-4 w-4 mr-1" /> Decline
+                      </Button>
+                    )}
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Your initials act as your e-signature on this meeting time.
                 </p>
               </div>
-            )}
-
-            {me && proposal && isPM && (
-              <p className="text-xs text-muted-foreground italic">
-                As PM you propose the time. Other members agree or decline above.
-              </p>
             )}
           </>
         )}
