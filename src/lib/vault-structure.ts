@@ -17,7 +17,7 @@ export const VAULT_STRUCTURE: VaultSection[] = [
   {
     name: "Semester Long Project",
     subsections: [
-      { name: "Research" },
+      { name: "Client research" },
       {
         name: "Interview Questions",
         perMember: true,
