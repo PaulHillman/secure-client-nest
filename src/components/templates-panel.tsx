@@ -209,11 +209,19 @@ export function TemplatesPanel() {
                                   }
                                 />
                               )}
+                              {user && (
+                                <RecallButton
+                                  template={t}
+                                  onDone={() =>
+                                    qc.invalidateQueries({ queryKey: ["admin", "templates"] })
+                                  }
+                                />
+                              )}
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => {
-                                  if (confirm(`Delete template "${t.file_name}"? Existing team copies are not removed.`))
+                                  if (confirm(`Delete template "${t.file_name}"? Existing team copies are not removed (use Recall first if you want to remove them).`))
                                     removeTpl.mutate(t);
                                 }}
                                 title="Delete template"
