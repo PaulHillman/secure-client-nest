@@ -14,6 +14,488 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          archive_id: string | null
+          archive_name: string | null
+          created_at: string
+          details: Json | null
+          id: number
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          archive_id?: string | null
+          archive_name?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: number
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          archive_id?: string | null
+          archive_name?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: number
+        }
+        Relationships: []
+      }
+      archived_company_focus: {
+        Row: {
+          archive_id: string
+          company_name: string | null
+          contact_job_title: string | null
+          contact_person: string | null
+          email: string | null
+          employee_count: string | null
+          hq_address: string | null
+          id: string
+          industry: string | null
+          team_id: string
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          archive_id: string
+          company_name?: string | null
+          contact_job_title?: string | null
+          contact_person?: string | null
+          email?: string | null
+          employee_count?: string | null
+          hq_address?: string | null
+          id: string
+          industry?: string | null
+          team_id: string
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          archive_id?: string
+          company_name?: string | null
+          contact_job_title?: string | null
+          contact_person?: string | null
+          email?: string | null
+          employee_count?: string | null
+          hq_address?: string | null
+          id?: string
+          industry?: string | null
+          team_id?: string
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_company_focus_archive_id_fkey"
+            columns: ["archive_id"]
+            isOneToOne: false
+            referencedRelation: "semester_archives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      archived_file_comments: {
+        Row: {
+          archive_id: string
+          author_id: string
+          body: string
+          created_at: string | null
+          file_id: string
+          id: string
+          recipient_ids: string[] | null
+          related_status: Database["public"]["Enums"]["vault_status"] | null
+          team_id: string
+          to_entire_team: boolean | null
+        }
+        Insert: {
+          archive_id: string
+          author_id: string
+          body: string
+          created_at?: string | null
+          file_id: string
+          id: string
+          recipient_ids?: string[] | null
+          related_status?: Database["public"]["Enums"]["vault_status"] | null
+          team_id: string
+          to_entire_team?: boolean | null
+        }
+        Update: {
+          archive_id?: string
+          author_id?: string
+          body?: string
+          created_at?: string | null
+          file_id?: string
+          id?: string
+          recipient_ids?: string[] | null
+          related_status?: Database["public"]["Enums"]["vault_status"] | null
+          team_id?: string
+          to_entire_team?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_file_comments_archive_id_fkey"
+            columns: ["archive_id"]
+            isOneToOne: false
+            referencedRelation: "semester_archives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      archived_file_tags: {
+        Row: {
+          archive_id: string
+          created_at: string | null
+          file_id: string
+          id: string
+          tag: string
+        }
+        Insert: {
+          archive_id: string
+          created_at?: string | null
+          file_id: string
+          id: string
+          tag: string
+        }
+        Update: {
+          archive_id?: string
+          created_at?: string | null
+          file_id?: string
+          id?: string
+          tag?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_file_tags_archive_id_fkey"
+            columns: ["archive_id"]
+            isOneToOne: false
+            referencedRelation: "semester_archives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      archived_file_versions: {
+        Row: {
+          archive_id: string
+          archive_storage_path: string
+          file_id: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          storage_path: string
+          uploaded_at: string | null
+          uploaded_by: string | null
+          version_number: number
+        }
+        Insert: {
+          archive_id: string
+          archive_storage_path: string
+          file_id: string
+          file_size?: number | null
+          id: string
+          mime_type?: string | null
+          storage_path: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+          version_number: number
+        }
+        Update: {
+          archive_id?: string
+          archive_storage_path?: string
+          file_id?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          storage_path?: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_file_versions_archive_id_fkey"
+            columns: ["archive_id"]
+            isOneToOne: false
+            referencedRelation: "semester_archives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      archived_files: {
+        Row: {
+          archive_id: string
+          assigned_to: string | null
+          category: string | null
+          created_at: string | null
+          current_version_id: string | null
+          description: string | null
+          file_name: string
+          id: string
+          is_locked: boolean | null
+          is_template: boolean | null
+          section: string
+          status: Database["public"]["Enums"]["vault_status"] | null
+          subsection: string
+          team_id: string | null
+          template_source_id: string | null
+          updated_at: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          archive_id: string
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string | null
+          current_version_id?: string | null
+          description?: string | null
+          file_name: string
+          id: string
+          is_locked?: boolean | null
+          is_template?: boolean | null
+          section: string
+          status?: Database["public"]["Enums"]["vault_status"] | null
+          subsection: string
+          team_id?: string | null
+          template_source_id?: string | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          archive_id?: string
+          assigned_to?: string | null
+          category?: string | null
+          created_at?: string | null
+          current_version_id?: string | null
+          description?: string | null
+          file_name?: string
+          id?: string
+          is_locked?: boolean | null
+          is_template?: boolean | null
+          section?: string
+          status?: Database["public"]["Enums"]["vault_status"] | null
+          subsection?: string
+          team_id?: string | null
+          template_source_id?: string | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_files_archive_id_fkey"
+            columns: ["archive_id"]
+            isOneToOne: false
+            referencedRelation: "semester_archives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      archived_group_norms: {
+        Row: {
+          archive_document_path: string
+          archive_id: string
+          document_path: string
+          id: string
+          is_locked: boolean | null
+          locked_at: string | null
+          team_id: string
+          uploaded_at: string | null
+        }
+        Insert: {
+          archive_document_path: string
+          archive_id: string
+          document_path: string
+          id: string
+          is_locked?: boolean | null
+          locked_at?: string | null
+          team_id: string
+          uploaded_at?: string | null
+        }
+        Update: {
+          archive_document_path?: string
+          archive_id?: string
+          document_path?: string
+          id?: string
+          is_locked?: boolean | null
+          locked_at?: string | null
+          team_id?: string
+          uploaded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_group_norms_archive_id_fkey"
+            columns: ["archive_id"]
+            isOneToOne: false
+            referencedRelation: "semester_archives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      archived_group_norms_signatures: {
+        Row: {
+          archive_id: string
+          group_norms_id: string
+          id: string
+          signed_at: string | null
+          user_id: string
+        }
+        Insert: {
+          archive_id: string
+          group_norms_id: string
+          id: string
+          signed_at?: string | null
+          user_id: string
+        }
+        Update: {
+          archive_id?: string
+          group_norms_id?: string
+          id?: string
+          signed_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_group_norms_signatures_archive_id_fkey"
+            columns: ["archive_id"]
+            isOneToOne: false
+            referencedRelation: "semester_archives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      archived_manager_submissions: {
+        Row: {
+          admin_notes: string | null
+          archive_id: string
+          company_name: string | null
+          company_website: string | null
+          created_at: string | null
+          id: string
+          industry: string | null
+          manager_first_name: string | null
+          manager_last_name: string | null
+          num_employees: number | null
+          status: string | null
+          submitted_by: string
+          team_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          archive_id: string
+          company_name?: string | null
+          company_website?: string | null
+          created_at?: string | null
+          id: string
+          industry?: string | null
+          manager_first_name?: string | null
+          manager_last_name?: string | null
+          num_employees?: number | null
+          status?: string | null
+          submitted_by: string
+          team_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          archive_id?: string
+          company_name?: string | null
+          company_website?: string | null
+          created_at?: string | null
+          id?: string
+          industry?: string | null
+          manager_first_name?: string | null
+          manager_last_name?: string | null
+          num_employees?: number | null
+          status?: string | null
+          submitted_by?: string
+          team_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_manager_submissions_archive_id_fkey"
+            columns: ["archive_id"]
+            isOneToOne: false
+            referencedRelation: "semester_archives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      archived_team_members: {
+        Row: {
+          archive_id: string
+          id: string
+          job_title: Database["public"]["Enums"]["team_job"]
+          joined_at: string | null
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          archive_id: string
+          id: string
+          job_title: Database["public"]["Enums"]["team_job"]
+          joined_at?: string | null
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          archive_id?: string
+          id?: string
+          job_title?: Database["public"]["Enums"]["team_job"]
+          joined_at?: string | null
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_team_members_archive_id_fkey"
+            columns: ["archive_id"]
+            isOneToOne: false
+            referencedRelation: "semester_archives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      archived_teams: {
+        Row: {
+          archive_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          section: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          archive_id: string
+          created_at?: string | null
+          description?: string | null
+          id: string
+          name: string
+          section?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          archive_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          section?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_teams_archive_id_fkey"
+            columns: ["archive_id"]
+            isOneToOne: false
+            referencedRelation: "semester_archives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_focus: {
         Row: {
           company_name: string
@@ -513,6 +995,39 @@ export type Database = {
           phone_number?: string | null
           section?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      semester_archives: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          file_count: number
+          id: string
+          member_count: number
+          name: string
+          notes: string | null
+          team_count: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          file_count?: number
+          id?: string
+          member_count?: number
+          name: string
+          notes?: string | null
+          team_count?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          file_count?: number
+          id?: string
+          member_count?: number
+          name?: string
+          notes?: string | null
+          team_count?: number
         }
         Relationships: []
       }
