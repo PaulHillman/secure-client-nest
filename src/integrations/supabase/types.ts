@@ -194,11 +194,13 @@ export type Database = {
           description: string | null
           file_name: string
           id: string
+          is_locked: boolean
           is_template: boolean
           section: string
           status: Database["public"]["Enums"]["vault_status"]
           subsection: string
-          team_id: string
+          team_id: string | null
+          template_source_id: string | null
           updated_at: string
           uploaded_by: string
         }
@@ -210,11 +212,13 @@ export type Database = {
           description?: string | null
           file_name: string
           id?: string
+          is_locked?: boolean
           is_template?: boolean
           section?: string
           status?: Database["public"]["Enums"]["vault_status"]
           subsection?: string
-          team_id: string
+          team_id?: string | null
+          template_source_id?: string | null
           updated_at?: string
           uploaded_by: string
         }
@@ -226,11 +230,13 @@ export type Database = {
           description?: string | null
           file_name?: string
           id?: string
+          is_locked?: boolean
           is_template?: boolean
           section?: string
           status?: Database["public"]["Enums"]["vault_status"]
           subsection?: string
-          team_id?: string
+          team_id?: string | null
+          template_source_id?: string | null
           updated_at?: string
           uploaded_by?: string
         }
@@ -240,6 +246,13 @@ export type Database = {
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "files_template_source_id_fkey"
+            columns: ["template_source_id"]
+            isOneToOne: false
+            referencedRelation: "files"
             referencedColumns: ["id"]
           },
         ]
