@@ -20,7 +20,6 @@ export const VAULT_STRUCTURE: VaultSection[] = [
     name: "Team Documents",
     subsections: [
       { name: "Group Norms" },
-      { name: "Contact Info" },
       { name: "Agendas" },
       { name: "Minutes" },
       { name: "Other" },
