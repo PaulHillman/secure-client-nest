@@ -27,11 +27,6 @@ export const VAULT_STRUCTURE: VaultSection[] = [
         description: "One set per team member, plus a final compiled version.",
       },
       { name: "Organizational Chart" },
-      { name: "Video — B-Roll" },
-      { name: "Video — Transcript" },
-      { name: "Video — Files" },
-      { name: "Project Drafts" },
-      { name: "Final Submission" },
     ],
   },
   {
@@ -41,6 +36,16 @@ export const VAULT_STRUCTURE: VaultSection[] = [
       { name: "Peer Reviews" },
       { name: "Contact Info" },
       { name: "Other" },
+    ],
+  },
+  {
+    name: "Video",
+    subsections: [
+      { name: "B-Roll" },
+      { name: "Transcript" },
+      { name: "Files" },
+      { name: "Project Drafts" },
+      { name: "Final Submission" },
     ],
   },
   {
@@ -59,6 +64,7 @@ export const VAULT_STRUCTURE: VaultSection[] = [
     tone: "bg-gold/20 border-gold/50",
   },
 ];
+
 
 export const SECTION_NAMES = VAULT_STRUCTURE.map((s) => s.name);
 
