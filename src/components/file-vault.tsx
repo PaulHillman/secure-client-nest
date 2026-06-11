@@ -55,6 +55,7 @@ type FileRow = {
   assigned_to: string | null;
   status: VaultStatus;
   is_template: boolean;
+  is_locked: boolean;
   uploaded_by: string;
   current_version_id: string | null;
   created_at: string;
@@ -354,7 +355,7 @@ function SubsectionBlock({
                   key={f.id}
                   file={f}
                   versions={verMap.get(f.id) ?? []}
-                  canManage={isAdmin || f.uploaded_by === userId}
+                  canManage={isAdmin || (f.uploaded_by === userId && !f.is_locked)}
                   {...commonProps}
                 />
               ))}
@@ -372,7 +373,7 @@ function SubsectionBlock({
               key={f.id}
               file={f}
               versions={verMap.get(f.id) ?? []}
-              canManage={isAdmin || f.uploaded_by === userId}
+              canManage={isAdmin || (f.uploaded_by === userId && !f.is_locked)}
               {...commonProps}
             />
           ))}
@@ -420,7 +421,7 @@ function SlotRow({
               key={f.id}
               file={f}
               versions={verMap.get(f.id) ?? []}
-              canManage={isAdmin || f.uploaded_by === userId}
+              canManage={isAdmin || (f.uploaded_by === userId && !f.is_locked)}
               verMap={verMap}
               isAdmin={isAdmin}
               userId={userId}
@@ -474,6 +475,11 @@ function FileLine({
             <span className="font-medium text-sm truncate">{file.file_name}</span>
             {current && (
               <Badge variant="outline" className="text-[10px]">v{current.version_number}</Badge>
+            )}
+            {file.is_locked && (
+              <Badge variant="outline" className="text-[10px] bg-gold/15 text-gold border-gold/30">
+                Template · read-only
+              </Badge>
             )}
             <Badge variant="outline" className={`text-[10px] ${STATUS_TONE[file.status]}`}>
               {file.status}
