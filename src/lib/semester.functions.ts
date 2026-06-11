@@ -327,54 +327,61 @@ export const promoteArchive = createServerFn({ method: "POST" })
       await supabaseAdmin.from("files").insert(files);
     }
 
-    // Restore file versions + copy storage back
+    // Restore file versions + copy storage back (parallel)
     if (afvRes.data?.length) {
-      const versionRows: any[] = [];
-      for (const v of afvRes.data) {
-        const { error: copyErr } = await supabaseAdmin.storage
-          .from(BUCKET)
-          .copy(v.archive_storage_path, v.storage_path);
-        if (copyErr && !/exists/i.test(copyErr.message)) {
-          console.warn(`[promote] copy ${v.archive_storage_path} → ${v.storage_path}: ${copyErr.message}`);
-        }
-        versionRows.push({
-          id: v.id,
-          file_id: v.file_id,
-          version_number: v.version_number,
-          storage_path: v.storage_path,
-          mime_type: v.mime_type,
-          file_size: v.file_size,
-          uploaded_by: v.uploaded_by,
-          uploaded_at: v.uploaded_at,
-        });
-      }
+      await Promise.all(
+        afvRes.data.map((v: any) =>
+          supabaseAdmin.storage
+            .from(BUCKET)
+            .copy(v.archive_storage_path, v.storage_path)
+            .then((r: any) => {
+              if (r.error && !/exists/i.test(r.error.message))
+                console.warn(`[promote] copy ${v.archive_storage_path} → ${v.storage_path}: ${r.error.message}`);
+            }),
+        ),
+      );
+      const versionRows = afvRes.data.map((v: any) => ({
+        id: v.id,
+        file_id: v.file_id,
+        version_number: v.version_number,
+        storage_path: v.storage_path,
+        mime_type: v.mime_type,
+        file_size: v.file_size,
+        uploaded_by: v.uploaded_by,
+        uploaded_at: v.uploaded_at,
+      }));
       await supabaseAdmin.from("file_versions").insert(versionRows);
 
-      // Restore current_version_id from archived_files
-      for (const af of afRes.data ?? []) {
-        if (af.current_version_id) {
-          await supabaseAdmin
-            .from("files")
-            .update({ current_version_id: af.current_version_id })
-            .eq("id", af.id);
-        }
-      }
+      // Restore current_version_id from archived_files (parallel)
+      await Promise.all(
+        (afRes.data ?? [])
+          .filter((af: any) => af.current_version_id)
+          .map((af: any) =>
+            supabaseAdmin
+              .from("files")
+              .update({ current_version_id: af.current_version_id })
+              .eq("id", af.id),
+          ),
+      );
     }
 
     if (aftRes.data?.length) await supabaseAdmin.from("file_tags").insert(stripArchive(aftRes.data));
     if (afcRes.data?.length) await supabaseAdmin.from("file_comments").insert(stripArchive(afcRes.data));
     if (acfRes.data?.length) await supabaseAdmin.from("company_focus").insert(stripArchive(acfRes.data));
 
-    // Group norms
+    // Group norms (parallel copies)
     if (agnRes.data?.length) {
-      for (const g of agnRes.data) {
-        const { error: copyErr } = await supabaseAdmin.storage
-          .from(BUCKET)
-          .copy(g.archive_document_path, g.document_path);
-        if (copyErr && !/exists/i.test(copyErr.message)) {
-          console.warn(`[promote] gn copy fail: ${copyErr.message}`);
-        }
-      }
+      await Promise.all(
+        agnRes.data.map((g: any) =>
+          supabaseAdmin.storage
+            .from(BUCKET)
+            .copy(g.archive_document_path, g.document_path)
+            .then((r: any) => {
+              if (r.error && !/exists/i.test(r.error.message))
+                console.warn(`[promote] gn copy fail: ${r.error.message}`);
+            }),
+        ),
+      );
       await supabaseAdmin.from("group_norms").insert(
         agnRes.data.map((g: any) => ({
           id: g.id,
