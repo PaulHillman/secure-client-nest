@@ -59,7 +59,7 @@ function Admin() {
 
       <Tabs defaultValue="users">
         <TabsList>
-          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="users">Students</TabsTrigger>
           <TabsTrigger value="teams">Teams</TabsTrigger>
           <TabsTrigger value="templates">
             <FileStack className="h-3.5 w-3.5 mr-1" /> Templates
@@ -67,7 +67,7 @@ function Admin() {
           <TabsTrigger value="submissions">Client</TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="mt-6">
-          <UsersPanel />
+          <StudentsPanel />
         </TabsContent>
         <TabsContent value="teams" className="mt-6">
           <TeamsPanel />
@@ -83,29 +83,41 @@ function Admin() {
   );
 }
 
-/* ---------------- Users ---------------- */
+/* ---------------- Students ---------------- */
 
-function UsersPanel() {
+function StudentsPanel() {
   const qc = useQueryClient();
-  const { data: users } = useQuery({
-    queryKey: ["admin", "users"],
+  const { data: students } = useQuery({
+    queryKey: ["admin", "students"],
     queryFn: async () => {
-      const { data: profiles, error } = await supabase
-        .from("profiles")
-        .select("id, name, email, section")
-        .order("name");
+      const [{ data: profiles, error }, { data: roles, error: rErr }, { data: members, error: mErr }, { data: teams, error: tErr }] = await Promise.all([
+        supabase.from("profiles").select("id, name, email, section").order("name"),
+        supabase.from("user_roles").select("user_id, role"),
+        supabase.from("team_members").select("user_id, team_id, job_title"),
+        supabase.from("teams").select("id, name"),
+      ]);
       if (error) throw error;
-      const { data: roles, error: rErr } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
       if (rErr) throw rErr;
-      const roleMap = new Map<string, string[]>();
-      roles?.forEach((r) => {
-        const arr = roleMap.get(r.user_id) ?? [];
-        arr.push(r.role);
-        roleMap.set(r.user_id, arr);
+      if (mErr) throw mErr;
+      if (tErr) throw tErr;
+
+      const adminSet = new Set((roles ?? []).filter((r) => r.role === "admin").map((r) => r.user_id));
+      const teamMap = new Map((teams ?? []).map((t) => [t.id, t.name] as const));
+      const memberMap = new Map<string, { team_name: string; job_title: string }>();
+      (members ?? []).forEach((m) => {
+        memberMap.set(m.user_id, {
+          team_name: teamMap.get(m.team_id) ?? "—",
+          job_title: m.job_title ?? "—",
+        });
       });
-      return profiles!.map((p) => ({ ...p, roles: roleMap.get(p.id) ?? [] }));
+
+      return (profiles ?? [])
+        .filter((p) => !adminSet.has(p.id))
+        .map((p) => ({
+          ...p,
+          team_name: memberMap.get(p.id)?.team_name ?? null,
+          job_title: memberMap.get(p.id)?.job_title ?? null,
+        }));
     },
   });
 
@@ -118,31 +130,8 @@ function UsersPanel() {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Profile updated");
-      qc.invalidateQueries({ queryKey: ["admin", "users"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const toggleAdmin = useMutation({
-    mutationFn: async (vars: { userId: string; makeAdmin: boolean }) => {
-      if (vars.makeAdmin) {
-        const { error } = await supabase
-          .from("user_roles")
-          .insert({ user_id: vars.userId, role: "admin" });
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("user_roles")
-          .delete()
-          .eq("user_id", vars.userId)
-          .eq("role", "admin");
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      toast.success("Role updated");
-      qc.invalidateQueries({ queryKey: ["admin", "users"] });
+      toast.success("Student updated");
+      qc.invalidateQueries({ queryKey: ["admin", "students"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -151,7 +140,7 @@ function UsersPanel() {
     <Card>
       <CardHeader>
         <CardTitle className="font-display text-xl flex items-center gap-2">
-          <UserCog className="h-5 w-5 text-gold" /> Users ({users?.length ?? 0})
+          <UserCog className="h-5 w-5 text-gold" /> Students ({students?.length ?? 0})
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -162,20 +151,18 @@ function UsersPanel() {
                 <th className="py-2 pr-3">Name</th>
                 <th className="py-2 pr-3">Email</th>
                 <th className="py-2 pr-3">Section</th>
-                <th className="py-2 pr-3">Roles</th>
+                <th className="py-2 pr-3">Team</th>
+                <th className="py-2 pr-3">Role on team</th>
                 <th className="py-2"></th>
               </tr>
             </thead>
             <tbody>
-              {users?.map((u) => (
-                <UserRow
-                  key={u.id}
-                  user={u}
+              {students?.map((s) => (
+                <StudentRow
+                  key={s.id}
+                  student={s}
                   onSave={(name, section) =>
-                    updateProfile.mutate({ id: u.id, name, section })
-                  }
-                  onToggleAdmin={(makeAdmin) =>
-                    toggleAdmin.mutate({ userId: u.id, makeAdmin })
+                    updateProfile.mutate({ id: s.id, name, section })
                   }
                 />
               ))}
@@ -187,26 +174,30 @@ function UsersPanel() {
   );
 }
 
-function UserRow({
-  user,
+function StudentRow({
+  student,
   onSave,
-  onToggleAdmin,
 }: {
-  user: { id: string; name: string; email: string | null; section: string | null; roles: string[] };
+  student: {
+    id: string;
+    name: string;
+    email: string | null;
+    section: string | null;
+    team_name: string | null;
+    job_title: string | null;
+  };
   onSave: (name: string, section: string | null) => void;
-  onToggleAdmin: (makeAdmin: boolean) => void;
 }) {
-  const [name, setName] = useState(user.name);
-  const [section, setSection] = useState(user.section ?? "");
-  const isAdmin = user.roles.includes("admin");
-  const dirty = name !== user.name || (section || null) !== (user.section || null);
+  const [name, setName] = useState(student.name);
+  const [section, setSection] = useState(student.section ?? "");
+  const dirty = name !== student.name || (section || null) !== (student.section || null);
 
   return (
     <tr className="border-b last:border-0 align-middle">
       <td className="py-2 pr-3">
         <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8" />
       </td>
-      <td className="py-2 pr-3 text-muted-foreground">{user.email}</td>
+      <td className="py-2 pr-3 text-muted-foreground">{student.email}</td>
       <td className="py-2 pr-3">
         <Input
           value={section}
@@ -216,31 +207,30 @@ function UserRow({
         />
       </td>
       <td className="py-2 pr-3">
-        {isAdmin ? (
-          <Badge className="bg-gold text-black">admin</Badge>
+        {student.team_name ? (
+          <span className="text-sm">{student.team_name}</span>
         ) : (
-          <Badge variant="secondary">student</Badge>
+          <span className="text-xs text-muted-foreground italic">unassigned</span>
+        )}
+      </td>
+      <td className="py-2 pr-3">
+        {student.job_title ? (
+          <Badge variant="secondary">{student.job_title}</Badge>
+        ) : (
+          <span className="text-xs text-muted-foreground italic">—</span>
         )}
       </td>
       <td className="py-2 text-right">
-        <div className="flex justify-end gap-2">
-          {dirty && (
-            <Button size="sm" variant="outline" onClick={() => onSave(name, section || null)}>
-              Save
-            </Button>
-          )}
-          <Button
-            size="sm"
-            variant={isAdmin ? "ghost" : "secondary"}
-            onClick={() => onToggleAdmin(!isAdmin)}
-          >
-            {isAdmin ? "Revoke admin" : "Make admin"}
+        {dirty && (
+          <Button size="sm" variant="outline" onClick={() => onSave(name, section || null)}>
+            Save
           </Button>
-        </div>
+        )}
       </td>
     </tr>
   );
 }
+
 
 /* ---------------- Teams ---------------- */
 
