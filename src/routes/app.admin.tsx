@@ -66,6 +66,9 @@ function Admin() {
             <FileStack className="h-3.5 w-3.5 mr-1" /> Templates
           </TabsTrigger>
           <TabsTrigger value="submissions">Client</TabsTrigger>
+          <TabsTrigger value="audit">
+            <History className="h-3.5 w-3.5 mr-1" /> Audit log
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="mt-6">
           <StudentsPanel />
@@ -78,6 +81,9 @@ function Admin() {
         </TabsContent>
         <TabsContent value="submissions" className="mt-6">
           <SubmissionsPanel />
+        </TabsContent>
+        <TabsContent value="audit" className="mt-6">
+          <AuditLogPanel />
         </TabsContent>
       </Tabs>
     </div>
