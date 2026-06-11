@@ -307,7 +307,7 @@ export const promoteArchive = createServerFn({ method: "POST" })
     await supabaseAdmin.from("manager_submissions").delete().not("id", "is", null);
     await supabaseAdmin.from("team_members").delete().not("id", "is", null);
     await supabaseAdmin.from("teams").delete().not("id", "is", null);
-    await deleteLiveStorageRecursive(supabaseAdmin, "teams");
+    await deleteLiveTeamStorage(supabaseAdmin);
 
     // Restore rows
     const stripArchive = (rows: any[]) =>
