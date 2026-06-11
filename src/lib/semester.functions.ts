@@ -288,9 +288,13 @@ export const promoteArchive = createServerFn({ method: "POST" })
       ]);
     if (aRes.error || !aRes.data) throw new Error("Archive not found");
 
-    // Wipe live (same as reset, inline to avoid double confirm requirement)
-    await supabaseAdmin.from("file_comments").delete().not("team_id", "is", null);
-    await supabaseAdmin.from("notifications").delete().not("team_id", "is", null);
+    // Wipe live — kick off storage delete FIRST (uses current file_versions rows for paths)
+    const wipeStoragePromise = deleteLiveTeamStorage(supabaseAdmin);
+
+    await Promise.all([
+      supabaseAdmin.from("file_comments").delete().not("team_id", "is", null),
+      supabaseAdmin.from("notifications").delete().not("team_id", "is", null),
+    ]);
     const teamFileIds =
       (await supabaseAdmin.from("files").select("id").eq("is_template", false).not("team_id", "is", null)).data?.map(
         (r) => r.id,
@@ -301,13 +305,15 @@ export const promoteArchive = createServerFn({ method: "POST" })
       await supabaseAdmin.from("file_versions").delete().in("file_id", teamFileIds);
       await supabaseAdmin.from("files").delete().in("id", teamFileIds);
     }
-    await supabaseAdmin.from("group_norms_signatures").delete().not("id", "is", null);
+    await Promise.all([
+      supabaseAdmin.from("group_norms_signatures").delete().not("id", "is", null),
+      supabaseAdmin.from("company_focus").delete().not("id", "is", null),
+      supabaseAdmin.from("manager_submissions").delete().not("id", "is", null),
+    ]);
     await supabaseAdmin.from("group_norms").delete().not("id", "is", null);
-    await supabaseAdmin.from("company_focus").delete().not("id", "is", null);
-    await supabaseAdmin.from("manager_submissions").delete().not("id", "is", null);
     await supabaseAdmin.from("team_members").delete().not("id", "is", null);
     await supabaseAdmin.from("teams").delete().not("id", "is", null);
-    await deleteLiveTeamStorage(supabaseAdmin);
+    await wipeStoragePromise;
 
     // Restore rows
     const stripArchive = (rows: any[]) =>
