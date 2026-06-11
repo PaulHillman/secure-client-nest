@@ -90,27 +90,30 @@ export const archiveSemester = createServerFn({ method: "POST" })
     if (files.length)
       await supabaseAdmin.from("archived_files").insert(files.map((f) => ({ ...f, archive_id: archiveId })));
 
-    // Versions: copy storage objects to archive/<archiveId>/<original_path>
-    const versionRowsToInsert: any[] = [];
-    for (const v of versions) {
-      const archivePath = `archive/${archiveId}/${v.storage_path}`;
-      const { error: copyErr } = await supabaseAdmin.storage.from(BUCKET).copy(v.storage_path, archivePath);
-      if (copyErr && !/exists/i.test(copyErr.message)) {
-        console.warn(`[archive] copy fail ${v.storage_path}: ${copyErr.message}`);
-      }
-      versionRowsToInsert.push({
-        archive_id: archiveId,
-        id: v.id,
-        file_id: v.file_id,
-        version_number: v.version_number,
-        storage_path: v.storage_path,
-        archive_storage_path: archivePath,
-        mime_type: v.mime_type,
-        file_size: v.file_size,
-        uploaded_by: v.uploaded_by,
-        uploaded_at: v.uploaded_at,
-      });
-    }
+    // Versions: copy storage objects to archive/<archiveId>/<original_path> — parallel
+    const versionRowsToInsert = versions.map((v) => ({
+      archive_id: archiveId,
+      id: v.id,
+      file_id: v.file_id,
+      version_number: v.version_number,
+      storage_path: v.storage_path,
+      archive_storage_path: `archive/${archiveId}/${v.storage_path}`,
+      mime_type: v.mime_type,
+      file_size: v.file_size,
+      uploaded_by: v.uploaded_by,
+      uploaded_at: v.uploaded_at,
+    }));
+    await Promise.all(
+      versionRowsToInsert.map((v) =>
+        supabaseAdmin.storage
+          .from(BUCKET)
+          .copy(v.storage_path, v.archive_storage_path)
+          .then((r: any) => {
+            if (r.error && !/exists/i.test(r.error.message))
+              console.warn(`[archive] copy fail ${v.storage_path}: ${r.error.message}`);
+          }),
+      ),
+    );
     if (versionRowsToInsert.length)
       await supabaseAdmin.from("archived_file_versions").insert(versionRowsToInsert);
 
@@ -121,26 +124,30 @@ export const archiveSemester = createServerFn({ method: "POST" })
     if (cf.length)
       await supabaseAdmin.from("archived_company_focus").insert(cf.map((c) => ({ ...c, archive_id: archiveId })));
 
-    // Group norms: copy storage objects too
-    const gnRows: any[] = [];
-    for (const g of gn) {
-      const archivePath = `archive/${archiveId}/${g.document_path}`;
-      const { error: copyErr } = await supabaseAdmin.storage.from(BUCKET).copy(g.document_path, archivePath);
-      if (copyErr && !/exists/i.test(copyErr.message)) {
-        console.warn(`[archive] gn copy fail ${g.document_path}: ${copyErr.message}`);
-      }
-      gnRows.push({
-        archive_id: archiveId,
-        id: g.id,
-        team_id: g.team_id,
-        document_path: g.document_path,
-        archive_document_path: archivePath,
-        is_locked: g.is_locked,
-        locked_at: g.locked_at,
-        uploaded_at: g.uploaded_at,
-      });
-    }
+    // Group norms: parallel copies
+    const gnRows = gn.map((g) => ({
+      archive_id: archiveId,
+      id: g.id,
+      team_id: g.team_id,
+      document_path: g.document_path,
+      archive_document_path: `archive/${archiveId}/${g.document_path}`,
+      is_locked: g.is_locked,
+      locked_at: g.locked_at,
+      uploaded_at: g.uploaded_at,
+    }));
+    await Promise.all(
+      gnRows.map((g) =>
+        supabaseAdmin.storage
+          .from(BUCKET)
+          .copy(g.document_path, g.archive_document_path)
+          .then((r: any) => {
+            if (r.error && !/exists/i.test(r.error.message))
+              console.warn(`[archive] gn copy fail: ${r.error.message}`);
+          }),
+      ),
+    );
     if (gnRows.length) await supabaseAdmin.from("archived_group_norms").insert(gnRows);
+
     if (gns.length)
       await supabaseAdmin.from("archived_group_norms_signatures").insert(gns.map((s) => ({ ...s, archive_id: archiveId })));
     if (ms.length)
