@@ -971,6 +971,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          initials: string | null
           name: string
           phone_number: string | null
           section: string | null
@@ -981,6 +982,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id: string
+          initials?: string | null
           name?: string
           phone_number?: string | null
           section?: string | null
@@ -991,6 +993,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          initials?: string | null
           name?: string
           phone_number?: string | null
           section?: string | null
@@ -1030,6 +1033,89 @@ export type Database = {
           team_count?: number
         }
         Relationships: []
+      }
+      team_meeting_agreements: {
+        Row: {
+          id: string
+          initials: string
+          proposal_id: string
+          responded_at: string
+          status: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          initials: string
+          proposal_id: string
+          responded_at?: string
+          status: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          initials?: string
+          proposal_id?: string
+          responded_at?: string
+          status?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_meeting_agreements_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "team_meeting_proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_meeting_agreements_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_meeting_proposals: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          id: string
+          meeting_time: string
+          proposed_by: string
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          id?: string
+          meeting_time: string
+          proposed_by: string
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          id?: string
+          meeting_time?: string
+          proposed_by?: string
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_meeting_proposals_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: true
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_members: {
         Row: {
@@ -1121,6 +1207,10 @@ export type Database = {
         Returns: boolean
       }
       is_team_member: {
+        Args: { _team_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_team_pm: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
       }

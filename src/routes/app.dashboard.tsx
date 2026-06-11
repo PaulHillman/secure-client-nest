@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, FileText, ShieldCheck, Building2 } from "lucide-react";
 import { ProjectArchCard } from "@/components/project-arch-card";
+import { ConsensusStatusCard } from "@/components/consensus-status-card";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ClientVault" }] }),
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/app/dashboard")({
 });
 
 function Dashboard() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
@@ -64,6 +65,12 @@ function Dashboard() {
       <div className="mt-6">
         <ProjectArchCard />
       </div>
+
+      {isAdmin && (
+        <div className="mt-6">
+          <ConsensusStatusCard />
+        </div>
+      )}
 
 
 

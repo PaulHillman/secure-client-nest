@@ -13,6 +13,7 @@ import { FileVault } from "@/components/file-vault";
 import { ManagerSubmissions } from "@/components/manager-submissions";
 import { CompanyFocusCard } from "@/components/company-focus-card";
 import { ProjectArchCard } from "@/components/project-arch-card";
+import { MeetingTimeCard } from "@/components/meeting-time-card";
 
 export const Route = createFileRoute("/app/teams/$teamId")({
   head: () => ({ meta: [{ title: "Team — ClientVault" }] }),
@@ -129,6 +130,8 @@ function TeamDetail() {
           </div>
         )}
       </section>
+
+      <MeetingTimeCard teamId={teamId} />
 
       <ManagerSubmissions teamId={teamId} />
 
