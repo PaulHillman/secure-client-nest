@@ -26,8 +26,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Trash2, Plus, UserCog, Briefcase, Check, X, ExternalLink, FileStack, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Trash2, Plus, UserCog, Briefcase, Check, X, ExternalLink, FileStack, ArrowUp, ArrowDown, ArrowUpDown, History } from "lucide-react";
 import { TemplatesPanel } from "@/components/templates-panel";
+import { AuditLogPanel } from "@/components/audit-log-panel";
 
 export const Route = createFileRoute("/app/admin")({
   head: () => ({ meta: [{ title: "Admin — ClientVault" }] }),
@@ -65,6 +66,9 @@ function Admin() {
             <FileStack className="h-3.5 w-3.5 mr-1" /> Templates
           </TabsTrigger>
           <TabsTrigger value="submissions">Client</TabsTrigger>
+          <TabsTrigger value="audit">
+            <History className="h-3.5 w-3.5 mr-1" /> Audit log
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="mt-6">
           <StudentsPanel />
@@ -77,6 +81,9 @@ function Admin() {
         </TabsContent>
         <TabsContent value="submissions" className="mt-6">
           <SubmissionsPanel />
+        </TabsContent>
+        <TabsContent value="audit" className="mt-6">
+          <AuditLogPanel />
         </TabsContent>
       </Tabs>
     </div>
