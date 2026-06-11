@@ -169,34 +169,27 @@ export const archiveSemester = createServerFn({ method: "POST" })
 
 /* ---------------- RESET ---------------- */
 
-async function deleteLiveStorageRecursive(supabaseAdmin: any, prefix: string) {
-  // Recursively list and delete under `prefix` (e.g. "teams")
-  const queue: string[] = [prefix];
-  const toDelete: string[] = [];
-  while (queue.length) {
-    const dir = queue.shift()!;
-    const { data, error } = await supabaseAdmin.storage.from(BUCKET).list(dir, { limit: 1000 });
-    if (error) {
-      console.warn(`[reset] list ${dir} failed: ${error.message}`);
-      continue;
-    }
-    for (const item of data ?? []) {
-      const path = `${dir}/${item.name}`;
-      if (item.id === null || item.metadata === null) {
-        // Folder
-        queue.push(path);
-      } else {
-        toDelete.push(path);
-      }
-    }
-  }
-  // Delete in batches
-  for (let i = 0; i < toDelete.length; i += 100) {
-    const batch = toDelete.slice(i, i + 100);
-    const { error } = await supabaseAdmin.storage.from(BUCKET).remove(batch);
-    if (error) console.warn(`[reset] remove batch failed: ${error.message}`);
-  }
-  return toDelete.length;
+// Fast path: pull paths directly from DB (no recursive list), parallel-delete in batches.
+async function deleteLiveTeamStorage(supabaseAdmin: any) {
+  const [{ data: versions }, { data: gn }] = await Promise.all([
+    supabaseAdmin.from("file_versions").select("storage_path"),
+    supabaseAdmin.from("group_norms").select("document_path"),
+  ]);
+  const paths: string[] = [
+    ...((versions ?? []).map((v: any) => v.storage_path).filter((p: string) => p && p.startsWith("teams/"))),
+    ...((gn ?? []).map((g: any) => g.document_path).filter((p: string) => p && p.startsWith("teams/"))),
+  ];
+  if (paths.length === 0) return 0;
+  const batches: string[][] = [];
+  for (let i = 0; i < paths.length; i += 200) batches.push(paths.slice(i, i + 200));
+  await Promise.all(
+    batches.map((b) =>
+      supabaseAdmin.storage.from(BUCKET).remove(b).then((r: any) => {
+        if (r.error) console.warn(`[reset] remove batch failed: ${r.error.message}`);
+      }),
+    ),
+  );
+  return paths.length;
 }
 
 export const resetSemester = createServerFn({ method: "POST" })
@@ -209,45 +202,42 @@ export const resetSemester = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Delete live rows (FK-safe order). Keep templates (is_template = true, team_id null).
-    await supabaseAdmin.from("file_comments").delete().not("team_id", "is", null);
-    await supabaseAdmin.from("notifications").delete().not("team_id", "is", null);
-    await supabaseAdmin
-      .from("file_tags")
-      .delete()
-      .in(
-        "file_id",
-        (
-          await supabaseAdmin.from("files").select("id").eq("is_template", false).not("team_id", "is", null)
-        ).data?.map((r) => r.id) ?? [],
-      );
-
-    // Null current_version_id on team files so we can delete file_versions
-    await supabaseAdmin
+    // Get team-file IDs once
+    const { data: teamFileRows } = await supabaseAdmin
       .from("files")
-      .update({ current_version_id: null })
+      .select("id")
       .eq("is_template", false)
       .not("team_id", "is", null);
-    await supabaseAdmin
-      .from("file_versions")
-      .delete()
-      .in(
-        "file_id",
-        (
-          await supabaseAdmin.from("files").select("id").eq("is_template", false).not("team_id", "is", null)
-        ).data?.map((r) => r.id) ?? [],
-      );
-    await supabaseAdmin.from("files").delete().eq("is_template", false).not("team_id", "is", null);
+    const teamFileIds = (teamFileRows ?? []).map((r: any) => r.id);
 
-    await supabaseAdmin.from("group_norms_signatures").delete().not("id", "is", null);
+    // Delete storage objects FIRST (uses still-present rows for paths), in parallel with comments/notifications
+    const storagePromise = deleteLiveTeamStorage(supabaseAdmin);
+
+    // Comments, notifications, tags can go in parallel
+    await Promise.all([
+      supabaseAdmin.from("file_comments").delete().not("team_id", "is", null),
+      supabaseAdmin.from("notifications").delete().not("team_id", "is", null),
+      teamFileIds.length
+        ? supabaseAdmin.from("file_tags").delete().in("file_id", teamFileIds)
+        : Promise.resolve(),
+    ]);
+
+    if (teamFileIds.length) {
+      await supabaseAdmin.from("files").update({ current_version_id: null }).in("id", teamFileIds);
+      await supabaseAdmin.from("file_versions").delete().in("file_id", teamFileIds);
+      await supabaseAdmin.from("files").delete().in("id", teamFileIds);
+    }
+
+    await Promise.all([
+      supabaseAdmin.from("group_norms_signatures").delete().not("id", "is", null),
+      supabaseAdmin.from("company_focus").delete().not("id", "is", null),
+      supabaseAdmin.from("manager_submissions").delete().not("id", "is", null),
+    ]);
     await supabaseAdmin.from("group_norms").delete().not("id", "is", null);
-    await supabaseAdmin.from("company_focus").delete().not("id", "is", null);
-    await supabaseAdmin.from("manager_submissions").delete().not("id", "is", null);
     await supabaseAdmin.from("team_members").delete().not("id", "is", null);
     await supabaseAdmin.from("teams").delete().not("id", "is", null);
 
-    // Delete live storage under teams/ (archive/ and templates/ untouched)
-    const deletedCount = await deleteLiveStorageRecursive(supabaseAdmin, "teams");
+    const deletedCount = await storagePromise;
 
     await supabaseAdmin.from("admin_audit_log").insert({
       actor_id: context.userId,
@@ -257,6 +247,8 @@ export const resetSemester = createServerFn({ method: "POST" })
 
     return { ok: true, storageDeleted: deletedCount };
   });
+
+
 
 /* ---------------- PROMOTE ---------------- */
 
