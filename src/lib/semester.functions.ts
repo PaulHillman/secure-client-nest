@@ -90,27 +90,30 @@ export const archiveSemester = createServerFn({ method: "POST" })
     if (files.length)
       await supabaseAdmin.from("archived_files").insert(files.map((f) => ({ ...f, archive_id: archiveId })));
 
-    // Versions: copy storage objects to archive/<archiveId>/<original_path>
-    const versionRowsToInsert: any[] = [];
-    for (const v of versions) {
-      const archivePath = `archive/${archiveId}/${v.storage_path}`;
-      const { error: copyErr } = await supabaseAdmin.storage.from(BUCKET).copy(v.storage_path, archivePath);
-      if (copyErr && !/exists/i.test(copyErr.message)) {
-        console.warn(`[archive] copy fail ${v.storage_path}: ${copyErr.message}`);
-      }
-      versionRowsToInsert.push({
-        archive_id: archiveId,
-        id: v.id,
-        file_id: v.file_id,
-        version_number: v.version_number,
-        storage_path: v.storage_path,
-        archive_storage_path: archivePath,
-        mime_type: v.mime_type,
-        file_size: v.file_size,
-        uploaded_by: v.uploaded_by,
-        uploaded_at: v.uploaded_at,
-      });
-    }
+    // Versions: copy storage objects to archive/<archiveId>/<original_path> — parallel
+    const versionRowsToInsert = versions.map((v) => ({
+      archive_id: archiveId,
+      id: v.id,
+      file_id: v.file_id,
+      version_number: v.version_number,
+      storage_path: v.storage_path,
+      archive_storage_path: `archive/${archiveId}/${v.storage_path}`,
+      mime_type: v.mime_type,
+      file_size: v.file_size,
+      uploaded_by: v.uploaded_by,
+      uploaded_at: v.uploaded_at,
+    }));
+    await Promise.all(
+      versionRowsToInsert.map((v) =>
+        supabaseAdmin.storage
+          .from(BUCKET)
+          .copy(v.storage_path, v.archive_storage_path)
+          .then((r: any) => {
+            if (r.error && !/exists/i.test(r.error.message))
+              console.warn(`[archive] copy fail ${v.storage_path}: ${r.error.message}`);
+          }),
+      ),
+    );
     if (versionRowsToInsert.length)
       await supabaseAdmin.from("archived_file_versions").insert(versionRowsToInsert);
 
@@ -121,26 +124,30 @@ export const archiveSemester = createServerFn({ method: "POST" })
     if (cf.length)
       await supabaseAdmin.from("archived_company_focus").insert(cf.map((c) => ({ ...c, archive_id: archiveId })));
 
-    // Group norms: copy storage objects too
-    const gnRows: any[] = [];
-    for (const g of gn) {
-      const archivePath = `archive/${archiveId}/${g.document_path}`;
-      const { error: copyErr } = await supabaseAdmin.storage.from(BUCKET).copy(g.document_path, archivePath);
-      if (copyErr && !/exists/i.test(copyErr.message)) {
-        console.warn(`[archive] gn copy fail ${g.document_path}: ${copyErr.message}`);
-      }
-      gnRows.push({
-        archive_id: archiveId,
-        id: g.id,
-        team_id: g.team_id,
-        document_path: g.document_path,
-        archive_document_path: archivePath,
-        is_locked: g.is_locked,
-        locked_at: g.locked_at,
-        uploaded_at: g.uploaded_at,
-      });
-    }
+    // Group norms: parallel copies
+    const gnRows = gn.map((g) => ({
+      archive_id: archiveId,
+      id: g.id,
+      team_id: g.team_id,
+      document_path: g.document_path,
+      archive_document_path: `archive/${archiveId}/${g.document_path}`,
+      is_locked: g.is_locked,
+      locked_at: g.locked_at,
+      uploaded_at: g.uploaded_at,
+    }));
+    await Promise.all(
+      gnRows.map((g) =>
+        supabaseAdmin.storage
+          .from(BUCKET)
+          .copy(g.document_path, g.archive_document_path)
+          .then((r: any) => {
+            if (r.error && !/exists/i.test(r.error.message))
+              console.warn(`[archive] gn copy fail: ${r.error.message}`);
+          }),
+      ),
+    );
     if (gnRows.length) await supabaseAdmin.from("archived_group_norms").insert(gnRows);
+
     if (gns.length)
       await supabaseAdmin.from("archived_group_norms_signatures").insert(gns.map((s) => ({ ...s, archive_id: archiveId })));
     if (ms.length)
@@ -169,34 +176,27 @@ export const archiveSemester = createServerFn({ method: "POST" })
 
 /* ---------------- RESET ---------------- */
 
-async function deleteLiveStorageRecursive(supabaseAdmin: any, prefix: string) {
-  // Recursively list and delete under `prefix` (e.g. "teams")
-  const queue: string[] = [prefix];
-  const toDelete: string[] = [];
-  while (queue.length) {
-    const dir = queue.shift()!;
-    const { data, error } = await supabaseAdmin.storage.from(BUCKET).list(dir, { limit: 1000 });
-    if (error) {
-      console.warn(`[reset] list ${dir} failed: ${error.message}`);
-      continue;
-    }
-    for (const item of data ?? []) {
-      const path = `${dir}/${item.name}`;
-      if (item.id === null || item.metadata === null) {
-        // Folder
-        queue.push(path);
-      } else {
-        toDelete.push(path);
-      }
-    }
-  }
-  // Delete in batches
-  for (let i = 0; i < toDelete.length; i += 100) {
-    const batch = toDelete.slice(i, i + 100);
-    const { error } = await supabaseAdmin.storage.from(BUCKET).remove(batch);
-    if (error) console.warn(`[reset] remove batch failed: ${error.message}`);
-  }
-  return toDelete.length;
+// Fast path: pull paths directly from DB (no recursive list), parallel-delete in batches.
+async function deleteLiveTeamStorage(supabaseAdmin: any) {
+  const [{ data: versions }, { data: gn }] = await Promise.all([
+    supabaseAdmin.from("file_versions").select("storage_path"),
+    supabaseAdmin.from("group_norms").select("document_path"),
+  ]);
+  const paths: string[] = [
+    ...((versions ?? []).map((v: any) => v.storage_path).filter((p: string) => p && p.startsWith("teams/"))),
+    ...((gn ?? []).map((g: any) => g.document_path).filter((p: string) => p && p.startsWith("teams/"))),
+  ];
+  if (paths.length === 0) return 0;
+  const batches: string[][] = [];
+  for (let i = 0; i < paths.length; i += 200) batches.push(paths.slice(i, i + 200));
+  await Promise.all(
+    batches.map((b) =>
+      supabaseAdmin.storage.from(BUCKET).remove(b).then((r: any) => {
+        if (r.error) console.warn(`[reset] remove batch failed: ${r.error.message}`);
+      }),
+    ),
+  );
+  return paths.length;
 }
 
 export const resetSemester = createServerFn({ method: "POST" })
@@ -209,45 +209,42 @@ export const resetSemester = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Delete live rows (FK-safe order). Keep templates (is_template = true, team_id null).
-    await supabaseAdmin.from("file_comments").delete().not("team_id", "is", null);
-    await supabaseAdmin.from("notifications").delete().not("team_id", "is", null);
-    await supabaseAdmin
-      .from("file_tags")
-      .delete()
-      .in(
-        "file_id",
-        (
-          await supabaseAdmin.from("files").select("id").eq("is_template", false).not("team_id", "is", null)
-        ).data?.map((r) => r.id) ?? [],
-      );
-
-    // Null current_version_id on team files so we can delete file_versions
-    await supabaseAdmin
+    // Get team-file IDs once
+    const { data: teamFileRows } = await supabaseAdmin
       .from("files")
-      .update({ current_version_id: null })
+      .select("id")
       .eq("is_template", false)
       .not("team_id", "is", null);
-    await supabaseAdmin
-      .from("file_versions")
-      .delete()
-      .in(
-        "file_id",
-        (
-          await supabaseAdmin.from("files").select("id").eq("is_template", false).not("team_id", "is", null)
-        ).data?.map((r) => r.id) ?? [],
-      );
-    await supabaseAdmin.from("files").delete().eq("is_template", false).not("team_id", "is", null);
+    const teamFileIds = (teamFileRows ?? []).map((r: any) => r.id);
 
-    await supabaseAdmin.from("group_norms_signatures").delete().not("id", "is", null);
+    // Delete storage objects FIRST (uses still-present rows for paths), in parallel with comments/notifications
+    const storagePromise = deleteLiveTeamStorage(supabaseAdmin);
+
+    // Comments, notifications, tags can go in parallel
+    await Promise.all([
+      supabaseAdmin.from("file_comments").delete().not("team_id", "is", null),
+      supabaseAdmin.from("notifications").delete().not("team_id", "is", null),
+      teamFileIds.length
+        ? supabaseAdmin.from("file_tags").delete().in("file_id", teamFileIds)
+        : Promise.resolve(),
+    ]);
+
+    if (teamFileIds.length) {
+      await supabaseAdmin.from("files").update({ current_version_id: null }).in("id", teamFileIds);
+      await supabaseAdmin.from("file_versions").delete().in("file_id", teamFileIds);
+      await supabaseAdmin.from("files").delete().in("id", teamFileIds);
+    }
+
+    await Promise.all([
+      supabaseAdmin.from("group_norms_signatures").delete().not("id", "is", null),
+      supabaseAdmin.from("company_focus").delete().not("id", "is", null),
+      supabaseAdmin.from("manager_submissions").delete().not("id", "is", null),
+    ]);
     await supabaseAdmin.from("group_norms").delete().not("id", "is", null);
-    await supabaseAdmin.from("company_focus").delete().not("id", "is", null);
-    await supabaseAdmin.from("manager_submissions").delete().not("id", "is", null);
     await supabaseAdmin.from("team_members").delete().not("id", "is", null);
     await supabaseAdmin.from("teams").delete().not("id", "is", null);
 
-    // Delete live storage under teams/ (archive/ and templates/ untouched)
-    const deletedCount = await deleteLiveStorageRecursive(supabaseAdmin, "teams");
+    const deletedCount = await storagePromise;
 
     await supabaseAdmin.from("admin_audit_log").insert({
       actor_id: context.userId,
@@ -257,6 +254,8 @@ export const resetSemester = createServerFn({ method: "POST" })
 
     return { ok: true, storageDeleted: deletedCount };
   });
+
+
 
 /* ---------------- PROMOTE ---------------- */
 
@@ -289,9 +288,13 @@ export const promoteArchive = createServerFn({ method: "POST" })
       ]);
     if (aRes.error || !aRes.data) throw new Error("Archive not found");
 
-    // Wipe live (same as reset, inline to avoid double confirm requirement)
-    await supabaseAdmin.from("file_comments").delete().not("team_id", "is", null);
-    await supabaseAdmin.from("notifications").delete().not("team_id", "is", null);
+    // Wipe live — kick off storage delete FIRST (uses current file_versions rows for paths)
+    const wipeStoragePromise = deleteLiveTeamStorage(supabaseAdmin);
+
+    await Promise.all([
+      supabaseAdmin.from("file_comments").delete().not("team_id", "is", null),
+      supabaseAdmin.from("notifications").delete().not("team_id", "is", null),
+    ]);
     const teamFileIds =
       (await supabaseAdmin.from("files").select("id").eq("is_template", false).not("team_id", "is", null)).data?.map(
         (r) => r.id,
@@ -302,13 +305,15 @@ export const promoteArchive = createServerFn({ method: "POST" })
       await supabaseAdmin.from("file_versions").delete().in("file_id", teamFileIds);
       await supabaseAdmin.from("files").delete().in("id", teamFileIds);
     }
-    await supabaseAdmin.from("group_norms_signatures").delete().not("id", "is", null);
+    await Promise.all([
+      supabaseAdmin.from("group_norms_signatures").delete().not("id", "is", null),
+      supabaseAdmin.from("company_focus").delete().not("id", "is", null),
+      supabaseAdmin.from("manager_submissions").delete().not("id", "is", null),
+    ]);
     await supabaseAdmin.from("group_norms").delete().not("id", "is", null);
-    await supabaseAdmin.from("company_focus").delete().not("id", "is", null);
-    await supabaseAdmin.from("manager_submissions").delete().not("id", "is", null);
     await supabaseAdmin.from("team_members").delete().not("id", "is", null);
     await supabaseAdmin.from("teams").delete().not("id", "is", null);
-    await deleteLiveStorageRecursive(supabaseAdmin, "teams");
+    await wipeStoragePromise;
 
     // Restore rows
     const stripArchive = (rows: any[]) =>
@@ -322,54 +327,61 @@ export const promoteArchive = createServerFn({ method: "POST" })
       await supabaseAdmin.from("files").insert(files);
     }
 
-    // Restore file versions + copy storage back
+    // Restore file versions + copy storage back (parallel)
     if (afvRes.data?.length) {
-      const versionRows: any[] = [];
-      for (const v of afvRes.data) {
-        const { error: copyErr } = await supabaseAdmin.storage
-          .from(BUCKET)
-          .copy(v.archive_storage_path, v.storage_path);
-        if (copyErr && !/exists/i.test(copyErr.message)) {
-          console.warn(`[promote] copy ${v.archive_storage_path} → ${v.storage_path}: ${copyErr.message}`);
-        }
-        versionRows.push({
-          id: v.id,
-          file_id: v.file_id,
-          version_number: v.version_number,
-          storage_path: v.storage_path,
-          mime_type: v.mime_type,
-          file_size: v.file_size,
-          uploaded_by: v.uploaded_by,
-          uploaded_at: v.uploaded_at,
-        });
-      }
+      await Promise.all(
+        afvRes.data.map((v: any) =>
+          supabaseAdmin.storage
+            .from(BUCKET)
+            .copy(v.archive_storage_path, v.storage_path)
+            .then((r: any) => {
+              if (r.error && !/exists/i.test(r.error.message))
+                console.warn(`[promote] copy ${v.archive_storage_path} → ${v.storage_path}: ${r.error.message}`);
+            }),
+        ),
+      );
+      const versionRows = afvRes.data.map((v: any) => ({
+        id: v.id,
+        file_id: v.file_id,
+        version_number: v.version_number,
+        storage_path: v.storage_path,
+        mime_type: v.mime_type,
+        file_size: v.file_size,
+        uploaded_by: v.uploaded_by,
+        uploaded_at: v.uploaded_at,
+      }));
       await supabaseAdmin.from("file_versions").insert(versionRows);
 
-      // Restore current_version_id from archived_files
-      for (const af of afRes.data ?? []) {
-        if (af.current_version_id) {
-          await supabaseAdmin
-            .from("files")
-            .update({ current_version_id: af.current_version_id })
-            .eq("id", af.id);
-        }
-      }
+      // Restore current_version_id from archived_files (parallel)
+      await Promise.all(
+        (afRes.data ?? [])
+          .filter((af: any) => af.current_version_id)
+          .map((af: any) =>
+            supabaseAdmin
+              .from("files")
+              .update({ current_version_id: af.current_version_id })
+              .eq("id", af.id),
+          ),
+      );
     }
 
     if (aftRes.data?.length) await supabaseAdmin.from("file_tags").insert(stripArchive(aftRes.data));
     if (afcRes.data?.length) await supabaseAdmin.from("file_comments").insert(stripArchive(afcRes.data));
     if (acfRes.data?.length) await supabaseAdmin.from("company_focus").insert(stripArchive(acfRes.data));
 
-    // Group norms
+    // Group norms (parallel copies)
     if (agnRes.data?.length) {
-      for (const g of agnRes.data) {
-        const { error: copyErr } = await supabaseAdmin.storage
-          .from(BUCKET)
-          .copy(g.archive_document_path, g.document_path);
-        if (copyErr && !/exists/i.test(copyErr.message)) {
-          console.warn(`[promote] gn copy fail: ${copyErr.message}`);
-        }
-      }
+      await Promise.all(
+        agnRes.data.map((g: any) =>
+          supabaseAdmin.storage
+            .from(BUCKET)
+            .copy(g.archive_document_path, g.document_path)
+            .then((r: any) => {
+              if (r.error && !/exists/i.test(r.error.message))
+                console.warn(`[promote] gn copy fail: ${r.error.message}`);
+            }),
+        ),
+      );
       await supabaseAdmin.from("group_norms").insert(
         agnRes.data.map((g: any) => ({
           id: g.id,
@@ -411,8 +423,32 @@ export const deleteArchive = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Remove storage under archive/<archiveId>/
-    await deleteLiveStorageRecursive(supabaseAdmin, `archive/${data.archiveId}`);
+    // Remove storage under archive/<archiveId>/ — use stored paths from archive tables
+    const [{ data: avers }, { data: agns }] = await Promise.all([
+      supabaseAdmin
+        .from("archived_file_versions")
+        .select("archive_storage_path")
+        .eq("archive_id", data.archiveId),
+      supabaseAdmin
+        .from("archived_group_norms")
+        .select("archive_document_path")
+        .eq("archive_id", data.archiveId),
+    ]);
+    const paths: string[] = [
+      ...((avers ?? []).map((v: any) => v.archive_storage_path).filter(Boolean)),
+      ...((agns ?? []).map((g: any) => g.archive_document_path).filter(Boolean)),
+    ];
+    if (paths.length) {
+      const batches: string[][] = [];
+      for (let i = 0; i < paths.length; i += 200) batches.push(paths.slice(i, i + 200));
+      await Promise.all(
+        batches.map((b) =>
+          supabaseAdmin.storage.from(BUCKET).remove(b).then((r: any) => {
+            if (r.error) console.warn(`[delete_archive] remove batch failed: ${r.error.message}`);
+          }),
+        ),
+      );
+    }
 
     const { data: a } = await supabaseAdmin
       .from("semester_archives")
