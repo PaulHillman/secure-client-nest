@@ -26,9 +26,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Trash2, Plus, UserCog, Briefcase, Check, X, ExternalLink, FileStack, ArrowUp, ArrowDown, ArrowUpDown, History } from "lucide-react";
+import { Trash2, Plus, UserCog, Briefcase, Check, X, ExternalLink, FileStack, ArrowUp, ArrowDown, ArrowUpDown, History, Archive } from "lucide-react";
 import { TemplatesPanel } from "@/components/templates-panel";
 import { AuditLogPanel } from "@/components/audit-log-panel";
+import { SemesterPanel } from "@/components/semester-panel";
 
 export const Route = createFileRoute("/app/admin")({
   head: () => ({ meta: [{ title: "Admin — ClientVault" }] }),
