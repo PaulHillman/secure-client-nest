@@ -600,3 +600,63 @@ function PushAllButton({
     </Button>
   );
 }
+
+/* ---------------- Recall: remove all team copies of a template ---------------- */
+
+function RecallButton({
+  template,
+  onDone,
+}: {
+  template: TemplateRow;
+  onDone: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      disabled={busy}
+      title="Recall from all teams (removes team copies)"
+      onClick={async () => {
+        if (
+          !confirm(
+            `Recall "${template.file_name}" from all teams?\n\nThis deletes every team's copy of this template (files and all their versions). The template itself stays in your Templates area so you can re-push later. This cannot be undone.`,
+          )
+        )
+          return;
+        setBusy(true);
+        try {
+          // Find all team-side files derived from this template
+          const { data: teamFiles, error: tfErr } = await supabase
+            .from("files")
+            .select("id")
+            .eq("template_source_id", template.id);
+          if (tfErr) throw tfErr;
+          const ids = (teamFiles ?? []).map((f) => f.id);
+          if (ids.length === 0) {
+            toast.success("No team copies to recall");
+            return;
+          }
+          // Remove their storage objects
+          const { data: vers } = await supabase
+            .from("file_versions")
+            .select("storage_path")
+            .in("file_id", ids);
+          const paths = (vers ?? []).map((v) => v.storage_path).filter(Boolean);
+          if (paths.length) await supabase.storage.from("vault").remove(paths);
+          // Delete the file rows (file_versions cascade)
+          const { error: delErr } = await supabase.from("files").delete().in("id", ids);
+          if (delErr) throw delErr;
+          toast.success(`Recalled from ${ids.length} team copy(ies)`);
+          onDone();
+        } catch (e: any) {
+          toast.error(e.message ?? "Recall failed");
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <Undo2 className="h-4 w-4" />
+    </Button>
+  );
+}
