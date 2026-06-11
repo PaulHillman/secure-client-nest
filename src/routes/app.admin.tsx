@@ -26,7 +26,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Trash2, Plus, UserCog, Briefcase, Check, X, ExternalLink, FileStack } from "lucide-react";
+import { Trash2, Plus, UserCog, Briefcase, Check, X, ExternalLink, FileStack, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { TemplatesPanel } from "@/components/templates-panel";
 
 export const Route = createFileRoute("/app/admin")({
@@ -136,28 +136,111 @@ function StudentsPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const [sectionFilter, setSectionFilter] = useState<string>("all");
+  const [teamFilter, setTeamFilter] = useState<string>("all");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [sortKey, setSortKey] = useState<"name" | "email" | "section" | "team" | "role">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const toggleSort = (key: typeof sortKey) => {
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(key); setSortDir("asc"); }
+  };
+
+  const sectionOptions = Array.from(new Set((students ?? []).map((s) => s.section).filter(Boolean))) as string[];
+  sectionOptions.sort();
+  const teamOptions = Array.from(new Set((students ?? []).map((s) => s.team_name).filter(Boolean))) as string[];
+  teamOptions.sort();
+  const roleOptions = Array.from(new Set((students ?? []).map((s) => s.job_title).filter(Boolean))) as string[];
+  roleOptions.sort();
+
+  const filtered = (students ?? []).filter((s) => {
+    if (sectionFilter !== "all" && (s.section ?? "") !== (sectionFilter === "__none__" ? "" : sectionFilter)) return false;
+    if (teamFilter !== "all" && (s.team_name ?? "") !== (teamFilter === "__none__" ? "" : teamFilter)) return false;
+    if (roleFilter !== "all" && (s.job_title ?? "") !== (roleFilter === "__none__" ? "" : roleFilter)) return false;
+    return true;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    const getVal = (s: typeof a) => {
+      switch (sortKey) {
+        case "name": return (s.name ?? "").toLowerCase();
+        case "email": return (s.email ?? "").toLowerCase();
+        case "section": return s.section ?? "";
+        case "team": return (s.team_name ?? "").toLowerCase();
+        case "role": return (s.job_title ?? "").toLowerCase();
+      }
+    };
+    const av = getVal(a), bv = getVal(b);
+    if (av < bv) return sortDir === "asc" ? -1 : 1;
+    if (av > bv) return sortDir === "asc" ? 1 : -1;
+    return 0;
+  });
+
+  const SortIcon = ({ k }: { k: typeof sortKey }) =>
+    sortKey !== k ? <ArrowUpDown className="h-3 w-3 inline ml-1 opacity-40" /> :
+    sortDir === "asc" ? <ArrowUp className="h-3 w-3 inline ml-1" /> :
+    <ArrowDown className="h-3 w-3 inline ml-1" />;
+
+  const filterSelect = (
+    value: string,
+    setValue: (v: string) => void,
+    options: string[],
+    label: string,
+  ) => (
+    <Select value={value} onValueChange={setValue}>
+      <SelectTrigger className="h-8 w-[140px]"><SelectValue placeholder={label} /></SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All {label}</SelectItem>
+        <SelectItem value="__none__">— none —</SelectItem>
+        {options.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+      </SelectContent>
+    </Select>
+  );
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-display text-xl flex items-center gap-2">
-          <UserCog className="h-5 w-5 text-gold" /> Students ({students?.length ?? 0})
-        </CardTitle>
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <CardTitle className="font-display text-xl flex items-center gap-2">
+            <UserCog className="h-5 w-5 text-gold" /> Students ({sorted.length}{sorted.length !== (students?.length ?? 0) ? ` of ${students?.length}` : ""})
+          </CardTitle>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <Label className="text-xs text-muted-foreground">Section</Label>
+              {filterSelect(sectionFilter, setSectionFilter, sectionOptions, "sections")}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Label className="text-xs text-muted-foreground">Team</Label>
+              {filterSelect(teamFilter, setTeamFilter, teamOptions, "teams")}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Label className="text-xs text-muted-foreground">Role</Label>
+              {filterSelect(roleFilter, setRoleFilter, roleOptions, "roles")}
+            </div>
+            {(sectionFilter !== "all" || teamFilter !== "all" || roleFilter !== "all") && (
+              <Button size="sm" variant="ghost" onClick={() => { setSectionFilter("all"); setTeamFilter("all"); setRoleFilter("all"); }}>
+                Clear
+              </Button>
+            )}
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase text-muted-foreground border-b">
-                <th className="py-2 pr-3">Name</th>
-                <th className="py-2 pr-3">Email</th>
-                <th className="py-2 pr-3">Section</th>
-                <th className="py-2 pr-3">Team</th>
-                <th className="py-2 pr-3">Role on team</th>
+                <th className="py-2 pr-3 cursor-pointer select-none" onClick={() => toggleSort("name")}>Name<SortIcon k="name" /></th>
+                <th className="py-2 pr-3 cursor-pointer select-none" onClick={() => toggleSort("email")}>Email<SortIcon k="email" /></th>
+                <th className="py-2 pr-3 cursor-pointer select-none" onClick={() => toggleSort("section")}>Section<SortIcon k="section" /></th>
+                <th className="py-2 pr-3 cursor-pointer select-none" onClick={() => toggleSort("team")}>Team<SortIcon k="team" /></th>
+                <th className="py-2 pr-3 cursor-pointer select-none" onClick={() => toggleSort("role")}>Role on team<SortIcon k="role" /></th>
                 <th className="py-2"></th>
               </tr>
             </thead>
             <tbody>
-              {students?.map((s) => (
+              {sorted.map((s) => (
                 <StudentRow
                   key={s.id}
                   student={s}
