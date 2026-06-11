@@ -131,6 +131,8 @@ function TeamDetail() {
         )}
       </section>
 
+      <MeetingTimeCard teamId={teamId} />
+
       <ManagerSubmissions teamId={teamId} />
 
       <FileVault teamId={teamId} />
