@@ -66,6 +66,12 @@ function Dashboard() {
         <ProjectArchCard />
       </div>
 
+      {isAdmin && (
+        <div className="mt-6">
+          <ConsensusStatusCard />
+        </div>
+      )}
+
 
 
       <Card className="mt-8 border-border/60">
