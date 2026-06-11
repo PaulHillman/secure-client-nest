@@ -15,7 +15,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { FileText, Upload, Trash2, Send, Download, Plus, Lock } from "lucide-react";
+import { FileText, Upload, Trash2, Send, Download, Plus, Lock, Undo2 } from "lucide-react";
 import { VAULT_STRUCTURE, findSubsection } from "@/lib/vault-structure";
 
 type TemplateRow = {
