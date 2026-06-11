@@ -45,32 +45,57 @@ export function SemesterPanel() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["semester", "archives"] });
 
   const archiveMut = useMutation({
-    mutationFn: (v: { name: string; notes?: string }) => archiveFn({ data: v }),
-    onSuccess: () => {
-      toast.success("Semester archived");
-      invalidate();
+    mutationFn: (v: { name: string; notes?: string }) => {
+      const id = toast.loading(`Archiving "${v.name}"… copying files, please wait`);
+      return archiveFn({ data: v })
+        .then((r) => {
+          toast.success(`Archive "${v.name}" saved successfully`, { id, duration: 6000 });
+          return r;
+        })
+        .catch((e) => {
+          toast.error(`Archive failed: ${e.message}`, { id, duration: 8000 });
+          throw e;
+        });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onSuccess: () => invalidate(),
   });
 
   const resetMut = useMutation({
-    mutationFn: (v: { confirm: string }) => resetFn({ data: v }),
-    onSuccess: (r) => {
-      toast.success(`Reset complete. Removed ${r.storageDeleted} stored files.`);
+    mutationFn: (v: { confirm: string }) => {
+      const id = toast.loading("Resetting semester… deleting teams and files");
+      return resetFn({ data: v })
+        .then((r) => {
+          toast.success(`Reset complete — removed ${r.storageDeleted} stored files`, { id, duration: 6000 });
+          return r;
+        })
+        .catch((e) => {
+          toast.error(`Reset failed: ${e.message}`, { id, duration: 8000 });
+          throw e;
+        });
+    },
+    onSuccess: () => {
       invalidate();
       qc.invalidateQueries();
     },
-    onError: (e: Error) => toast.error(e.message),
   });
 
   const promoteMut = useMutation({
-    mutationFn: (v: { archiveId: string; confirm: string }) => promoteFn({ data: v }),
+    mutationFn: (v: { archiveId: string; confirm: string }) => {
+      const id = toast.loading("Restoring archive to live… this may take a moment");
+      return promoteFn({ data: v })
+        .then((r) => {
+          toast.success("Archive restored — live data is now editable again", { id, duration: 6000 });
+          return r;
+        })
+        .catch((e) => {
+          toast.error(`Restore failed: ${e.message}`, { id, duration: 8000 });
+          throw e;
+        });
+    },
     onSuccess: () => {
-      toast.success("Archive restored to live");
       invalidate();
       qc.invalidateQueries();
     },
-    onError: (e: Error) => toast.error(e.message),
   });
 
   const deleteMut = useMutation({
