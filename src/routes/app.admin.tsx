@@ -59,7 +59,7 @@ function Admin() {
 
       <Tabs defaultValue="users">
         <TabsList>
-          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="users">Students</TabsTrigger>
           <TabsTrigger value="teams">Teams</TabsTrigger>
           <TabsTrigger value="templates">
             <FileStack className="h-3.5 w-3.5 mr-1" /> Templates
@@ -67,7 +67,7 @@ function Admin() {
           <TabsTrigger value="submissions">Client</TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="mt-6">
-          <UsersPanel />
+          <StudentsPanel />
         </TabsContent>
         <TabsContent value="teams" className="mt-6">
           <TeamsPanel />
@@ -80,6 +80,154 @@ function Admin() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+/* ---------------- Students ---------------- */
+
+function StudentsPanel() {
+  const qc = useQueryClient();
+  const { data: students } = useQuery({
+    queryKey: ["admin", "students"],
+    queryFn: async () => {
+      const [{ data: profiles, error }, { data: roles, error: rErr }, { data: members, error: mErr }, { data: teams, error: tErr }] = await Promise.all([
+        supabase.from("profiles").select("id, name, email, section").order("name"),
+        supabase.from("user_roles").select("user_id, role"),
+        supabase.from("team_members").select("user_id, team_id, job_title"),
+        supabase.from("teams").select("id, name"),
+      ]);
+      if (error) throw error;
+      if (rErr) throw rErr;
+      if (mErr) throw mErr;
+      if (tErr) throw tErr;
+
+      const adminSet = new Set((roles ?? []).filter((r) => r.role === "admin").map((r) => r.user_id));
+      const teamMap = new Map((teams ?? []).map((t) => [t.id, t.name] as const));
+      const memberMap = new Map<string, { team_name: string; job_title: string }>();
+      (members ?? []).forEach((m) => {
+        memberMap.set(m.user_id, {
+          team_name: teamMap.get(m.team_id) ?? "—",
+          job_title: m.job_title ?? "—",
+        });
+      });
+
+      return (profiles ?? [])
+        .filter((p) => !adminSet.has(p.id))
+        .map((p) => ({
+          ...p,
+          team_name: memberMap.get(p.id)?.team_name ?? null,
+          job_title: memberMap.get(p.id)?.job_title ?? null,
+        }));
+    },
+  });
+
+  const updateProfile = useMutation({
+    mutationFn: async (vars: { id: string; section: string | null; name: string }) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ section: vars.section, name: vars.name })
+        .eq("id", vars.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Student updated");
+      qc.invalidateQueries({ queryKey: ["admin", "students"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-display text-xl flex items-center gap-2">
+          <UserCog className="h-5 w-5 text-gold" /> Students ({students?.length ?? 0})
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase text-muted-foreground border-b">
+                <th className="py-2 pr-3">Name</th>
+                <th className="py-2 pr-3">Email</th>
+                <th className="py-2 pr-3">Section</th>
+                <th className="py-2 pr-3">Team</th>
+                <th className="py-2 pr-3">Role on team</th>
+                <th className="py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {students?.map((s) => (
+                <StudentRow
+                  key={s.id}
+                  student={s}
+                  onSave={(name, section) =>
+                    updateProfile.mutate({ id: s.id, name, section })
+                  }
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function StudentRow({
+  student,
+  onSave,
+}: {
+  student: {
+    id: string;
+    name: string;
+    email: string | null;
+    section: string | null;
+    team_name: string | null;
+    job_title: string | null;
+  };
+  onSave: (name: string, section: string | null) => void;
+}) {
+  const [name, setName] = useState(student.name);
+  const [section, setSection] = useState(student.section ?? "");
+  const dirty = name !== student.name || (section || null) !== (student.section || null);
+
+  return (
+    <tr className="border-b last:border-0 align-middle">
+      <td className="py-2 pr-3">
+        <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8" />
+      </td>
+      <td className="py-2 pr-3 text-muted-foreground">{student.email}</td>
+      <td className="py-2 pr-3">
+        <Input
+          value={section}
+          onChange={(e) => setSection(e.target.value)}
+          placeholder="—"
+          className="h-8 w-20"
+        />
+      </td>
+      <td className="py-2 pr-3">
+        {student.team_name ? (
+          <span className="text-sm">{student.team_name}</span>
+        ) : (
+          <span className="text-xs text-muted-foreground italic">unassigned</span>
+        )}
+      </td>
+      <td className="py-2 pr-3">
+        {student.job_title ? (
+          <Badge variant="secondary">{student.job_title}</Badge>
+        ) : (
+          <span className="text-xs text-muted-foreground italic">—</span>
+        )}
+      </td>
+      <td className="py-2 text-right">
+        {dirty && (
+          <Button size="sm" variant="outline" onClick={() => onSave(name, section || null)}>
+            Save
+          </Button>
+        )}
+      </td>
+    </tr>
   );
 }
 
