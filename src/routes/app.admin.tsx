@@ -64,7 +64,7 @@ function Admin() {
           <TabsTrigger value="templates">
             <FileStack className="h-3.5 w-3.5 mr-1" /> Templates
           </TabsTrigger>
-          <TabsTrigger value="submissions">Manager</TabsTrigger>
+          <TabsTrigger value="submissions">Client</TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="mt-6">
           <UsersPanel />
@@ -669,7 +669,7 @@ function SubmissionsPanel() {
     <Card>
       <CardHeader>
         <CardTitle className="font-display text-xl flex items-center gap-2">
-          <Briefcase className="h-5 w-5 text-gold" /> Manager submissions ({subs?.length ?? 0})
+          <Briefcase className="h-5 w-5 text-gold" /> Client Manager Submissions ({subs?.length ?? 0})
         </CardTitle>
       </CardHeader>
       <CardContent>

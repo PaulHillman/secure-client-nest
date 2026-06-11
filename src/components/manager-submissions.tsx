@@ -80,7 +80,7 @@ export function ManagerSubmissions({ teamId }: { teamId: string }) {
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Manager submitted for approval");
+      toast.success("Client manager submitted for approval");
       invalidate();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -118,14 +118,14 @@ export function ManagerSubmissions({ teamId }: { teamId: string }) {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Briefcase className="h-5 w-5 text-gold" />
-          <h2 className="font-display text-2xl">Manager submissions</h2>
+          <h2 className="font-display text-2xl">Client Manager Submissions</h2>
           <span className="text-sm text-muted-foreground">({subs?.length ?? 0})</span>
         </div>
         <ManagerFormDialog
           mode="create"
           trigger={
             <Button size="sm">
-              <Plus className="h-4 w-4 mr-1" /> Submit manager
+              <Plus className="h-4 w-4 mr-1" /> Submit client manager
             </Button>
           }
           onSubmit={(v) => create.mutate(v)}
@@ -137,7 +137,7 @@ export function ManagerSubmissions({ teamId }: { teamId: string }) {
       ) : subs?.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="py-8 text-center text-muted-foreground text-sm">
-            No managers submitted yet. Submit a potential manager for instructor approval.
+            No client managers submitted yet. Submit a potential client manager for instructor approval.
           </CardContent>
         </Card>
       ) : (
@@ -259,7 +259,7 @@ function ManagerFormDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="font-display text-xl">
-            {mode === "create" ? "Submit a manager for approval" : "Edit manager submission"}
+            {mode === "create" ? "Submit a client manager for approval" : "Edit client manager submission"}
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
