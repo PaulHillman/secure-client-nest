@@ -33,11 +33,12 @@ export const VAULT_STRUCTURE: VaultSection[] = [
     name: "Team Documents",
     subsections: [
       { name: "Group Norms" },
-      { name: "Peer Reviews" },
       { name: "Contact Info" },
       { name: "Other" },
+      { name: "Mid-Semester Peer Reviews" },
     ],
   },
+
   {
     name: "Video",
     subsections: [
