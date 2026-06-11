@@ -198,7 +198,7 @@ export function FileVault({ teamId }: { teamId: string }) {
               <AccordionItem
                 key={section.name}
                 value={section.name}
-                className="border rounded-md px-3"
+                className={`border rounded-md px-3 ${section.tone ?? ""}`}
               >
                 <AccordionTrigger className="hover:no-underline">
                   <div className="flex items-center gap-2">

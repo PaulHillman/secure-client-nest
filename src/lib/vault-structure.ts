@@ -11,6 +11,8 @@ export type VaultSubsection = {
 export type VaultSection = {
   name: string;
   subsections: VaultSubsection[];
+  /** Tailwind classes applied to the section card to tint it. Optional. */
+  tone?: string;
 };
 
 export const VAULT_STRUCTURE: VaultSection[] = [
@@ -32,9 +34,6 @@ export const VAULT_STRUCTURE: VaultSection[] = [
       { name: "Final Submission" },
     ],
   },
-  { name: "Competition #1", subsections: [{ name: "Submission" }, { name: "Supporting Materials" }] },
-  { name: "Competition #2", subsections: [{ name: "Submission" }, { name: "Supporting Materials" }] },
-  { name: "Competition #3", subsections: [{ name: "Submission" }, { name: "Supporting Materials" }] },
   {
     name: "Team Documents",
     subsections: [
@@ -43,6 +42,21 @@ export const VAULT_STRUCTURE: VaultSection[] = [
       { name: "Contact Info" },
       { name: "Other" },
     ],
+  },
+  {
+    name: "Competition #1",
+    subsections: [{ name: "Submission" }, { name: "Supporting Materials" }],
+    tone: "bg-gold/5 border-gold/30",
+  },
+  {
+    name: "Competition #2",
+    subsections: [{ name: "Submission" }, { name: "Supporting Materials" }],
+    tone: "bg-gold/10 border-gold/40",
+  },
+  {
+    name: "Competition #3",
+    subsections: [{ name: "Submission" }, { name: "Supporting Materials" }],
+    tone: "bg-gold/20 border-gold/50",
   },
 ];
 
