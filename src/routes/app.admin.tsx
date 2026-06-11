@@ -70,6 +70,9 @@ function Admin() {
           <TabsTrigger value="audit">
             <History className="h-3.5 w-3.5 mr-1" /> Audit log
           </TabsTrigger>
+          <TabsTrigger value="semester">
+            <Archive className="h-3.5 w-3.5 mr-1" /> Semester
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="mt-6">
           <StudentsPanel />
@@ -85,6 +88,9 @@ function Admin() {
         </TabsContent>
         <TabsContent value="audit" className="mt-6">
           <AuditLogPanel />
+        </TabsContent>
+        <TabsContent value="semester" className="mt-6">
+          <SemesterPanel />
         </TabsContent>
       </Tabs>
     </div>
