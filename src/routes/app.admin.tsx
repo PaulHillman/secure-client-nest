@@ -26,7 +26,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Trash2, Plus, UserCog, Briefcase, Check, X, ExternalLink, FileStack } from "lucide-react";
+import { Trash2, Plus, UserCog, Briefcase, Check, X, ExternalLink, FileStack, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { TemplatesPanel } from "@/components/templates-panel";
 
 export const Route = createFileRoute("/app/admin")({
