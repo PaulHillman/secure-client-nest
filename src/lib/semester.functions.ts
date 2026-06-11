@@ -423,8 +423,32 @@ export const deleteArchive = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Remove storage under archive/<archiveId>/
-    await deleteLiveStorageRecursive(supabaseAdmin, `archive/${data.archiveId}`);
+    // Remove storage under archive/<archiveId>/ — use stored paths from archive tables
+    const [{ data: avers }, { data: agns }] = await Promise.all([
+      supabaseAdmin
+        .from("archived_file_versions")
+        .select("archive_storage_path")
+        .eq("archive_id", data.archiveId),
+      supabaseAdmin
+        .from("archived_group_norms")
+        .select("archive_document_path")
+        .eq("archive_id", data.archiveId),
+    ]);
+    const paths: string[] = [
+      ...((avers ?? []).map((v: any) => v.archive_storage_path).filter(Boolean)),
+      ...((agns ?? []).map((g: any) => g.archive_document_path).filter(Boolean)),
+    ];
+    if (paths.length) {
+      const batches: string[][] = [];
+      for (let i = 0; i < paths.length; i += 200) batches.push(paths.slice(i, i + 200));
+      await Promise.all(
+        batches.map((b) =>
+          supabaseAdmin.storage.from(BUCKET).remove(b).then((r: any) => {
+            if (r.error) console.warn(`[delete_archive] remove batch failed: ${r.error.message}`);
+          }),
+        ),
+      );
+    }
 
     const { data: a } = await supabaseAdmin
       .from("semester_archives")
