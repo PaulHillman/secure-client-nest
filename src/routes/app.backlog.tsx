@@ -30,6 +30,7 @@ type Item = {
   order_index: number;
   created_at: string;
   updated_at: string;
+  completed_at: string | null;
 };
 
 const STATUS_LABEL: Record<Status, string> = {
