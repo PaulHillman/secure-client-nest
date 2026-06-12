@@ -72,8 +72,12 @@ const PREV_STATUS: Record<Status, Status | null> = {
 const STATUS_ORDER: Status[] = ["todo", "in_progress", "done", "shelved"];
 
 function BacklogPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, loading } = useAuth();
   const qc = useQueryClient();
+
+  if (loading) return null;
+  if (!isAdmin) return <Navigate to="/app/dashboard" />;
+
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["backlog_items"],
