@@ -31,7 +31,8 @@ export function ClientContactsCard() {
           supabase
             .from("files")
             .select("id, team_id, file_name, subsection, created_at")
-            .eq("subsection", "Organizational Chart"),
+            .eq("subsection", "Organizational Chart")
+            .is("template_source_id", null),
         ]);
       if (tErr) throw tErr;
       if (cErr) throw cErr;
