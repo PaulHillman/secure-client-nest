@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,14 +11,14 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Plus, Trash2, ClipboardList, ArrowRight, ArrowLeft, Play, CheckCircle2, RotateCcw } from "lucide-react";
+import { Plus, Trash2, ClipboardList, ArrowRight, ArrowLeft, Play, CheckCircle2, Archive } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/backlog")({
   component: BacklogPage,
 });
 
-type Status = "todo" | "in_progress" | "done";
+type Status = "todo" | "in_progress" | "done" | "shelved";
 type Priority = "low" | "medium" | "high";
 
 type Item = {
@@ -36,6 +36,7 @@ const STATUS_LABEL: Record<Status, string> = {
   todo: "To do",
   in_progress: "In progress",
   done: "Done",
+  shelved: "Shelved",
 };
 const PRIORITY_LABEL: Record<Priority, string> = {
   low: "Low",
@@ -51,19 +52,24 @@ const STATUS_CLASS: Record<Status, string> = {
   todo: "bg-muted text-muted-foreground",
   in_progress: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
   done: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  shelved: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-300",
 };
 
 const NEXT_STATUS: Record<Status, Status | null> = {
   todo: "in_progress",
   in_progress: "done",
   done: null,
+  shelved: null,
 };
 
 const PREV_STATUS: Record<Status, Status | null> = {
   todo: null,
   in_progress: "todo",
   done: "in_progress",
+  shelved: "todo",
 };
+
+const STATUS_ORDER: Status[] = ["todo", "in_progress", "done", "shelved"];
 
 function BacklogPage() {
   const { isAdmin } = useAuth();
