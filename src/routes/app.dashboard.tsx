@@ -8,6 +8,7 @@ import { ProjectArchCard } from "@/components/project-arch-card";
 import { ConsensusStatusCard } from "@/components/consensus-status-card";
 import { ClientContactsCard } from "@/components/client-contacts-card";
 import { TeamRosterCard } from "@/components/team-roster-card";
+import { AuthAuditLogCard } from "@/components/auth-audit-log-card";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ClientVault" }] }),
@@ -171,6 +172,12 @@ function Dashboard() {
       {isAdmin && (
         <div className="mt-6">
           <ConsensusStatusCard />
+        </div>
+      )}
+
+      {isAdmin && (
+        <div className="mt-6">
+          <AuthAuditLogCard />
         </div>
       )}
 

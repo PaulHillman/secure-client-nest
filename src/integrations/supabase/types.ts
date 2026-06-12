@@ -496,6 +496,30 @@ export type Database = {
           },
         ]
       }
+      auth_audit_log: {
+        Row: {
+          created_at: string
+          event: string
+          id: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event: string
+          id?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event?: string
+          id?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       backlog_items: {
         Row: {
           completed_at: string | null
