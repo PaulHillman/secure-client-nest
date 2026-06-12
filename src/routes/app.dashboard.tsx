@@ -7,6 +7,7 @@ import { FileText, ShieldAlert, CalendarX, BuildingIcon } from "lucide-react";
 import { ProjectArchCard } from "@/components/project-arch-card";
 import { ConsensusStatusCard } from "@/components/consensus-status-card";
 import { ClientContactsCard } from "@/components/client-contacts-card";
+import { TeamRosterCard } from "@/components/team-roster-card";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ClientVault" }] }),
@@ -150,6 +151,12 @@ function Dashboard() {
         ))}
       </div>
 
+
+      {isAdmin && (
+        <div className="mt-6">
+          <TeamRosterCard />
+        </div>
+      )}
 
       {isAdmin && (
         <div className="mt-6">
