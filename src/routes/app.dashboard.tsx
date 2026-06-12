@@ -175,6 +175,12 @@ function Dashboard() {
         </div>
       )}
 
+      {isAdmin && (
+        <div className="mt-6">
+          <AuthAuditLogCard />
+        </div>
+      )}
+
 
 
       <Card className="mt-8 border-border/60">
