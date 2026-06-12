@@ -228,6 +228,11 @@ function BacklogPage() {
                               </span>
                             </div>
                             <h3 className="mt-2 font-medium leading-snug">{item.title}</h3>
+                            {item.status === "done" && item.completed_at && (
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Completed {new Date(item.completed_at).toLocaleString()}
+                              </p>
+                            )}
                             {item.notes && (
                               <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
                                 {item.notes}
