@@ -9,6 +9,7 @@ import { ConsensusStatusCard } from "@/components/consensus-status-card";
 import { ClientContactsCard } from "@/components/client-contacts-card";
 import { TeamRosterCard } from "@/components/team-roster-card";
 import { AuthAuditLogCard } from "@/components/auth-audit-log-card";
+import { UploadActivityLogCard } from "@/components/upload-activity-log-card";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ClientVault" }] }),
