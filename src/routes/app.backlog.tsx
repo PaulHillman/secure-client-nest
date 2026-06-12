@@ -145,6 +145,7 @@ function BacklogPage() {
           <Badge variant="outline">To do: {counts.todo}</Badge>
           <Badge variant="outline">In progress: {counts.in_progress}</Badge>
           <Badge variant="outline">Done: {counts.done}</Badge>
+          <Badge variant="outline">Shelved: {counts.shelved}</Badge>
         </div>
       </header>
 
