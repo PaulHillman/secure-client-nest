@@ -151,14 +151,19 @@ function Dashboard() {
       </div>
 
 
+      {isAdmin && (
+        <div className="mt-6">
+          <ClientContactsCard />
+        </div>
+      )}
+
       <div className="mt-6">
         <ProjectArchCard />
       </div>
 
       {isAdmin && (
-        <div className="mt-6 space-y-6">
+        <div className="mt-6">
           <ConsensusStatusCard />
-          <ClientContactsCard />
         </div>
       )}
 
