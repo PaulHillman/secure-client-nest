@@ -274,6 +274,19 @@ function BacklogPage() {
                               )}
                             </Button>
                           )}
+                          {item.status !== "shelved" && item.status !== "done" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 text-xs gap-1 text-muted-foreground"
+                              onClick={() =>
+                                updateMut.mutate({ id: item.id, patch: { status: "shelved" } })
+                              }
+                              disabled={updateMut.isPending}
+                            >
+                              <Archive className="h-3.5 w-3.5" /> Shelve
+                            </Button>
+                          )}
                         </div>
                       </Card>
                     </li>
