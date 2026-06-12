@@ -17,7 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Archive, RotateCcw, Eye, Upload, Trash2, AlertTriangle } from "lucide-react";
+import { Archive, RotateCcw, Eye, Upload, Trash2, AlertTriangle, CalendarClock, PlayCircle } from "lucide-react";
 import {
   archiveSemester,
   listArchives,
@@ -26,6 +26,11 @@ import {
   deleteArchive,
   getArchiveContents,
 } from "@/lib/semester.functions";
+import {
+  getSemesterSchedule,
+  updateSemesterSchedule,
+  runAutoArchiveNow,
+} from "@/lib/semester-schedule.functions";
 
 export function SemesterPanel() {
   const qc = useQueryClient();
