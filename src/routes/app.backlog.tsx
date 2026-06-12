@@ -30,6 +30,7 @@ type Item = {
   order_index: number;
   created_at: string;
   updated_at: string;
+  completed_at: string | null;
 };
 
 const STATUS_LABEL: Record<Status, string> = {
@@ -119,15 +120,27 @@ function BacklogPage() {
     onError: (e: any) => toast.error(e.message ?? "Delete failed"),
   });
 
-  const groups: { key: Status; items: Item[] }[] = STATUS_ORDER.map(
-    (k) => ({ key: k, items: items.filter((i) => i.status === k) }),
+  const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+  const [priorityFilter, setPriorityFilter] = useState<Priority | "all">("all");
+
+  const filteredItems = items.filter((i) => {
+    if (statusFilter !== "all" && i.status !== statusFilter) return false;
+    if (priorityFilter !== "all" && i.priority !== priorityFilter) return false;
+    return true;
+  });
+
+  const visibleStatuses: Status[] =
+    statusFilter === "all" ? STATUS_ORDER : [statusFilter];
+
+  const groups: { key: Status; items: Item[] }[] = visibleStatuses.map(
+    (k) => ({ key: k, items: filteredItems.filter((i) => i.status === k) }),
   );
 
   const counts = {
-    todo: groups[0].items.length,
-    in_progress: groups[1].items.length,
-    done: groups[2].items.length,
-    shelved: groups[3].items.length,
+    todo: items.filter((i) => i.status === "todo").length,
+    in_progress: items.filter((i) => i.status === "in_progress").length,
+    done: items.filter((i) => i.status === "done").length,
+    shelved: items.filter((i) => i.status === "shelved").length,
   };
 
   return (
@@ -150,6 +163,39 @@ function BacklogPage() {
       </header>
 
       {isAdmin && <NewItemForm />}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs text-muted-foreground">Filter:</span>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as Status | "all")}>
+          <SelectTrigger className="h-8 w-[150px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            {STATUS_ORDER.map((s) => (
+              <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={priorityFilter} onValueChange={(v) => setPriorityFilter(v as Priority | "all")}>
+          <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All priorities</SelectItem>
+            {(Object.keys(PRIORITY_LABEL) as Priority[]).map((p) => (
+              <SelectItem key={p} value={p}>{PRIORITY_LABEL[p]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {(statusFilter !== "all" || priorityFilter !== "all") && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 text-xs"
+            onClick={() => { setStatusFilter("all"); setPriorityFilter("all"); }}
+          >
+            Clear
+          </Button>
+        )}
+      </div>
+
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
@@ -182,6 +228,11 @@ function BacklogPage() {
                               </span>
                             </div>
                             <h3 className="mt-2 font-medium leading-snug">{item.title}</h3>
+                            {item.status === "done" && item.completed_at && (
+                              <p className="mt-1 text-xs text-muted-foreground">
+                                Completed {new Date(item.completed_at).toLocaleString()}
+                              </p>
+                            )}
                             {item.notes && (
                               <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">
                                 {item.notes}
