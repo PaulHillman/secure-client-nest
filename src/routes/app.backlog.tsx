@@ -164,6 +164,39 @@ function BacklogPage() {
 
       {isAdmin && <NewItemForm />}
 
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs text-muted-foreground">Filter:</span>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as Status | "all")}>
+          <SelectTrigger className="h-8 w-[150px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All statuses</SelectItem>
+            {STATUS_ORDER.map((s) => (
+              <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={priorityFilter} onValueChange={(v) => setPriorityFilter(v as Priority | "all")}>
+          <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All priorities</SelectItem>
+            {(Object.keys(PRIORITY_LABEL) as Priority[]).map((p) => (
+              <SelectItem key={p} value={p}>{PRIORITY_LABEL[p]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {(statusFilter !== "all" || priorityFilter !== "all") && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 text-xs"
+            onClick={() => { setStatusFilter("all"); setPriorityFilter("all"); }}
+          >
+            Clear
+          </Button>
+        )}
+      </div>
+
+
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : items.length === 0 ? (
