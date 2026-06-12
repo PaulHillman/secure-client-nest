@@ -206,6 +206,57 @@ function BacklogPage() {
                             </div>
                           )}
                         </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          {PREV_STATUS[item.status] && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 text-xs gap-1"
+                              onClick={() =>
+                                updateMut.mutate({
+                                  id: item.id,
+                                  patch: { status: PREV_STATUS[item.status]! },
+                                })
+                              }
+                              disabled={updateMut.isPending}
+                            >
+                              <ArrowLeft className="h-3.5 w-3.5" />
+                              {PREV_STATUS[item.status] === "todo"
+                                ? "Move back to To do"
+                                : PREV_STATUS[item.status] === "in_progress"
+                                  ? "Reopen"
+                                  : "Back"}
+                            </Button>
+                          )}
+                          {NEXT_STATUS[item.status] && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-8 text-xs gap-1"
+                              onClick={() =>
+                                updateMut.mutate({
+                                  id: item.id,
+                                  patch: { status: NEXT_STATUS[item.status]! },
+                                })
+                              }
+                              disabled={updateMut.isPending}
+                            >
+                              {NEXT_STATUS[item.status] === "in_progress" ? (
+                                <>
+                                  <Play className="h-3.5 w-3.5" /> Start work
+                                </>
+                              ) : NEXT_STATUS[item.status] === "done" ? (
+                                <>
+                                  <CheckCircle2 className="h-3.5 w-3.5" /> Complete
+                                </>
+                              ) : (
+                                <>
+                                  <ArrowRight className="h-3.5 w-3.5" /> Next
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </div>
                       </Card>
                     </li>
                   ))}
