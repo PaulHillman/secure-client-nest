@@ -26,7 +26,7 @@ export function TeamRosterCard() {
         { data: members, error: mErr },
         { data: profiles, error: pErr },
       ] = await Promise.all([
-        supabase.from("teams").select("id, name, section").order("name"),
+        supabase.from("teams").select("id, name, section"),
         supabase.from("team_members").select("team_id, user_id, job_title"),
         supabase.from("profiles").select("id, name, email"),
       ]);
@@ -35,7 +35,7 @@ export function TeamRosterCard() {
       if (pErr) throw pErr;
 
       const profMap = new Map((profiles ?? []).map((p) => [p.id, p] as const));
-      return (teams ?? []).map((t) => {
+      const enriched = (teams ?? []).map((t) => {
         const roster = (members ?? [])
           .filter((m) => m.team_id === t.id)
           .map((m) => ({
@@ -51,52 +51,82 @@ export function TeamRosterCard() {
           });
         return { ...t, roster };
       });
+
+      enriched.sort((a, b) => {
+        const sa = a.section ?? "";
+        const sb = b.section ?? "";
+        const na = parseInt(sa, 10);
+        const nb = parseInt(sb, 10);
+        if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+        if (sa !== sb) return sa.localeCompare(sb);
+        return (a.name ?? "").localeCompare(b.name ?? "");
+      });
+      return enriched;
     },
   });
+
+  const teams = data ?? [];
+  const totalStudents = teams.reduce((acc, t) => acc + t.roster.length, 0);
 
   return (
     <Card className="border-border/60">
       <CardHeader>
         <CardTitle className="font-display text-xl flex items-center gap-2">
-          <Users className="h-5 w-5 text-gold" /> Students by team
+          <Users className="h-5 w-5 text-gold" /> Students by team ({totalStudents})
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {!data?.length ? (
+        {teams.length === 0 ? (
           <p className="text-sm text-muted-foreground">No teams yet.</p>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {data.map((t) => (
-              <div key={t.id} className="rounded-md border border-border/60 p-3">
-                <div className="flex items-baseline justify-between mb-2">
-                  <h3 className="font-display text-base">{t.name}</h3>
-                  {t.section && (
-                    <span className="text-xs text-muted-foreground">§ {t.section}</span>
-                  )}
-                </div>
-                {t.roster.length === 0 ? (
-                  <p className="text-xs text-muted-foreground italic">No members</p>
-                ) : (
-                  <ul className="space-y-1.5">
-                    {t.roster.map((m) => (
-                      <li key={m.user_id} className="flex items-center justify-between gap-2 text-sm">
-                        <div className="min-w-0">
-                          <div className="truncate">{m.name}</div>
-                          {m.email && (
-                            <div className="text-xs text-muted-foreground truncate">{m.email}</div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-xs uppercase text-muted-foreground border-b">
+                  <th className="py-2 pr-3">Section</th>
+                  <th className="py-2 pr-3">Team</th>
+                  <th className="py-2 pr-3">Name</th>
+                  <th className="py-2 pr-3">Email</th>
+                  <th className="py-2 pr-3">Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                {teams.map((t) =>
+                  t.roster.length === 0 ? (
+                    <tr key={t.id} className="border-b last:border-0">
+                      <td className="py-2 pr-3 text-muted-foreground">{t.section ?? "—"}</td>
+                      <td className="py-2 pr-3 font-medium">{t.name}</td>
+                      <td className="py-2 pr-3 text-xs text-muted-foreground italic" colSpan={3}>
+                        No members
+                      </td>
+                    </tr>
+                  ) : (
+                    t.roster.map((m, idx) => (
+                      <tr
+                        key={`${t.id}-${m.user_id}`}
+                        className={idx === t.roster.length - 1 ? "border-b" : ""}
+                      >
+                        <td className="py-2 pr-3 text-muted-foreground">
+                          {idx === 0 ? t.section ?? "—" : ""}
+                        </td>
+                        <td className="py-2 pr-3 font-medium">
+                          {idx === 0 ? t.name : ""}
+                        </td>
+                        <td className="py-2 pr-3">{m.name}</td>
+                        <td className="py-2 pr-3 text-muted-foreground">{m.email ?? "—"}</td>
+                        <td className="py-2 pr-3">
+                          {m.job_title ? (
+                            <Badge variant="secondary">{m.job_title}</Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic">—</span>
                           )}
-                        </div>
-                        {m.job_title ? (
-                          <Badge variant="secondary" className="shrink-0">{m.job_title}</Badge>
-                        ) : (
-                          <span className="text-xs text-muted-foreground italic shrink-0">—</span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
+                        </td>
+                      </tr>
+                    ))
+                  ),
                 )}
-              </div>
-            ))}
+              </tbody>
+            </table>
           </div>
         )}
       </CardContent>
