@@ -154,6 +154,12 @@ function Dashboard() {
 
       {isAdmin && (
         <div className="mt-6">
+          <TeamRosterCard />
+        </div>
+      )}
+
+      {isAdmin && (
+        <div className="mt-6">
           <ClientContactsCard />
         </div>
       )}
