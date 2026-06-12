@@ -1,0 +1,1 @@
+CREATE POLICY "Authenticated users can update backlog status" ON public.backlog_items FOR UPDATE TO authenticated USING (true) WITH CHECK (true);
