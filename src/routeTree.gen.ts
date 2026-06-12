@@ -19,6 +19,7 @@ import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppBacklogRouteImport } from './routes/app.backlog'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppTeamsTeamIdRouteImport } from './routes/app.teams.$teamId'
+import { Route as ApiPublicHooksAutoArchiveRouteImport } from './routes/api/public/hooks/auto-archive'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -70,6 +71,12 @@ const AppTeamsTeamIdRoute = AppTeamsTeamIdRouteImport.update({
   path: '/$teamId',
   getParentRoute: () => AppTeamsRoute,
 } as any)
+const ApiPublicHooksAutoArchiveRoute =
+  ApiPublicHooksAutoArchiveRouteImport.update({
+    id: '/api/public/hooks/auto-archive',
+    path: '/api/public/hooks/auto-archive',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
+  '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +102,7 @@ export interface FileRoutesByTo {
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
+  '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +116,7 @@ export interface FileRoutesById {
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
+  '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/app/vault'
     | '/app/vault-overview'
     | '/app/teams/$teamId'
+    | '/api/public/hooks/auto-archive'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/app/vault'
     | '/app/vault-overview'
     | '/app/teams/$teamId'
+    | '/api/public/hooks/auto-archive'
   id:
     | '__root__'
     | '/'
@@ -145,12 +157,14 @@ export interface FileRouteTypes {
     | '/app/vault'
     | '/app/vault-overview'
     | '/app/teams/$teamId'
+    | '/api/public/hooks/auto-archive'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiPublicHooksAutoArchiveRoute: typeof ApiPublicHooksAutoArchiveRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -225,6 +239,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTeamsTeamIdRouteImport
       parentRoute: typeof AppTeamsRoute
     }
+    '/api/public/hooks/auto-archive': {
+      id: '/api/public/hooks/auto-archive'
+      path: '/api/public/hooks/auto-archive'
+      fullPath: '/api/public/hooks/auto-archive'
+      preLoaderRoute: typeof ApiPublicHooksAutoArchiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -264,6 +285,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiPublicHooksAutoArchiveRoute: ApiPublicHooksAutoArchiveRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

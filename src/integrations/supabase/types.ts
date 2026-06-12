@@ -1043,9 +1043,11 @@ export type Database = {
           created_by: string | null
           file_count: number
           id: string
+          kind: string
           member_count: number
           name: string
           notes: string | null
+          tag_date: string | null
           team_count: number
         }
         Insert: {
@@ -1053,9 +1055,11 @@ export type Database = {
           created_by?: string | null
           file_count?: number
           id?: string
+          kind?: string
           member_count?: number
           name: string
           notes?: string | null
+          tag_date?: string | null
           team_count?: number
         }
         Update: {
@@ -1063,10 +1067,36 @@ export type Database = {
           created_by?: string | null
           file_count?: number
           id?: string
+          kind?: string
           member_count?: number
           name?: string
           notes?: string | null
+          tag_date?: string | null
           team_count?: number
+        }
+        Relationships: []
+      }
+      semester_schedule: {
+        Row: {
+          end_date: string | null
+          id: boolean
+          start_date: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          end_date?: string | null
+          id?: boolean
+          start_date?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          end_date?: string | null
+          id?: boolean
+          start_date?: string | null
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
