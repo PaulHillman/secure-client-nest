@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Download } from "lucide-react";
 import { toast } from "sonner";
 
 /** Minimal CSV parser supporting quoted fields and embedded commas. */
@@ -131,7 +131,26 @@ export function BulkImportPanel() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="rounded-md border border-dashed p-4 text-sm space-y-2">
-          <p className="font-medium">CSV format</p>
+          <div className="flex items-center justify-between">
+            <p className="font-medium">CSV format</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1 text-xs"
+              onClick={() => {
+                const csv = 'Last Name,First Name,Username,Student ID,Child Course ID\n"Doe","Jane","doej","G02361464","GVMGT331.03.202610.12188"\n"Smith","John","smithj","G02361465","GVMGT331.03.202610.12188"';
+                const blob = new Blob([csv], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "student_import_template.csv";
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
+              <Download className="h-3.5 w-3.5" /> Download template
+            </Button>
+          </div>
           <p className="text-muted-foreground">
             Required columns: <code>Last Name</code>, <code>First Name</code>,{" "}
             <code>Username</code>, <code>Student ID</code>. Optional:{" "}
@@ -141,6 +160,9 @@ export function BulkImportPanel() {
           <p className="text-muted-foreground">
             Each account is created with email <code>username@mail.gvsu.edu</code> and
             initial password set to the <b>Student ID</b> (e.g. <code>G02361464</code>).
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Use the template above for a standard Blackboard download format.
           </p>
         </div>
 
