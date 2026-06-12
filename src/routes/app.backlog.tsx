@@ -302,12 +302,21 @@ function BacklogPage() {
                               variant="default"
                               size="sm"
                               className="h-8 text-xs gap-1"
-                              onClick={() =>
+                              onClick={() => {
+                                if (NEXT_STATUS[item.status] === "in_progress") {
+                                  const copyText = [
+                                    `Work item: ${item.title}`,
+                                    `Priority: ${PRIORITY_LABEL[item.priority]}`,
+                                    item.notes ? `Notes: ${item.notes}` : null,
+                                  ].filter(Boolean).join("\n");
+                                  navigator.clipboard.writeText(copyText).catch(() => {});
+                                  toast.info("Copied to clipboard — paste it in this chat so I know what to work on.");
+                                }
                                 updateMut.mutate({
                                   id: item.id,
                                   patch: { status: NEXT_STATUS[item.status]! },
-                                })
-                              }
+                                });
+                              }}
                               disabled={updateMut.isPending}
                             >
                               {NEXT_STATUS[item.status] === "in_progress" ? (
