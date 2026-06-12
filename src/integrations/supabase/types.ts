@@ -496,6 +496,42 @@ export type Database = {
           },
         ]
       }
+      backlog_items: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          order_index: number
+          priority: Database["public"]["Enums"]["backlog_priority"]
+          status: Database["public"]["Enums"]["backlog_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          order_index?: number
+          priority?: Database["public"]["Enums"]["backlog_priority"]
+          status?: Database["public"]["Enums"]["backlog_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          order_index?: number
+          priority?: Database["public"]["Enums"]["backlog_priority"]
+          status?: Database["public"]["Enums"]["backlog_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       company_focus: {
         Row: {
           company_name: string
@@ -1218,6 +1254,8 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "student"
+      backlog_priority: "low" | "medium" | "high"
+      backlog_status: "todo" | "in_progress" | "done"
       team_job:
         | "PM"
         | "Communication Specialist"
@@ -1359,6 +1397,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "student"],
+      backlog_priority: ["low", "medium", "high"],
+      backlog_status: ["todo", "in_progress", "done"],
       team_job: [
         "PM",
         "Communication Specialist",

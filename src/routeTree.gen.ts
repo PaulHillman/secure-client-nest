@@ -16,6 +16,7 @@ import { Route as AppVaultOverviewRouteImport } from './routes/app.vault-overvie
 import { Route as AppVaultRouteImport } from './routes/app.vault'
 import { Route as AppTeamsRouteImport } from './routes/app.teams'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
+import { Route as AppBacklogRouteImport } from './routes/app.backlog'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppTeamsTeamIdRouteImport } from './routes/app.teams.$teamId'
 
@@ -54,6 +55,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppBacklogRoute = AppBacklogRouteImport.update({
+  id: '/backlog',
+  path: '/backlog',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminRoute = AppAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/app/admin': typeof AppAdminRoute
+  '/app/backlog': typeof AppBacklogRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/app/admin': typeof AppAdminRoute
+  '/app/backlog': typeof AppBacklogRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/app/admin': typeof AppAdminRoute
+  '/app/backlog': typeof AppBacklogRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/app/admin'
+    | '/app/backlog'
     | '/app/dashboard'
     | '/app/teams'
     | '/app/vault'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/app/admin'
+    | '/app/backlog'
     | '/app/dashboard'
     | '/app/teams'
     | '/app/vault'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/app/admin'
+    | '/app/backlog'
     | '/app/dashboard'
     | '/app/teams'
     | '/app/vault'
@@ -192,6 +204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/backlog': {
+      id: '/app/backlog'
+      path: '/backlog'
+      fullPath: '/app/backlog'
+      preLoaderRoute: typeof AppBacklogRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/admin': {
       id: '/app/admin'
       path: '/admin'
@@ -223,6 +242,7 @@ const AppTeamsRouteWithChildren = AppTeamsRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
+  AppBacklogRoute: typeof AppBacklogRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppTeamsRoute: typeof AppTeamsRouteWithChildren
   AppVaultRoute: typeof AppVaultRoute
@@ -231,6 +251,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
+  AppBacklogRoute: AppBacklogRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppTeamsRoute: AppTeamsRouteWithChildren,
   AppVaultRoute: AppVaultRoute,
