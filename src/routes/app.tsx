@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, Link, Navigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
-import { LayoutDashboard, Users, FolderLock, LogOut, FolderOpen, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Users, FolderLock, LogOut, FolderOpen, ClipboardList, ListTodo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/notifications-bell";
 import logoAsset from "@/assets/clientvault-safe.png.asset.json";
@@ -20,6 +20,7 @@ function AppLayout() {
     { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/app/teams", label: "Teams", icon: Users },
     { to: "/app/vault", label: "File Vault", icon: FolderOpen },
+    { to: "/app/backlog", label: "Work List", icon: ListTodo },
     ...(isAdmin
       ? [
           { to: "/app/vault-overview", label: "Vault Overview", icon: ClipboardList },
