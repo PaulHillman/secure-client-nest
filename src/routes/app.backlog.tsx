@@ -89,8 +89,14 @@ function BacklogPage() {
     mutationFn: async ({ id, patch }: { id: string; patch: Partial<Item> }) => {
       const { error } = await supabase.from("backlog_items").update(patch).eq("id", id);
       if (error) throw error;
+      return patch;
     },
-    onSuccess: invalidate,
+    onSuccess: (patch) => {
+      invalidate();
+      if (patch?.status) {
+        toast.success(`Moved to ${STATUS_LABEL[patch.status as Status]}`);
+      }
+    },
     onError: (e: any) => toast.error(e.message ?? "Update failed"),
   });
 
