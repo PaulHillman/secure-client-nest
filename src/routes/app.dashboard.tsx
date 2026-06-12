@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, FileText, ShieldCheck, Building2 } from "lucide-react";
 import { ProjectArchCard } from "@/components/project-arch-card";
 import { ConsensusStatusCard } from "@/components/consensus-status-card";
+import { ClientContactsCard } from "@/components/client-contacts-card";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ClientVault" }] }),
