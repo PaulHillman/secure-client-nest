@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Plus, Trash2, ClipboardList } from "lucide-react";
+import { Plus, Trash2, ClipboardList, ArrowRight, ArrowLeft, Play, CheckCircle2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/backlog")({
@@ -51,6 +51,18 @@ const STATUS_CLASS: Record<Status, string> = {
   todo: "bg-muted text-muted-foreground",
   in_progress: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
   done: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+};
+
+const NEXT_STATUS: Record<Status, Status | null> = {
+  todo: "in_progress",
+  in_progress: "done",
+  done: null,
+};
+
+const PREV_STATUS: Record<Status, Status | null> = {
+  todo: null,
+  in_progress: "todo",
+  done: "in_progress",
 };
 
 function BacklogPage() {
@@ -192,6 +204,57 @@ function BacklogPage() {
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
                             </div>
+                          )}
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          {PREV_STATUS[item.status] && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 text-xs gap-1"
+                              onClick={() =>
+                                updateMut.mutate({
+                                  id: item.id,
+                                  patch: { status: PREV_STATUS[item.status]! },
+                                })
+                              }
+                              disabled={updateMut.isPending}
+                            >
+                              <ArrowLeft className="h-3.5 w-3.5" />
+                              {PREV_STATUS[item.status] === "todo"
+                                ? "Move back to To do"
+                                : PREV_STATUS[item.status] === "in_progress"
+                                  ? "Reopen"
+                                  : "Back"}
+                            </Button>
+                          )}
+                          {NEXT_STATUS[item.status] && (
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-8 text-xs gap-1"
+                              onClick={() =>
+                                updateMut.mutate({
+                                  id: item.id,
+                                  patch: { status: NEXT_STATUS[item.status]! },
+                                })
+                              }
+                              disabled={updateMut.isPending}
+                            >
+                              {NEXT_STATUS[item.status] === "in_progress" ? (
+                                <>
+                                  <Play className="h-3.5 w-3.5" /> Start work
+                                </>
+                              ) : NEXT_STATUS[item.status] === "done" ? (
+                                <>
+                                  <CheckCircle2 className="h-3.5 w-3.5" /> Complete
+                                </>
+                              ) : (
+                                <>
+                                  <ArrowRight className="h-3.5 w-3.5" /> Next
+                                </>
+                              )}
+                            </Button>
                           )}
                         </div>
                       </Card>
