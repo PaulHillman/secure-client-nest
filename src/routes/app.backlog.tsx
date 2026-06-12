@@ -119,7 +119,7 @@ function BacklogPage() {
     onError: (e: any) => toast.error(e.message ?? "Delete failed"),
   });
 
-  const groups: { key: Status; items: Item[] }[] = (["todo", "in_progress", "done"] as Status[]).map(
+  const groups: { key: Status; items: Item[] }[] = STATUS_ORDER.map(
     (k) => ({ key: k, items: items.filter((i) => i.status === k) }),
   );
 
@@ -127,6 +127,7 @@ function BacklogPage() {
     todo: groups[0].items.length,
     in_progress: groups[1].items.length,
     done: groups[2].items.length,
+    shelved: groups[3].items.length,
   };
 
   return (
