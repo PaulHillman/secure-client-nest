@@ -50,7 +50,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     roles,
     isAdmin: roles.includes("admin"),
     loading,
-    signOut: async () => { await supabase.auth.signOut(); },
+    signOut: async () => {
+      const uid = session?.user?.id;
+      if (uid) {
+        const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
+        try {
+          await supabase.from("auth_audit_log").insert({ user_id: uid, event: "signout", user_agent: ua });
+          if (typeof sessionStorage !== "undefined") sessionStorage.removeItem(`auth_audit_signin:${uid}`);
+        } catch { /* ignore */ }
+      }
+      await supabase.auth.signOut();
+    },
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
