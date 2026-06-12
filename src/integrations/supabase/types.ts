@@ -498,6 +498,7 @@ export type Database = {
       }
       backlog_items: {
         Row: {
+          completed_at: string | null
           created_at: string
           created_by: string | null
           id: string
@@ -509,6 +510,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          completed_at?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
@@ -520,6 +522,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          completed_at?: string | null
           created_at?: string
           created_by?: string | null
           id?: string
