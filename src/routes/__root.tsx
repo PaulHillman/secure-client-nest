@@ -79,9 +79,23 @@ function AuthSync() {
   const router = useRouter();
   const qc = useQueryClient();
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+
+      if (event === "SIGNED_IN" && session?.user?.id) {
+        const userId = session.user.id;
+        const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
+        try {
+          const key = `auth_audit_signin:${userId}`;
+          if (typeof sessionStorage === "undefined" || !sessionStorage.getItem(key)) {
+            void supabase.from("auth_audit_log").insert({ user_id: userId, event: "signin", user_agent: ua });
+            if (typeof sessionStorage !== "undefined") sessionStorage.setItem(key, "1");
+          }
+        } catch { /* ignore */ }
+      }
+
       router.invalidate();
-      qc.invalidateQueries();
+      if (event !== "SIGNED_OUT") qc.invalidateQueries();
     });
     return () => subscription.unsubscribe();
   }, [router, qc]);
