@@ -169,6 +169,112 @@ export function SemesterPanel() {
   );
 }
 
+function AutoArchiveCard() {
+  const qc = useQueryClient();
+  const getSchedFn = useServerFn(getSemesterSchedule);
+  const updateSchedFn = useServerFn(updateSemesterSchedule);
+  const runNowFn = useServerFn(runAutoArchiveNow);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["semester", "schedule"],
+    queryFn: () => getSchedFn({}),
+  });
+  const sched = data?.schedule;
+
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [dirty, setDirty] = useState(false);
+
+  // Initialize fields once schedule loads
+  if (!dirty && sched && (start === "" && end === "")) {
+    if (sched.start_date) setStart(sched.start_date);
+    if (sched.end_date) setEnd(sched.end_date);
+  }
+
+  const saveMut = useMutation({
+    mutationFn: () =>
+      updateSchedFn({
+        data: { start_date: start || null, end_date: end || null },
+      }),
+    onSuccess: () => {
+      toast.success("Schedule saved");
+      setDirty(false);
+      qc.invalidateQueries({ queryKey: ["semester", "schedule"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const runMut = useMutation({
+    mutationFn: () => runNowFn({}),
+    onSuccess: (r: any) => {
+      if (r.ran) toast.success(`Snapshot created. Pruned ${r.pruned ?? 0} old archive(s).`);
+      else toast.message(`Skipped: ${r.reason}`);
+      qc.invalidateQueries({ queryKey: ["semester", "archives"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-display text-lg flex items-center gap-2">
+          <CalendarClock className="h-5 w-5 text-gold" /> Auto-archive schedule
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Runs once a day between the start and end dates. Keeps the last 7 daily snapshots and
+          4 weekly snapshots (Sundays) — about 11 archives total. Older auto-archives are
+          permanently deleted. Manually-created archives are never auto-deleted.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <Label>First day of semester</Label>
+            <Input
+              type="date"
+              value={start}
+              onChange={(e) => {
+                setStart(e.target.value);
+                setDirty(true);
+              }}
+            />
+          </div>
+          <div>
+            <Label>Last day of semester</Label>
+            <Input
+              type="date"
+              value={end}
+              onChange={(e) => {
+                setEnd(e.target.value);
+                setDirty(true);
+              }}
+            />
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => saveMut.mutate()} disabled={!dirty || saveMut.isPending}>
+            {saveMut.isPending ? "Saving…" : "Save schedule"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => runMut.mutate()}
+            disabled={runMut.isPending}
+          >
+            <PlayCircle className="h-4 w-4 mr-1" />
+            {runMut.isPending ? "Running…" : "Run now"}
+          </Button>
+          {isLoading ? null : sched?.updated_at ? (
+            <span className="text-xs text-muted-foreground self-center">
+              Last updated {new Date(sched.updated_at).toLocaleString()}
+            </span>
+          ) : null}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+
 function ArchiveNowDialog({
   onArchive,
   loading,
