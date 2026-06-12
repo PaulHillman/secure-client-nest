@@ -114,6 +114,8 @@ export function SemesterPanel() {
 
   return (
     <div className="space-y-6">
+      <AutoArchiveCard />
+
       <Card>
         <CardHeader>
           <CardTitle className="font-display text-xl flex items-center gap-2">
