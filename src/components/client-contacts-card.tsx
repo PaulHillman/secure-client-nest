@@ -37,7 +37,7 @@ export function ClientContactsCard() {
       if (cErr) throw cErr;
       if (fErr) throw fErr;
 
-      const cfMap = new Map((cf ?? []).map((c) => [c.team_id, c]));
+      const cfMap = new Map((cf ?? []).filter((c) => c.team_id).map((c) => [c.team_id as string, c]));
       const orgMap = new Map<string, any>();
       (orgFiles ?? []).forEach((f) => {
         if (!f.team_id) return;
