@@ -53,6 +53,18 @@ const STATUS_CLASS: Record<Status, string> = {
   done: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
 };
 
+const NEXT_STATUS: Record<Status, Status | null> = {
+  todo: "in_progress",
+  in_progress: "done",
+  done: null,
+};
+
+const PREV_STATUS: Record<Status, Status | null> = {
+  todo: null,
+  in_progress: "todo",
+  done: "in_progress",
+};
+
 function BacklogPage() {
   const { isAdmin } = useAuth();
   const qc = useQueryClient();
