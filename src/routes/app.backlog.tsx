@@ -120,15 +120,27 @@ function BacklogPage() {
     onError: (e: any) => toast.error(e.message ?? "Delete failed"),
   });
 
-  const groups: { key: Status; items: Item[] }[] = STATUS_ORDER.map(
-    (k) => ({ key: k, items: items.filter((i) => i.status === k) }),
+  const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
+  const [priorityFilter, setPriorityFilter] = useState<Priority | "all">("all");
+
+  const filteredItems = items.filter((i) => {
+    if (statusFilter !== "all" && i.status !== statusFilter) return false;
+    if (priorityFilter !== "all" && i.priority !== priorityFilter) return false;
+    return true;
+  });
+
+  const visibleStatuses: Status[] =
+    statusFilter === "all" ? STATUS_ORDER : [statusFilter];
+
+  const groups: { key: Status; items: Item[] }[] = visibleStatuses.map(
+    (k) => ({ key: k, items: filteredItems.filter((i) => i.status === k) }),
   );
 
   const counts = {
-    todo: groups[0].items.length,
-    in_progress: groups[1].items.length,
-    done: groups[2].items.length,
-    shelved: groups[3].items.length,
+    todo: items.filter((i) => i.status === "todo").length,
+    in_progress: items.filter((i) => i.status === "in_progress").length,
+    done: items.filter((i) => i.status === "done").length,
+    shelved: items.filter((i) => i.status === "shelved").length,
   };
 
   return (
