@@ -40,7 +40,7 @@ export function ClientContactsCard() {
       const cfMap = new Map((cf ?? []).map((c) => [c.team_id, c]));
       const orgMap = new Map<string, any>();
       (orgFiles ?? []).forEach((f) => {
-        // keep most recent per team
+        if (!f.team_id) return;
         const existing = orgMap.get(f.team_id);
         if (!existing || new Date(f.created_at) > new Date(existing.created_at)) {
           orgMap.set(f.team_id, f);
