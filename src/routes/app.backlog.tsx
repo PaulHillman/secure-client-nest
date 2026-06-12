@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,14 +11,14 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Plus, Trash2, ClipboardList, ArrowRight, ArrowLeft, Play, CheckCircle2, RotateCcw } from "lucide-react";
+import { Plus, Trash2, ClipboardList, ArrowRight, ArrowLeft, Play, CheckCircle2, Archive } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/backlog")({
   component: BacklogPage,
 });
 
-type Status = "todo" | "in_progress" | "done";
+type Status = "todo" | "in_progress" | "done" | "shelved";
 type Priority = "low" | "medium" | "high";
 
 type Item = {
@@ -36,6 +36,7 @@ const STATUS_LABEL: Record<Status, string> = {
   todo: "To do",
   in_progress: "In progress",
   done: "Done",
+  shelved: "Shelved",
 };
 const PRIORITY_LABEL: Record<Priority, string> = {
   low: "Low",
@@ -51,23 +52,32 @@ const STATUS_CLASS: Record<Status, string> = {
   todo: "bg-muted text-muted-foreground",
   in_progress: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
   done: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  shelved: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-300",
 };
 
 const NEXT_STATUS: Record<Status, Status | null> = {
   todo: "in_progress",
   in_progress: "done",
   done: null,
+  shelved: null,
 };
 
 const PREV_STATUS: Record<Status, Status | null> = {
   todo: null,
   in_progress: "todo",
   done: "in_progress",
+  shelved: "todo",
 };
 
+const STATUS_ORDER: Status[] = ["todo", "in_progress", "done", "shelved"];
+
 function BacklogPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, loading } = useAuth();
   const qc = useQueryClient();
+
+  if (loading) return null;
+  if (!isAdmin) return <Navigate to="/app/dashboard" />;
+
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["backlog_items"],
@@ -109,7 +119,7 @@ function BacklogPage() {
     onError: (e: any) => toast.error(e.message ?? "Delete failed"),
   });
 
-  const groups: { key: Status; items: Item[] }[] = (["todo", "in_progress", "done"] as Status[]).map(
+  const groups: { key: Status; items: Item[] }[] = STATUS_ORDER.map(
     (k) => ({ key: k, items: items.filter((i) => i.status === k) }),
   );
 
@@ -117,6 +127,7 @@ function BacklogPage() {
     todo: groups[0].items.length,
     in_progress: groups[1].items.length,
     done: groups[2].items.length,
+    shelved: groups[3].items.length,
   };
 
   return (
@@ -134,6 +145,7 @@ function BacklogPage() {
           <Badge variant="outline">To do: {counts.todo}</Badge>
           <Badge variant="outline">In progress: {counts.in_progress}</Badge>
           <Badge variant="outline">Done: {counts.done}</Badge>
+          <Badge variant="outline">Shelved: {counts.shelved}</Badge>
         </div>
       </header>
 
@@ -260,6 +272,19 @@ function BacklogPage() {
                                   <ArrowRight className="h-3.5 w-3.5" /> Next
                                 </>
                               )}
+                            </Button>
+                          )}
+                          {item.status !== "shelved" && item.status !== "done" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 text-xs gap-1 text-muted-foreground"
+                              onClick={() =>
+                                updateMut.mutate({ id: item.id, patch: { status: "shelved" } })
+                              }
+                              disabled={updateMut.isPending}
+                            >
+                              <Archive className="h-3.5 w-3.5" /> Shelve
                             </Button>
                           )}
                         </div>

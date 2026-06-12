@@ -20,9 +20,9 @@ function AppLayout() {
     { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/app/teams", label: "Teams", icon: Users },
     { to: "/app/vault", label: "File Vault", icon: FolderOpen },
-    { to: "/app/backlog", label: "Work List", icon: ListTodo },
     ...(isAdmin
       ? [
+          { to: "/app/backlog", label: "Work List", icon: ListTodo },
           { to: "/app/vault-overview", label: "Vault Overview", icon: ClipboardList },
           { to: "/app/admin", label: "Admin", icon: FolderLock },
         ]
