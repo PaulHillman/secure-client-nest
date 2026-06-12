@@ -1285,7 +1285,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "student"
       backlog_priority: "low" | "medium" | "high"
-      backlog_status: "todo" | "in_progress" | "done"
+      backlog_status: "todo" | "in_progress" | "done" | "shelved"
       team_job:
         | "PM"
         | "Communication Specialist"
@@ -1428,7 +1428,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "student"],
       backlog_priority: ["low", "medium", "high"],
-      backlog_status: ["todo", "in_progress", "done"],
+      backlog_status: ["todo", "in_progress", "done", "shelved"],
       team_job: [
         "PM",
         "Communication Specialist",
