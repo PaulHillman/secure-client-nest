@@ -26,10 +26,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Trash2, Plus, UserCog, Briefcase, Check, X, ExternalLink, FileStack, ArrowUp, ArrowDown, ArrowUpDown, History, Archive } from "lucide-react";
+import { Trash2, Plus, UserCog, Briefcase, Check, X, ExternalLink, FileStack, ArrowUp, ArrowDown, ArrowUpDown, History, Archive, Upload } from "lucide-react";
 import { TemplatesPanel } from "@/components/templates-panel";
 import { AuditLogPanel } from "@/components/audit-log-panel";
 import { SemesterPanel } from "@/components/semester-panel";
+import { BulkImportPanel } from "@/components/bulk-import-panel";
 
 export const Route = createFileRoute("/app/admin")({
   head: () => ({ meta: [{ title: "Admin — ClientVault" }] }),
@@ -62,6 +63,9 @@ function Admin() {
       <Tabs defaultValue="users">
         <TabsList>
           <TabsTrigger value="users">Students</TabsTrigger>
+          <TabsTrigger value="import">
+            <Upload className="h-3.5 w-3.5 mr-1" /> Import
+          </TabsTrigger>
           <TabsTrigger value="teams">Teams</TabsTrigger>
           <TabsTrigger value="templates">
             <FileStack className="h-3.5 w-3.5 mr-1" /> Templates
@@ -76,6 +80,9 @@ function Admin() {
         </TabsList>
         <TabsContent value="users" className="mt-6">
           <StudentsPanel />
+        </TabsContent>
+        <TabsContent value="import" className="mt-6">
+          <BulkImportPanel />
         </TabsContent>
         <TabsContent value="teams" className="mt-6">
           <TeamsPanel />
