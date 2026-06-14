@@ -13,6 +13,7 @@ import { UploadActivityLogCard } from "@/components/upload-activity-log-card";
 import { StudentActivityScoreCard } from "@/components/student-activity-score-card";
 import { SluggoFlagCard } from "@/components/sluggo-flag-card";
 import { TeamActivityDashboardCard } from "@/components/team-activity-dashboard-card";
+import { CrossTeamComparisonCard } from "@/components/cross-team-comparison-card";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ClientVault" }] }),
