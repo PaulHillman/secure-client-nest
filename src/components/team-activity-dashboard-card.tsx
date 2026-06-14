@@ -290,7 +290,7 @@ export function TeamActivityDashboardCard() {
                     const pct = totalFiles ? Math.round((r.filesCompleted / totalFiles) * 100) : 0;
                     const isExpanded = expandedTeam === r.team_id;
                     return (
-                      <React.Fragment key={r.team_id}>
+                      <Fragment key={r.team_id}>
                         <tr
                           className="border-b border-border/40 cursor-pointer hover:bg-muted/30 transition-colors"
                           onClick={() => setExpandedTeam(isExpanded ? null : r.team_id)}
