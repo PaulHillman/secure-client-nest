@@ -193,6 +193,12 @@ function Dashboard() {
 
       {isAdmin && (
         <div className="mt-6">
+          <TeamActivityDashboardCard />
+        </div>
+      )}
+
+      {isAdmin && (
+        <div className="mt-6">
           <SluggoFlagCard />
         </div>
       )}
