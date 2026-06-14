@@ -373,7 +373,7 @@ export function TeamActivityDashboardCard() {
                             </td>
                           </tr>
                         )}
-                      </React.Fragment>
+                      </Fragment>
                     );
                   })}
                 </tbody>
