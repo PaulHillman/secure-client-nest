@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowDown, ArrowUp, Trophy, AlertTriangle } from "lucide-react";
 
 type WindowKey = "7" | "30" | "90" | "all";
-type SortField = "score" | "logins" | "uploads" | "comments" | "filesDone" | "outstanding" | "lastActivity";
+type SortField = "team_name" | "score" | "logins" | "uploads" | "comments" | "filesDone" | "outstanding" | "lastActivity";
 type SortDir = "asc" | "desc";
 
 interface TeamRow {
