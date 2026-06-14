@@ -10,6 +10,7 @@ import { ClientContactsCard } from "@/components/client-contacts-card";
 import { TeamRosterCard } from "@/components/team-roster-card";
 import { AuthAuditLogCard } from "@/components/auth-audit-log-card";
 import { UploadActivityLogCard } from "@/components/upload-activity-log-card";
+import { StudentActivityScoreCard } from "@/components/student-activity-score-card";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ClientVault" }] }),
@@ -185,6 +186,12 @@ function Dashboard() {
       {isAdmin && (
         <div className="mt-6">
           <UploadActivityLogCard />
+        </div>
+      )}
+
+      {isAdmin && (
+        <div className="mt-6">
+          <StudentActivityScoreCard />
         </div>
       )}
 
