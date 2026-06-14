@@ -144,22 +144,23 @@ export function CrossTeamComparisonCard() {
   const sortedRows = useMemo(() => {
     const r = [...(data ?? [])];
     const dir = sortDir === "asc" ? 1 : -1;
-    r.sort((a, b) => {
-      switch (sortField) {
-        case "score": return (a.score - b.score) * dir;
-        case "logins": return (a.logins - b.logins) * dir;
-        case "uploads": return (a.uploads - b.uploads) * dir;
-        case "comments": return (a.comments - b.comments) * dir;
-        case "filesDone": return (a.filesDone - b.filesDone) * dir;
-        case "outstanding": return (a.filesOutstanding - b.filesOutstanding) * dir;
-        case "lastActivity": {
-          const aT = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
-          const bT = b.lastActivity ? new Date(b.lastActivity).getTime() : 0;
-          return (aT - bT) * dir;
+      r.sort((a, b) => {
+        switch (sortField) {
+          case "team_name": return a.team_name.localeCompare(b.team_name) * dir;
+          case "score": return (a.score - b.score) * dir;
+          case "logins": return (a.logins - b.logins) * dir;
+          case "uploads": return (a.uploads - b.uploads) * dir;
+          case "comments": return (a.comments - b.comments) * dir;
+          case "filesDone": return (a.filesDone - b.filesDone) * dir;
+          case "outstanding": return (a.filesOutstanding - b.filesOutstanding) * dir;
+          case "lastActivity": {
+            const aT = a.lastActivity ? new Date(a.lastActivity).getTime() : 0;
+            const bT = b.lastActivity ? new Date(b.lastActivity).getTime() : 0;
+            return (aT - bT) * dir;
+          }
+          default: return 0;
         }
-        default: return 0;
-      }
-    });
+      });
     return r;
   }, [data, sortField, sortDir]);
 
