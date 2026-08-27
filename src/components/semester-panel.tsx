@@ -31,6 +31,7 @@ import {
   updateSemesterSchedule,
   runAutoArchiveNow,
 } from "@/lib/semester-schedule.functions";
+import { deleteAllStudents } from "@/lib/students.functions";
 
 export function SemesterPanel() {
   const qc = useQueryClient();
@@ -39,6 +40,8 @@ export function SemesterPanel() {
   const resetFn = useServerFn(resetSemester);
   const promoteFn = useServerFn(promoteArchive);
   const deleteFn = useServerFn(deleteArchive);
+  const purgeFn = useServerFn(deleteAllStudents);
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["semester", "archives"],
@@ -112,6 +115,17 @@ export function SemesterPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const purgeMut = useMutation({
+    mutationFn: (v: { confirm: string }) => purgeFn({ data: v }),
+    onSuccess: (r: any) => {
+      toast.success(`Deleted ${r.deleted} student account${r.deleted === 1 ? "" : "s"}`);
+      if (r.failed?.length) toast.error(`${r.failed.length} failed to delete`);
+      qc.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   return (
     <div className="space-y-6">
       <AutoArchiveCard />
@@ -135,7 +149,12 @@ export function SemesterPanel() {
           <div className="flex flex-wrap gap-2">
             <ArchiveNowDialog onArchive={(v) => archiveMut.mutate(v)} loading={archiveMut.isPending} />
             <ResetDialog onReset={(v) => resetMut.mutate(v)} loading={resetMut.isPending} />
+            <DeleteStudentsDialog
+              onDelete={(v) => purgeMut.mutate(v)}
+              loading={purgeMut.isPending}
+            />
           </div>
+
         </CardContent>
       </Card>
 
@@ -387,6 +406,62 @@ function ResetDialog({
     </Dialog>
   );
 }
+
+function DeleteStudentsDialog({
+  onDelete,
+  loading,
+}: {
+  onDelete: (v: { confirm: string }) => void;
+  loading: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [confirm, setConfirm] = useState("");
+  const PHRASE = "DELETE STUDENTS";
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="destructive">
+          <Trash2 className="h-4 w-4 mr-1" /> Delete all students
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="font-display flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" /> Delete all student accounts
+          </DialogTitle>
+          <DialogDescription>
+            Permanently deletes every student login (and their profile, roles, team memberships and
+            notifications). Admin accounts, templates, the audit log and saved archives are kept.
+            Run a semester reset first if you also want to clear teams and files. This cannot be
+            undone — students will need to be re-imported.
+          </DialogDescription>
+        </DialogHeader>
+        <div>
+          <Label className="text-xs">Type {PHRASE} to confirm</Label>
+          <Input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder={PHRASE} />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            disabled={confirm !== PHRASE || loading}
+            onClick={() => {
+              onDelete({ confirm });
+              setConfirm("");
+              setOpen(false);
+            }}
+          >
+            {loading ? "Deleting…" : "Delete all students"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
 
 function ArchiveRow({
   archive,
