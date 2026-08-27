@@ -91,6 +91,7 @@ export const bulkImportStudents = createServerFn({ method: "POST" })
       const firstName = String(raw.firstName ?? "").trim();
       const lastName = String(raw.lastName ?? "").trim();
       const section = raw.section ? String(raw.section).trim() : null;
+      const teamLabel = raw.team ? String(raw.team).trim() : null;
 
       if (!username || !studentId) {
         result.errors.push({
@@ -111,25 +112,39 @@ export const bulkImportStudents = createServerFn({ method: "POST" })
           user_metadata: { name: fullName },
         });
 
+        let userId: string | null = created?.user?.id ?? null;
+
         if (error) {
           const msg = error.message ?? "Unknown error";
           if (/already.*registered|already exists|duplicate/i.test(msg)) {
             result.skipped.push({ email, reason: "Account already exists" });
+            // Still resolve the existing account so we can (re)assign its team
+            const { data: prof } = await supabaseAdmin
+              .from("profiles")
+              .select("id")
+              .ilike("email", email)
+              .limit(1);
+            userId = prof?.[0]?.id ?? null;
           } else {
             result.errors.push({ email, error: msg });
+            continue;
           }
-          continue;
         }
 
         // Update profile with section if provided (trigger already inserted profile+role)
-        if (created?.user?.id && section) {
+        if (userId && section) {
           await supabaseAdmin
             .from("profiles")
             .update({ section })
-            .eq("id", created.user.id);
+            .eq("id", userId);
         }
 
-        result.created++;
+        // Assign to team if the file has a team column
+        if (userId && teamLabel) {
+          await assignToTeam(userId, teamLabel, section);
+        }
+
+        if (!error) result.created++;
       } catch (e: any) {
         result.errors.push({ email, error: e?.message ?? "Failed" });
       }
