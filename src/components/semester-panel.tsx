@@ -35,6 +35,7 @@ import { deleteAllStudents } from "@/lib/students.functions";
 
 export function SemesterPanel() {
   const qc = useQueryClient();
+  const [purgeResult, setPurgeResult] = useState<{ deleted: number; failed: number } | null>(null);
   const listFn = useServerFn(listArchives);
   const archiveFn = useServerFn(archiveSemester);
   const resetFn = useServerFn(resetSemester);
@@ -118,11 +119,19 @@ export function SemesterPanel() {
   const purgeMut = useMutation({
     mutationFn: (v: { confirm: string }) => purgeFn({ data: v }),
     onSuccess: (r: any) => {
-      toast.success(`Deleted ${r.deleted} student account${r.deleted === 1 ? "" : "s"}`);
-      if (r.failed?.length) toast.error(`${r.failed.length} failed to delete`);
+      const failed = r.failed?.length ?? 0;
+      setPurgeResult({ deleted: r.deleted, failed });
+      if (failed > 0) {
+        toast.error(`Deleted ${r.deleted}; ${failed} account${failed === 1 ? "" : "s"} could not be deleted`, { duration: 10000 });
+      } else {
+        toast.success(`Deleted ${r.deleted} student account${r.deleted === 1 ? "" : "s"}`, { duration: 8000 });
+      }
       qc.invalidateQueries();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      setPurgeResult(null);
+      toast.error(`Student deletion failed: ${e.message}`, { duration: 10000 });
+    },
   });
 
 
@@ -154,6 +163,15 @@ export function SemesterPanel() {
               loading={purgeMut.isPending}
             />
           </div>
+          {purgeResult && (
+            <div role="status" className="rounded-md border border-border bg-muted/30 p-3 text-sm">
+              <p className="font-medium">Student deletion finished</p>
+              <p className="text-muted-foreground">
+                Deleted {purgeResult.deleted} student account{purgeResult.deleted === 1 ? "" : "s"}.
+                {purgeResult.failed > 0 ? ` ${purgeResult.failed} could not be deleted.` : " No failures."}
+              </p>
+            </div>
+          )}
 
         </CardContent>
       </Card>
