@@ -91,3 +91,50 @@ export const bulkImportStudents = createServerFn({ method: "POST" })
 
     return result;
   });
+
+export type PurgeResult = { deleted: number; failed: { email: string; error: string }[] };
+
+export const deleteAllStudents = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { confirm: string }) => {
+    if (input?.confirm !== "DELETE STUDENTS") throw new Error("Type DELETE STUDENTS to confirm");
+    return input;
+  })
+  .handler(async ({ context }) => {
+    await assertAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: studentRows, error: rolesErr } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "student");
+    if (rolesErr) throw new Error(rolesErr.message);
+
+    const { data: adminRows } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin");
+    const adminIds = new Set((adminRows ?? []).map((r: any) => r.user_id));
+
+    const ids = (studentRows ?? [])
+      .map((r: any) => r.user_id)
+      .filter((id: string) => id && !adminIds.has(id) && id !== context.userId);
+
+    const result: PurgeResult = { deleted: 0, failed: [] };
+
+    for (const id of ids) {
+      // Clear references that don't cascade
+      await supabaseAdmin.from("notifications").delete().eq("user_id", id);
+      await supabaseAdmin.from("team_members").delete().eq("user_id", id);
+      await supabaseAdmin.from("files").update({ assigned_to: null }).eq("assigned_to", id);
+
+      const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
+      if (error) {
+        result.failed.push({ email: id, error: error.message });
+      } else {
+        result.deleted++;
+      }
+    }
+
+    return result;
+  });
