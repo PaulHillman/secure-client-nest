@@ -1,3 +1,4 @@
+import { teamLabel } from "@/lib/team-label";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,7 +14,7 @@ export function ConsensusStatusCard() {
     queryFn: async () => {
       const [{ data: teams, error: tErr }, { data: members, error: mErr }, { data: proposals, error: pErr }, { data: agreements, error: aErr }] =
         await Promise.all([
-          supabase.from("teams").select("id, name"),
+          supabase.from("teams").select("id, name, section"),
           supabase.from("team_members").select("team_id, user_id"),
           supabase.from("team_meeting_proposals").select("*"),
           supabase.from("team_meeting_agreements").select("proposal_id, user_id, status"),
@@ -42,7 +43,7 @@ export function ConsensusStatusCard() {
         const hasConsensus = !!proposal && total > 0 && agreed >= total;
         return {
           id: t.id,
-          name: t.name,
+          name: teamLabel(t),
           proposal,
           total,
           agreed,

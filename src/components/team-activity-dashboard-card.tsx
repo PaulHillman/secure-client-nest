@@ -1,3 +1,4 @@
+import { teamLabel } from "@/lib/team-label";
 import { useQuery } from "@tanstack/react-query";
 import { Fragment, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,7 +51,7 @@ export function TeamActivityDashboardCard() {
     queryKey: ["team-activity-dashboard", win],
     queryFn: async (): Promise<Row[]> => {
       const [teamsRes, membersRes, authRes, fileAuditRes, commentsRes, filesRes, profilesRes] = await Promise.all([
-        supabase.from("teams").select("id, name"),
+        supabase.from("teams").select("id, name, section"),
         supabase.from("team_members").select("user_id, team_id"),
         since
           ? supabase.from("auth_audit_log").select("user_id, event, created_at").eq("event", "signin").gte("created_at", since)
@@ -163,7 +164,7 @@ export function TeamActivityDashboardCard() {
 
         return {
           team_id: t.id,
-          team_name: t.name,
+          team_name: teamLabel(t),
           members: memberCount.get(t.id) ?? 0,
           logins: logins.get(t.id) ?? 0,
           uploads: uploads.get(t.id) ?? 0,
