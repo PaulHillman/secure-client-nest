@@ -134,6 +134,9 @@ export function BulkImportPanel() {
     setParseError(null);
     setResult(null);
     setRows([]);
+    setSelected(new Set());
+    setFilter("");
+    setSectionFilter("all");
     setMapping([]);
     setFileName(file.name);
     try {
@@ -209,6 +212,8 @@ export function BulkImportPanel() {
       }
       if (out.length === 0) throw new Error("No valid rows found");
       setRows(out);
+      // Pre-select all rows by default
+      setSelected(new Set(out.map((r) => `${r.studentId}|${r.username}`)));
     } catch (e: any) {
       setParseError(e?.message ?? "Failed to read file");
     }
