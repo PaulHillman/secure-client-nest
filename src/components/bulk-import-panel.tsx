@@ -355,26 +355,69 @@ export function BulkImportPanel() {
 
 
         {rows.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  className="h-9 pl-7 text-sm"
+                  placeholder="Filter by name, username, or student ID…"
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                />
+              </div>
+              {sections.length > 1 && (
+                <select
+                  className="h-9 rounded-md border bg-background px-2 text-sm"
+                  value={sectionFilter}
+                  onChange={(e) => setSectionFilter(e.target.value)}
+                >
+                  <option value="all">All sections</option>
+                  {sections.map((s) => (
+                    <option key={s} value={s}>Section {s}</option>
+                  ))}
+                </select>
+              )}
+              <div className="flex gap-1">
+                <Button variant="outline" size="sm" className="h-9" onClick={() => toggleAllVisible(true)}>
+                  Select all shown
+                </Button>
+                <Button variant="ghost" size="sm" className="h-9" onClick={() => toggleAllVisible(false)}>
+                  Unselect shown
+                </Button>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between">
               <p className="text-sm">
-                Parsed <b>{rows.length}</b> row{rows.length === 1 ? "" : "s"}.
-                {previewRows.length < rows.length && (
-                  <span className="text-muted-foreground"> Showing first 10.</span>
+                <b>{selectedCount}</b> of {rows.length} selected
+                {visibleRows.length !== rows.length && (
+                  <span className="text-muted-foreground">
+                    {" "}· showing {visibleRows.length}
+                  </span>
                 )}
               </p>
               <Button
                 onClick={() => importMut.mutate()}
-                disabled={importMut.isPending}
+                disabled={importMut.isPending || selectedCount === 0}
               >
-                {importMut.isPending ? "Importing…" : `Create ${rows.length} accounts`}
+                {importMut.isPending
+                  ? "Importing…"
+                  : `Create ${selectedCount} account${selectedCount === 1 ? "" : "s"}`}
               </Button>
             </div>
 
-            <div className="overflow-x-auto rounded border">
+            <div className="overflow-x-auto rounded border max-h-96 overflow-y-auto">
               <table className="w-full text-xs">
-                <thead className="bg-muted/40 text-left">
+                <thead className="bg-muted/40 text-left sticky top-0">
                   <tr>
+                    <th className="p-2 w-8">
+                      <Checkbox
+                        checked={allVisibleSelected}
+                        onCheckedChange={(v) => toggleAllVisible(!!v)}
+                        aria-label="Select all shown"
+                      />
+                    </th>
                     <th className="p-2">Name</th>
                     <th className="p-2">Email (derived)</th>
                     <th className="p-2">Initial password</th>
@@ -382,14 +425,29 @@ export function BulkImportPanel() {
                   </tr>
                 </thead>
                 <tbody>
-                  {previewRows.map((r, i) => (
-                    <tr key={i} className="border-t">
-                      <td className="p-2">{r.firstName} {r.lastName}</td>
-                      <td className="p-2 font-mono">{r.username}@mail.gvsu.edu</td>
-                      <td className="p-2 font-mono">{r.studentId}</td>
-                      <td className="p-2">{r.section ?? "—"}</td>
-                    </tr>
-                  ))}
+                  {visibleRows.map((r) => {
+                    const k = rowKey(r);
+                    const on = selected.has(k);
+                    return (
+                      <tr
+                        key={k}
+                        className={`border-t cursor-pointer ${on ? "" : "opacity-50"}`}
+                        onClick={() => toggleRow(k, !on)}
+                      >
+                        <td className="p-2">
+                          <Checkbox
+                            checked={on}
+                            onCheckedChange={(v) => toggleRow(k, !!v)}
+                            aria-label={`Select ${r.firstName} ${r.lastName}`}
+                          />
+                        </td>
+                        <td className="p-2">{r.firstName} {r.lastName}</td>
+                        <td className="p-2 font-mono">{r.username}@mail.gvsu.edu</td>
+                        <td className="p-2 font-mono">{r.studentId}</td>
+                        <td className="p-2">{r.section ?? "—"}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
