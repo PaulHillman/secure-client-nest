@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Download } from "lucide-react";
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Download, Search } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 /** Minimal CSV parser supporting quoted fields and embedded commas. */
@@ -109,12 +110,18 @@ export function BulkImportPanel() {
   const importFn = useServerFn(bulkImportStudents);
   const [fileName, setFileName] = useState<string>("");
   const [rows, setRows] = useState<ImportRow[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [filter, setFilter] = useState("");
+  const [sectionFilter, setSectionFilter] = useState<string>("all");
   const [mapping, setMapping] = useState<{ field: string; column: string }[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
 
+  const rowKey = (r: ImportRow) => `${r.studentId}|${r.username}`;
+
   const importMut = useMutation({
-    mutationFn: async () => importFn({ data: { rows } }),
+    mutationFn: async () =>
+      importFn({ data: { rows: rows.filter((r) => selected.has(rowKey(r))) } }),
     onSuccess: (r) => {
       setResult(r);
       toast.success(`Imported ${r.created} accounts`);
