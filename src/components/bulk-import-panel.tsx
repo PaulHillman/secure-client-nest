@@ -91,6 +91,7 @@ const ALIASES = {
   studentId: ["student id", "studentid", "g#", "gnumber", "g number", "gnum", "gid", "banner id", "student number"],
   email: ["email", "email address", "eaddr", "emailaddress", "e-mail"],
   section: ["child course id", "child course", "course id", "section", "crn", "course"],
+  team: ["team", "team name", "team number", "team #", "team no", "group", "group name", "group number", "team id"],
 };
 
 /** Read any uploaded file (csv/xlsx/xls) into a matrix of strings. */
@@ -202,6 +203,7 @@ export function BulkImportPanel() {
 
       const iCourse = findCol(headers, ALIASES.section);
       const iSectionCol = findCol(headers, ["section"]);
+      const iTeam = findCol(headers, ALIASES.team);
 
       setMapping(
         [
@@ -211,6 +213,7 @@ export function BulkImportPanel() {
           ["Email", iEmail],
           ["Student ID", iSid],
           ["Section", iSectionCol >= 0 ? iSectionCol : iCourse],
+          ["Team", iTeam],
         ]
           .filter(([, i]) => (i as number) >= 0)
           .map(([field, i]) => ({ field: field as string, column: headers[i as number] })),
