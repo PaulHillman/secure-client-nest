@@ -135,7 +135,12 @@ export function SemesterPanel() {
           <div className="flex flex-wrap gap-2">
             <ArchiveNowDialog onArchive={(v) => archiveMut.mutate(v)} loading={archiveMut.isPending} />
             <ResetDialog onReset={(v) => resetMut.mutate(v)} loading={resetMut.isPending} />
+            <DeleteStudentsDialog
+              onDelete={(v) => purgeMut.mutate(v)}
+              loading={purgeMut.isPending}
+            />
           </div>
+
         </CardContent>
       </Card>
 
