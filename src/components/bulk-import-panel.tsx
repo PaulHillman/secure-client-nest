@@ -313,7 +313,7 @@ export function BulkImportPanel() {
               size="sm"
               className="h-7 gap-1 text-xs"
               onClick={() => {
-                const csv = 'Last Name,First Name,Username,Student ID,Child Course ID\n"Doe","Jane","doej","G02361464","GVMGT331.03.202610.12188"\n"Smith","John","smithj","G02361465","GVMGT331.03.202610.12188"';
+                const csv = 'Last Name,First Name,Username,Student ID,Child Course ID,Team\n"Doe","Jane","doej","G02361464","GVMGT331.03.202610.12188","Team 1"\n"Smith","John","smithj","G02361465","GVMGT331.03.202610.12188","Team 1"';
                 const blob = new Blob([csv], { type: "text/csv" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
@@ -331,7 +331,14 @@ export function BulkImportPanel() {
             variations work: <code>Last Name</code>/<code>Lname</code>,{" "}
             <code>First Name</code>/<code>Fname</code>, <code>Username</code>/<code>ID</code>/
             <code>NetID</code> (or derived from <code>Email</code>), <code>Student ID</code>/
-            <code>G#</code>, and <code>Section</code>/<code>Child Course ID</code>.
+            <code>G#</code>, <code>Section</code>/<code>Child Course ID</code>, and an optional{" "}
+            <code>Team</code>/<code>Team Name</code> column.
+          </p>
+          <p className="text-muted-foreground">
+            If a <b>Team</b> value is present, the team is created automatically (per section) if
+            it doesn't exist yet, and the student is enrolled in it. Plain numbers like{" "}
+            <code>3</code> become <code>Team 3</code>. Everyone is enrolled with the default role{" "}
+            <b>Researcher</b> — assign PM and other roles afterwards from the team page.
           </p>
           <p className="text-muted-foreground">
             Section is parsed from any common shape:{" "}
