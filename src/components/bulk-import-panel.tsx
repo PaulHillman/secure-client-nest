@@ -121,15 +121,40 @@ export function BulkImportPanel() {
   const rowKey = (r: ImportRow) => `${r.studentId}|${r.username}`;
 
   const importMut = useMutation({
-    mutationFn: async () =>
-      importFn({ data: { rows: rows.filter((r) => selected.has(rowKey(r))) } }),
+    mutationFn: async () => {
+      const picked = rows.filter((r) => selected.has(rowKey(r)));
+      if (picked.length === 0) throw new Error("No students selected");
+      // Send in small batches: creating accounts is slow and one big request times out.
+      const BATCH = 20;
+      const total: ImportResult = { created: 0, skipped: [], errors: [] };
+      for (let i = 0; i < picked.length; i += BATCH) {
+        const chunk = picked.slice(i, i + BATCH);
+        try {
+          const r = await importFn({ data: { rows: chunk } });
+          total.created += r.created;
+          total.skipped.push(...r.skipped);
+          total.errors.push(...r.errors);
+        } catch (e: any) {
+          total.errors.push(
+            ...chunk.map((row) => ({
+              email: row.username,
+              error: e?.message ?? "Server error during import",
+            })),
+          );
+        }
+        setResult({ ...total });
+      }
+      return total;
+    },
     onSuccess: (r) => {
       setResult(r);
-      toast.success(`Imported ${r.created} accounts`);
+      if (r.created > 0) toast.success(`Imported ${r.created} accounts`);
+      if (r.errors.length > 0) toast.error(`${r.errors.length} rows failed — see details below`);
       qc.invalidateQueries({ queryKey: ["admin", "students"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Import failed"),
   });
+
 
   const onFile = async (file: File) => {
     setParseError(null);
