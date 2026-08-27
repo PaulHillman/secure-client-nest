@@ -1,3 +1,4 @@
+import { teamLabel } from "@/lib/team-label";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -26,7 +27,7 @@ export function ClientContactsCard() {
     queryFn: async () => {
       const [{ data: teams, error: tErr }, { data: cf, error: cErr }, { data: orgFiles, error: fErr }] =
         await Promise.all([
-          supabase.from("teams").select("id, name").order("name"),
+          supabase.from("teams").select("id, name, section").order("name"),
           supabase.from("company_focus").select("*"),
           supabase
             .from("files")
@@ -51,7 +52,7 @@ export function ClientContactsCard() {
       return (teams ?? [])
         .map((t) => ({
           id: t.id,
-          name: t.name,
+          name: teamLabel(t),
           cf: cfMap.get(t.id) ?? null,
           orgChart: orgMap.get(t.id) ?? null,
         }))

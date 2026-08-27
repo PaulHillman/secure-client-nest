@@ -50,8 +50,10 @@ export const bulkImportStudents = createServerFn({ method: "POST" })
       const cached = teamCache.get(key);
       if (cached) return cached;
 
+      // Teams are identified by BOTH name and section: "Team 1" in section 01 is a
+      // different team than "Team 1" in section 02.
       let query = supabaseAdmin.from("teams").select("id").ilike("name", teamName);
-      if (section) query = query.eq("section", section);
+      query = section ? query.eq("section", section) : query.is("section", null);
       const { data: existing } = await query.limit(1);
       let teamId = existing?.[0]?.id as string | undefined;
 

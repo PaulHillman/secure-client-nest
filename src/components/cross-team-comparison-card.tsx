@@ -1,3 +1,4 @@
+import { teamLabel } from "@/lib/team-label";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,7 +41,7 @@ export function CrossTeamComparisonCard() {
     queryKey: ["cross-team-comparison", win],
     queryFn: async (): Promise<TeamRow[]> => {
       const [teamsRes, membersRes, authRes, fileAuditRes, commentsRes, filesRes] = await Promise.all([
-        supabase.from("teams").select("id, name"),
+        supabase.from("teams").select("id, name, section"),
         supabase.from("team_members").select("user_id, team_id"),
         since
           ? supabase.from("auth_audit_log").select("user_id, event, created_at").eq("event", "signin").gte("created_at", since)
@@ -115,7 +116,7 @@ export function CrossTeamComparisonCard() {
         const score = mem > 0 ? Math.round(((l + u * 2 + c * 1.5 + fd) / mem) * 10) : 0;
         return {
           team_id: t.id,
-          team_name: t.name,
+          team_name: teamLabel(t),
           members: mem,
           logins: l,
           uploads: u,

@@ -1,3 +1,4 @@
+import { teamLabel } from "@/lib/team-label";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
@@ -115,7 +116,7 @@ function StudentsPanel() {
         supabase.from("profiles").select("id, name, email, section").order("name"),
         supabase.from("user_roles").select("user_id, role"),
         supabase.from("team_members").select("user_id, team_id, job_title"),
-        supabase.from("teams").select("id, name"),
+        supabase.from("teams").select("id, name, section"),
       ]);
       if (error) throw error;
       if (rErr) throw rErr;
@@ -123,7 +124,7 @@ function StudentsPanel() {
       if (tErr) throw tErr;
 
       const adminSet = new Set((roles ?? []).filter((r) => r.role === "admin").map((r) => r.user_id));
-      const teamMap = new Map((teams ?? []).map((t) => [t.id, t.name] as const));
+      const teamMap = new Map((teams ?? []).map((t) => [t.id, teamLabel(t)] as const));
       const memberMap = new Map<string, { team_name: string; job_title: string }>();
       (members ?? []).forEach((m) => {
         memberMap.set(m.user_id, {

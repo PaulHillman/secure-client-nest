@@ -1,3 +1,4 @@
+import { teamLabel } from "@/lib/team-label";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,7 +41,7 @@ export function SluggoFlagCard() {
       const [profilesRes, membersRes, teamsRes, authRes, fileRes, commentsRes, rolesRes] = await Promise.all([
         supabase.from("profiles").select("id, name, email, section"),
         supabase.from("team_members").select("user_id, team_id"),
-        supabase.from("teams").select("id, name"),
+        supabase.from("teams").select("id, name, section"),
         supabase.from("auth_audit_log").select("user_id, event, created_at").eq("event", "signin"),
         supabase.from("file_audit_log").select("actor_id, action").eq("action", "insert"),
         supabase.from("file_comments").select("author_id"),
@@ -48,7 +49,7 @@ export function SluggoFlagCard() {
       ]);
 
       const teams = teamsRes.data ?? [];
-      const teamById = new Map(teams.map((t) => [t.id, t.name]));
+      const teamById = new Map(teams.map((t) => [t.id, teamLabel(t)]));
       const teamByUser = new Map<string, string>();
       (membersRes.data ?? []).forEach((m) => {
         if (m.user_id && m.team_id) teamByUser.set(m.user_id, teamById.get(m.team_id) ?? "");
@@ -169,7 +170,7 @@ export function SluggoFlagCard() {
             <SelectContent>
               <SelectItem value="all">All teams</SelectItem>
               {teams.map((t) => (
-                <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
+                <SelectItem key={t.id} value={teamLabel(t)}>{teamLabel(t)}</SelectItem>
               ))}
             </SelectContent>
           </Select>
