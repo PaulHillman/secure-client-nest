@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Download, Search } from "lucide-react";
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Download, Search, Users, Eye, EyeOff } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
@@ -113,6 +113,7 @@ export function BulkImportPanel() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState("");
   const [sectionFilter, setSectionFilter] = useState<string>("all");
+  const [showSelectedOnly, setShowSelectedOnly] = useState(false);
   const [mapping, setMapping] = useState<{ field: string; column: string }[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -229,6 +230,8 @@ export function BulkImportPanel() {
   const visibleRows = useMemo(() => {
     const q = filter.trim().toLowerCase();
     return rows.filter((r) => {
+      const k = rowKey(r);
+      if (showSelectedOnly && !selected.has(k)) return false;
       if (sectionFilter !== "all" && (r.section ?? "") !== sectionFilter) return false;
       if (!q) return true;
       return [r.firstName, r.lastName, r.username, r.studentId, r.section ?? ""]
@@ -236,7 +239,7 @@ export function BulkImportPanel() {
         .toLowerCase()
         .includes(q);
     });
-  }, [rows, filter, sectionFilter]);
+  }, [rows, filter, sectionFilter, showSelectedOnly, selected]);
 
   const selectedCount = useMemo(
     () => rows.filter((r) => selected.has(rowKey(r))).length,
@@ -356,6 +359,21 @@ export function BulkImportPanel() {
 
         {rows.length > 0 && (
           <div className="space-y-3">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-md border p-3 text-center">
+                <p className="text-2xl font-bold">{rows.length}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">In file</p>
+              </div>
+              <div className="rounded-md border p-3 text-center bg-emerald-500/5 border-emerald-500/20">
+                <p className="text-2xl font-bold text-emerald-700">{selectedCount}</p>
+                <p className="text-xs text-emerald-700/80 uppercase tracking-wide">To create</p>
+              </div>
+              <div className="rounded-md border p-3 text-center">
+                <p className="text-2xl font-bold">{rows.length - selectedCount}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Not selected</p>
+              </div>
+            </div>
+
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative flex-1 min-w-[200px]">
                 <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
@@ -388,19 +406,20 @@ export function BulkImportPanel() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between">
-              <p className="text-sm">
-                <b>{selectedCount}</b> of {rows.length} selected
-                {visibleRows.length !== rows.length && (
-                  <span className="text-muted-foreground">
-                    {" "}· showing {visibleRows.length}
-                  </span>
-                )}
-              </p>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <Checkbox
+                  checked={showSelectedOnly}
+                  onCheckedChange={(v) => setShowSelectedOnly(!!v)}
+                />
+                <span>Show selected only</span>
+              </label>
               <Button
                 onClick={() => importMut.mutate()}
                 disabled={importMut.isPending || selectedCount === 0}
+                className="gap-2"
               >
+                <Users className="h-4 w-4" />
                 {importMut.isPending
                   ? "Importing…"
                   : `Create ${selectedCount} account${selectedCount === 1 ? "" : "s"}`}
