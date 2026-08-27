@@ -124,7 +124,7 @@ function StudentsPanel() {
       if (tErr) throw tErr;
 
       const adminSet = new Set((roles ?? []).filter((r) => r.role === "admin").map((r) => r.user_id));
-      const teamMap = new Map((teams ?? []).map((t) => [t.id, t.name] as const));
+      const teamMap = new Map((teams ?? []).map((t) => [t.id, teamLabel(t)] as const));
       const memberMap = new Map<string, { team_name: string; job_title: string }>();
       (members ?? []).forEach((m) => {
         memberMap.set(m.user_id, {
