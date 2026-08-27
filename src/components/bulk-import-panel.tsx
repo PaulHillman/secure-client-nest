@@ -230,6 +230,8 @@ export function BulkImportPanel() {
   const visibleRows = useMemo(() => {
     const q = filter.trim().toLowerCase();
     return rows.filter((r) => {
+      const k = rowKey(r);
+      if (showSelectedOnly && !selected.has(k)) return false;
       if (sectionFilter !== "all" && (r.section ?? "") !== sectionFilter) return false;
       if (!q) return true;
       return [r.firstName, r.lastName, r.username, r.studentId, r.section ?? ""]
@@ -237,7 +239,7 @@ export function BulkImportPanel() {
         .toLowerCase()
         .includes(q);
     });
-  }, [rows, filter, sectionFilter]);
+  }, [rows, filter, sectionFilter, showSelectedOnly, selected]);
 
   const selectedCount = useMemo(
     () => rows.filter((r) => selected.has(rowKey(r))).length,
