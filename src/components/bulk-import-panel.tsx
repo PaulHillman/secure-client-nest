@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import * as XLSX from "xlsx";
 import { bulkImportStudents, type ImportRow, type ImportResult } from "@/lib/students.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,22 +41,68 @@ function parseCSV(text: string): string[][] {
   return rows;
 }
 
-/** Extract section like "03" from "GVMGT331.03.202610.12188". */
-function extractSection(courseId: string | undefined): string | null {
-  if (!courseId) return null;
-  const parts = courseId.split(".");
-  if (parts.length >= 2 && /^\d+$/.test(parts[1])) return parts[1];
+/**
+ * Extract a section number from any of the common shapes:
+ *  "GVMGT331.03.202610.12188" -> 03
+ *  "346-01"                    -> 01
+ *  "MGT 331 04"                -> 04
+ *  "03" / 3                    -> 03
+ */
+function extractSection(value: string | undefined | null): string | null {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  if (raw.includes(".")) {
+    const parts = raw.split(".");
+    if (parts.length >= 2 && /^\d+$/.test(parts[1])) return parts[1].padStart(2, "0");
+  }
+  const tokens = raw.split(/[^0-9A-Za-z]+/).filter(Boolean);
+  const numeric = tokens.filter((t) => /^\d+$/.test(t));
+  if (numeric.length === 0) return null;
+  // Section is the trailing short number (course numbers are 3+ digits)
+  const last = numeric[numeric.length - 1];
+  if (last.length <= 2) return last.padStart(2, "0");
   return null;
 }
 
-function findCol(headers: string[], ...names: string[]): number {
-  const norm = headers.map((h) => h.trim().toLowerCase());
-  for (const n of names) {
-    const i = norm.indexOf(n.toLowerCase());
+const norm = (s: unknown) => String(s ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+/** Fuzzy header match: exact normalized alias first, then substring contains. */
+function findCol(headers: string[], aliases: string[]): number {
+  const normed = headers.map(norm);
+  for (const a of aliases) {
+    const t = norm(a);
+    const i = normed.indexOf(t);
+    if (i >= 0) return i;
+  }
+  for (const a of aliases) {
+    const t = norm(a);
+    if (t.length < 4) continue;
+    const i = normed.findIndex((h) => h.includes(t) || t.includes(h));
     if (i >= 0) return i;
   }
   return -1;
 }
+
+const ALIASES = {
+  last: ["last name", "lastname", "lname", "surname", "family name", "last"],
+  first: ["first name", "firstname", "fname", "given name", "first"],
+  username: ["username", "user name", "netid", "net id", "login", "user id", "userid", "user", "id"],
+  studentId: ["student id", "studentid", "g#", "gnumber", "g number", "gnum", "gid", "banner id", "student number"],
+  email: ["email", "email address", "eaddr", "emailaddress", "e-mail"],
+  section: ["child course id", "child course", "course id", "section", "crn", "course"],
+};
+
+/** Read any uploaded file (csv/xlsx/xls) into a matrix of strings. */
+async function readSheet(file: File): Promise<string[][]> {
+  const isCsv = /\.csv$/i.test(file.name) || file.type === "text/csv";
+  if (isCsv) return parseCSV(await file.text());
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array" });
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const matrix = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1, raw: false, defval: "" });
+  return matrix.map((r) => (r ?? []).map((c) => String(c ?? "")));
+}
+
 
 export function BulkImportPanel() {
   const qc = useQueryClient();
