@@ -31,6 +31,7 @@ import {
   updateSemesterSchedule,
   runAutoArchiveNow,
 } from "@/lib/semester-schedule.functions";
+import { deleteAllStudents } from "@/lib/students.functions";
 
 export function SemesterPanel() {
   const qc = useQueryClient();
@@ -39,6 +40,8 @@ export function SemesterPanel() {
   const resetFn = useServerFn(resetSemester);
   const promoteFn = useServerFn(promoteArchive);
   const deleteFn = useServerFn(deleteArchive);
+  const purgeFn = useServerFn(deleteAllStudents);
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["semester", "archives"],
