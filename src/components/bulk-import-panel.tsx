@@ -91,6 +91,7 @@ const ALIASES = {
   studentId: ["student id", "studentid", "g#", "gnumber", "g number", "gnum", "gid", "banner id", "student number"],
   email: ["email", "email address", "eaddr", "emailaddress", "e-mail"],
   section: ["child course id", "child course", "course id", "section", "crn", "course"],
+  team: ["team", "team name", "team number", "team #", "team no", "group", "group name", "group number", "team id"],
 };
 
 /** Read any uploaded file (csv/xlsx/xls) into a matrix of strings. */
@@ -202,6 +203,7 @@ export function BulkImportPanel() {
 
       const iCourse = findCol(headers, ALIASES.section);
       const iSectionCol = findCol(headers, ["section"]);
+      const iTeam = findCol(headers, ALIASES.team);
 
       setMapping(
         [
@@ -211,6 +213,7 @@ export function BulkImportPanel() {
           ["Email", iEmail],
           ["Student ID", iSid],
           ["Section", iSectionCol >= 0 ? iSectionCol : iCourse],
+          ["Team", iTeam],
         ]
           .filter(([, i]) => (i as number) >= 0)
           .map(([field, i]) => ({ field: field as string, column: headers[i as number] })),
@@ -234,6 +237,7 @@ export function BulkImportPanel() {
           username,
           studentId,
           section,
+          team: iTeam >= 0 ? (row[iTeam] ?? "").trim() || null : null,
         });
       }
       if (out.length === 0) throw new Error("No valid rows found");
@@ -309,7 +313,7 @@ export function BulkImportPanel() {
               size="sm"
               className="h-7 gap-1 text-xs"
               onClick={() => {
-                const csv = 'Last Name,First Name,Username,Student ID,Child Course ID\n"Doe","Jane","doej","G02361464","GVMGT331.03.202610.12188"\n"Smith","John","smithj","G02361465","GVMGT331.03.202610.12188"';
+                const csv = 'Last Name,First Name,Username,Student ID,Child Course ID,Team\n"Doe","Jane","doej","G02361464","GVMGT331.03.202610.12188","Team 1"\n"Smith","John","smithj","G02361465","GVMGT331.03.202610.12188","Team 1"';
                 const blob = new Blob([csv], { type: "text/csv" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
@@ -327,7 +331,14 @@ export function BulkImportPanel() {
             variations work: <code>Last Name</code>/<code>Lname</code>,{" "}
             <code>First Name</code>/<code>Fname</code>, <code>Username</code>/<code>ID</code>/
             <code>NetID</code> (or derived from <code>Email</code>), <code>Student ID</code>/
-            <code>G#</code>, and <code>Section</code>/<code>Child Course ID</code>.
+            <code>G#</code>, <code>Section</code>/<code>Child Course ID</code>, and an optional{" "}
+            <code>Team</code>/<code>Team Name</code> column.
+          </p>
+          <p className="text-muted-foreground">
+            If a <b>Team</b> value is present, the team is created automatically (per section) if
+            it doesn't exist yet, and the student is enrolled in it. Plain numbers like{" "}
+            <code>3</code> become <code>Team 3</code>. Everyone is enrolled with the default role{" "}
+            <b>Researcher</b> — assign PM and other roles afterwards from the team page.
           </p>
           <p className="text-muted-foreground">
             Section is parsed from any common shape:{" "}
@@ -466,6 +477,7 @@ export function BulkImportPanel() {
                     <th className="p-2">Email (derived)</th>
                     <th className="p-2">Initial password</th>
                     <th className="p-2">Section</th>
+                    <th className="p-2">Team</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -489,6 +501,7 @@ export function BulkImportPanel() {
                         <td className="p-2 font-mono">{r.username}@mail.gvsu.edu</td>
                         <td className="p-2 font-mono">{r.studentId}</td>
                         <td className="p-2">{r.section ?? "—"}</td>
+                        <td className="p-2">{r.team ?? "—"}</td>
                       </tr>
                     );
                   })}

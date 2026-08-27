@@ -7,7 +7,17 @@ export type ImportRow = {
   username: string;
   studentId: string;
   section?: string | null;
+  team?: string | null;
 };
+
+/** Normalize team labels: "3" -> "Team 3", "team 3" -> "Team 3", otherwise trimmed as-is. */
+function normalizeTeamName(value: string | null | undefined): string | null {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const m = raw.match(/^(?:team\s*)?(\d+)$/i);
+  if (m) return `Team ${parseInt(m[1], 10)}`;
+  return raw;
+}
 
 export type ImportResult = {
   created: number;
@@ -33,12 +43,55 @@ export const bulkImportStudents = createServerFn({ method: "POST" })
 
     const result: ImportResult = { created: 0, skipped: [], errors: [] };
 
+    // Cache of resolved teams keyed by "section|team name" so we only query once per team
+    const teamCache = new Map<string, string>(); // key -> team_id
+    const resolveTeamId = async (teamName: string, section: string | null): Promise<string> => {
+      const key = `${section ?? ""}|${teamName.toLowerCase()}`;
+      const cached = teamCache.get(key);
+      if (cached) return cached;
+
+      let query = supabaseAdmin.from("teams").select("id").ilike("name", teamName);
+      if (section) query = query.eq("section", section);
+      const { data: existing } = await query.limit(1);
+      let teamId = existing?.[0]?.id as string | undefined;
+
+      if (!teamId) {
+        const { data: createdTeam, error: teamError } = await supabaseAdmin
+          .from("teams")
+          .insert({ name: teamName, section })
+          .select("id")
+          .single();
+        if (teamError) throw new Error(`Could not create team "${teamName}": ${teamError.message}`);
+        teamId = createdTeam.id;
+      }
+      teamCache.set(key, teamId!);
+      return teamId!;
+    };
+
+    const assignToTeam = async (userId: string, teamLabel: string, section: string | null) => {
+      const teamName = normalizeTeamName(teamLabel);
+      if (!teamName) return;
+      const teamId = await resolveTeamId(teamName, section);
+      const { data: member } = await supabaseAdmin
+        .from("team_members")
+        .select("id")
+        .eq("team_id", teamId)
+        .eq("user_id", userId)
+        .limit(1);
+      if (member && member.length > 0) return;
+      const { error } = await supabaseAdmin
+        .from("team_members")
+        .insert({ team_id: teamId, user_id: userId, job_title: "Researcher" });
+      if (error) throw new Error(`Team assign failed: ${error.message}`);
+    };
+
     for (const raw of data.rows) {
       const username = String(raw.username ?? "").trim().toLowerCase();
       const studentId = String(raw.studentId ?? "").trim();
       const firstName = String(raw.firstName ?? "").trim();
       const lastName = String(raw.lastName ?? "").trim();
       const section = raw.section ? String(raw.section).trim() : null;
+      const teamLabel = raw.team ? String(raw.team).trim() : null;
 
       if (!username || !studentId) {
         result.errors.push({
@@ -59,25 +112,39 @@ export const bulkImportStudents = createServerFn({ method: "POST" })
           user_metadata: { name: fullName },
         });
 
+        let userId: string | null = created?.user?.id ?? null;
+
         if (error) {
           const msg = error.message ?? "Unknown error";
           if (/already.*registered|already exists|duplicate/i.test(msg)) {
             result.skipped.push({ email, reason: "Account already exists" });
+            // Still resolve the existing account so we can (re)assign its team
+            const { data: prof } = await supabaseAdmin
+              .from("profiles")
+              .select("id")
+              .ilike("email", email)
+              .limit(1);
+            userId = prof?.[0]?.id ?? null;
           } else {
             result.errors.push({ email, error: msg });
+            continue;
           }
-          continue;
         }
 
         // Update profile with section if provided (trigger already inserted profile+role)
-        if (created?.user?.id && section) {
+        if (userId && section) {
           await supabaseAdmin
             .from("profiles")
             .update({ section })
-            .eq("id", created.user.id);
+            .eq("id", userId);
         }
 
-        result.created++;
+        // Assign to team if the file has a team column
+        if (userId && teamLabel) {
+          await assignToTeam(userId, teamLabel, section);
+        }
+
+        if (!error) result.created++;
       } catch (e: any) {
         result.errors.push({ email, error: e?.message ?? "Failed" });
       }
