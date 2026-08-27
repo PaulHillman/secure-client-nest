@@ -220,7 +220,50 @@ export function BulkImportPanel() {
   };
 
 
-  const previewRows = useMemo(() => rows.slice(0, 10), [rows]);
+  const sections = useMemo(
+    () =>
+      Array.from(new Set(rows.map((r) => r.section).filter(Boolean) as string[])).sort(),
+    [rows],
+  );
+
+  const visibleRows = useMemo(() => {
+    const q = filter.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (sectionFilter !== "all" && (r.section ?? "") !== sectionFilter) return false;
+      if (!q) return true;
+      return [r.firstName, r.lastName, r.username, r.studentId, r.section ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(q);
+    });
+  }, [rows, filter, sectionFilter]);
+
+  const selectedCount = useMemo(
+    () => rows.filter((r) => selected.has(rowKey(r))).length,
+    [rows, selected],
+  );
+  const visibleKeys = visibleRows.map(rowKey);
+  const allVisibleSelected =
+    visibleKeys.length > 0 && visibleKeys.every((k) => selected.has(k));
+
+  const toggleRow = (k: string, on: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(k);
+      else next.delete(k);
+      return next;
+    });
+  };
+  const toggleAllVisible = (on: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const k of visibleKeys) {
+        if (on) next.add(k);
+        else next.delete(k);
+      }
+      return next;
+    });
+  };
 
   return (
     <Card>
