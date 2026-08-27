@@ -113,6 +113,7 @@ export function BulkImportPanel() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState("");
   const [sectionFilter, setSectionFilter] = useState<string>("all");
+  const [showSelectedOnly, setShowSelectedOnly] = useState(false);
   const [mapping, setMapping] = useState<{ field: string; column: string }[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
