@@ -112,6 +112,17 @@ export function SemesterPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const purgeMut = useMutation({
+    mutationFn: (v: { confirm: string }) => purgeFn({ data: v }),
+    onSuccess: (r: any) => {
+      toast.success(`Deleted ${r.deleted} student account${r.deleted === 1 ? "" : "s"}`);
+      if (r.failed?.length) toast.error(`${r.failed.length} failed to delete`);
+      qc.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   return (
     <div className="space-y-6">
       <AutoArchiveCard />
