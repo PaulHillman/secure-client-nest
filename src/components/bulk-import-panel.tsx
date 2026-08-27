@@ -109,6 +109,7 @@ export function BulkImportPanel() {
   const importFn = useServerFn(bulkImportStudents);
   const [fileName, setFileName] = useState<string>("");
   const [rows, setRows] = useState<ImportRow[]>([]);
+  const [mapping, setMapping] = useState<{ field: string; column: string }[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
 
@@ -126,46 +127,86 @@ export function BulkImportPanel() {
     setParseError(null);
     setResult(null);
     setRows([]);
+    setMapping([]);
     setFileName(file.name);
     try {
-      const text = await file.text();
-      const parsed = parseCSV(text);
-      if (parsed.length < 2) throw new Error("CSV has no data rows");
-      const headers = parsed[0];
-      const iLast = findCol(headers, "Last Name", "lastname", "last");
-      const iFirst = findCol(headers, "First Name", "firstname", "first");
-      const iUser = findCol(headers, "Username", "user", "login");
-      const iSid = findCol(headers, "Student ID", "studentid", "id");
-      const iCourse = findCol(headers, "Child Course ID", "course id", "course");
+      const parsed = (await readSheet(file)).filter((r) => r.some((c) => c?.trim()));
+      if (parsed.length < 2) throw new Error("File has no data rows");
+
+      // Header row is the first row within the first 5 that matches at least 2 known fields
+      let headerIdx = 0;
+      let best = -1;
+      for (let i = 0; i < Math.min(5, parsed.length); i++) {
+        const h = parsed[i];
+        const score = Object.values(ALIASES).filter((a) => findCol(h, a) >= 0).length;
+        if (score > best) { best = score; headerIdx = i; }
+      }
+      const headers = parsed[headerIdx];
+
+      const iLast = findCol(headers, ALIASES.last);
+      const iFirst = findCol(headers, ALIASES.first);
+      const iEmail = findCol(headers, ALIASES.email);
+      const iSid = findCol(headers, ALIASES.studentId);
+      let iUser = findCol(headers, ALIASES.username);
+      // Don't let "ID" double as both username and student ID
+      if (iUser === iSid) iUser = -1;
 
       const missing: string[] = [];
-      if (iLast < 0) missing.push("Last Name");
-      if (iFirst < 0) missing.push("First Name");
-      if (iUser < 0) missing.push("Username");
-      if (iSid < 0) missing.push("Student ID");
-      if (missing.length) throw new Error(`Missing required column(s): ${missing.join(", ")}`);
+      if (iLast < 0) missing.push("Last name");
+      if (iFirst < 0) missing.push("First name");
+      if (iUser < 0 && iEmail < 0) missing.push("Username or Email");
+      if (iSid < 0) missing.push("Student ID (G#)");
+      if (missing.length) {
+        throw new Error(
+          `Could not match column(s): ${missing.join(", ")}. Found headers: ${headers
+            .filter(Boolean)
+            .join(", ")}`,
+        );
+      }
+
+      const iCourse = findCol(headers, ALIASES.section);
+      const iSectionCol = findCol(headers, ["section"]);
+
+      setMapping(
+        [
+          ["Last name", iLast],
+          ["First name", iFirst],
+          ["Username", iUser],
+          ["Email", iEmail],
+          ["Student ID", iSid],
+          ["Section", iSectionCol >= 0 ? iSectionCol : iCourse],
+        ]
+          .filter(([, i]) => (i as number) >= 0)
+          .map(([field, i]) => ({ field: field as string, column: headers[i as number] })),
+      );
 
       const out: ImportRow[] = [];
-      for (let r = 1; r < parsed.length; r++) {
+      for (let r = headerIdx + 1; r < parsed.length; r++) {
         const row = parsed[r];
         if (!row || row.every((c) => !c?.trim())) continue;
-        const username = (row[iUser] ?? "").trim();
+        const email = iEmail >= 0 ? (row[iEmail] ?? "").trim() : "";
+        let username = iUser >= 0 ? (row[iUser] ?? "").trim() : "";
+        if (!username && email.includes("@")) username = email.split("@")[0].trim();
         const studentId = (row[iSid] ?? "").trim();
         if (!username || !studentId) continue;
+        const section =
+          (iSectionCol >= 0 ? extractSection(row[iSectionCol]) : null) ??
+          (iCourse >= 0 ? extractSection(row[iCourse]) : null);
         out.push({
           lastName: (row[iLast] ?? "").trim(),
           firstName: (row[iFirst] ?? "").trim(),
           username,
           studentId,
-          section: iCourse >= 0 ? extractSection(row[iCourse]) : null,
+          section,
         });
       }
       if (out.length === 0) throw new Error("No valid rows found");
       setRows(out);
     } catch (e: any) {
-      setParseError(e?.message ?? "Failed to parse CSV");
+      setParseError(e?.message ?? "Failed to read file");
     }
   };
+
 
   const previewRows = useMemo(() => rows.slice(0, 10), [rows]);
 
