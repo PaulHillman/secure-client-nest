@@ -104,37 +104,46 @@ export const deleteAllStudents = createServerFn({ method: "POST" })
     await assertAdmin(context.supabase, context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: studentRows, error: rolesErr } = await supabaseAdmin
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "student");
-    if (rolesErr) throw new Error(rolesErr.message);
-
+    // Admins are anyone with the admin role — everyone else is treated as a student
     const { data: adminRows } = await supabaseAdmin
       .from("user_roles")
       .select("user_id")
       .eq("role", "admin");
     const adminIds = new Set((adminRows ?? []).map((r: any) => r.user_id));
+    adminIds.add(context.userId);
 
-    const ids = (studentRows ?? [])
-      .map((r: any) => r.user_id)
-      .filter((id: string) => id && !adminIds.has(id) && id !== context.userId);
+    const { data: profileRows, error: pErr } = await supabaseAdmin.from("profiles").select("id, email");
+    if (pErr) throw new Error(pErr.message);
+
+    const targets = (profileRows ?? []).filter((p: any) => p.id && !adminIds.has(p.id));
+    const ids = targets.map((p: any) => p.id);
 
     const result: PurgeResult = { deleted: 0, failed: [] };
+    if (ids.length === 0) return result;
 
-    for (const id of ids) {
-      // Clear references that don't cascade
-      await supabaseAdmin.from("notifications").delete().eq("user_id", id);
-      await supabaseAdmin.from("team_members").delete().eq("user_id", id);
-      await supabaseAdmin.from("files").update({ assigned_to: null }).eq("assigned_to", id);
+    // Clear dependent rows that block user deletion
+    await supabaseAdmin.from("notifications").delete().in("user_id", ids);
+    await supabaseAdmin.from("notifications").delete().in("actor_id", ids);
+    await supabaseAdmin.from("team_meeting_agreements").delete().in("user_id", ids);
+    await supabaseAdmin.from("team_meeting_proposals").delete().in("proposed_by", ids);
+    await supabaseAdmin.from("group_norms_signatures").delete().in("user_id", ids);
+    await supabaseAdmin.from("file_comments").delete().in("author_id", ids);
+    await supabaseAdmin.from("manager_submissions").delete().in("submitted_by", ids);
+    await supabaseAdmin.from("team_members").delete().in("user_id", ids);
+    await supabaseAdmin.from("files").update({ assigned_to: null }).in("assigned_to", ids);
 
-      const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
-      if (error) {
-        result.failed.push({ email: id, error: error.message });
-      } else {
-        result.deleted++;
+    for (const p of targets) {
+      const { error } = await supabaseAdmin.auth.admin.deleteUser(p.id);
+      if (error && !/not found/i.test(error.message)) {
+        result.failed.push({ email: p.email ?? p.id, error: error.message });
+        continue;
       }
+      // Remove the profile row too (covers orphaned profiles with no auth user)
+      await supabaseAdmin.from("profiles").delete().eq("id", p.id);
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", p.id);
+      result.deleted++;
     }
+
 
     return result;
   });
