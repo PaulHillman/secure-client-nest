@@ -1,14 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-async function assertAdmin(supabase: any, userId: string) {
-  const { data, error } = await supabase.rpc("has_role", {
-    _user_id: userId,
-    _role: "admin",
-  });
-  if (error || !data) throw new Error("Forbidden: admin role required");
-}
-
 export type ImportRow = {
   lastName: string;
   firstName: string;
@@ -23,8 +15,6 @@ export type ImportResult = {
   errors: { email: string; error: string }[];
 };
 
-const EMAIL_DOMAIN = "mail.gvsu.edu";
-
 export const bulkImportStudents = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { rows: ImportRow[] }) => {
@@ -34,7 +24,11 @@ export const bulkImportStudents = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ data, context }) => {
-    await assertAdmin(context.supabase, context.userId);
+    const { data: isAdmin, error: roleError } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (roleError || !isAdmin) throw new Error("Forbidden: admin role required");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const result: ImportResult = { created: 0, skipped: [], errors: [] };
@@ -54,7 +48,7 @@ export const bulkImportStudents = createServerFn({ method: "POST" })
         continue;
       }
 
-      const email = `${username}@${EMAIL_DOMAIN}`;
+      const email = `${username}@mail.gvsu.edu`;
       const fullName = `${firstName} ${lastName}`.trim();
 
       try {
@@ -101,7 +95,11 @@ export const deleteAllStudents = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ context }) => {
-    await assertAdmin(context.supabase, context.userId);
+    const { data: isAdmin, error: roleError } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (roleError || !isAdmin) throw new Error("Forbidden: admin role required");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // Admins are anyone with the admin role — everyone else is treated as a student
@@ -115,22 +113,48 @@ export const deleteAllStudents = createServerFn({ method: "POST" })
     const { data: profileRows, error: pErr } = await supabaseAdmin.from("profiles").select("id, email");
     if (pErr) throw new Error(pErr.message);
 
-    const targets = (profileRows ?? []).filter((p: any) => p.id && !adminIds.has(p.id));
-    const ids = targets.map((p: any) => p.id);
+    const authUsers: Array<{ id: string; email?: string }> = [];
+    let page = 1;
+    while (true) {
+      const { data: userPage, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage: 1000,
+      });
+      if (listError) throw new Error(`Could not list login accounts: ${listError.message}`);
+      authUsers.push(...userPage.users);
+      if (userPage.users.length < 1000) break;
+      page += 1;
+    }
+
+    const targetsById = new Map<string, { id: string; email?: string | null }>();
+    for (const user of authUsers) {
+      if (!adminIds.has(user.id)) targetsById.set(user.id, user);
+    }
+    for (const profile of profileRows ?? []) {
+      if (profile.id && !adminIds.has(profile.id)) targetsById.set(profile.id, profile);
+    }
+    const targets = Array.from(targetsById.values());
+    const ids = targets.map((target) => target.id);
 
     const result: PurgeResult = { deleted: 0, failed: [] };
     if (ids.length === 0) return result;
 
     // Clear dependent rows that block user deletion
-    await supabaseAdmin.from("notifications").delete().in("user_id", ids);
-    await supabaseAdmin.from("notifications").delete().in("actor_id", ids);
-    await supabaseAdmin.from("team_meeting_agreements").delete().in("user_id", ids);
-    await supabaseAdmin.from("team_meeting_proposals").delete().in("proposed_by", ids);
-    await supabaseAdmin.from("group_norms_signatures").delete().in("user_id", ids);
-    await supabaseAdmin.from("file_comments").delete().in("author_id", ids);
-    await supabaseAdmin.from("manager_submissions").delete().in("submitted_by", ids);
-    await supabaseAdmin.from("team_members").delete().in("user_id", ids);
-    await supabaseAdmin.from("files").update({ assigned_to: null }).in("assigned_to", ids);
+    const cleanupOperations = [
+      supabaseAdmin.from("notifications").delete().in("user_id", ids),
+      supabaseAdmin.from("notifications").delete().in("actor_id", ids),
+      supabaseAdmin.from("team_meeting_agreements").delete().in("user_id", ids),
+      supabaseAdmin.from("team_meeting_proposals").delete().in("proposed_by", ids),
+      supabaseAdmin.from("group_norms_signatures").delete().in("user_id", ids),
+      supabaseAdmin.from("file_comments").delete().in("author_id", ids),
+      supabaseAdmin.from("manager_submissions").delete().in("submitted_by", ids),
+      supabaseAdmin.from("team_members").delete().in("user_id", ids),
+      supabaseAdmin.from("auth_audit_log").delete().in("user_id", ids),
+      supabaseAdmin.from("files").update({ assigned_to: null }).in("assigned_to", ids),
+    ];
+    const cleanupResults = await Promise.all(cleanupOperations);
+    const cleanupError = cleanupResults.find((operation) => operation.error)?.error;
+    if (cleanupError) throw new Error(`Could not clean student records: ${cleanupError.message}`);
 
     for (const p of targets) {
       const { error } = await supabaseAdmin.auth.admin.deleteUser(p.id);
@@ -139,11 +163,16 @@ export const deleteAllStudents = createServerFn({ method: "POST" })
         continue;
       }
       // Remove the profile row too (covers orphaned profiles with no auth user)
-      await supabaseAdmin.from("profiles").delete().eq("id", p.id);
-      await supabaseAdmin.from("user_roles").delete().eq("user_id", p.id);
+      const { error: profileError } = await supabaseAdmin.from("profiles").delete().eq("id", p.id);
+      const { error: userRoleError } = await supabaseAdmin.from("user_roles").delete().eq("user_id", p.id);
+      if (profileError || userRoleError) {
+        result.failed.push({
+          email: p.email ?? p.id,
+          error: profileError?.message ?? userRoleError?.message ?? "Profile cleanup failed",
+        });
+        continue;
+      }
       result.deleted++;
     }
-
-
     return result;
   });
