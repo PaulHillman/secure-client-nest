@@ -237,6 +237,7 @@ export function BulkImportPanel() {
           username,
           studentId,
           section,
+          team: iTeam >= 0 ? (row[iTeam] ?? "").trim() || null : null,
         });
       }
       if (out.length === 0) throw new Error("No valid rows found");
@@ -469,6 +470,7 @@ export function BulkImportPanel() {
                     <th className="p-2">Email (derived)</th>
                     <th className="p-2">Initial password</th>
                     <th className="p-2">Section</th>
+                    <th className="p-2">Team</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -492,6 +494,7 @@ export function BulkImportPanel() {
                         <td className="p-2 font-mono">{r.username}@mail.gvsu.edu</td>
                         <td className="p-2 font-mono">{r.studentId}</td>
                         <td className="p-2">{r.section ?? "—"}</td>
+                        <td className="p-2">{r.team ?? "—"}</td>
                       </tr>
                     );
                   })}
