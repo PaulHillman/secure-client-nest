@@ -151,6 +151,8 @@ export const deleteAllStudents = createServerFn({ method: "POST" })
       supabaseAdmin.from("team_members").delete().in("user_id", ids),
       supabaseAdmin.from("auth_audit_log").delete().in("user_id", ids),
       supabaseAdmin.from("files").update({ assigned_to: null }).in("assigned_to", ids),
+      supabaseAdmin.from("files").update({ uploaded_by: context.userId }).in("uploaded_by", ids),
+      supabaseAdmin.from("file_versions").update({ uploaded_by: context.userId }).in("uploaded_by", ids),
     ];
     const cleanupResults = await Promise.all(cleanupOperations);
     const cleanupError = cleanupResults.find((operation) => operation.error)?.error;
