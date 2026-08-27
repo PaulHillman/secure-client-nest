@@ -407,6 +407,62 @@ function ResetDialog({
   );
 }
 
+function DeleteStudentsDialog({
+  onDelete,
+  loading,
+}: {
+  onDelete: (v: { confirm: string }) => void;
+  loading: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [confirm, setConfirm] = useState("");
+  const PHRASE = "DELETE STUDENTS";
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="destructive">
+          <Trash2 className="h-4 w-4 mr-1" /> Delete all students
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="font-display flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" /> Delete all student accounts
+          </DialogTitle>
+          <DialogDescription>
+            Permanently deletes every student login (and their profile, roles, team memberships and
+            notifications). Admin accounts, templates, the audit log and saved archives are kept.
+            Run a semester reset first if you also want to clear teams and files. This cannot be
+            undone — students will need to be re-imported.
+          </DialogDescription>
+        </DialogHeader>
+        <div>
+          <Label className="text-xs">Type {PHRASE} to confirm</Label>
+          <Input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder={PHRASE} />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            disabled={confirm !== PHRASE || loading}
+            onClick={() => {
+              onDelete({ confirm });
+              setConfirm("");
+              setOpen(false);
+            }}
+          >
+            {loading ? "Deleting…" : "Delete all students"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+
 function ArchiveRow({
   archive,
   onPromote,
