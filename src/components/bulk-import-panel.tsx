@@ -240,10 +240,16 @@ export function BulkImportPanel() {
             </Button>
           </div>
           <p className="text-muted-foreground">
-            Required columns: <code>Last Name</code>, <code>First Name</code>,{" "}
-            <code>Username</code>, <code>Student ID</code>. Optional:{" "}
-            <code>Child Course ID</code> (section parsed from second segment, e.g.{" "}
-            <code>GVMGT331.<b>03</b>.202610.12188</code> → section <b>03</b>).
+            Upload a <b>CSV or Excel</b> file. Column names are matched automatically, so
+            variations work: <code>Last Name</code>/<code>Lname</code>,{" "}
+            <code>First Name</code>/<code>Fname</code>, <code>Username</code>/<code>ID</code>/
+            <code>NetID</code> (or derived from <code>Email</code>), <code>Student ID</code>/
+            <code>G#</code>, and <code>Section</code>/<code>Child Course ID</code>.
+          </p>
+          <p className="text-muted-foreground">
+            Section is parsed from any common shape:{" "}
+            <code>GVMGT331.<b>03</b>.202610.12188</code>, <code>346-<b>01</b></code>, or{" "}
+            <code>MGT 331 <b>04</b></code>.
           </p>
           <p className="text-muted-foreground">
             Each account is created with email <code>username@mail.gvsu.edu</code> and
@@ -255,11 +261,11 @@ export function BulkImportPanel() {
         </div>
 
         <div>
-          <Label htmlFor="csv-file">CSV file</Label>
+          <Label htmlFor="csv-file">CSV or Excel file</Label>
           <Input
             id="csv-file"
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) onFile(f);
@@ -278,6 +284,20 @@ export function BulkImportPanel() {
             <span>{parseError}</span>
           </div>
         )}
+
+        {mapping.length > 0 && (
+          <div className="rounded-md border p-3 text-xs space-y-1">
+            <p className="font-medium text-sm">Detected columns</p>
+            <div className="flex flex-wrap gap-1.5">
+              {mapping.map((m) => (
+                <Badge key={m.field} variant="outline">
+                  {m.field} ← <code className="ml-1">{m.column}</code>
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
 
         {rows.length > 0 && (
           <div className="space-y-2">
