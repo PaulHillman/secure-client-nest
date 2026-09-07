@@ -2,7 +2,13 @@ import { useState, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import * as XLSX from "xlsx";
-import { bulkImportStudents, type ImportRow, type ImportResult } from "@/lib/students.functions";
+import JSZip from "jszip";
+import {
+  bulkImportStudents,
+  uploadStudentPhotos,
+  type ImportRow,
+  type ImportResult,
+} from "@/lib/students.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,9 +100,11 @@ const ALIASES = {
   team: ["team", "team name", "team number", "team #", "team no", "group", "group name", "group number", "team id"],
 };
 
-/** Read any uploaded file (csv/xlsx/xls) into a matrix of strings. */
-async function readSheet(file: File): Promise<string[][]> {
-  const isCsv = /\.csv$/i.test(file.name) || file.type === "text/csv";
+/** Photos pulled out of a roster .zip, keyed by uppercase G number. */
+type PhotoMap = Map<string, { fileName: string; dataBase64: string }>;
+
+async function matrixFromFile(file: File | Blob, name: string): Promise<string[][]> {
+  const isCsv = /\.csv$/i.test(name);
   if (isCsv) return parseCSV(await file.text());
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
@@ -105,10 +113,39 @@ async function readSheet(file: File): Promise<string[][]> {
   return matrix.map((r) => (r ?? []).map((c) => String(c ?? "")));
 }
 
+/**
+ * Read any uploaded file into a matrix of strings — plus photos when the upload is a
+ * roster .zip (EngageU export: one spreadsheet + a photos/ folder named ..._G########.jpg).
+ */
+async function readUpload(file: File): Promise<{ matrix: string[][]; photos: PhotoMap }> {
+  const photos: PhotoMap = new Map();
+  if (!/\.zip$/i.test(file.name)) {
+    return { matrix: await matrixFromFile(file, file.name), photos };
+  }
+  const zip = await JSZip.loadAsync(await file.arrayBuffer());
+  let sheetEntry: { name: string; blob: Blob } | null = null;
+  for (const entry of Object.values(zip.files)) {
+    if (entry.dir) continue;
+    const base = entry.name.split("/").pop() ?? "";
+    if (base.startsWith(".") || base.startsWith("__MACOSX")) continue;
+    if (!sheetEntry && /\.(csv|xlsx|xls)$/i.test(base)) {
+      sheetEntry = { name: base, blob: await entry.async("blob") };
+      continue;
+    }
+    if (/\.(jpe?g|png)$/i.test(base)) {
+      const g = base.match(/G\d{6,}/i)?.[0];
+      if (!g) continue;
+      photos.set(g.toUpperCase(), { fileName: base, dataBase64: await entry.async("base64") });
+    }
+  }
+  if (!sheetEntry) throw new Error("The zip has no CSV or Excel roster file inside");
+  return { matrix: await matrixFromFile(sheetEntry.blob, sheetEntry.name), photos };
+}
 
 export function BulkImportPanel() {
   const qc = useQueryClient();
   const importFn = useServerFn(bulkImportStudents);
+  const photoFn = useServerFn(uploadStudentPhotos);
   const [fileName, setFileName] = useState<string>("");
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -118,6 +155,8 @@ export function BulkImportPanel() {
   const [mapping, setMapping] = useState<{ field: string; column: string }[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
+  const [photos, setPhotos] = useState<PhotoMap>(new Map());
+  const [photoStatus, setPhotoStatus] = useState<string | null>(null);
 
   const rowKey = (r: ImportRow) => `${r.studentId}|${r.username}`;
 
@@ -145,6 +184,26 @@ export function BulkImportPanel() {
         }
         setResult({ ...total });
       }
+      // Attach roster photos (zip uploads) for the same students, in small batches.
+      const photoItems = picked
+        .map((r) => {
+          const p = photos.get(r.studentId.toUpperCase());
+          return p ? { email: `${r.username}@mail.gvsu.edu`, ...p } : null;
+        })
+        .filter(Boolean) as { email: string; fileName: string; dataBase64: string }[];
+      if (photoItems.length > 0) {
+        let uploaded = 0;
+        const PB = 10;
+        for (let i = 0; i < photoItems.length; i += PB) {
+          try {
+            const r = await photoFn({ data: { photos: photoItems.slice(i, i + PB) } });
+            uploaded += r.uploaded;
+          } catch {
+            /* reported in the summary below */
+          }
+          setPhotoStatus(`Photos attached: ${uploaded} of ${photoItems.length}`);
+        }
+      }
       return total;
     },
     onSuccess: (r) => {
@@ -165,9 +224,13 @@ export function BulkImportPanel() {
     setFilter("");
     setSectionFilter("all");
     setMapping([]);
+    setPhotos(new Map());
+    setPhotoStatus(null);
     setFileName(file.name);
     try {
-      const parsed = (await readSheet(file)).filter((r) => r.some((c) => c?.trim()));
+      const upload = await readUpload(file);
+      setPhotos(upload.photos);
+      const parsed = upload.matrix.filter((r) => r.some((c) => c?.trim()));
       if (parsed.length < 2) throw new Error("File has no data rows");
 
       // Header row is the first row within the first 5 that matches at least 2 known fields
@@ -327,7 +390,9 @@ export function BulkImportPanel() {
             </Button>
           </div>
           <p className="text-muted-foreground">
-            Upload a <b>CSV or Excel</b> file. Column names are matched automatically, so
+            Upload a <b>CSV, Excel, or a roster .zip</b> (an EngageU export with a spreadsheet
+            plus a <code>photos/</code> folder — pictures are matched by G number and attached to
+            each profile). Column names are matched automatically, so
             variations work: <code>Last Name</code>/<code>Lname</code>,{" "}
             <code>First Name</code>/<code>Fname</code>, <code>Username</code>/<code>ID</code>/
             <code>NetID</code> (or derived from <code>Email</code>), <code>Student ID</code>/
@@ -355,11 +420,11 @@ export function BulkImportPanel() {
         </div>
 
         <div>
-          <Label htmlFor="csv-file">CSV or Excel file</Label>
+          <Label htmlFor="csv-file">CSV, Excel, or roster .zip</Label>
           <Input
             id="csv-file"
             type="file"
-            accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+            accept=".zip,application/zip,.csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) onFile(f);
@@ -510,6 +575,15 @@ export function BulkImportPanel() {
             </div>
           </div>
         )}
+
+        {photos.size > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {photos.size} student photo{photos.size === 1 ? "" : "s"} found in this upload — they
+            will be attached to matching profiles automatically.
+          </p>
+        )}
+
+        {photoStatus && <p className="text-xs text-muted-foreground">{photoStatus}</p>}
 
         {result && (
           <div className="rounded-md border p-3 text-sm space-y-2">
