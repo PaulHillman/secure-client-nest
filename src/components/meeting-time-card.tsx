@@ -184,7 +184,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
         .split(/\s+/)
         .filter(Boolean)
         .slice(0, 3)
-        .map((s) => s[0]?.toUpperCase() ?? "")
+        .map((s: string) => s[0]?.toUpperCase() ?? "")
         .join("");
       const cleaned = (initials.trim() || derived).toUpperCase();
       if (!/^[A-Z]{2,4}$/.test(cleaned)) throw new Error("Enter 2–4 letter initials");
