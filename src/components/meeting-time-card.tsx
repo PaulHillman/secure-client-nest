@@ -89,41 +89,82 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
   // PM form state
   const [day, setDay] = useState<string>("");
   const [time, setTime] = useState<string>("");
+  const [location, setLocation] = useState<string>("");
+  const [mode, setMode] = useState<string>("");
+  const [c1, setC1] = useState<string>("");
+  const [c2, setC2] = useState<string>("");
+  const [c3, setC3] = useState<string>("");
 
   useEffect(() => {
     if (proposal) {
       setDay(String(proposal.day_of_week));
       setTime(proposal.meeting_time.slice(0, 5));
+      setLocation((proposal as any).location ?? "");
+      setMode((proposal as any).meeting_mode ?? "");
+      setC1((proposal as any).mode_choice_1 ?? "");
+      setC2((proposal as any).mode_choice_2 ?? "");
+      setC3((proposal as any).mode_choice_3 ?? "");
     }
   }, [proposal?.id, proposal?.day_of_week, proposal?.meeting_time]);
 
   const saveProposal = useMutation({
     mutationFn: async () => {
       if (day === "" || !time) throw new Error("Pick a day and time");
-      const payload = {
-        team_id: teamId,
+      const fields = {
         day_of_week: Number(day),
         meeting_time: time,
-        proposed_by: user!.id,
+        location: location.trim() || null,
+        meeting_mode: mode || null,
+        mode_choice_1: c1 || null,
+        mode_choice_2: c2 || null,
+        mode_choice_3: c3 || null,
       };
+      let changed = false;
       if (proposal) {
+        changed =
+          proposal.day_of_week !== fields.day_of_week ||
+          proposal.meeting_time.slice(0, 5) !== fields.meeting_time ||
+          ((proposal as any).location ?? null) !== fields.location ||
+          ((proposal as any).meeting_mode ?? null) !== fields.meeting_mode;
         const { error } = await supabase
           .from("team_meeting_proposals")
-          .update({ day_of_week: payload.day_of_week, meeting_time: payload.meeting_time, proposed_by: user!.id })
+          .update({ ...fields, proposed_by: user!.id })
           .eq("id", proposal.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("team_meeting_proposals").insert(payload);
+        const { error } = await supabase
+          .from("team_meeting_proposals")
+          .insert({ ...fields, team_id: teamId, proposed_by: user!.id });
         if (error) throw error;
       }
+      if (changed) {
+        try {
+          await notifyMeetingChange({
+            data: {
+              teamId,
+              message: `Meeting time changed to ${DAYS[fields.day_of_week]} ${fmtTime(fields.meeting_time)}${
+                fields.location ? ` · ${fields.location}` : ""
+              }${fields.meeting_mode ? ` · ${fields.meeting_mode}` : ""} — all members must re-approve.`,
+            },
+          });
+        } catch {
+          /* notification is best-effort */
+        }
+      }
+      return changed;
     },
-    onSuccess: () => {
-      toast.success("Proposal saved — teammates can now agree");
+    onSuccess: (changed) => {
+      toast.success(
+        changed
+          ? "Meeting details updated — approvals were reset and Professor Hillman was notified"
+          : "Proposal saved — teammates can now agree",
+      );
       qc.invalidateQueries({ queryKey: ["meeting-time", teamId] });
       qc.invalidateQueries({ queryKey: ["admin-consensus"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   // Member response
   const [initials, setInitials] = useState("");
