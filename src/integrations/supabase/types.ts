@@ -1334,6 +1334,7 @@ export type Database = {
         | "Video Specialist"
         | "Company Liaison"
         | "Researcher"
+        | "Unassigned"
       vault_status:
         | "Submitted"
         | "Awaiting Review"
@@ -1477,6 +1478,7 @@ export const Constants = {
         "Video Specialist",
         "Company Liaison",
         "Researcher",
+        "Unassigned",
       ],
       vault_status: [
         "Submitted",
