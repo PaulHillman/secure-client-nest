@@ -6,6 +6,7 @@ import { Users } from "lucide-react";
 
 const JOB_ORDER = [
   "PM",
+  "Client Vault & Tech Administrator",
   "Company Liaison",
   "Video Specialist",
   "Communication Specialist",

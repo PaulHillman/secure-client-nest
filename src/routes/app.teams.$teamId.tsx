@@ -14,6 +14,7 @@ import { ManagerSubmissions } from "@/components/manager-submissions";
 import { CompanyFocusCard } from "@/components/company-focus-card";
 import { ProjectArchCard } from "@/components/project-arch-card";
 import { MeetingTimeCard } from "@/components/meeting-time-card";
+import { VaultAdminDutiesCard, VAULT_ADMIN_ROLE } from "@/components/vault-admin-duties-card";
 
 export const Route = createFileRoute("/app/teams/$teamId")({
   head: () => ({ meta: [{ title: "Team — ClientVault" }] }),
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/app/teams/$teamId")({
 const ROLE_ORDER = [
   "PM",
   "Company Liaison",
+  "Client Vault & Tech Administrator",
   "Communication Specialist",
   "Video Specialist",
   "Unassigned",
@@ -134,6 +136,10 @@ function TeamDetail() {
           </div>
         )}
       </section>
+
+      <VaultAdminDutiesCard
+        holder={members.find((m) => m.job_title === VAULT_ADMIN_ROLE)?.profiles?.name ?? null}
+      />
 
       <MeetingTimeCard teamId={teamId} />
 
