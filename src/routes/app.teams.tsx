@@ -1,27 +1,51 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { teamPrimaryName } from "@/lib/team-label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Building2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Building2, Search, ArrowUpDown } from "lucide-react";
 
 export const Route = createFileRoute("/app/teams")({
   head: () => ({ meta: [{ title: "Teams — ClientVault" }] }),
   component: Teams,
 });
 
+type SortMode = "section-team" | "name-asc" | "team-number";
+
+function extractTeamNumber(name: string | null): number {
+  if (!name) return Infinity;
+  const match = name.match(/\d+/);
+  return match ? parseInt(match[0], 10) : Infinity;
+}
+
+function normalizeSection(section: string | null): string {
+  return section ?? "";
+}
+
 function Teams() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const { user, isAdmin } = useAuth();
+
+  const [sortBy, setSortBy] = useState<SortMode>(isAdmin ? "section-team" : "section-team");
+  const [sectionFilter, setSectionFilter] = useState<string>("all");
+  const [searchText, setSearchText] = useState("");
 
   const { data: teams } = useQuery({
     queryKey: ["teams"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("teams")
-        .select("id, name, display_name, description, section, company_focus(company_name, industry)")
-        .order("name");
+        .select("id, name, display_name, description, section, company_focus(company_name, industry)");
       if (error) throw error;
       return data;
     },
@@ -42,16 +66,123 @@ function Teams() {
 
   const myTeamIds = memberships ?? new Set<string>();
 
+  const sections = useMemo(() => {
+    const set = new Set<string>();
+    (teams ?? []).forEach((t) => {
+      if (t.section) set.add(t.section);
+    });
+    return Array.from(set).sort((a, b) => {
+      const na = parseInt(a, 10);
+      const nb = parseInt(b, 10);
+      if (!isNaN(na) && !isNaN(nb)) return na - nb;
+      return a.localeCompare(b);
+    });
+  }, [teams]);
+
+  const filteredTeams = useMemo(() => {
+    let list = (teams ?? []).slice();
+
+    const query = searchText.trim().toLowerCase();
+    if (query) {
+      list = list.filter((t) => {
+        const primary = teamPrimaryName(t).toLowerCase();
+        const name = (t.name ?? "").toLowerCase();
+        const section = (t.section ?? "").toLowerCase();
+        const teamNum = String(extractTeamNumber(t.name));
+        return (
+          primary.includes(query) ||
+          name.includes(query) ||
+          section.includes(query) ||
+          teamNum.includes(query)
+        );
+      });
+    }
+
+    if (sectionFilter !== "all") {
+      list = list.filter((t) => t.section === sectionFilter);
+    }
+
+    list.sort((a, b) => {
+      const sa = normalizeSection(a.section);
+      const sb = normalizeSection(b.section);
+      const na = parseInt(sa, 10);
+      const nb = parseInt(sb, 10);
+
+      if (sortBy === "section-team") {
+        if (!isNaN(na) && !isNaN(nb) && na !== nb) return na - nb;
+        if (sa !== sb) return sa.localeCompare(sb);
+        return extractTeamNumber(a.name) - extractTeamNumber(b.name);
+      }
+
+      if (sortBy === "team-number") {
+        return extractTeamNumber(a.name) - extractTeamNumber(b.name);
+      }
+
+      // name-asc
+      const pa = teamPrimaryName(a).toLowerCase();
+      const pb = teamPrimaryName(b).toLowerCase();
+      return pa.localeCompare(pb);
+    });
+
+    return list;
+  }, [teams, searchText, sectionFilter, sortBy]);
+
   if (pathname !== "/app/teams") {
     return <Outlet />;
   }
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
-      <header className="mb-8">
+      <header className="mb-6">
         <h1 className="font-display text-4xl">Teams</h1>
         <p className="text-sm text-muted-foreground mt-1">All MGT 331 consulting teams.</p>
       </header>
+
+      {isAdmin && (
+        <div className="mb-6 flex flex-col sm:flex-row gap-3">
+          <div className="flex-1 min-w-[200px]">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Filter by team name, number, or section…"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+
+          <div className="w-full sm:w-44">
+            <Select value={sectionFilter} onValueChange={setSectionFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="All sections" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All sections</SelectItem>
+                {sections.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    Section {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="w-full sm:w-52">
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortMode)}>
+              <SelectTrigger>
+                <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="section-team">Section, then Team #</SelectItem>
+                <SelectItem value="name-asc">Team name A–Z</SelectItem>
+                <SelectItem value="team-number">Team number</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
 
       {teams && teams.length === 0 && (
         <Card className="border-dashed">
@@ -61,8 +192,16 @@ function Teams() {
         </Card>
       )}
 
+      {filteredTeams.length === 0 && teams && teams.length > 0 && (
+        <Card className="border-dashed">
+          <CardContent className="py-10 text-center text-muted-foreground text-sm">
+            No teams match your filters.
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {teams?.map((t) => {
+        {filteredTeams.map((t) => {
           const cf = Array.isArray(t.company_focus) ? t.company_focus[0] : t.company_focus;
           const isMine = myTeamIds.has(t.id);
           const canEnter = isAdmin || isMine;
