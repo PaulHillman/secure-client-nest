@@ -136,7 +136,13 @@ export const bulkImportStudents = createServerFn({ method: "POST" })
         // Update profile (trigger already inserted profile+role). Names come from the
         // export and may be preferred names ("Nick" instead of "Nikolai") — keep them in sync.
         if (userId) {
-          const patch: Record<string, unknown> = { student_id: studentId };
+          const patch: {
+            student_id: string;
+            section?: string;
+            first_name?: string;
+            last_name?: string;
+            name?: string;
+          } = { student_id: studentId };
           if (section) patch.section = section;
           if (firstName) patch.first_name = firstName;
           if (lastName) patch.last_name = lastName;
