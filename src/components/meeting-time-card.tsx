@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -14,10 +15,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { CalendarClock, Check, X, CircleDashed } from "lucide-react";
+import { CalendarClock, Check, X, CircleDashed, MapPin, Video } from "lucide-react";
 import { toast } from "sonner";
+import { MEETING_MODES } from "@/lib/meeting-agreement";
+import { notifyMeetingChange } from "@/lib/meeting.functions";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
 
 function fmtTime(t: string) {
   // t is "HH:MM[:SS]"
@@ -89,41 +93,82 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
   // PM form state
   const [day, setDay] = useState<string>("");
   const [time, setTime] = useState<string>("");
+  const [location, setLocation] = useState<string>("");
+  const [mode, setMode] = useState<string>("");
+  const [c1, setC1] = useState<string>("");
+  const [c2, setC2] = useState<string>("");
+  const [c3, setC3] = useState<string>("");
 
   useEffect(() => {
     if (proposal) {
       setDay(String(proposal.day_of_week));
       setTime(proposal.meeting_time.slice(0, 5));
+      setLocation((proposal as any).location ?? "");
+      setMode((proposal as any).meeting_mode ?? "");
+      setC1((proposal as any).mode_choice_1 ?? "");
+      setC2((proposal as any).mode_choice_2 ?? "");
+      setC3((proposal as any).mode_choice_3 ?? "");
     }
   }, [proposal?.id, proposal?.day_of_week, proposal?.meeting_time]);
 
   const saveProposal = useMutation({
     mutationFn: async () => {
       if (day === "" || !time) throw new Error("Pick a day and time");
-      const payload = {
-        team_id: teamId,
+      const fields = {
         day_of_week: Number(day),
         meeting_time: time,
-        proposed_by: user!.id,
+        location: location.trim() || null,
+        meeting_mode: mode || null,
+        mode_choice_1: c1 || null,
+        mode_choice_2: c2 || null,
+        mode_choice_3: c3 || null,
       };
+      let changed = false;
       if (proposal) {
+        changed =
+          proposal.day_of_week !== fields.day_of_week ||
+          proposal.meeting_time.slice(0, 5) !== fields.meeting_time ||
+          ((proposal as any).location ?? null) !== fields.location ||
+          ((proposal as any).meeting_mode ?? null) !== fields.meeting_mode;
         const { error } = await supabase
           .from("team_meeting_proposals")
-          .update({ day_of_week: payload.day_of_week, meeting_time: payload.meeting_time, proposed_by: user!.id })
+          .update({ ...fields, proposed_by: user!.id })
           .eq("id", proposal.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("team_meeting_proposals").insert(payload);
+        const { error } = await supabase
+          .from("team_meeting_proposals")
+          .insert({ ...fields, team_id: teamId, proposed_by: user!.id });
         if (error) throw error;
       }
+      if (changed) {
+        try {
+          await notifyMeetingChange({
+            data: {
+              teamId,
+              message: `Meeting time changed to ${DAYS[fields.day_of_week]} ${fmtTime(fields.meeting_time)}${
+                fields.location ? ` · ${fields.location}` : ""
+              }${fields.meeting_mode ? ` · ${fields.meeting_mode}` : ""} — all members must re-approve.`,
+            },
+          });
+        } catch {
+          /* notification is best-effort */
+        }
+      }
+      return changed;
     },
-    onSuccess: () => {
-      toast.success("Proposal saved — teammates can now agree");
+    onSuccess: (changed) => {
+      toast.success(
+        changed
+          ? "Meeting details updated — approvals were reset and Professor Hillman was notified"
+          : "Proposal saved — teammates can now agree",
+      );
       qc.invalidateQueries({ queryKey: ["meeting-time", teamId] });
       qc.invalidateQueries({ queryKey: ["admin-consensus"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   // Member response
   const [initials, setInitials] = useState("");
@@ -135,8 +180,15 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
   const respond = useMutation({
     mutationFn: async (status: "agreed" | "declined") => {
       if (!proposal) throw new Error("No proposal yet");
-      const cleaned = initials.trim().toUpperCase();
+      const derived = (me?.name ?? "")
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 3)
+        .map((s: string) => s[0]?.toUpperCase() ?? "")
+        .join("");
+      const cleaned = (initials.trim() || derived).toUpperCase();
       if (!/^[A-Z]{2,4}$/.test(cleaned)) throw new Error("Enter 2–4 letter initials");
+
       // upsert
       const { error } = await supabase
         .from("team_meeting_agreements")
@@ -185,6 +237,14 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                 <div className="font-medium text-lg">
                   {DAYS[proposal.day_of_week]} at {fmtTime(proposal.meeting_time)}
                 </div>
+                <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {(proposal as any).location || <span className="italic">No place set</span>}
+                </div>
+                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Video className="h-3.5 w-3.5" />
+                  {(proposal as any).meeting_mode || <span className="italic">No mode set</span>}
+                </div>
               </div>
             ) : (
               <p className="text-sm text-muted-foreground italic">
@@ -198,7 +258,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                 <div className="text-xs font-medium uppercase tracking-wide text-gold">
                   PM: {proposal ? "Update" : "Propose"} meeting time
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px_auto] gap-2 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-2 items-end">
                   <div>
                     <Label className="text-xs">Day</Label>
                     <Select value={day} onValueChange={setDay}>
@@ -214,15 +274,58 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                     <Label className="text-xs">Time</Label>
                     <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
                   </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-end">
+                  <div>
+                    <Label className="text-xs">Where will you meet?</Label>
+                    <Input
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="e.g. Library room 214, or Zoom link"
+                      maxLength={200}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">How will you meet?</Label>
+                    <Select value={mode} onValueChange={setMode}>
+                      <SelectTrigger><SelectValue placeholder="Pick a mode" /></SelectTrigger>
+                      <SelectContent>
+                        {MEETING_MODES.map((m) => (
+                          <SelectItem key={m} value={m}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
+                  {([["1st choice", c1, setC1], ["2nd choice", c2, setC2], ["3rd choice", c3, setC3]] as const).map(
+                    ([label, val, set]) => (
+                      <div key={label}>
+                        <Label className="text-xs">Mode preference · {label}</Label>
+                        <Select value={val} onValueChange={set as (v: string) => void}>
+                          <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
+                          <SelectContent>
+                            {MEETING_MODES.map((m) => (
+                              <SelectItem key={m} value={m}>{m}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ),
+                  )}
+                </div>
+                <div>
                   <Button onClick={() => saveProposal.mutate()} disabled={saveProposal.isPending}>
                     {proposal ? "Update" : "Submit"}
                   </Button>
                 </div>
                 {proposal && (
                   <p className="text-xs text-muted-foreground">
-                    Changing day/time will reset everyone's agreement.
+                    Changing the day, time, place or mode resets everyone's agreement and notifies
+                    Professor Hillman.
                   </p>
                 )}
+
               </div>
             )}
 
@@ -269,42 +372,37 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
               </ul>
             </div>
 
-            {/* My response — every member including PM signs off with initials */}
+            {/* My response — every member including PM signs the agreement */}
             {me && proposal && (
-              <div className="rounded-md border p-3 space-y-2">
+              <div className="rounded-md border p-3 space-y-3">
                 <div className="text-xs font-medium uppercase tracking-wide">
-                  {isPM ? "Confirm your own proposal" : "Your response"}
+                  {me.agreement?.status === "agreed" ? "You have signed" : "Your approval is required"}
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
-                  <div className="flex-1">
-                    <Label className="text-xs">Your initials (2–4 letters)</Label>
-                    <Input
-                      value={initials}
-                      onChange={(e) => setInitials(e.target.value.toUpperCase())}
-                      maxLength={4}
-                      placeholder="e.g. JLD"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={() => respond.mutate("agreed")} disabled={respond.isPending}>
-                      <Check className="h-4 w-4 mr-1" /> Agree
-                    </Button>
-                    {!isPM && (
-                      <Button
-                        variant="outline"
-                        onClick={() => respond.mutate("declined")}
-                        disabled={respond.isPending}
-                      >
-                        <X className="h-4 w-4 mr-1" /> Decline
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Your initials act as your e-signature on this meeting time.
+                <p className="text-sm text-muted-foreground">
+                  Every member must read and sign the Meeting Time Agreement, including the rule that
+                  whoever needs a time change is responsible for negotiating the new time, updating
+                  ClientVault, and notifying Professor Hillman.
                 </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild>
+                    <Link to="/app/agreement">
+                      <Check className="h-4 w-4 mr-1" />
+                      {me.agreement?.status === "agreed" ? "Review my signature" : "Read & sign the agreement"}
+                    </Link>
+                  </Button>
+                  {me.agreement?.status !== "declined" && (
+                    <Button
+                      variant="outline"
+                      onClick={() => respond.mutate("declined")}
+                      disabled={respond.isPending}
+                    >
+                      <X className="h-4 w-4 mr-1" /> I do not agree
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
+
           </>
         )}
       </CardContent>

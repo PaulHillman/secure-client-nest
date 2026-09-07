@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, Link, Navigate, useRouterState } from "@tansta
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, Users, FolderLock, LogOut, FolderOpen, ClipboardList, ListTodo } from "lucide-react";
+import { LayoutDashboard, Users, FolderLock, LogOut, FolderOpen, ClipboardList, ListTodo, FileSignature } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/notifications-bell";
 import logoAsset from "@/assets/clientvault-safe.png.asset.json";
@@ -36,6 +36,7 @@ function AppLayout() {
   const nav = [
     { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/app/teams", label: "Teams", icon: Users },
+    { to: "/app/agreement", label: "Meeting Agreement", icon: FileSignature },
     { to: "/app/vault", label: "File Vault", icon: FolderOpen },
     ...(isAdmin
       ? [

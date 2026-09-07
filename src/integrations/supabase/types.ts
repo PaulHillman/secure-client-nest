@@ -1141,6 +1141,9 @@ export type Database = {
       }
       team_meeting_agreements: {
         Row: {
+          agreement_text: string | null
+          agreement_version: string | null
+          full_name: string | null
           id: string
           initials: string
           proposal_id: string
@@ -1150,6 +1153,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agreement_text?: string | null
+          agreement_version?: string | null
+          full_name?: string | null
           id?: string
           initials: string
           proposal_id: string
@@ -1159,6 +1165,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agreement_text?: string | null
+          agreement_version?: string | null
+          full_name?: string | null
           id?: string
           initials?: string
           proposal_id?: string
@@ -1189,7 +1198,12 @@ export type Database = {
           created_at: string
           day_of_week: number
           id: string
+          location: string | null
+          meeting_mode: string | null
           meeting_time: string
+          mode_choice_1: string | null
+          mode_choice_2: string | null
+          mode_choice_3: string | null
           proposed_by: string
           team_id: string
           updated_at: string
@@ -1198,7 +1212,12 @@ export type Database = {
           created_at?: string
           day_of_week: number
           id?: string
+          location?: string | null
+          meeting_mode?: string | null
           meeting_time: string
+          mode_choice_1?: string | null
+          mode_choice_2?: string | null
+          mode_choice_3?: string | null
           proposed_by: string
           team_id: string
           updated_at?: string
@@ -1207,7 +1226,12 @@ export type Database = {
           created_at?: string
           day_of_week?: number
           id?: string
+          location?: string | null
+          meeting_mode?: string | null
           meeting_time?: string
+          mode_choice_1?: string | null
+          mode_choice_2?: string | null
+          mode_choice_3?: string | null
           proposed_by?: string
           team_id?: string
           updated_at?: string

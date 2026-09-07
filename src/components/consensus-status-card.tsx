@@ -12,34 +12,43 @@ export function ConsensusStatusCard() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin-consensus"],
     queryFn: async () => {
-      const [{ data: teams, error: tErr }, { data: members, error: mErr }, { data: proposals, error: pErr }, { data: agreements, error: aErr }] =
+      const [{ data: teams, error: tErr }, { data: members, error: mErr }, { data: proposals, error: pErr }, { data: agreements, error: aErr }, { data: profiles }] =
         await Promise.all([
           supabase.from("teams").select("id, name, section"),
           supabase.from("team_members").select("team_id, user_id"),
           supabase.from("team_meeting_proposals").select("*"),
           supabase.from("team_meeting_agreements").select("proposal_id, user_id, status"),
+          supabase.from("profiles").select("id, name"),
         ]);
       if (tErr) throw tErr;
       if (mErr) throw mErr;
       if (pErr) throw pErr;
       if (aErr) throw aErr;
 
-      const memberCounts = new Map<string, number>();
+      const nameById = new Map((profiles ?? []).map((p) => [p.id, p.name]));
+      const membersByTeam = new Map<string, string[]>();
       (members ?? []).forEach((m) => {
-        memberCounts.set(m.team_id, (memberCounts.get(m.team_id) ?? 0) + 1);
+        membersByTeam.set(m.team_id, [...(membersByTeam.get(m.team_id) ?? []), m.user_id]);
       });
       const proposalByTeam = new Map((proposals ?? []).map((p) => [p.team_id, p]));
-      const agreedByProposal = new Map<string, number>();
+      const agreedByProposal = new Map<string, Set<string>>();
       (agreements ?? []).forEach((a) => {
         if (a.status === "agreed") {
-          agreedByProposal.set(a.proposal_id, (agreedByProposal.get(a.proposal_id) ?? 0) + 1);
+          const set = agreedByProposal.get(a.proposal_id) ?? new Set<string>();
+          set.add(a.user_id);
+          agreedByProposal.set(a.proposal_id, set);
         }
       });
 
       return (teams ?? []).map((t) => {
-        const proposal = proposalByTeam.get(t.id);
-        const total = memberCounts.get(t.id) ?? 0;
-        const agreed = proposal ? agreedByProposal.get(proposal.id) ?? 0 : 0;
+        const proposal = proposalByTeam.get(t.id) as any;
+        const memberIds = membersByTeam.get(t.id) ?? [];
+        const total = memberIds.length;
+        const agreedSet = proposal ? agreedByProposal.get(proposal.id) ?? new Set<string>() : new Set<string>();
+        const agreed = memberIds.filter((id) => agreedSet.has(id)).length;
+        const outstanding = memberIds
+          .filter((id) => !agreedSet.has(id))
+          .map((id) => nameById.get(id) ?? "Unknown");
         const hasConsensus = !!proposal && total > 0 && agreed >= total;
         return {
           id: t.id,
@@ -47,11 +56,13 @@ export function ConsensusStatusCard() {
           proposal,
           total,
           agreed,
+          outstanding,
           hasConsensus,
         };
       });
     },
   });
+
 
   const teams = data ?? [];
   const withoutConsensus = teams.filter((t) => !t.hasConsensus);
@@ -79,26 +90,36 @@ export function ConsensusStatusCard() {
         ) : (
           <ul className="divide-y rounded-md border">
             {withoutConsensus.map((t) => (
-              <li key={t.id} className="p-3 flex items-center gap-3">
-                <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
-                <Link
-                  to="/app/teams/$teamId"
-                  params={{ teamId: t.id }}
-                  className="font-medium hover:underline flex-1 min-w-0 truncate"
-                >
-                  {t.name}
-                </Link>
-                <div className="text-xs text-muted-foreground">
+              <li key={t.id} className="p-3 flex items-start gap-3">
+                <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-1" />
+                <div className="flex-1 min-w-0">
+                  <Link
+                    to="/app/teams/$teamId"
+                    params={{ teamId: t.id }}
+                    className="font-medium hover:underline block truncate"
+                  >
+                    {t.name}
+                  </Link>
                   {t.proposal ? (
-                    <>
-                      {DAYS[t.proposal.day_of_week]} {t.proposal.meeting_time.slice(0, 5)} ·{" "}
-                      {t.agreed}/{t.total} agreed
-                    </>
+                    <div className="text-xs text-muted-foreground">
+                      {DAYS[t.proposal.day_of_week]} {t.proposal.meeting_time.slice(0, 5)}
+                      {t.proposal.location ? ` · ${t.proposal.location}` : ""}
+                      {t.proposal.meeting_mode ? ` · ${t.proposal.meeting_mode}` : ""}
+                    </div>
                   ) : (
-                    <span className="italic">No proposal yet</span>
+                    <div className="text-xs text-muted-foreground italic">No proposal yet</div>
+                  )}
+                  {t.outstanding.length > 0 && (
+                    <div className="text-xs text-amber-700 mt-0.5 truncate">
+                      Waiting on: {t.outstanding.join(", ")}
+                    </div>
                   )}
                 </div>
+                <div className="text-xs text-muted-foreground whitespace-nowrap">
+                  {t.agreed}/{t.total} signed
+                </div>
               </li>
+
             ))}
           </ul>
         )}
