@@ -55,7 +55,7 @@ function AppLayout() {
             <span className="vault-client-slide text-sidebar-foreground">Client</span><span className="text-gold">Vault</span>
           </span>
         </Link>
-        <nav className="mt-6 flex-1 space-y-1">
+        <nav className="mt-6 space-y-1">
           {nav.map((n) => {
             const active = path.startsWith(n.to);
             return (
@@ -68,7 +68,7 @@ function AppLayout() {
             );
           })}
         </nav>
-        <div className="border-t border-sidebar-border pt-3">
+        <div className="border-t border-sidebar-border mt-4 pt-3 flex-shrink-0">
           <div className="px-2">
             <div className="text-sm font-medium text-sidebar-foreground truncate">
               {profile?.first_name && profile?.last_name
