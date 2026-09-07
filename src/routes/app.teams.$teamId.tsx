@@ -72,13 +72,16 @@ function TeamDetail() {
     },
   });
 
+  const { user } = useAuth();
   const team = data?.team;
   const cf = data?.companyFocus;
+  const isMember = !!user && (data?.members ?? []).some((m) => m.user_id === user.id);
   const members = (data?.members ?? []).slice().sort((a, b) => {
     const ai = ROLE_ORDER.indexOf(a.job_title);
     const bi = ROLE_ORDER.indexOf(b.job_title);
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
   });
+
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
@@ -87,13 +90,14 @@ function TeamDetail() {
       </Link>
 
       <header className="mt-4 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-4xl">{team?.name ?? (isLoading ? "Loading…" : "Team")}</h1>
-          {team?.section && (
-            <p className="text-sm text-muted-foreground mt-1">Section §{team.section}</p>
-          )}
-        </div>
+        <TeamNameHeader
+          team={team as any}
+          isLoading={isLoading}
+          canEdit={isMember}
+          onSaved={() => refetch()}
+        />
       </header>
+
 
       <CompanyFocusCard teamId={teamId} cf={cf as any} queryKey={["team", teamId]} />
 
@@ -259,5 +263,91 @@ function MemberCard({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function TeamNameHeader({
+  team,
+  isLoading,
+  canEdit,
+  onSaved,
+}: {
+  team: { id: string; name: string; section: string | null; display_name: string | null } | undefined;
+  isLoading: boolean;
+  canEdit: boolean;
+  onSaved: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const custom = team?.display_name?.trim() || "";
+  const primary = custom || team?.name || (isLoading ? "Loading…" : "Team");
+
+  const save = async () => {
+    if (!team) return;
+    setSaving(true);
+    const next = value.trim();
+    const { error } = await supabase
+      .from("teams")
+      .update({ display_name: next || null })
+      .eq("id", team.id);
+    setSaving(false);
+    if (error) {
+      toast.error("Could not save the team name");
+      return;
+    }
+    toast.success(next ? "Team name saved" : "Team name cleared");
+    setEditing(false);
+    onSaved();
+  };
+
+  return (
+    <div className="min-w-0">
+      {editing ? (
+        <div className="flex items-center gap-2">
+          <Input
+            autoFocus
+            value={value}
+            maxLength={60}
+            placeholder="Team name"
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") save();
+              if (e.key === "Escape") setEditing(false);
+            }}
+            className="text-2xl h-12 font-display"
+          />
+          <Button size="icon" onClick={save} disabled={saving} aria-label="Save team name">
+            <Check className="h-4 w-4" />
+          </Button>
+          <Button size="icon" variant="ghost" onClick={() => setEditing(false)} aria-label="Cancel">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 flex-wrap">
+          <h1 className="font-display text-4xl">{primary}</h1>
+          {canEdit && team && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setValue(custom);
+                setEditing(true);
+              }}
+            >
+              <Pencil className="h-3.5 w-3.5 mr-1" />
+              {custom ? "Rename" : "Add team name"}
+            </Button>
+          )}
+        </div>
+      )}
+      <p className="text-sm text-muted-foreground mt-1">
+        {custom ? `${team?.name}` : null}
+        {custom && team?.section ? " · " : null}
+        {team?.section ? `Section ${team.section}` : null}
+      </p>
+    </div>
   );
 }
