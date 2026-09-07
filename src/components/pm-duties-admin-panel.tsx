@@ -70,7 +70,7 @@ export function PmDutiesAdminPanel() {
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: Record<string, unknown> }) => {
+    mutationFn: async ({ id, patch }: { id: string; patch: { title?: string; due_at?: string | null; active?: boolean } }) => {
       const { error } = await supabase.from("pm_duties").update(patch).eq("id", id);
       if (error) throw error;
     },

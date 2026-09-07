@@ -47,7 +47,13 @@ export const notifyOverdueDuties = createServerFn({ method: "POST" })
     }
     const adminIds = (admins ?? []).map((a) => a.user_id);
 
-    const rows: Record<string, unknown>[] = [];
+    const rows: {
+      user_id: string;
+      team_id: string;
+      actor_id: string;
+      kind: string;
+      message: string;
+    }[] = [];
     let overdue = 0;
 
     for (const team of teams) {
