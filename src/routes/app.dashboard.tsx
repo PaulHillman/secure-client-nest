@@ -142,6 +142,20 @@ function Dashboard() {
         <h1 className="font-display text-4xl mt-1">Your workspace</h1>
       </header>
 
+      <Card className="mb-6 border-border/60">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
+              <h2 className="font-display text-lg mt-0.5">{isAdmin ? "Admin session" : "Student session"}</h2>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => void signOut()}>
+              <LogOut className="mr-2 h-4 w-4" />Sign out
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="mb-6">
         <MyProfileCard />
       </div>
