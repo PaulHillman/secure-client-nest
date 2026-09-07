@@ -14,6 +14,7 @@ import { StudentActivityScoreCard } from "@/components/student-activity-score-ca
 import { SluggoFlagCard } from "@/components/sluggo-flag-card";
 import { TeamActivityDashboardCard } from "@/components/team-activity-dashboard-card";
 import { CrossTeamComparisonCard } from "@/components/cross-team-comparison-card";
+import { MyProfileCard } from "@/components/my-profile-card";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ClientVault" }] }),
