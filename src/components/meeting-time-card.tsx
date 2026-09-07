@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -14,10 +15,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { CalendarClock, Check, X, CircleDashed } from "lucide-react";
+import { CalendarClock, Check, X, CircleDashed, MapPin, Video } from "lucide-react";
 import { toast } from "sonner";
+import { MEETING_MODES } from "@/lib/meeting-agreement";
+import { notifyMeetingChange } from "@/lib/meeting.functions";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
 
 function fmtTime(t: string) {
   // t is "HH:MM[:SS]"
