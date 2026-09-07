@@ -967,6 +967,69 @@ export type Database = {
           },
         ]
       }
+      meeting_logs: {
+        Row: {
+          as_agreed: boolean
+          created_at: string
+          deviation_reason: string | null
+          id: string
+          location: string
+          logged_by: string
+          meeting_date: string
+          meeting_mode: string | null
+          meeting_time: string
+          minutes_file_id: string | null
+          minutes_posted: boolean
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          as_agreed?: boolean
+          created_at?: string
+          deviation_reason?: string | null
+          id?: string
+          location: string
+          logged_by: string
+          meeting_date: string
+          meeting_mode?: string | null
+          meeting_time: string
+          minutes_file_id?: string | null
+          minutes_posted?: boolean
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          as_agreed?: boolean
+          created_at?: string
+          deviation_reason?: string | null
+          id?: string
+          location?: string
+          logged_by?: string
+          meeting_date?: string
+          meeting_mode?: string | null
+          meeting_time?: string
+          minutes_file_id?: string | null
+          minutes_posted?: boolean
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_logs_minutes_file_id_fkey"
+            columns: ["minutes_file_id"]
+            isOneToOne: false
+            referencedRelation: "files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_logs_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           actor_id: string | null

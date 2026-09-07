@@ -14,6 +14,8 @@ import { ManagerSubmissions } from "@/components/manager-submissions";
 import { CompanyFocusCard } from "@/components/company-focus-card";
 import { ProjectArchCard } from "@/components/project-arch-card";
 import { MeetingTimeCard } from "@/components/meeting-time-card";
+import { MeetingLogCard } from "@/components/meeting-log-card";
+
 import { VAULT_ADMIN_ROLE } from "@/components/vault-admin-duties-card";
 
 
@@ -142,6 +144,9 @@ function TeamDetail() {
 
 
       <MeetingTimeCard teamId={teamId} />
+
+      <MeetingLogCard teamId={teamId} />
+
 
       <ManagerSubmissions teamId={teamId} />
 
