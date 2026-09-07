@@ -308,13 +308,13 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                     {proposal ? "Update" : "Submit"}
                   </Button>
                 </div>
-
-                </div>
                 {proposal && (
                   <p className="text-xs text-muted-foreground">
-                    Changing day/time will reset everyone's agreement.
+                    Changing the day, time, place or mode resets everyone's agreement and notifies
+                    Professor Hillman.
                   </p>
                 )}
+
               </div>
             )}
 
