@@ -241,10 +241,18 @@ function Teams() {
 
               <CardContent className="text-sm text-muted-foreground">
                 {cf ? (
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-gold" />
-                    <span className="text-foreground">{cf.company_name}</span>
-                    {cf.industry && <span className="text-xs">· {cf.industry}</span>}
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-gold" />
+                      <span className="text-foreground">{cf.company_name}</span>
+                      {cf.industry && <span className="text-xs">· {cf.industry}</span>}
+                    </div>
+                    {cf.contact_person && (
+                      <div className="text-xs pl-6">
+                        Manager: {cf.contact_person}
+                        {cf.contact_job_title && <span className="text-muted-foreground">, {cf.contact_job_title}</span>}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <span className="italic">No company selected</span>
