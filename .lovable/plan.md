@@ -1,60 +1,40 @@
-# Semester Reset & Archive System
+# Meeting Time Agreement
 
-## Goal
-Let an admin (1) snapshot the current semester, (2) wipe live data to start fresh, and (3) browse or promote any past snapshot back to live. Templates, admin accounts, audit log, and student login accounts are preserved across resets.
+Today each team's PM proposes a day and time, and teammates check off with their initials. Your sheet also captures *where* and *how* they meet, and a promise about who owns a schedule change. This adds those pieces and turns the checkbox into a real, recorded agreement.
 
-## What gets archived vs. preserved vs. wiped
+## What gets added
 
-| Data | Archive | Reset wipes | Notes |
-|---|---|---|---|
-| `teams`, `team_members` | yes | yes | |
-| `files` (team files only), `file_versions`, `file_tags`, `file_comments` | yes | yes | bytes copied in storage too |
-| Vault storage objects under each team | yes (copied to `archive/<id>/...`) | yes (live paths deleted) | byte-perfect restore |
-| `company_focus`, `group_norms`, `group_norms_signatures`, `manager_submissions` | yes | yes | |
-| `notifications` | no | yes | transient |
-| Template files (`is_template = true`, no team) | no | **no — preserved** | always live in Admin |
-| `profiles`, `auth.users` (students) | no | **no — preserved** | detached from teams only |
-| `user_roles` (admin rows) | no | **no — preserved** | |
-| `file_audit_log` | no | **no — preserved** | permanent paper trail |
-| Past `semester_archives` | n/a | **no — preserved** | many snapshots kept |
+**1. More detail on the meeting proposal**
+The PM's proposal grows to include:
+- Where they meet (room, building, or link/place description)
+- How they meet: In person, Zoom, or VR headset
+- Optional first/second/third choice of meeting mode (matches your study question)
 
-## Three Admin actions
+**2. A written Agreement page**
+A new page every student reads and signs. It states plainly:
+- I agree to the weekly meeting day, time, place, and mode listed for my team.
+- If *I* need the time changed, it is *my* responsibility to find a new time that works for everyone — not the Project Manager's and not the team's.
+- Any new time must be entered in ClientVault, and Professor Hillman must be notified.
+- I will attend and participate.
 
-**Archive now** — prompts for a name (e.g. "Spring 2026"), creates a `semester_archives` row, copies all in-scope rows into archive tables, copies every team-file storage object to `archive/<archive_id>/<original_path>`.
+Signing = typing full name + initials and ticking the box. We store the date/time, the exact wording they signed, and the exact meeting details as they stood at that moment.
 
-**Reset semester** — confirmation dialog ("type RESET"). Deletes in-scope rows + live storage objects. Templates, students, admins, audit log, archives untouched.
+**3. Everyone must sign — enforced**
+- Each team member sees a reminder banner until they have signed.
+- The team page shows a live "4 of 5 agreed" list with who's outstanding.
+- If the PM changes day, time, place, or mode, every signature clears and everyone must re-agree — that is the change-negotiation rule in action.
 
-**Restore** — from the Archives list, per row:
-- **Preview (read-only)** — opens an in-admin browser of that archive's teams/files/comments/etc. Uses archive tables directly; no writes to live tables.
-- **Promote to live** — confirmation dialog. Wipes current live data (same as Reset), then writes archive rows back into live tables and copies storage objects from `archive/<id>/...` back to their original paths. Fully editable again.
+**4. What you see as professor**
+- Your existing "Meeting time consensus" panel gains place and mode, plus who has not signed.
+- When a team changes an agreed meeting time, you get a notification, since re-agreement is required and the change is logged.
 
-## Test loop this supports
-1. Archive now → "Test snapshot"
-2. Reset → empty teams/files; templates still there
-3. (optional) create dummy teams to confirm
-4. Archives → Preview "Test snapshot" to verify capture
-5. Promote "Test snapshot" → back to original state, fully writable
+## Notes on your spreadsheet
 
-## Technical sketch (for reference)
+I'll use it as the field reference only (day, time, PM, firm name, place, mode, the change-responsibility clause). Team member lists are skipped as you asked, and I'm not importing the Winter 2021 responses as data.
 
-**New tables** (all admin-only via RLS using `has_role(auth.uid(),'admin')`):
-- `semester_archives` — id, name, created_at, created_by, stats (team_count, file_count, byte_size)
-- `archived_teams`, `archived_team_members`, `archived_files`, `archived_file_versions`, `archived_file_tags`, `archived_file_comments`, `archived_company_focus`, `archived_group_norms`, `archived_group_norms_signatures`, `archived_manager_submissions` — each carries `archive_id` FK + original columns
+## Technical outline
 
-**Server functions** (`src/lib/semester.functions.ts`, all `requireSupabaseAuth` + admin role check):
-- `archiveSemester({ name })` — transactional copy of rows; then storage object copy via `supabaseAdmin.storage.from('vault').copy()` per file
-- `resetSemester()` — delete live rows in FK-safe order; delete live storage objects (skip `archive/` and `template/` prefixes)
-- `promoteArchive({ archiveId })` — calls reset, then inserts archived rows back, then copies storage objects back
-- `listArchives()`, `getArchiveContents({ archiveId })` — for the Archives tab UI
-
-**UI** — new "Semester" tab in `/app/admin` with three buttons (Archive, Reset, plus an Archives list with Preview / Promote / Delete actions per row). Preview opens a read-only variant of the existing file-vault tree fed by archive tables.
-
-**Storage layout** — live files stay at `<team_id>/...`; archived copies at `archive/<archive_id>/<team_id>/...`. Reset deletes objects NOT under `archive/` or `template/` prefixes.
-
-**Audit log** — archive/reset/promote actions also write a row to `file_audit_log` (or a sibling `admin_audit_log`) so semester operations are tracked.
-
-## Out of scope (confirm if you want any of these added)
-- Exporting an archive as a downloadable zip
-- Renaming/editing an archive after creation
-- Selective restore (just one team from an archive)
-- Scheduled/automatic archives
+- Migration: add `location`, `meeting_mode`, and optional mode preference columns to `team_meeting_proposals`; add `agreement_version`, `full_name`, and `agreement_text` to `team_meeting_agreements`; extend the existing reset-on-change trigger to cover the new fields.
+- New route `src/routes/app.agreement.tsx` rendering the agreement text plus signing form.
+- Update `src/components/meeting-time-card.tsx` (PM form fields, signature flow linking to the agreement page) and `src/components/consensus-status-card.tsx` (place/mode, outstanding names).
+- Notification row for the professor on any agreed-time change, using the existing notifications table.
