@@ -103,12 +103,12 @@ export function ClientContactsCard() {
                       <div className="font-medium truncate">{t.name}</div>
                       <div className="text-xs text-muted-foreground truncate">
                         {missing ? (
-                          <span className="italic">No company set yet</span>
+                          <span className="italic">No company selected</span>
                         ) : (
                           <>
                             {cf!.company_name}
                             {cf!.contact_person && (
-                              <span> · Interviewing {cf!.contact_person}</span>
+                              <span> · {cf!.contact_person}{cf!.contact_job_title ? `, ${cf!.contact_job_title}` : ""}</span>
                             )}
                           </>
                         )}
