@@ -247,7 +247,7 @@ function Teams() {
                     {cf.industry && <span className="text-xs">· {cf.industry}</span>}
                   </div>
                 ) : (
-                  <span className="italic">No company focus yet</span>
+                  <span className="italic">No company selected</span>
                 )}
                 {t.description && <p className="mt-2 line-clamp-2">{t.description}</p>}
                 {!canEnter && (
