@@ -338,7 +338,7 @@ export function BulkImportPanel() {
             If a <b>Team</b> value is present, the team is created automatically (per section) if
             it doesn't exist yet, and the student is enrolled in it. Plain numbers like{" "}
             <code>3</code> become <code>Team 3</code>. Everyone is enrolled with the default role{" "}
-            <b>Researcher</b> — assign PM and other roles afterwards from the team page.
+            <b>Unassigned</b> — assign PM and other roles afterwards from the team page.
           </p>
           <p className="text-muted-foreground">
             Section is parsed from any common shape:{" "}

@@ -25,7 +25,7 @@ const ROLE_ORDER = [
   "Company Liaison",
   "Communication Specialist",
   "Video Specialist",
-  "Researcher",
+  "Unassigned",
 ];
 
 function initials(name: string) {
@@ -195,7 +195,11 @@ function MemberCard({
         </Avatar>
         <div className="min-w-0 flex-1">
           <div className="font-medium truncate">{displayName}</div>
-          <div className="text-xs text-gold">{member.job_title}</div>
+          {member.job_title === "Unassigned" ? (
+            <div className="text-xs text-muted-foreground italic">Role not assigned</div>
+          ) : (
+            <div className="text-xs text-gold">{member.job_title}</div>
+          )}
           {p?.email && (
             <a
               href={`mailto:${p.email}`}

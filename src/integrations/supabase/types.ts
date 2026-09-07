@@ -1232,7 +1232,7 @@ export type Database = {
         }
         Insert: {
           id?: string
-          job_title: Database["public"]["Enums"]["team_job"]
+          job_title?: Database["public"]["Enums"]["team_job"]
           joined_at?: string
           team_id: string
           user_id: string
@@ -1334,6 +1334,7 @@ export type Database = {
         | "Video Specialist"
         | "Company Liaison"
         | "Researcher"
+        | "Unassigned"
       vault_status:
         | "Submitted"
         | "Awaiting Review"
@@ -1477,6 +1478,7 @@ export const Constants = {
         "Video Specialist",
         "Company Liaison",
         "Researcher",
+        "Unassigned",
       ],
       vault_status: [
         "Submitted",
