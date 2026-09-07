@@ -23,7 +23,7 @@ export const Route = createFileRoute("/app/dashboard")({
 });
 
 function Dashboard() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
 
   const { data: stats } = useQuery({
     queryKey: ["dashboard-gap-stats"],
