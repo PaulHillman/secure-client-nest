@@ -161,9 +161,6 @@ export function MyProfileCard() {
                 <Badge variant="secondary">{team ? teamLabel(team) : "No team yet"}</Badge>
                 <Badge variant="outline">{data?.membership?.job_title ?? "No role yet"}</Badge>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Team and role are set by your instructor and can't be changed here.
-              </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
