@@ -153,22 +153,17 @@ export function MyProfileCard() {
           </div>
 
           <div className="flex-1 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="font-display text-2xl leading-tight">
-                  {`${form.first_name} ${form.last_name}`.trim() || p?.name || user.email}
-                </h2>
-                <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <Badge variant="secondary">{team ? teamLabel(team) : "No team yet"}</Badge>
-                  <Badge variant="outline">{data?.membership?.job_title ?? "No role yet"}</Badge>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Team and role are set by your instructor and can't be changed here.
-                </p>
+            <div>
+              <h2 className="font-display text-2xl leading-tight">
+                {`${form.first_name} ${form.last_name}`.trim() || p?.name || user.email}
+              </h2>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <Badge variant="secondary">{team ? teamLabel(team) : "No team yet"}</Badge>
+                <Badge variant="outline">{data?.membership?.job_title ?? "No role yet"}</Badge>
               </div>
-              <Button variant="outline" size="sm" onClick={() => void signOut()}>
-                <LogOut className="mr-2 h-4 w-4" />Sign out
-              </Button>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Team and role are set by your instructor and can't be changed here.
+              </p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
