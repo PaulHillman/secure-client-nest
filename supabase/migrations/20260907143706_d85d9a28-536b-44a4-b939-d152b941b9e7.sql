@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.copy_pm_on_notifications() FROM anon, authenticated;
