@@ -138,11 +138,8 @@ function TeamDetail() {
         )}
       </section>
 
-      <VaultAdminDutiesCard
-        holder={members.find((m) => m.job_title === VAULT_ADMIN_ROLE)?.profiles?.name ?? null}
-      />
 
-      <PmDutiesCard teamId={teamId} />
+
 
       <MeetingTimeCard teamId={teamId} />
 
