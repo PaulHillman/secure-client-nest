@@ -226,6 +226,14 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                 <div className="font-medium text-lg">
                   {DAYS[proposal.day_of_week]} at {fmtTime(proposal.meeting_time)}
                 </div>
+                <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  {(proposal as any).location || <span className="italic">No place set</span>}
+                </div>
+                <div className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Video className="h-3.5 w-3.5" />
+                  {(proposal as any).meeting_mode || <span className="italic">No mode set</span>}
+                </div>
               </div>
             ) : (
               <p className="text-sm text-muted-foreground italic">
@@ -239,7 +247,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                 <div className="text-xs font-medium uppercase tracking-wide text-gold">
                   PM: {proposal ? "Update" : "Propose"} meeting time
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px_auto] gap-2 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-2 items-end">
                   <div>
                     <Label className="text-xs">Day</Label>
                     <Select value={day} onValueChange={setDay}>
@@ -255,9 +263,52 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                     <Label className="text-xs">Time</Label>
                     <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
                   </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-end">
+                  <div>
+                    <Label className="text-xs">Where will you meet?</Label>
+                    <Input
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="e.g. Library room 214, or Zoom link"
+                      maxLength={200}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">How will you meet?</Label>
+                    <Select value={mode} onValueChange={setMode}>
+                      <SelectTrigger><SelectValue placeholder="Pick a mode" /></SelectTrigger>
+                      <SelectContent>
+                        {MEETING_MODES.map((m) => (
+                          <SelectItem key={m} value={m}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
+                  {([["1st choice", c1, setC1], ["2nd choice", c2, setC2], ["3rd choice", c3, setC3]] as const).map(
+                    ([label, val, set]) => (
+                      <div key={label}>
+                        <Label className="text-xs">Mode preference · {label}</Label>
+                        <Select value={val} onValueChange={set as (v: string) => void}>
+                          <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
+                          <SelectContent>
+                            {MEETING_MODES.map((m) => (
+                              <SelectItem key={m} value={m}>{m}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ),
+                  )}
+                </div>
+                <div>
                   <Button onClick={() => saveProposal.mutate()} disabled={saveProposal.isPending}>
                     {proposal ? "Update" : "Submit"}
                   </Button>
+                </div>
+
                 </div>
                 {proposal && (
                   <p className="text-xs text-muted-foreground">
