@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Camera, LogOut, Loader2 } from "lucide-react";
+import { Camera, Loader2 } from "lucide-react";
 
 type Form = {
   first_name: string;
