@@ -2,7 +2,13 @@ import { useState, useMemo } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import * as XLSX from "xlsx";
-import { bulkImportStudents, type ImportRow, type ImportResult } from "@/lib/students.functions";
+import JSZip from "jszip";
+import {
+  bulkImportStudents,
+  uploadStudentPhotos,
+  type ImportRow,
+  type ImportResult,
+} from "@/lib/students.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -94,9 +100,11 @@ const ALIASES = {
   team: ["team", "team name", "team number", "team #", "team no", "group", "group name", "group number", "team id"],
 };
 
-/** Read any uploaded file (csv/xlsx/xls) into a matrix of strings. */
-async function readSheet(file: File): Promise<string[][]> {
-  const isCsv = /\.csv$/i.test(file.name) || file.type === "text/csv";
+/** Photos pulled out of a roster .zip, keyed by uppercase G number. */
+type PhotoMap = Map<string, { fileName: string; dataBase64: string }>;
+
+async function matrixFromFile(file: File | Blob, name: string): Promise<string[][]> {
+  const isCsv = /\.csv$/i.test(name);
   if (isCsv) return parseCSV(await file.text());
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
@@ -105,6 +113,34 @@ async function readSheet(file: File): Promise<string[][]> {
   return matrix.map((r) => (r ?? []).map((c) => String(c ?? "")));
 }
 
+/**
+ * Read any uploaded file into a matrix of strings — plus photos when the upload is a
+ * roster .zip (EngageU export: one spreadsheet + a photos/ folder named ..._G########.jpg).
+ */
+async function readUpload(file: File): Promise<{ matrix: string[][]; photos: PhotoMap }> {
+  const photos: PhotoMap = new Map();
+  if (!/\.zip$/i.test(file.name)) {
+    return { matrix: await matrixFromFile(file, file.name), photos };
+  }
+  const zip = await JSZip.loadAsync(await file.arrayBuffer());
+  let sheetEntry: { name: string; blob: Blob } | null = null;
+  for (const entry of Object.values(zip.files)) {
+    if (entry.dir) continue;
+    const base = entry.name.split("/").pop() ?? "";
+    if (base.startsWith(".") || base.startsWith("__MACOSX")) continue;
+    if (!sheetEntry && /\.(csv|xlsx|xls)$/i.test(base)) {
+      sheetEntry = { name: base, blob: await entry.async("blob") };
+      continue;
+    }
+    if (/\.(jpe?g|png)$/i.test(base)) {
+      const g = base.match(/G\d{6,}/i)?.[0];
+      if (!g) continue;
+      photos.set(g.toUpperCase(), { fileName: base, dataBase64: await entry.async("base64") });
+    }
+  }
+  if (!sheetEntry) throw new Error("The zip has no CSV or Excel roster file inside");
+  return { matrix: await matrixFromFile(sheetEntry.blob, sheetEntry.name), photos };
+}
 
 export function BulkImportPanel() {
   const qc = useQueryClient();
