@@ -250,3 +250,67 @@ export const deleteAllStudents = createServerFn({ method: "POST" })
     }
     return result;
   });
+
+export type PhotoUploadItem = { email: string; fileName: string; dataBase64: string };
+export type PhotoUploadResult = { uploaded: number; errors: { email: string; error: string }[] };
+
+/** Attach roster photos (from an EngageU export) to student profiles, matched by email. */
+export const uploadStudentPhotos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { photos: PhotoUploadItem[] }) => {
+    if (!input || !Array.isArray(input.photos) || input.photos.length === 0)
+      throw new Error("photos required");
+    if (input.photos.length > 25) throw new Error("Max 25 photos per request");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin, error: roleError } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (roleError || !isAdmin) throw new Error("Forbidden: admin role required");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const result: PhotoUploadResult = { uploaded: 0, errors: [] };
+    for (const photo of data.photos) {
+      const email = String(photo.email ?? "").trim().toLowerCase();
+      try {
+        const { data: prof } = await supabaseAdmin
+          .from("profiles")
+          .select("id")
+          .ilike("email", email)
+          .limit(1);
+        const userId = prof?.[0]?.id as string | undefined;
+        if (!userId) {
+          result.errors.push({ email, error: "No account found for this email" });
+          continue;
+        }
+        const bytes = Buffer.from(photo.dataBase64, "base64");
+        const ext = (photo.fileName.split(".").pop() || "jpg").toLowerCase();
+        const path = `${userId}/roster-photo.${ext}`;
+        const { error: upErr } = await supabaseAdmin.storage
+          .from("avatars")
+          .upload(path, bytes, {
+            upsert: true,
+            contentType: ext === "png" ? "image/png" : "image/jpeg",
+          });
+        if (upErr) {
+          result.errors.push({ email, error: upErr.message });
+          continue;
+        }
+        const { data: pub } = supabaseAdmin.storage.from("avatars").getPublicUrl(path);
+        const { error: updErr } = await supabaseAdmin
+          .from("profiles")
+          .update({ avatar_url: `${pub.publicUrl}?v=${Date.now()}` })
+          .eq("id", userId);
+        if (updErr) {
+          result.errors.push({ email, error: updErr.message });
+          continue;
+        }
+        result.uploaded++;
+      } catch (e: any) {
+        result.errors.push({ email, error: e?.message ?? "Photo upload failed" });
+      }
+    }
+    return result;
+  });
