@@ -1028,6 +1028,87 @@ export type Database = {
           },
         ]
       }
+      pm_duties: {
+        Row: {
+          active: boolean
+          created_at: string
+          details: string | null
+          due_at: string | null
+          id: string
+          order_index: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          details?: string | null
+          due_at?: string | null
+          id?: string
+          order_index?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          details?: string | null
+          due_at?: string | null
+          id?: string
+          order_index?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pm_duty_completions: {
+        Row: {
+          completed_at: string
+          completed_by: string | null
+          created_at: string
+          duty_id: string
+          id: string
+          notes: string | null
+          team_id: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string
+          completed_by?: string | null
+          created_at?: string
+          duty_id: string
+          id?: string
+          notes?: string | null
+          team_id: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string
+          completed_by?: string | null
+          created_at?: string
+          duty_id?: string
+          id?: string
+          notes?: string | null
+          team_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pm_duty_completions_duty_id_fkey"
+            columns: ["duty_id"]
+            isOneToOne: false
+            referencedRelation: "pm_duties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pm_duty_completions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
