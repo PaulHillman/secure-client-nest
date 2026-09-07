@@ -61,8 +61,11 @@ export function CompanyFocusCard({
   if (!cf) {
     return (
       <Card className="mt-6 border-dashed">
-        <CardContent className="py-6 flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">No company focus set yet.</p>
+        <CardContent className="py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">No company selected</p>
+            <p className="text-sm text-muted-foreground">No manager selected</p>
+          </div>
           <CompanyFocusDialog
             trigger={
               <Button size="sm">
