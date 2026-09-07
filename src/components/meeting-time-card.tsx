@@ -361,42 +361,37 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
               </ul>
             </div>
 
-            {/* My response — every member including PM signs off with initials */}
+            {/* My response — every member including PM signs the agreement */}
             {me && proposal && (
-              <div className="rounded-md border p-3 space-y-2">
+              <div className="rounded-md border p-3 space-y-3">
                 <div className="text-xs font-medium uppercase tracking-wide">
-                  {isPM ? "Confirm your own proposal" : "Your response"}
+                  {me.agreement?.status === "agreed" ? "You have signed" : "Your approval is required"}
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
-                  <div className="flex-1">
-                    <Label className="text-xs">Your initials (2–4 letters)</Label>
-                    <Input
-                      value={initials}
-                      onChange={(e) => setInitials(e.target.value.toUpperCase())}
-                      maxLength={4}
-                      placeholder="e.g. JLD"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button onClick={() => respond.mutate("agreed")} disabled={respond.isPending}>
-                      <Check className="h-4 w-4 mr-1" /> Agree
-                    </Button>
-                    {!isPM && (
-                      <Button
-                        variant="outline"
-                        onClick={() => respond.mutate("declined")}
-                        disabled={respond.isPending}
-                      >
-                        <X className="h-4 w-4 mr-1" /> Decline
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Your initials act as your e-signature on this meeting time.
+                <p className="text-sm text-muted-foreground">
+                  Every member must read and sign the Meeting Time Agreement, including the rule that
+                  whoever needs a time change is responsible for negotiating the new time, updating
+                  ClientVault, and notifying Professor Hillman.
                 </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild>
+                    <Link to="/app/agreement">
+                      <Check className="h-4 w-4 mr-1" />
+                      {me.agreement?.status === "agreed" ? "Review my signature" : "Read & sign the agreement"}
+                    </Link>
+                  </Button>
+                  {me.agreement?.status !== "declined" && (
+                    <Button
+                      variant="outline"
+                      onClick={() => respond.mutate("declined")}
+                      disabled={respond.isPending}
+                    >
+                      <X className="h-4 w-4 mr-1" /> I do not agree
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
+
           </>
         )}
       </CardContent>
