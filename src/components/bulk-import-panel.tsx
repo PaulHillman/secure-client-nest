@@ -145,6 +145,7 @@ async function readUpload(file: File): Promise<{ matrix: string[][]; photos: Pho
 export function BulkImportPanel() {
   const qc = useQueryClient();
   const importFn = useServerFn(bulkImportStudents);
+  const photoFn = useServerFn(uploadStudentPhotos);
   const [fileName, setFileName] = useState<string>("");
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -154,6 +155,8 @@ export function BulkImportPanel() {
   const [mapping, setMapping] = useState<{ field: string; column: string }[]>([]);
   const [parseError, setParseError] = useState<string | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
+  const [photos, setPhotos] = useState<PhotoMap>(new Map());
+  const [photoStatus, setPhotoStatus] = useState<string | null>(null);
 
   const rowKey = (r: ImportRow) => `${r.studentId}|${r.username}`;
 
@@ -181,6 +184,26 @@ export function BulkImportPanel() {
         }
         setResult({ ...total });
       }
+      // Attach roster photos (zip uploads) for the same students, in small batches.
+      const photoItems = picked
+        .map((r) => {
+          const p = photos.get(r.studentId.toUpperCase());
+          return p ? { email: `${r.username}@mail.gvsu.edu`, ...p } : null;
+        })
+        .filter(Boolean) as { email: string; fileName: string; dataBase64: string }[];
+      if (photoItems.length > 0) {
+        let uploaded = 0;
+        const PB = 10;
+        for (let i = 0; i < photoItems.length; i += PB) {
+          try {
+            const r = await photoFn({ data: { photos: photoItems.slice(i, i + PB) } });
+            uploaded += r.uploaded;
+          } catch {
+            /* reported in the summary below */
+          }
+          setPhotoStatus(`Photos attached: ${uploaded} of ${photoItems.length}`);
+        }
+      }
       return total;
     },
     onSuccess: (r) => {
@@ -201,9 +224,13 @@ export function BulkImportPanel() {
     setFilter("");
     setSectionFilter("all");
     setMapping([]);
+    setPhotos(new Map());
+    setPhotoStatus(null);
     setFileName(file.name);
     try {
-      const parsed = (await readSheet(file)).filter((r) => r.some((c) => c?.trim()));
+      const upload = await readUpload(file);
+      setPhotos(upload.photos);
+      const parsed = upload.matrix.filter((r) => r.some((c) => c?.trim()));
       if (parsed.length < 2) throw new Error("File has no data rows");
 
       // Header row is the first row within the first 5 that matches at least 2 known fields
@@ -363,7 +390,9 @@ export function BulkImportPanel() {
             </Button>
           </div>
           <p className="text-muted-foreground">
-            Upload a <b>CSV or Excel</b> file. Column names are matched automatically, so
+            Upload a <b>CSV, Excel, or a roster .zip</b> (an EngageU export with a spreadsheet
+            plus a <code>photos/</code> folder — pictures are matched by G number and attached to
+            each profile). Column names are matched automatically, so
             variations work: <code>Last Name</code>/<code>Lname</code>,{" "}
             <code>First Name</code>/<code>Fname</code>, <code>Username</code>/<code>ID</code>/
             <code>NetID</code> (or derived from <code>Email</code>), <code>Student ID</code>/
@@ -391,11 +420,11 @@ export function BulkImportPanel() {
         </div>
 
         <div>
-          <Label htmlFor="csv-file">CSV or Excel file</Label>
+          <Label htmlFor="csv-file">CSV, Excel, or roster .zip</Label>
           <Input
             id="csv-file"
             type="file"
-            accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+            accept=".zip,application/zip,.csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) onFile(f);
@@ -546,6 +575,15 @@ export function BulkImportPanel() {
             </div>
           </div>
         )}
+
+        {photos.size > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {photos.size} student photo{photos.size === 1 ? "" : "s"} found in this upload — they
+            will be attached to matching profiles automatically.
+          </p>
+        )}
+
+        {photoStatus && <p className="text-xs text-muted-foreground">{photoStatus}</p>}
 
         {result && (
           <div className="rounded-md border p-3 text-sm space-y-2">
