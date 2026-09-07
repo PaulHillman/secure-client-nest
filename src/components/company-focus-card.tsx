@@ -61,8 +61,11 @@ export function CompanyFocusCard({
   if (!cf) {
     return (
       <Card className="mt-6 border-dashed">
-        <CardContent className="py-6 flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">No company focus set yet.</p>
+        <CardContent className="py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">No company selected</p>
+            <p className="text-sm text-muted-foreground">No manager selected</p>
+          </div>
           <CompanyFocusDialog
             trigger={
               <Button size="sm">
@@ -98,42 +101,47 @@ export function CompanyFocusCard({
           />
         </div>
       </CardHeader>
-      <CardContent className="text-sm grid sm:grid-cols-2 gap-3">
-        {cf.contact_person && (
-          <div>
-            <div className="text-foreground">{cf.contact_person}</div>
-            <div className="text-muted-foreground">{cf.contact_job_title}</div>
-          </div>
-        )}
-        {cf.email && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Mail className="h-4 w-4" />
-            <a href={`mailto:${cf.email}`} className="hover:text-foreground">
-              {cf.email}
-            </a>
-          </div>
-        )}
-        {cf.website && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Globe className="h-4 w-4" />
-            <a
-              href={cf.website.startsWith("http") ? cf.website : `https://${cf.website}`}
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-foreground"
-            >
-              {cf.website}
-            </a>
-          </div>
-        )}
-        {cf.hq_address && (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <MapPin className="h-4 w-4" /> {cf.hq_address}
-          </div>
-        )}
-        {cf.employee_count && (
-          <div className="text-muted-foreground">{cf.employee_count} employees</div>
-        )}
+      <CardContent className="text-sm space-y-4">
+        <div className="border-l-2 border-gold pl-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide">Manager</p>
+          <p className="font-medium text-foreground">
+            {cf.contact_person ?? <span className="italic text-muted-foreground">Not set</span>}
+          </p>
+          {cf.contact_job_title && (
+            <p className="text-muted-foreground">{cf.contact_job_title}</p>
+          )}
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {cf.email && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Mail className="h-4 w-4" />
+              <a href={`mailto:${cf.email}`} className="hover:text-foreground">
+                {cf.email}
+              </a>
+            </div>
+          )}
+          {cf.website && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Globe className="h-4 w-4" />
+              <a
+                href={cf.website.startsWith("http") ? cf.website : `https://${cf.website}`}
+                target="_blank"
+                rel="noreferrer"
+                className="hover:text-foreground"
+              >
+                {cf.website}
+              </a>
+            </div>
+          )}
+          {cf.hq_address && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MapPin className="h-4 w-4" /> {cf.hq_address}
+            </div>
+          )}
+          {cf.employee_count && (
+            <div className="text-muted-foreground">{cf.employee_count} employees</div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
