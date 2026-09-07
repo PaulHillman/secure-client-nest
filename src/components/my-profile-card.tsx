@@ -23,7 +23,7 @@ type Form = {
 };
 
 export function MyProfileCard() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
