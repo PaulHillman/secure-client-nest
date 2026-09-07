@@ -141,6 +141,10 @@ function Dashboard() {
         <h1 className="font-display text-4xl mt-1">Your workspace</h1>
       </header>
 
+      <div className="mb-6">
+        <MyProfileCard />
+      </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c) => (
           <Card key={c.label} className="border-border/60">
