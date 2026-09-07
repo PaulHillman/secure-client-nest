@@ -45,7 +45,7 @@ function Teams() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("teams")
-        .select("id, name, display_name, description, section, company_focus(company_name, industry)");
+        .select("id, name, display_name, description, section, company_focus(company_name, industry, contact_person, contact_job_title)");
       if (error) throw error;
       return data;
     },
