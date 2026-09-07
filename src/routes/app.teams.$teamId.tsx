@@ -87,13 +87,14 @@ function TeamDetail() {
       </Link>
 
       <header className="mt-4 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-4xl">{team?.name ?? (isLoading ? "Loading…" : "Team")}</h1>
-          {team?.section && (
-            <p className="text-sm text-muted-foreground mt-1">Section §{team.section}</p>
-          )}
-        </div>
+        <TeamNameHeader
+          team={team as any}
+          isLoading={isLoading}
+          canEdit={isMember}
+          onSaved={() => refetch()}
+        />
       </header>
+
 
       <CompanyFocusCard teamId={teamId} cf={cf as any} queryKey={["team", teamId]} />
 
