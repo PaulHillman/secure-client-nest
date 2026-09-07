@@ -3,8 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { FileText, ShieldAlert, CalendarX, BuildingIcon, LogOut } from "lucide-react";
+import { FileText, ShieldAlert, CalendarX, BuildingIcon } from "lucide-react";
 import { ProjectArchCard } from "@/components/project-arch-card";
 import { ConsensusStatusCard } from "@/components/consensus-status-card";
 import { ClientContactsCard } from "@/components/client-contacts-card";
@@ -23,7 +22,7 @@ export const Route = createFileRoute("/app/dashboard")({
 });
 
 function Dashboard() {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const { data: stats } = useQuery({
     queryKey: ["dashboard-gap-stats"],
@@ -141,20 +140,6 @@ function Dashboard() {
         <p className="text-sm text-muted-foreground">Welcome back</p>
         <h1 className="font-display text-4xl mt-1">Your workspace</h1>
       </header>
-
-      <Card className="mb-6 border-border/60">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">{user?.email}</p>
-              <h2 className="font-display text-lg mt-0.5">{isAdmin ? "Admin session" : "Student session"}</h2>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => void signOut()}>
-              <LogOut className="mr-2 h-4 w-4" />Sign out
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       <div className="mb-6">
         <MyProfileCard />

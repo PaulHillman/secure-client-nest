@@ -1,5 +1,7 @@
 import { createFileRoute, Outlet, Link, Navigate, useRouterState } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
+import { supabase } from "@/integrations/supabase/client";
 import { LayoutDashboard, Users, FolderLock, LogOut, FolderOpen, ClipboardList, ListTodo } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/notifications-bell";
@@ -12,6 +14,20 @@ export const Route = createFileRoute("/app")({
 function AppLayout() {
   const { user, loading, isAdmin, signOut } = useAuth();
   const path = useRouterState({ select: (s) => s.location.pathname });
+
+  const { data: profile } = useQuery({
+    queryKey: ["sidebar-profile", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("first_name, last_name, email")
+        .eq("id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
 
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
@@ -52,7 +68,14 @@ function AppLayout() {
           })}
         </nav>
         <div className="border-t border-sidebar-border pt-3">
-          <div className="px-2 text-xs text-sidebar-foreground/60 truncate">{user.email}</div>
+          <div className="px-2">
+            <div className="text-sm font-medium text-sidebar-foreground truncate">
+              {profile?.first_name && profile?.last_name
+                ? `${profile.first_name} ${profile.last_name}`
+                : user.email}
+            </div>
+            <div className="text-xs text-sidebar-foreground/60 truncate">{user.email}</div>
+          </div>
           <Button variant="ghost" size="sm" onClick={signOut}
             className="mt-2 w-full justify-start text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground">
             <LogOut className="h-4 w-4 mr-2" />Sign out
