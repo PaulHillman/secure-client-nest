@@ -84,7 +84,14 @@ export const archiveSemester = createServerFn({ method: "POST" })
 
     // Insert shadow rows
     if (teams.length)
-      await supabaseAdmin.from("archived_teams").insert(teams.map((t) => ({ ...t, archive_id: archiveId })));
+      await supabaseAdmin.from("archived_teams").insert(
+        teams.map(({ display_name, ...t }: any) => ({
+          ...t,
+          name: display_name?.trim() ? `${display_name.trim()} (${t.name})` : t.name,
+          archive_id: archiveId,
+        })),
+      );
+
     if (tm.length)
       await supabaseAdmin.from("archived_team_members").insert(tm.map((m) => ({ ...m, archive_id: archiveId })));
     if (files.length)
