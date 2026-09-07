@@ -14,6 +14,7 @@ import { StudentActivityScoreCard } from "@/components/student-activity-score-ca
 import { SluggoFlagCard } from "@/components/sluggo-flag-card";
 import { TeamActivityDashboardCard } from "@/components/team-activity-dashboard-card";
 import { CrossTeamComparisonCard } from "@/components/cross-team-comparison-card";
+import { MyProfileCard } from "@/components/my-profile-card";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ClientVault" }] }),
@@ -139,6 +140,10 @@ function Dashboard() {
         <p className="text-sm text-muted-foreground">Welcome back</p>
         <h1 className="font-display text-4xl mt-1">Your workspace</h1>
       </header>
+
+      <div className="mb-6">
+        <MyProfileCard />
+      </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c) => (
