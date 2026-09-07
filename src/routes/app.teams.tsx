@@ -217,7 +217,15 @@ function Teams() {
             >
               <CardHeader>
                 <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="font-display text-xl">{primary}</CardTitle>
+                  <div className="min-w-0">
+                    <CardTitle className="font-display text-xl">{primary}</CardTitle>
+                    {primary !== t.name && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {t.name}
+                        {t.section ? ` · Section ${t.section}` : ""}
+                      </p>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     {isMine && (
                       <span className="text-[10px] uppercase tracking-wider font-semibold rounded-full bg-gold/20 text-gold px-2 py-0.5">
@@ -230,6 +238,7 @@ function Teams() {
                   </div>
                 </div>
               </CardHeader>
+
               <CardContent className="text-sm text-muted-foreground">
                 {cf ? (
                   <div className="flex items-center gap-2">
