@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, ShieldAlert, CalendarX, BuildingIcon } from "lucide-react";
 import { ProjectArchCard } from "@/components/project-arch-card";
 import { ConsensusStatusCard } from "@/components/consensus-status-card";
+import { MeetingGapsCard } from "@/components/meeting-gaps-card";
+
 import { ClientContactsCard } from "@/components/client-contacts-card";
 import { TeamRosterCard } from "@/components/team-roster-card";
 import { AuthAuditLogCard } from "@/components/auth-audit-log-card";
@@ -181,9 +183,16 @@ function Dashboard() {
 
       {isAdmin && (
         <div className="mt-6">
+          <MeetingGapsCard />
+        </div>
+      )}
+
+      {isAdmin && (
+        <div className="mt-6">
           <ConsensusStatusCard />
         </div>
       )}
+
 
       {isAdmin && (
         <div className="mt-6">
