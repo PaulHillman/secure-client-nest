@@ -72,13 +72,16 @@ function TeamDetail() {
     },
   });
 
+  const { user } = useAuth();
   const team = data?.team;
   const cf = data?.companyFocus;
+  const isMember = !!user && (data?.members ?? []).some((m) => m.user_id === user.id);
   const members = (data?.members ?? []).slice().sort((a, b) => {
     const ai = ROLE_ORDER.indexOf(a.job_title);
     const bi = ROLE_ORDER.indexOf(b.job_title);
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
   });
+
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
