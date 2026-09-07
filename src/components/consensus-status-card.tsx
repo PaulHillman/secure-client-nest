@@ -90,26 +90,36 @@ export function ConsensusStatusCard() {
         ) : (
           <ul className="divide-y rounded-md border">
             {withoutConsensus.map((t) => (
-              <li key={t.id} className="p-3 flex items-center gap-3">
-                <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
-                <Link
-                  to="/app/teams/$teamId"
-                  params={{ teamId: t.id }}
-                  className="font-medium hover:underline flex-1 min-w-0 truncate"
-                >
-                  {t.name}
-                </Link>
-                <div className="text-xs text-muted-foreground">
+              <li key={t.id} className="p-3 flex items-start gap-3">
+                <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-1" />
+                <div className="flex-1 min-w-0">
+                  <Link
+                    to="/app/teams/$teamId"
+                    params={{ teamId: t.id }}
+                    className="font-medium hover:underline block truncate"
+                  >
+                    {t.name}
+                  </Link>
                   {t.proposal ? (
-                    <>
-                      {DAYS[t.proposal.day_of_week]} {t.proposal.meeting_time.slice(0, 5)} ·{" "}
-                      {t.agreed}/{t.total} agreed
-                    </>
+                    <div className="text-xs text-muted-foreground">
+                      {DAYS[t.proposal.day_of_week]} {t.proposal.meeting_time.slice(0, 5)}
+                      {t.proposal.location ? ` · ${t.proposal.location}` : ""}
+                      {t.proposal.meeting_mode ? ` · ${t.proposal.meeting_mode}` : ""}
+                    </div>
                   ) : (
-                    <span className="italic">No proposal yet</span>
+                    <div className="text-xs text-muted-foreground italic">No proposal yet</div>
+                  )}
+                  {t.outstanding.length > 0 && (
+                    <div className="text-xs text-amber-700 mt-0.5 truncate">
+                      Waiting on: {t.outstanding.join(", ")}
+                    </div>
                   )}
                 </div>
+                <div className="text-xs text-muted-foreground whitespace-nowrap">
+                  {t.agreed}/{t.total} signed
+                </div>
               </li>
+
             ))}
           </ul>
         )}
