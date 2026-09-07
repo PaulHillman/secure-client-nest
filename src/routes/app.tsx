@@ -68,7 +68,14 @@ function AppLayout() {
           })}
         </nav>
         <div className="border-t border-sidebar-border pt-3">
-          <div className="px-2 text-xs text-sidebar-foreground/60 truncate">{user.email}</div>
+          <div className="px-2">
+            <div className="text-sm font-medium text-sidebar-foreground truncate">
+              {profile?.first_name && profile?.last_name
+                ? `${profile.first_name} ${profile.last_name}`
+                : user.email}
+            </div>
+            <div className="text-xs text-sidebar-foreground/60 truncate">{user.email}</div>
+          </div>
           <Button variant="ghost" size="sm" onClick={signOut}
             className="mt-2 w-full justify-start text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground">
             <LogOut className="h-4 w-4 mr-2" />Sign out
