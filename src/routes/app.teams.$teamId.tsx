@@ -23,6 +23,7 @@ export const Route = createFileRoute("/app/teams/$teamId")({
 const ROLE_ORDER = [
   "PM",
   "Company Liaison",
+  "Client Vault & Tech Administrator",
   "Communication Specialist",
   "Video Specialist",
   "Unassigned",
