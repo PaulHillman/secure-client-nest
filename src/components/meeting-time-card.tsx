@@ -176,8 +176,15 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
   const respond = useMutation({
     mutationFn: async (status: "agreed" | "declined") => {
       if (!proposal) throw new Error("No proposal yet");
-      const cleaned = initials.trim().toUpperCase();
+      const derived = (me?.name ?? "")
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 3)
+        .map((s) => s[0]?.toUpperCase() ?? "")
+        .join("");
+      const cleaned = (initials.trim() || derived).toUpperCase();
       if (!/^[A-Z]{2,4}$/.test(cleaned)) throw new Error("Enter 2–4 letter initials");
+
       // upsert
       const { error } = await supabase
         .from("team_meeting_agreements")
