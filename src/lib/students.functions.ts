@@ -133,12 +133,15 @@ export const bulkImportStudents = createServerFn({ method: "POST" })
           }
         }
 
-        // Update profile with section if provided (trigger already inserted profile+role)
-        if (userId && section) {
-          await supabaseAdmin
-            .from("profiles")
-            .update({ section })
-            .eq("id", userId);
+        // Update profile (trigger already inserted profile+role). Names come from the
+        // export and may be preferred names ("Nick" instead of "Nikolai") — keep them in sync.
+        if (userId) {
+          const patch: Record<string, unknown> = { student_id: studentId };
+          if (section) patch.section = section;
+          if (firstName) patch.first_name = firstName;
+          if (lastName) patch.last_name = lastName;
+          if (fullName) patch.name = fullName;
+          await supabaseAdmin.from("profiles").update(patch).eq("id", userId);
         }
 
         // Assign to team if the file has a team column
