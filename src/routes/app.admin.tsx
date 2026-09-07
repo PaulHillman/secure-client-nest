@@ -43,7 +43,7 @@ const TEAM_JOBS = [
   "Communication Specialist",
   "Video Specialist",
   "Company Liaison",
-  "Researcher",
+  "Unassigned",
 ] as const;
 type TeamJob = (typeof TEAM_JOBS)[number];
 

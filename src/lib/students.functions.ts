@@ -83,7 +83,7 @@ export const bulkImportStudents = createServerFn({ method: "POST" })
       if (member && member.length > 0) return;
       const { error } = await supabaseAdmin
         .from("team_members")
-        .insert({ team_id: teamId, user_id: userId, job_title: "Researcher" });
+        .insert({ team_id: teamId, user_id: userId, job_title: "Unassigned" });
       if (error) throw new Error(`Team assign failed: ${error.message}`);
     };
 
