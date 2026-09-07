@@ -15,6 +15,20 @@ function AppLayout() {
   const { user, loading, isAdmin, signOut } = useAuth();
   const path = useRouterState({ select: (s) => s.location.pathname });
 
+  const { data: profile } = useQuery({
+    queryKey: ["sidebar-profile", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("first_name, last_name, email")
+        .eq("id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
 
