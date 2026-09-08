@@ -1172,6 +1172,39 @@ export type Database = {
           },
         ]
       }
+      profile_reminders: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          last_sent_at: string
+          missing: string[]
+          send_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind?: string
+          last_sent_at?: string
+          missing?: string[]
+          send_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          last_sent_at?: string
+          missing?: string[]
+          send_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
