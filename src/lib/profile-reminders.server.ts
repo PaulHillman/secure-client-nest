@@ -10,6 +10,7 @@ export type ReminderTarget = {
   userId: string;
   name: string;
   email: string | null;
+  avatarUrl: string | null;
   teamId: string | null;
   missing: string[];
   message: string;
