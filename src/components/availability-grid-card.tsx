@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { CalendarClock, Eraser } from "lucide-react";
 import { toast } from "sonner";
 import { DAY_LABELS, SLOT_MINUTES, fmtSlot, slotKey, slotRangeLabel } from "@/lib/availability";
+import { saveAvailabilityFor } from "@/lib/availability.functions";
 
 export function AvailabilityGridCard() {
   const { user, viewAs } = useAuth();
@@ -41,6 +42,10 @@ export function AvailabilityGridCard() {
 
   const save = useMutation({
     mutationFn: async () => {
+      if (viewAs) {
+        await saveAvailabilityFor({ data: { userId: user!.id, slots: Array.from(busy) } });
+        return;
+      }
       const { error } = await supabase
         .from("student_availability")
         .upsert(
@@ -81,7 +86,7 @@ export function AvailabilityGridCard() {
             Click or drag any half hour you are busy. Leave it blank when you are free.
           </CardDescription>
         </div>
-        {!viewAs && (
+        {(
           <div className="flex shrink-0 gap-2">
             <Button
               size="sm"
@@ -126,15 +131,13 @@ export function AvailabilityGridCard() {
                       aria-label={`${slotRangeLabel(day, m)} — ${isBusy ? "busy" : "free"}`}
                       onPointerDown={(e) => {
                         e.preventDefault();
-                        if (viewAs) return;
                         dragging.current = !isBusy;
                         apply(key, !isBusy);
                       }}
                       onPointerEnter={() => {
-                        if (viewAs) return;
                         if (dragging.current !== null) apply(key, dragging.current);
                       }}
-                      className={`h-5 rounded-[2px] border transition-colors ${viewAs ? "cursor-default" : ""} ${
+                      className={`h-5 rounded-[2px] border transition-colors ${
                         isBusy
                           ? "border-gold/60 bg-gold/70"
                           : m % 60 === 0
@@ -149,9 +152,8 @@ export function AvailabilityGridCard() {
           </div>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          {viewAs
-            ? "Viewing as student — this grid is view-only."
-            : `Shaded = busy · Blank = free. ${busy.size} half-hour blocks marked busy.`}
+          {`Shaded = busy · Blank = free. ${busy.size} half-hour blocks marked busy.`}
+          {viewAs ? " Saving on behalf of this student." : ""}
         </p>
       </CardContent>
     </Card>
