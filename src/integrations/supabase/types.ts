@@ -1185,8 +1185,12 @@ export type Database = {
           phone_number: string | null
           phone_visible: boolean
           section: string | null
+          skills_have: string[]
+          skills_learn: string[]
           student_id: string | null
+          top_skills: string[]
           updated_at: string
+          work_style: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1200,8 +1204,12 @@ export type Database = {
           phone_number?: string | null
           phone_visible?: boolean
           section?: string | null
+          skills_have?: string[]
+          skills_learn?: string[]
           student_id?: string | null
+          top_skills?: string[]
           updated_at?: string
+          work_style?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1215,8 +1223,12 @@ export type Database = {
           phone_number?: string | null
           phone_visible?: boolean
           section?: string | null
+          skills_have?: string[]
+          skills_learn?: string[]
           student_id?: string | null
+          top_skills?: string[]
           updated_at?: string
+          work_style?: string | null
         }
         Relationships: []
       }

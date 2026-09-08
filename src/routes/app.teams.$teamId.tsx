@@ -11,13 +11,16 @@ import { Users, Phone, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { FileVault } from "@/components/file-vault";
 import { ManagerSubmissions } from "@/components/manager-submissions";
-import { CompanyFocusCard } from "@/components/company-focus-card";
+import { CompanyFocusCard, type CompanyFocus } from "@/components/company-focus-card";
 import { ProjectArchCard } from "@/components/project-arch-card";
 import { MeetingTimeCard } from "@/components/meeting-time-card";
 import { MeetingLogCard } from "@/components/meeting-log-card";
+import { TeamSkillsMap } from "@/components/team-skills-map";
+import { roleMatches, skillLabel } from "@/lib/student-skills";
+import { Badge } from "@/components/ui/badge";
+import type { Database } from "@/integrations/supabase/types";
 
 import { VAULT_ADMIN_ROLE } from "@/components/vault-admin-duties-card";
-
 
 export const Route = createFileRoute("/app/teams/$teamId")({
   head: () => ({ meta: [{ title: "Team — ClientVault" }] }),
@@ -32,6 +35,28 @@ const ROLE_ORDER = [
   "Video Specialist",
   "Unassigned",
 ];
+
+type TeamRow = Database["public"]["Tables"]["teams"]["Row"];
+type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+type Member = {
+  id: string;
+  user_id: string;
+  job_title: string | null;
+  profiles?: Pick<
+    ProfileRow,
+    | "id"
+    | "name"
+    | "email"
+    | "avatar_url"
+    | "section"
+    | "phone_number"
+    | "phone_visible"
+    | "skills_have"
+    | "skills_learn"
+    | "top_skills"
+    | "work_style"
+  >;
+};
 
 function initials(name: string) {
   return name
@@ -52,21 +77,20 @@ function TeamDetail() {
         await Promise.all([
           supabase.from("teams").select("*").eq("id", teamId).single(),
           supabase.from("company_focus").select("*").eq("team_id", teamId).maybeSingle(),
-          supabase
-            .from("team_members")
-            .select("id, job_title, user_id")
-            .eq("team_id", teamId),
+          supabase.from("team_members").select("id, job_title, user_id").eq("team_id", teamId),
         ]);
       if (tErr) throw tErr;
       if (cfErr) throw cfErr;
       if (mErr) throw mErr;
 
       const userIds = (tm ?? []).map((m) => m.user_id);
-      let profiles: any[] = [];
+      let profiles: NonNullable<Member["profiles"]>[] = [];
       if (userIds.length) {
         const { data: pData, error: pErr } = await supabase
           .from("profiles")
-          .select("id, name, email, avatar_url, section, phone_number")
+          .select(
+            "id, name, email, avatar_url, section, phone_number, phone_visible, skills_have, skills_learn, top_skills, work_style",
+          )
           .in("id", userIds);
         if (pErr) throw pErr;
         profiles = pData ?? [];
@@ -87,7 +111,6 @@ function TeamDetail() {
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
   });
 
-
   return (
     <div className="p-8 max-w-5xl mx-auto">
       <Link to="/app/teams" className="text-sm text-muted-foreground hover:text-foreground">
@@ -96,15 +119,18 @@ function TeamDetail() {
 
       <header className="mt-4 flex items-start justify-between gap-4">
         <TeamNameHeader
-          team={team as any}
+          team={team}
           isLoading={isLoading}
           canEdit={isMember}
           onSaved={() => refetch()}
         />
       </header>
 
-
-      <CompanyFocusCard teamId={teamId} cf={cf as any} queryKey={["team", teamId]} />
+      <CompanyFocusCard
+        teamId={teamId}
+        cf={cf as CompanyFocus | null}
+        queryKey={["team", teamId]}
+      />
 
       <div className="mt-6">
         <ProjectArchCard variant="wide" />
@@ -120,7 +146,13 @@ function TeamDetail() {
         {error ? (
           <Card className="border-destructive/30">
             <CardContent className="py-8 text-center text-muted-foreground text-sm">
-              Could not load this team roster. <button className="text-foreground underline underline-offset-4" onClick={() => refetch()}>Try again</button>
+              Could not load this team roster.{" "}
+              <button
+                className="text-foreground underline underline-offset-4"
+                onClick={() => refetch()}
+              >
+                Try again
+              </button>
             </CardContent>
           </Card>
         ) : isLoading ? (
@@ -140,34 +172,26 @@ function TeamDetail() {
         )}
       </section>
 
-
-
+      <TeamSkillsMap members={members} />
 
       <MeetingTimeCard teamId={teamId} />
 
       <MeetingLogCard teamId={teamId} />
 
-
       <ManagerSubmissions teamId={teamId} />
 
       <FileVault teamId={teamId} />
-
     </div>
   );
 }
 
-function MemberCard({
-  member,
-  teamId,
-}: {
-  member: any;
-  teamId: string;
-}) {
+function MemberCard({ member, teamId }: { member: Member; teamId: string }) {
   const { user, isAdmin } = useAuth();
   const qc = useQueryClient();
   const p = member.profiles;
   const displayName = p?.name ?? "Unlinked team member";
   const canEdit = !!p && (p.id === user?.id || isAdmin);
+  const suggestedRoles = roleMatches(p?.skills_have ?? [], p?.top_skills ?? []).slice(0, 2);
 
   const [editing, setEditing] = useState(false);
   const [phone, setPhone] = useState(p?.phone_number ?? "");
@@ -254,7 +278,7 @@ function MemberCard({
               </div>
             ) : (
               <>
-                {p?.phone_number ? (
+                {p?.phone_visible && p?.phone_number ? (
                   <a href={`tel:${p.phone_number}`} className="hover:text-foreground">
                     {p.phone_number}
                   </a>
@@ -275,6 +299,37 @@ function MemberCard({
               </>
             )}
           </div>
+          {(p?.top_skills?.length ?? 0) > 0 && (
+            <div className="mt-3">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Strongest skills
+              </div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {p.top_skills.map((skill: string) => (
+                  <Badge key={skill} variant="secondary" className="text-[10px]">
+                    {skillLabel(skill)}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          {(p?.skills_learn?.length ?? 0) > 0 && (
+            <div className="mt-2 text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">Wants to develop:</span>{" "}
+              {p.skills_learn
+                .slice(0, 3)
+                .map((skill: string) => skillLabel(skill))
+                .join(", ")}
+            </div>
+          )}
+          {p?.work_style && (
+            <p className="mt-2 line-clamp-3 text-xs text-muted-foreground">“{p.work_style}”</p>
+          )}
+          {suggestedRoles.length > 0 && (
+            <div className="mt-2 text-[10px] text-muted-foreground">
+              Possible role fit: {suggestedRoles.map((match) => match.role).join(" · ")}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -287,7 +342,7 @@ function TeamNameHeader({
   canEdit,
   onSaved,
 }: {
-  team: { id: string; name: string; section: string | null; display_name: string | null } | undefined;
+  team: TeamRow | undefined;
   isLoading: boolean;
   canEdit: boolean;
   onSaved: () => void;

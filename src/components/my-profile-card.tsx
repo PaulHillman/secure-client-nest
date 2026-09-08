@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Camera, Loader2 } from "lucide-react";
+import { StudentSkillsSection, type StudentSkillsValue } from "@/components/student-skills-section";
 
 type Form = {
   first_name: string;
@@ -20,6 +21,10 @@ type Form = {
   student_id: string;
   phone_number: string;
   phone_visible: boolean;
+  skills_have: string[];
+  skills_learn: string[];
+  top_skills: string[];
+  work_style: string;
 };
 
 export function MyProfileCard() {
@@ -28,8 +33,16 @@ export function MyProfileCard() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState<Form>({
-    first_name: "", last_name: "", email: "", student_id: "",
-    phone_number: "", phone_visible: false,
+    first_name: "",
+    last_name: "",
+    email: "",
+    student_id: "",
+    phone_number: "",
+    phone_visible: false,
+    skills_have: [],
+    skills_learn: [],
+    top_skills: [],
+    work_style: "",
   });
 
   const { data } = useQuery({
@@ -38,7 +51,9 @@ export function MyProfileCard() {
     queryFn: async () => {
       const { data: profile, error } = await supabase
         .from("profiles")
-        .select("id, name, first_name, last_name, email, student_id, phone_number, phone_visible, avatar_url, section")
+        .select(
+          "id, name, first_name, last_name, email, student_id, phone_number, phone_visible, avatar_url, section, skills_have, skills_learn, top_skills, work_style",
+        )
         .eq("id", user!.id)
         .maybeSingle();
       if (error) throw error;
@@ -64,6 +79,10 @@ export function MyProfileCard() {
       student_id: p.student_id ?? "",
       phone_number: p.phone_number ?? "",
       phone_visible: p.phone_visible ?? false,
+      skills_have: p.skills_have ?? [],
+      skills_learn: p.skills_learn ?? [],
+      top_skills: p.top_skills ?? [],
+      work_style: p.work_style ?? "",
     });
   }, [data, user?.email]);
 
@@ -80,6 +99,10 @@ export function MyProfileCard() {
           student_id: f.student_id.trim() || null,
           phone_number: f.phone_number.trim() || null,
           phone_visible: f.phone_visible,
+          skills_have: f.skills_have,
+          skills_learn: f.skills_learn,
+          top_skills: f.top_skills,
+          work_style: f.work_style.trim() || null,
         })
         .eq("id", user!.id);
       if (error) throw error;
@@ -92,7 +115,11 @@ export function MyProfileCard() {
       return { emailChanged: false };
     },
     onSuccess: (r) => {
-      toast.success(r.emailChanged ? "Profile saved — check your new inbox to confirm the address." : "Profile saved");
+      toast.success(
+        r.emailChanged
+          ? "Profile saved — check your new inbox to confirm the address."
+          : "Profile saved",
+      );
       qc.invalidateQueries({ queryKey: ["my-profile"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -104,10 +131,15 @@ export function MyProfileCard() {
     try {
       const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
       const path = `${user.id}/avatar-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+      const { error: upErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-      const { error } = await supabase.from("profiles").update({ avatar_url: pub.publicUrl }).eq("id", user.id);
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: pub.publicUrl })
+        .eq("id", user.id);
       if (error) throw error;
       toast.success("Profile picture updated");
       qc.invalidateQueries({ queryKey: ["my-profile"] });
@@ -121,7 +153,8 @@ export function MyProfileCard() {
   if (!user) return null;
 
   const p = data?.profile;
-  const team = data?.membership?.teams as { name: string; section: string | null } | null | undefined;
+  const team = data?.membership?.teams as
+    { name: string; section: string | null } | null | undefined;
   const initials = `${form.first_name[0] ?? ""}${form.last_name[0] ?? ""}`.toUpperCase() || "?";
 
   return (
@@ -140,14 +173,22 @@ export function MyProfileCard() {
                 className="absolute -bottom-1 -right-1 rounded-full bg-primary p-2 text-primary-foreground shadow hover:opacity-90"
                 aria-label="Change profile picture"
               >
-                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="h-4 w-4" />
+                )}
               </button>
               <input
                 ref={fileRef}
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickFile(f); e.target.value = ""; }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void onPickFile(f);
+                  e.target.value = "";
+                }}
               />
             </div>
           </div>
@@ -166,38 +207,71 @@ export function MyProfileCard() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="first_name">First name</Label>
-                <Input id="first_name" value={form.first_name}
-                  onChange={(e) => setForm({ ...form, first_name: e.target.value })} maxLength={60} />
+                <Input
+                  id="first_name"
+                  value={form.first_name}
+                  onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                  maxLength={60}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="last_name">Last name</Label>
-                <Input id="last_name" value={form.last_name}
-                  onChange={(e) => setForm({ ...form, last_name: e.target.value })} maxLength={60} />
+                <Input
+                  id="last_name"
+                  value={form.last_name}
+                  onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                  maxLength={60}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="email">Email address</Label>
-                <Input id="email" type="email" value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })} maxLength={255} />
+                <Input
+                  id="email"
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  maxLength={255}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="student_id">G#</Label>
-                <Input id="student_id" value={form.student_id} placeholder="G00123456"
-                  onChange={(e) => setForm({ ...form, student_id: e.target.value })} maxLength={20} />
+                <Input
+                  id="student_id"
+                  value={form.student_id}
+                  placeholder="G00123456"
+                  onChange={(e) => setForm({ ...form, student_id: e.target.value })}
+                  maxLength={20}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="phone_number">Mobile number</Label>
-                <Input id="phone_number" type="tel" value={form.phone_number} placeholder="(555) 555-5555"
-                  onChange={(e) => setForm({ ...form, phone_number: e.target.value })} maxLength={25} />
+                <Input
+                  id="phone_number"
+                  type="tel"
+                  value={form.phone_number}
+                  placeholder="(555) 555-5555"
+                  onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
+                  maxLength={25}
+                />
               </div>
               <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 px-3 py-2 sm:mt-6">
                 <div>
                   <div className="text-sm font-medium">Share my number</div>
-                  <div className="text-xs text-muted-foreground">Visible to teammates and the instructor</div>
+                  <div className="text-xs text-muted-foreground">
+                    Visible to teammates and the instructor
+                  </div>
                 </div>
-                <Switch checked={form.phone_visible}
-                  onCheckedChange={(v) => setForm({ ...form, phone_visible: v })} />
+                <Switch
+                  checked={form.phone_visible}
+                  onCheckedChange={(v) => setForm({ ...form, phone_visible: v })}
+                />
               </div>
             </div>
+
+            <StudentSkillsSection
+              value={form satisfies StudentSkillsValue}
+              onChange={(skills) => setForm({ ...form, ...skills })}
+            />
 
             <div className="flex justify-end">
               <Button onClick={() => save.mutate(form)} disabled={save.isPending}>
