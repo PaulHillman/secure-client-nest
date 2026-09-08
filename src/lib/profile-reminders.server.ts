@@ -57,8 +57,30 @@ export async function findIncompleteStudents(
   return targets;
 }
 
+/** Is today inside the admin-set reminder window? */
+export async function remindersWindowOpen(supabaseAdmin: SupabaseClient) {
+  const { data } = await supabaseAdmin
+    .from("semester_schedule")
+    .select("profile_reminders_start, profile_reminders_end")
+    .eq("id", true)
+    .maybeSingle();
+  const today = new Date().toISOString().slice(0, 10);
+  const start = (data as any)?.profile_reminders_start as string | null | undefined;
+  const end = (data as any)?.profile_reminders_end as string | null | undefined;
+  if (start && today < start) return { open: false, reason: `Reminders start ${start}` };
+  if (end && today > end) return { open: false, reason: `Reminders ended ${end}` };
+  return { open: true, reason: "" };
+}
+
 /** Send at most one reminder per student per 24 hours. */
-export async function runProfileReminders(supabaseAdmin: SupabaseClient) {
+export async function runProfileReminders(
+  supabaseAdmin: SupabaseClient,
+  opts: { force?: boolean } = {},
+) {
+  if (!opts.force) {
+    const win = await remindersWindowOpen(supabaseAdmin);
+    if (!win.open) return { candidates: 0, reminded: 0, skipped: 0, skippedReason: win.reason };
+  }
   const targets = await findIncompleteStudents(supabaseAdmin);
   if (targets.length === 0) return { candidates: 0, reminded: 0, skipped: 0 };
 
