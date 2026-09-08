@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { DAY_LABELS, SLOT_MINUTES, fmtSlot, slotKey, slotRangeLabel } from "@/lib/availability";
 
 export function AvailabilityGridCard() {
-  const { user } = useAuth();
+  const { user, viewAs } = useAuth();
   const qc = useQueryClient();
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [dirty, setDirty] = useState(false);
@@ -81,21 +81,23 @@ export function AvailabilityGridCard() {
             Click or drag any half hour you are busy. Leave it blank when you are free.
           </CardDescription>
         </div>
-        <div className="flex shrink-0 gap-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              setBusy(new Set());
-              setDirty(true);
-            }}
-          >
-            <Eraser className="mr-1 h-3.5 w-3.5" /> Clear
-          </Button>
-          <Button size="sm" disabled={!dirty || save.isPending} onClick={() => save.mutate()}>
-            {save.isPending ? "Saving…" : "Save"}
-          </Button>
-        </div>
+        {!viewAs && (
+          <div className="flex shrink-0 gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setBusy(new Set());
+                setDirty(true);
+              }}
+            >
+              <Eraser className="mr-1 h-3.5 w-3.5" /> Clear
+            </Button>
+            <Button size="sm" disabled={!dirty || save.isPending} onClick={() => save.mutate()}>
+              {save.isPending ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -124,13 +126,15 @@ export function AvailabilityGridCard() {
                       aria-label={`${slotRangeLabel(day, m)} — ${isBusy ? "busy" : "free"}`}
                       onPointerDown={(e) => {
                         e.preventDefault();
+                        if (viewAs) return;
                         dragging.current = !isBusy;
                         apply(key, !isBusy);
                       }}
                       onPointerEnter={() => {
+                        if (viewAs) return;
                         if (dragging.current !== null) apply(key, dragging.current);
                       }}
-                      className={`h-5 rounded-[2px] border transition-colors ${
+                      className={`h-5 rounded-[2px] border transition-colors ${viewAs ? "cursor-default" : ""} ${
                         isBusy
                           ? "border-gold/60 bg-gold/70"
                           : m % 60 === 0
@@ -145,7 +149,9 @@ export function AvailabilityGridCard() {
           </div>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          Shaded = busy · Blank = free. {busy.size} half-hour blocks marked busy.
+          {viewAs
+            ? "Viewing as student — this grid is view-only."
+            : `Shaded = busy · Blank = free. ${busy.size} half-hour blocks marked busy.`}
         </p>
       </CardContent>
     </Card>
