@@ -14,6 +14,7 @@ import { ManagerSubmissions } from "@/components/manager-submissions";
 import { CompanyFocusCard, type CompanyFocus } from "@/components/company-focus-card";
 import { ProjectArchCard } from "@/components/project-arch-card";
 import { MeetingTimeCard } from "@/components/meeting-time-card";
+import { TeamAvailabilityCard } from "@/components/team-availability-card";
 import { MeetingLogCard } from "@/components/meeting-log-card";
 import { TeamSkillsMap } from "@/components/team-skills-map";
 import { roleMatches, skillLabel } from "@/lib/student-skills";
@@ -173,6 +174,8 @@ function TeamDetail() {
       </section>
 
       <TeamSkillsMap members={members} />
+
+      <TeamAvailabilityCard teamId={teamId} />
 
       <MeetingTimeCard teamId={teamId} />
 

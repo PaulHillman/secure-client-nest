@@ -17,6 +17,7 @@ import { SluggoFlagCard } from "@/components/sluggo-flag-card";
 import { TeamActivityDashboardCard } from "@/components/team-activity-dashboard-card";
 import { CrossTeamComparisonCard } from "@/components/cross-team-comparison-card";
 import { MyProfileCard } from "@/components/my-profile-card";
+import { AvailabilityGridCard } from "@/components/availability-grid-card";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ClientVault" }] }),
@@ -145,6 +146,10 @@ function Dashboard() {
 
       <div className="mb-6">
         <MyProfileCard />
+      </div>
+
+      <div className="mt-6">
+        <AvailabilityGridCard />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
