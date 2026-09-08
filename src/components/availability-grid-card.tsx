@@ -149,7 +149,9 @@ export function AvailabilityGridCard() {
           </div>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          Shaded = busy · Blank = free. {busy.size} half-hour blocks marked busy.
+          {viewAs
+            ? "Viewing as student — this grid is view-only."
+            : `Shaded = busy · Blank = free. ${busy.size} half-hour blocks marked busy.`}
         </p>
       </CardContent>
     </Card>
