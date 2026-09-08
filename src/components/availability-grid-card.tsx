@@ -80,6 +80,8 @@ export function AvailabilityGridCard() {
 
   if (!user) return null;
 
+  const summary = summarizeBlocks(Array.from(busy));
+
   return (
     <Card className="border-border/60">
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
