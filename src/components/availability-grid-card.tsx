@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { DAY_LABELS, SLOT_MINUTES, fmtSlot, slotKey, slotRangeLabel } from "@/lib/availability";
 
 export function AvailabilityGridCard() {
-  const { user } = useAuth();
+  const { user, viewAs } = useAuth();
   const qc = useQueryClient();
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [dirty, setDirty] = useState(false);
