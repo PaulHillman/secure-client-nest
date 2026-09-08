@@ -138,6 +138,7 @@ export function SemesterPanel() {
   return (
     <div className="space-y-6">
       <AutoArchiveCard />
+      <ProfileRemindersScheduleCard />
 
       <Card>
         <CardHeader>
