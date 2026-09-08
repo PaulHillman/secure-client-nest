@@ -36,3 +36,15 @@ You'll also get an admin view of who is still outstanding.
 - New `src/lib/profile-completion.ts` with the shared rule, used by the dashboard panel and the daily job.
 - `src/lib/profile-reminders.server.ts` + a public cron hook at `/api/public/hooks/profile-reminders`, scheduled daily with pg_cron, mirroring the existing weekly digest job.
 - Availability "saved" is tracked by row existence, so a student with zero conflicts still counts as done once they hit Save.
+
+## Over-blocking check
+
+The grid covers 6am to midnight, so a student has 126 grid hours a week; with sleep from midnight to 8am the realistic waking window is 112 hours. A typical 15-credit load is about 30 hours of class and a job adds about 15 more — roughly 45 hours blocked, leaving about 67 hours open, or 60% of the waking week.
+
+So the availability card will show a live readout as they mark blocks:
+
+- "You've blocked 38 hours — 74 hours still open."
+- A green note while they're at or under ~45 hours: "That's in line with a full class load plus a job."
+- An amber warning above that: "You've blocked more than a full class schedule and a part-time job. Please only block class periods, scheduled work shifts and athletic practices."
+
+The same figure is stored so your admin view can flag students who have blocked out an unrealistic amount of time, alongside those who haven't filled the grid in at all.
