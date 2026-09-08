@@ -21,6 +21,7 @@ import { Route as AppAgreementRouteImport } from './routes/app.agreement'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppTeamsTeamIdRouteImport } from './routes/app.teams.$teamId'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
+import { Route as ApiPublicHooksProfileRemindersRouteImport } from './routes/api/public/hooks/profile-reminders'
 import { Route as ApiPublicHooksAutoArchiveRouteImport } from './routes/api/public/hooks/auto-archive'
 
 const LoginRoute = LoginRouteImport.update({
@@ -84,6 +85,12 @@ const ApiPublicHooksWeeklyDigestRoute =
     path: '/api/public/hooks/weekly-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksProfileRemindersRoute =
+  ApiPublicHooksProfileRemindersRouteImport.update({
+    id: '/api/public/hooks/profile-reminders',
+    path: '/api/public/hooks/profile-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksAutoArchiveRoute =
   ApiPublicHooksAutoArchiveRouteImport.update({
     id: '/api/public/hooks/auto-archive',
@@ -104,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/app/vault-overview': typeof AppVaultOverviewRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
+  '/api/public/hooks/profile-reminders': typeof ApiPublicHooksProfileRemindersRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
 }
 export interface FileRoutesByTo {
@@ -119,6 +127,7 @@ export interface FileRoutesByTo {
   '/app/vault-overview': typeof AppVaultOverviewRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
+  '/api/public/hooks/profile-reminders': typeof ApiPublicHooksProfileRemindersRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
 }
 export interface FileRoutesById {
@@ -135,6 +144,7 @@ export interface FileRoutesById {
   '/app/vault-overview': typeof AppVaultOverviewRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
+  '/api/public/hooks/profile-reminders': typeof ApiPublicHooksProfileRemindersRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
 }
 export interface FileRouteTypes {
@@ -152,6 +162,7 @@ export interface FileRouteTypes {
     | '/app/vault-overview'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
+    | '/api/public/hooks/profile-reminders'
     | '/api/public/hooks/weekly-digest'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/app/vault-overview'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
+    | '/api/public/hooks/profile-reminders'
     | '/api/public/hooks/weekly-digest'
   id:
     | '__root__'
@@ -182,6 +194,7 @@ export interface FileRouteTypes {
     | '/app/vault-overview'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
+    | '/api/public/hooks/profile-reminders'
     | '/api/public/hooks/weekly-digest'
   fileRoutesById: FileRoutesById
 }
@@ -190,6 +203,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   ApiPublicHooksAutoArchiveRoute: typeof ApiPublicHooksAutoArchiveRoute
+  ApiPublicHooksProfileRemindersRoute: typeof ApiPublicHooksProfileRemindersRoute
   ApiPublicHooksWeeklyDigestRoute: typeof ApiPublicHooksWeeklyDigestRoute
 }
 
@@ -279,6 +293,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksWeeklyDigestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/profile-reminders': {
+      id: '/api/public/hooks/profile-reminders'
+      path: '/api/public/hooks/profile-reminders'
+      fullPath: '/api/public/hooks/profile-reminders'
+      preLoaderRoute: typeof ApiPublicHooksProfileRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/auto-archive': {
       id: '/api/public/hooks/auto-archive'
       path: '/api/public/hooks/auto-archive'
@@ -328,6 +349,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   ApiPublicHooksAutoArchiveRoute: ApiPublicHooksAutoArchiveRoute,
+  ApiPublicHooksProfileRemindersRoute: ApiPublicHooksProfileRemindersRoute,
   ApiPublicHooksWeeklyDigestRoute: ApiPublicHooksWeeklyDigestRoute,
 }
 export const routeTree = rootRouteImport
