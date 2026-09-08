@@ -1,4 +1,4 @@
-import { StudentAvatar } from "@/components/student-avatar";
+import { StudentAvatar, StudentName } from "@/components/student-avatar";
 import { teamLabel } from "@/lib/team-label";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -485,19 +485,19 @@ function TeamCard({
         .eq("team_id", team.id);
       if (error) throw error;
       const ids = (data ?? []).map((m) => m.user_id);
-      let profMap = new Map<string, { name: string; email: string | null }>();
+       let profMap = new Map<string, { name: string; email: string | null; avatar_url: string | null }>();
       if (ids.length) {
         const { data: profs, error: pErr } = await supabase
           .from("profiles")
-          .select("id, name, email")
+          .select("id, name, email, avatar_url")
           .in("id", ids);
         if (pErr) throw pErr;
-        profs?.forEach((p) => profMap.set(p.id, { name: p.name, email: p.email }));
+        profs?.forEach((p) => profMap.set(p.id, { name: p.name, email: p.email, avatar_url: p.avatar_url }));
       }
       return (data ?? []).map((m) => ({
         ...m,
         job_title: m.job_title as TeamJob,
-        profiles: profMap.get(m.user_id) ?? { name: "", email: null },
+        profiles: profMap.get(m.user_id) ?? { name: "", email: null, avatar_url: null },
       }));
     },
   });
@@ -663,9 +663,14 @@ function TeamCard({
               key={m.id}
               className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50"
             >
-              <div className="text-sm">
-                <span className="font-medium">{m.profiles.name || m.profiles.email}</span>
-                <span className="ml-2 text-xs text-muted-foreground">{m.job_title}</span>
+               <div className="flex items-center gap-2 text-sm">
+                <StudentName
+                  name={m.profiles.name}
+                  email={m.profiles.email}
+                  avatarUrl={m.profiles.avatar_url}
+                  className="font-medium"
+                />
+                <span className="text-xs text-muted-foreground">{m.job_title}</span>
               </div>
               <Button
                 size="sm"

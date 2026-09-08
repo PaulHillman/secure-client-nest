@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { StudentName } from "@/components/student-avatar";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,7 @@ type VersionRow = {
   uploaded_by: string;
 };
 
-type MemberRow = { user_id: string; name: string | null; email: string | null };
+type MemberRow = { user_id: string; name: string | null; email: string | null; avatar_url: string | null };
 
 function fmtSize(bytes?: number | null) {
   if (!bytes && bytes !== 0) return "";
@@ -260,9 +261,9 @@ async function loadMembers(teamId: string): Promise<MemberRow[]> {
   const ids = (tm ?? []).map((r) => r.user_id);
   if (ids.length === 0) return [];
   const { data: profs } = await supabase
-    .from("profiles").select("id, name, email").in("id", ids);
+    .from("profiles").select("id, name, email, avatar_url").in("id", ids);
   return (profs ?? []).map((p) => ({
-    user_id: p.id, name: p.name, email: p.email,
+    user_id: p.id, name: p.name, email: p.email, avatar_url: p.avatar_url,
   }));
 }
 
@@ -959,8 +960,13 @@ function CommentsDialog({
               return (
                 <div key={c.id} className="rounded border bg-background p-2 text-sm">
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <div className="text-xs font-medium">
-                      {author?.name || author?.email || "User"}
+                    <div className="flex items-center gap-2 text-xs font-medium">
+                      <StudentName
+                        name={author?.name}
+                        email={author?.email}
+                        avatarUrl={author?.avatar_url}
+                        size={20}
+                      />
                       <span className="text-muted-foreground font-normal">
                         {" · "}
                         {new Date(c.created_at).toLocaleString()}

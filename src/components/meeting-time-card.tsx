@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { StudentAvatar } from "@/components/student-avatar";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -54,7 +55,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
       if (userIds.length) {
         const { data: pData } = await supabase
           .from("profiles")
-          .select("id, name, initials")
+          .select("id, name, initials, email, avatar_url")
           .in("id", userIds);
         profiles = pData ?? [];
       }
@@ -75,6 +76,8 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
         user_id: m.user_id,
         job_title: m.job_title,
         name: pmap.get(m.user_id)?.name ?? "Unknown",
+        email: pmap.get(m.user_id)?.email ?? null,
+        avatarUrl: pmap.get(m.user_id)?.avatar_url ?? null,
         savedInitials: pmap.get(m.user_id)?.initials ?? "",
         agreement: amap.get(m.user_id) ?? null,
       }));
@@ -340,6 +343,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                   const status = r.agreement?.status;
                   return (
                     <li key={r.user_id} className="p-3 flex items-center gap-3">
+                      <StudentAvatar name={r.name} email={r.email} avatarUrl={r.avatarUrl} size={32} />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium truncate">
                           {r.name} {isMe && <span className="text-xs text-muted-foreground">(you)</span>}
