@@ -1295,6 +1295,27 @@ export type Database = {
         }
         Relationships: []
       }
+      student_availability: {
+        Row: {
+          busy_slots: string[]
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          busy_slots?: string[]
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          busy_slots?: string[]
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       team_meeting_agreements: {
         Row: {
           agreement_text: string | null
