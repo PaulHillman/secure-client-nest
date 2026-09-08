@@ -10,6 +10,7 @@ export type ReminderTarget = {
   userId: string;
   name: string;
   email: string | null;
+  avatarUrl: string | null;
   teamId: string | null;
   missing: string[];
   message: string;
@@ -20,7 +21,7 @@ export async function findIncompleteStudents(
   supabaseAdmin: SupabaseClient,
 ): Promise<ReminderTarget[]> {
   const [profilesRes, availRes, membersRes, rolesRes] = await Promise.all([
-    supabaseAdmin.from("profiles").select("id, name, email, skills_have, skills_learn"),
+    supabaseAdmin.from("profiles").select("id, name, email, avatar_url, skills_have, skills_learn"),
     supabaseAdmin.from("student_availability").select("user_id"),
     supabaseAdmin.from("team_members").select("user_id, team_id"),
     supabaseAdmin.from("user_roles").select("user_id, role").eq("role", "admin"),
@@ -47,6 +48,7 @@ export async function findIncompleteStudents(
       userId: p.id,
       name: p.name || p.email || "Student",
       email: p.email ?? null,
+      avatarUrl: p.avatar_url ?? null,
       teamId: teamByUser.get(p.id) ?? null,
       missing: status.missing,
       message:

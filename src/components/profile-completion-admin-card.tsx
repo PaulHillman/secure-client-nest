@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ClipboardList, Send } from "lucide-react";
 import { toast } from "sonner";
 import { listIncompleteProfiles, sendProfileReminders } from "@/lib/profile-reminders.functions";
+import { StudentName } from "@/components/student-avatar";
 
 export function ProfileCompletionAdminCard() {
   const qc = useQueryClient();
@@ -53,7 +54,12 @@ export function ProfileCompletionAdminCard() {
           <ul className="divide-y divide-border/60">
             {rows.map((r) => (
               <li key={r.userId} className="flex flex-wrap items-center gap-2 py-2 text-sm">
-                <span className="min-w-40 font-medium">{r.name}</span>
+                <StudentName
+                  name={r.name}
+                  email={r.email}
+                  avatarUrl={(r as any).avatarUrl}
+                  className="min-w-40 font-medium"
+                />
                 <span className="text-xs text-muted-foreground">{r.email}</span>
                 <span className="ml-auto flex flex-wrap gap-1">
                   {r.missing.map((m) => (

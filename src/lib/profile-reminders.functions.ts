@@ -18,6 +18,7 @@ export const listIncompleteProfiles = createServerFn({ method: "GET" })
       userId: t.userId,
       name: t.name,
       email: t.email,
+      avatarUrl: t.avatarUrl,
       missing: t.missing,
     }));
   });
