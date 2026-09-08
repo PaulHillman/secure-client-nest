@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Lightbulb, Plus, Sparkles, Star, Target, X } from "lucide-react";
+import { Check, Lightbulb, Plus, Sparkles, Star, Target, X } from "lucide-react";
 import {
   MAX_SKILLS_HAVE,
   MAX_SKILLS_LEARN,
@@ -29,7 +29,16 @@ type Props = {
 };
 
 function countClass(count: number, max: number) {
-  return count >= max ? "text-amber-700 font-medium" : "text-muted-foreground";
+  return count >= max ? "text-emerald-700 font-medium" : "text-amber-700 font-medium";
+}
+
+function CountLabel({ count, max }: { count: number; max: number }) {
+  return (
+    <span className={`flex items-center gap-1 text-xs ${countClass(count, max)}`}>
+      {count >= max && <Check className="h-3.5 w-3.5" />}
+      {count}/{max}
+    </span>
+  );
 }
 
 export function StudentSkillsSection({ value, onChange }: Props) {
@@ -109,14 +118,12 @@ export function StudentSkillsSection({ value, onChange }: Props) {
         <div className="space-y-3">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <Label className="text-base">Skills I bring</Label>
+              <Label className="text-base">Choose {MAX_SKILLS_HAVE} skills you have</Label>
               <p className="text-xs text-muted-foreground">
-                Choose up to {MAX_SKILLS_HAVE}; star your strongest {MAX_TOP_SKILLS}.
+                All {MAX_SKILLS_HAVE} are required; star your strongest {MAX_TOP_SKILLS}.
               </p>
             </div>
-            <span className={`text-xs ${countClass(value.skills_have.length, MAX_SKILLS_HAVE)}`}>
-              {value.skills_have.length}/{MAX_SKILLS_HAVE}
-            </span>
+            <CountLabel count={value.skills_have.length} max={MAX_SKILLS_HAVE} />
           </div>
           <div className="min-h-12 rounded-md border border-border/60 bg-background p-2">
             {value.skills_have.length === 0 ? (
@@ -159,14 +166,14 @@ export function StudentSkillsSection({ value, onChange }: Props) {
         <div className="space-y-3">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <Label className="text-base">Skills I want to develop</Label>
+              <Label className="text-base">
+                Choose {MAX_SKILLS_LEARN} skills you want to learn
+              </Label>
               <p className="text-xs text-muted-foreground">
-                Choose up to {MAX_SKILLS_LEARN} growth goals.
+                All {MAX_SKILLS_LEARN} growth goals are required.
               </p>
             </div>
-            <span className={`text-xs ${countClass(value.skills_learn.length, MAX_SKILLS_LEARN)}`}>
-              {value.skills_learn.length}/{MAX_SKILLS_LEARN}
-            </span>
+            <CountLabel count={value.skills_learn.length} max={MAX_SKILLS_LEARN} />
           </div>
           <div className="min-h-12 rounded-md border border-border/60 bg-background p-2">
             {value.skills_learn.length === 0 ? (

@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProfileCompletionAdminCard } from "@/components/profile-completion-admin-card";
 import {
   Select,
   SelectContent,
@@ -83,7 +84,8 @@ function Admin() {
             <Archive className="h-3.5 w-3.5 mr-1" /> Semester
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="users" className="mt-6">
+        <TabsContent value="users" className="mt-6 space-y-6">
+          <ProfileCompletionAdminCard />
           <StudentsPanel />
         </TabsContent>
         <TabsContent value="import" className="mt-6">
