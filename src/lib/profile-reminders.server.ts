@@ -1,6 +1,7 @@
 // Server-only: daily reminders for students who have not finished their profile.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { completionStatus } from "@/lib/profile-completion";
+import { sendTemplateEmail } from "@/lib/email-templates/send-email";
 
 const KIND = "profile_incomplete";
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -116,6 +117,7 @@ export async function runProfileReminders(supabaseAdmin: SupabaseClient) {
   return {
     candidates: targets.length,
     reminded: due.length,
+    emailed,
     skipped: targets.length - due.length,
   };
 }
