@@ -85,6 +85,23 @@ export async function runProfileReminders(supabaseAdmin: SupabaseClient) {
   );
   if (notifyErr) throw notifyErr;
 
+  // Email each student. One send per student per day; suppressed recipients are skipped.
+  const day = new Date(now).toISOString().slice(0, 10);
+  let emailed = 0;
+  for (const t of due) {
+    if (!t.email) continue;
+    try {
+      const result = await sendTemplateEmail("profile-incomplete", t.email, {
+        idempotencyKey: `profile-incomplete-${t.userId}-${day}`,
+        templateData: { name: t.name, missing: t.missing },
+      });
+      if (result.sent) emailed += 1;
+    } catch (e) {
+      console.error("[profile-reminders] email failed for", t.userId, e);
+    }
+  }
+
+
   const { error: upsertErr } = await supabaseAdmin.from("profile_reminders").upsert(
     due.map((t) => ({
       user_id: t.userId,
