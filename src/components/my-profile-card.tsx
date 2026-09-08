@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Camera, Loader2 } from "lucide-react";
+import { Camera, Eye, EyeOff, Loader2 } from "lucide-react";
 import { StudentSkillsSection, type StudentSkillsValue } from "@/components/student-skills-section";
 
 type Form = {
