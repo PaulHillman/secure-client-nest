@@ -32,6 +32,9 @@ export function MyProfileCard() {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
   const [form, setForm] = useState<Form>({
     first_name: "",
     last_name: "",
@@ -84,7 +87,18 @@ export function MyProfileCard() {
       top_skills: p.top_skills ?? [],
       work_style: p.work_style ?? "",
     });
+    setPassword((prev) => (prev ? prev : (p.student_id ?? "")));
   }, [data, user?.email]);
+
+  const savePassword = useMutation({
+    mutationFn: async (pw: string) => {
+      const { error } = await supabase.auth.updateUser({ password: pw });
+      if (error) throw error;
+    },
+    onSuccess: () => toast.success("Password updated — use it the next time you sign in."),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const save = useMutation({
     mutationFn: async (f: Form) => {

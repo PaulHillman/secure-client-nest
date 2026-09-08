@@ -99,9 +99,15 @@ function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)} required className="mt-1.5" />
             </div>
             <div>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{mode === "signin" ? "Password or G#" : "Password"}</Label>
               <Input id="password" type="password" autoComplete={mode === "signin" ? "current-password" : "new-password"}
                 value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="mt-1.5" />
+              {mode === "signin" && (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  First time here? Your password is your G# — including the G (for example G00123456).
+                </p>
+              )}
+
             </div>
             <Button type="submit" className="w-full" disabled={busy}>
               {busy ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
