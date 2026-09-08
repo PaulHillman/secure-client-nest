@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ClipboardList, Send } from "lucide-react";
 import { toast } from "sonner";
 import { listIncompleteProfiles, sendProfileReminders } from "@/lib/profile-reminders.functions";
+import { StudentName } from "@/components/student-avatar";
 
 export function ProfileCompletionAdminCard() {
   const qc = useQueryClient();
