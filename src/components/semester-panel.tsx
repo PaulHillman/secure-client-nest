@@ -312,6 +312,88 @@ function AutoArchiveCard() {
   );
 }
 
+function ProfileRemindersScheduleCard() {
+  const qc = useQueryClient();
+  const getSchedFn = useServerFn(getSemesterSchedule);
+  const updateSchedFn = useServerFn(updateSemesterSchedule);
+
+  const { data } = useQuery({
+    queryKey: ["semester", "schedule"],
+    queryFn: () => getSchedFn({}),
+  });
+  const sched: any = data?.schedule;
+
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [dirty, setDirty] = useState(false);
+
+  if (!dirty && sched && start === "" && end === "") {
+    if (sched.profile_reminders_start) setStart(sched.profile_reminders_start);
+    if (sched.profile_reminders_end) setEnd(sched.profile_reminders_end);
+  }
+
+  const saveMut = useMutation({
+    mutationFn: () =>
+      updateSchedFn({
+        data: {
+          start_date: sched?.start_date ?? null,
+          end_date: sched?.end_date ?? null,
+          profile_reminders_start: start || null,
+          profile_reminders_end: end || null,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Reminder dates saved");
+      setDirty(false);
+      qc.invalidateQueries({ queryKey: ["semester", "schedule"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-display text-lg flex items-center gap-2">
+          <CalendarClock className="h-5 w-5 text-gold" /> Student profile reminders
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Daily reminders (in-app and email) to students who have not finished their 8 skills, 5
+          learning goals and weekly availability. Nothing is sent before the start date. Leave the
+          stop date blank to keep reminding all semester. Set these again each new semester.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <Label>Start reminding on</Label>
+            <Input
+              type="date"
+              value={start}
+              onChange={(e) => {
+                setStart(e.target.value);
+                setDirty(true);
+              }}
+            />
+          </div>
+          <div>
+            <Label>Stop reminding after (optional)</Label>
+            <Input
+              type="date"
+              value={end}
+              onChange={(e) => {
+                setEnd(e.target.value);
+                setDirty(true);
+              }}
+            />
+          </div>
+        </div>
+        <Button onClick={() => saveMut.mutate()} disabled={!dirty || saveMut.isPending}>
+          {saveMut.isPending ? "Saving…" : "Save reminder dates"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 function ArchiveNowDialog({
   onArchive,
