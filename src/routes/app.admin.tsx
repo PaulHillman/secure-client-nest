@@ -663,9 +663,14 @@ function TeamCard({
               key={m.id}
               className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-muted/50"
             >
-              <div className="text-sm">
-                <span className="font-medium">{m.profiles.name || m.profiles.email}</span>
-                <span className="ml-2 text-xs text-muted-foreground">{m.job_title}</span>
+               <div className="flex items-center gap-2 text-sm">
+                <StudentName
+                  name={m.profiles.name}
+                  email={m.profiles.email}
+                  avatarUrl={m.profiles.avatar_url}
+                  className="font-medium"
+                />
+                <span className="text-xs text-muted-foreground">{m.job_title}</span>
               </div>
               <Button
                 size="sm"
