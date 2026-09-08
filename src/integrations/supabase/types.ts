@@ -1308,6 +1308,8 @@ export type Database = {
         Row: {
           end_date: string | null
           id: boolean
+          profile_reminders_end: string | null
+          profile_reminders_start: string | null
           start_date: string | null
           updated_at: string
           updated_by: string | null
@@ -1315,6 +1317,8 @@ export type Database = {
         Insert: {
           end_date?: string | null
           id?: boolean
+          profile_reminders_end?: string | null
+          profile_reminders_start?: string | null
           start_date?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -1322,6 +1326,8 @@ export type Database = {
         Update: {
           end_date?: string | null
           id?: boolean
+          profile_reminders_end?: string | null
+          profile_reminders_start?: string | null
           start_date?: string | null
           updated_at?: string
           updated_by?: string | null
