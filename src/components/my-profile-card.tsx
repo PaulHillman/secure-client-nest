@@ -258,6 +258,44 @@ export function MyProfileCard() {
                 />
               </div>
               <div className="space-y-1.5">
+                <Label htmlFor="password">Password</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    value={password}
+                    placeholder="G00123456"
+                    onChange={(e) => setPassword(e.target.value)}
+                    maxLength={72}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    onClick={() => setShowPassword((v) => !v)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={password.trim().length < 6 || savePassword.isPending}
+                    onClick={() => savePassword.mutate(password.trim())}
+                  >
+                    {savePassword.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Update
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Starts as your G#, including the G. Type a new one and press Update to change it.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
                 <Label htmlFor="phone_number">Mobile number</Label>
                 <Input
                   id="phone_number"
