@@ -59,6 +59,8 @@ export const updateSemesterSchedule = createServerFn({ method: "POST" })
         id: true,
         start_date: data.start_date,
         end_date: data.end_date,
+        profile_reminders_start: data.profile_reminders_start ?? null,
+        profile_reminders_end: data.profile_reminders_end ?? null,
         updated_at: new Date().toISOString(),
         updated_by: context.userId,
       });
