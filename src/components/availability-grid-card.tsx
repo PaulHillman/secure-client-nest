@@ -126,13 +126,15 @@ export function AvailabilityGridCard() {
                       aria-label={`${slotRangeLabel(day, m)} — ${isBusy ? "busy" : "free"}`}
                       onPointerDown={(e) => {
                         e.preventDefault();
+                        if (viewAs) return;
                         dragging.current = !isBusy;
                         apply(key, !isBusy);
                       }}
                       onPointerEnter={() => {
+                        if (viewAs) return;
                         if (dragging.current !== null) apply(key, dragging.current);
                       }}
-                      className={`h-5 rounded-[2px] border transition-colors ${
+                      className={`h-5 rounded-[2px] border transition-colors ${viewAs ? "cursor-default" : ""} ${
                         isBusy
                           ? "border-gold/60 bg-gold/70"
                           : m % 60 === 0
