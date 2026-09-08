@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { StudentName } from "@/components/student-avatar";
 import { CalendarClock, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -18,14 +19,14 @@ export function ConsensusStatusCard() {
           supabase.from("team_members").select("team_id, user_id"),
           supabase.from("team_meeting_proposals").select("*"),
           supabase.from("team_meeting_agreements").select("proposal_id, user_id, status"),
-          supabase.from("profiles").select("id, name"),
+          supabase.from("profiles").select("id, name, email, avatar_url"),
         ]);
       if (tErr) throw tErr;
       if (mErr) throw mErr;
       if (pErr) throw pErr;
       if (aErr) throw aErr;
 
-      const nameById = new Map((profiles ?? []).map((p) => [p.id, p.name]));
+      const profById = new Map((profiles ?? []).map((p) => [p.id, p]));
       const membersByTeam = new Map<string, string[]>();
       (members ?? []).forEach((m) => {
         membersByTeam.set(m.team_id, [...(membersByTeam.get(m.team_id) ?? []), m.user_id]);
@@ -48,7 +49,12 @@ export function ConsensusStatusCard() {
         const agreed = memberIds.filter((id) => agreedSet.has(id)).length;
         const outstanding = memberIds
           .filter((id) => !agreedSet.has(id))
-          .map((id) => nameById.get(id) ?? "Unknown");
+          .map((id) => ({
+            id,
+            name: profById.get(id)?.name ?? "Unknown",
+            email: profById.get(id)?.email ?? null,
+            avatarUrl: profById.get(id)?.avatar_url ?? null,
+          }));
         const hasConsensus = !!proposal && total > 0 && agreed >= total;
         return {
           id: t.id,
@@ -110,8 +116,11 @@ export function ConsensusStatusCard() {
                     <div className="text-xs text-muted-foreground italic">No proposal yet</div>
                   )}
                   {t.outstanding.length > 0 && (
-                    <div className="text-xs text-amber-700 mt-0.5 truncate">
-                      Waiting on: {t.outstanding.join(", ")}
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-amber-700">
+                      <span>Waiting on:</span>
+                      {t.outstanding.map((o) => (
+                        <StudentName key={o.id} name={o.name} email={o.email} avatarUrl={o.avatarUrl} size={20} />
+                      ))}
                     </div>
                   )}
                 </div>
