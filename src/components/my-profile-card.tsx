@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Camera, Loader2 } from "lucide-react";
+import { Camera, Eye, EyeOff, Loader2 } from "lucide-react";
 import { StudentSkillsSection, type StudentSkillsValue } from "@/components/student-skills-section";
 
 type Form = {
@@ -32,6 +32,9 @@ export function MyProfileCard() {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
   const [form, setForm] = useState<Form>({
     first_name: "",
     last_name: "",
@@ -84,7 +87,18 @@ export function MyProfileCard() {
       top_skills: p.top_skills ?? [],
       work_style: p.work_style ?? "",
     });
+    setPassword((prev) => (prev ? prev : (p.student_id ?? "")));
   }, [data, user?.email]);
+
+  const savePassword = useMutation({
+    mutationFn: async (pw: string) => {
+      const { error } = await supabase.auth.updateUser({ password: pw });
+      if (error) throw error;
+    },
+    onSuccess: () => toast.success("Password updated — use it the next time you sign in."),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const save = useMutation({
     mutationFn: async (f: Form) => {
@@ -243,6 +257,44 @@ export function MyProfileCard() {
                   maxLength={20}
                 />
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="password">Password</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    value={password}
+                    placeholder="G00123456"
+                    onChange={(e) => setPassword(e.target.value)}
+                    maxLength={72}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    onClick={() => setShowPassword((v) => !v)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={password.trim().length < 6 || savePassword.isPending}
+                    onClick={() => savePassword.mutate(password.trim())}
+                  >
+                    {savePassword.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Update
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Starts as your G#, including the G. Type a new one and press Update to change it.
+                </p>
+              </div>
+
               <div className="space-y-1.5">
                 <Label htmlFor="phone_number">Mobile number</Label>
                 <Input
