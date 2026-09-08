@@ -157,8 +157,25 @@ export function AvailabilityGridCard() {
             ))}
           </div>
         </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          {`Shaded = busy · Blank = free. ${busy.size} half-hour blocks marked busy.`}
+        <div
+          className={`mt-3 rounded-md border p-3 text-xs ${
+            summary.overBlocked
+              ? "border-amber-500/60 bg-amber-50/70 text-amber-900 dark:bg-amber-950/20 dark:text-amber-200"
+              : "border-emerald-600/40 bg-emerald-50/60 text-emerald-900 dark:bg-emerald-950/20 dark:text-emerald-200"
+          }`}
+        >
+          <div className="font-medium">
+            {`You've blocked ${summary.blockedHours} hours — about ${summary.openHours} hours still open.`}
+          </div>
+          <p className="mt-1">
+            {summary.overBlocked
+              ? `That's more than a full class schedule (about ${TYPICAL_BLOCKED_HOURS} hours of class plus a part-time job). Please only block class periods, scheduled work shifts and athletic practices.`
+              : `That's in line with a full class load plus a job (about ${TYPICAL_BLOCKED_HOURS} hours). Counting sleep from midnight to 8am, you have 112 waking hours a week.`}
+          </p>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Shaded = busy · Blank = free. Save even if you have no conflicts at all, so your team knows
+          you are done.
           {viewAs ? " Saving on behalf of this student." : ""}
         </p>
       </CardContent>
