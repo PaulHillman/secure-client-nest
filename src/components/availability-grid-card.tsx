@@ -81,21 +81,23 @@ export function AvailabilityGridCard() {
             Click or drag any half hour you are busy. Leave it blank when you are free.
           </CardDescription>
         </div>
-        <div className="flex shrink-0 gap-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => {
-              setBusy(new Set());
-              setDirty(true);
-            }}
-          >
-            <Eraser className="mr-1 h-3.5 w-3.5" /> Clear
-          </Button>
-          <Button size="sm" disabled={!dirty || save.isPending} onClick={() => save.mutate()}>
-            {save.isPending ? "Saving…" : "Save"}
-          </Button>
-        </div>
+        {!viewAs && (
+          <div className="flex shrink-0 gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setBusy(new Set());
+                setDirty(true);
+              }}
+            >
+              <Eraser className="mr-1 h-3.5 w-3.5" /> Clear
+            </Button>
+            <Button size="sm" disabled={!dirty || save.isPending} onClick={() => save.mutate()}>
+              {save.isPending ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        )}
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
