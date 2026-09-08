@@ -1,3 +1,4 @@
+import { StudentAvatar } from "@/components/student-avatar";
 import { teamLabel } from "@/lib/team-label";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useState } from "react";

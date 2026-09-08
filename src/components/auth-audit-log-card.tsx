@@ -1,3 +1,4 @@
+import { StudentAvatar } from "@/components/student-avatar";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

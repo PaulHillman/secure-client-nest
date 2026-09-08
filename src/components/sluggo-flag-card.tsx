@@ -1,3 +1,4 @@
+import { StudentAvatar } from "@/components/student-avatar";
 import { teamLabel } from "@/lib/team-label";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
