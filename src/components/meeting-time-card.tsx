@@ -54,7 +54,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
       if (userIds.length) {
         const { data: pData } = await supabase
           .from("profiles")
-          .select("id, name, initials")
+          .select("id, name, initials, email, avatar_url")
           .in("id", userIds);
         profiles = pData ?? [];
       }
