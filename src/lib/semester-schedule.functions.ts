@@ -13,17 +13,39 @@ export const getSemesterSchedule = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("semester_schedule")
-      .select("start_date, end_date, updated_at")
+      .select("start_date, end_date, profile_reminders_start, profile_reminders_end, updated_at")
       .eq("id", true)
       .maybeSingle();
-    return { schedule: data ?? { start_date: null, end_date: null, updated_at: null } };
+    return {
+      schedule:
+        data ?? {
+          start_date: null,
+          end_date: null,
+          profile_reminders_start: null,
+          profile_reminders_end: null,
+          updated_at: null,
+        },
+    };
   });
 
 export const updateSemesterSchedule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { start_date: string | null; end_date: string | null }) => {
-    const dateOk = (d: string | null) => d === null || /^\d{4}-\d{2}-\d{2}$/.test(d);
-    if (!dateOk(input?.start_date) || !dateOk(input?.end_date)) throw new Error("Invalid date format (YYYY-MM-DD)");
+  .inputValidator(
+    (input: {
+      start_date: string | null;
+      end_date: string | null;
+      profile_reminders_start?: string | null;
+      profile_reminders_end?: string | null;
+    }) => {
+    const dateOk = (d: string | null | undefined) =>
+      d === null || d === undefined || /^\d{4}-\d{2}-\d{2}$/.test(d);
+    if (
+      !dateOk(input?.start_date) ||
+      !dateOk(input?.end_date) ||
+      !dateOk(input?.profile_reminders_start) ||
+      !dateOk(input?.profile_reminders_end)
+    )
+      throw new Error("Invalid date format (YYYY-MM-DD)");
     if (input.start_date && input.end_date && input.start_date > input.end_date)
       throw new Error("Start date must be on or before end date");
     return input;
