@@ -34,5 +34,5 @@ export const sendProfileReminders = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { runProfileReminders } = await import("@/lib/profile-reminders.server");
-    return await runProfileReminders(supabaseAdmin as any);
+    return await runProfileReminders(supabaseAdmin as any, { force: true });
   });
