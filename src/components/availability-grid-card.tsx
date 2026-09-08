@@ -7,6 +7,11 @@ import { Button } from "@/components/ui/button";
 import { CalendarClock, Eraser } from "lucide-react";
 import { toast } from "sonner";
 import { DAY_LABELS, SLOT_MINUTES, fmtSlot, slotKey, slotRangeLabel } from "@/lib/availability";
+import {
+  AVAILABILITY_GUIDANCE,
+  TYPICAL_BLOCKED_HOURS,
+  summarizeBlocks,
+} from "@/lib/profile-completion";
 import { saveAvailabilityFor } from "@/lib/availability.functions";
 
 export function AvailabilityGridCard() {
@@ -83,7 +88,8 @@ export function AvailabilityGridCard() {
             <CalendarClock className="h-5 w-5 text-gold" /> My weekly availability
           </CardTitle>
           <CardDescription>
-            Click or drag any half hour you are busy. Leave it blank when you are free.
+            Click or drag any half hour you are busy. Leave it blank when you are free.{" "}
+            {AVAILABILITY_GUIDANCE}
           </CardDescription>
         </div>
         {(
