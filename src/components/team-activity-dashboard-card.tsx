@@ -14,6 +14,7 @@ const WEIGHTS = { login: 1, upload: 5, comment: 3, reply: 2 } as const;
 type MemberStat = {
   user_id: string;
   name: string;
+  avatar_url?: string | null;
   email: string;
   logins: number;
   uploads: number;
@@ -63,7 +64,7 @@ export function TeamActivityDashboardCard() {
           ? supabase.from("file_comments").select("team_id, author_id, to_entire_team, recipient_ids, created_at").gte("created_at", since)
           : supabase.from("file_comments").select("team_id, author_id, to_entire_team, recipient_ids, created_at"),
         supabase.from("files").select("team_id, status, updated_at"),
-        supabase.from("profiles").select("id, name, email"),
+        supabase.from("profiles").select("id, name, email, avatar_url"),
       ]);
 
       const teams = teamsRes.data ?? [];
@@ -152,6 +153,7 @@ export function TeamActivityDashboardCard() {
             return {
               user_id: uid,
               name: p?.name ?? "—",
+              avatar_url: p?.avatar_url ?? null,
               email: p?.email ?? "",
               logins: l,
               uploads: u,
@@ -349,8 +351,13 @@ export function TeamActivityDashboardCard() {
                                       r.memberStats.map((m) => (
                                         <tr key={m.user_id} className="border-b border-border/20 last:border-0">
                                           <td className="py-1 pr-3">
-                                            <div className="font-medium text-foreground">{m.name}</div>
-                                            <div className="text-muted-foreground">{m.email}</div>
+                                            <div className="flex items-center gap-2">
+                                              <StudentAvatar name={m.name} email={m.email} avatarUrl={m.avatar_url} size={24} />
+                                              <div>
+                                                <div className="font-medium text-foreground">{m.name}</div>
+                                                <div className="text-muted-foreground">{m.email}</div>
+                                              </div>
+                                            </div>
                                           </td>
                                           <td className="py-1 pr-2 text-right tabular-nums">{m.logins}</td>
                                           <td className="py-1 pr-2 text-right tabular-nums">{m.uploads}</td>

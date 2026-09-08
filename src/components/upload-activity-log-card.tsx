@@ -18,6 +18,7 @@ type LogRow = {
 
 type Enriched = LogRow & {
   actor_name: string | null;
+  actor_avatar?: string | null;
   actor_email: string | null;
   team_name: string | null;
 };
@@ -44,8 +45,8 @@ export function UploadActivityLogCard() {
 
       const [profilesRes, teamsRes] = await Promise.all([
         userIds.length
-          ? supabase.from("profiles").select("id, name, email").in("id", userIds)
-          : Promise.resolve({ data: [] as { id: string; name: string | null; email: string | null }[] }),
+          ? supabase.from("profiles").select("id, name, email, avatar_url").in("id", userIds)
+          : Promise.resolve({ data: [] as { id: string; name: string | null; email: string | null; avatar_url: string | null }[] }),
         teamIds.length
           ? supabase.from("teams").select("id, name").in("id", teamIds)
           : Promise.resolve({ data: [] as { id: string; name: string | null }[] }),
@@ -57,6 +58,7 @@ export function UploadActivityLogCard() {
       return (logs ?? []).map((l) => ({
         ...l,
         actor_name: l.actor_id ? profMap.get(l.actor_id)?.name ?? null : null,
+        actor_avatar: l.actor_id ? profMap.get(l.actor_id)?.avatar_url ?? null : null,
         actor_email: l.actor_id ? profMap.get(l.actor_id)?.email ?? null : null,
         team_name: l.team_id ? teamMap.get(l.team_id) ?? null : null,
       }));
@@ -135,7 +137,10 @@ export function UploadActivityLogCard() {
                       {new Date(r.created_at).toLocaleString()}
                     </td>
                     <td className="py-2 pr-4">
-                      <div className="font-medium text-foreground">{r.actor_name ?? "—"}</div>
+                      <div className="flex items-center gap-2">
+                        <StudentAvatar name={r.actor_name} email={r.actor_email} avatarUrl={r.actor_avatar} size={24} />
+                        <div className="font-medium text-foreground">{r.actor_name ?? "—"}</div>
+                      </div>
                       <div className="text-xs text-muted-foreground">{r.actor_email ?? (r.actor_id ? r.actor_id.slice(0, 8) : "system")}</div>
                     </td>
                     <td className="py-2 pr-4 text-foreground">{r.team_name ?? "—"}</td>

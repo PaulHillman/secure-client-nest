@@ -119,7 +119,7 @@ function StudentsPanel() {
     queryKey: ["admin", "students"],
     queryFn: async () => {
       const [{ data: profiles, error }, { data: roles, error: rErr }, { data: members, error: mErr }, { data: teams, error: tErr }] = await Promise.all([
-        supabase.from("profiles").select("id, name, email, section").order("name"),
+        supabase.from("profiles").select("id, name, email, section, avatar_url").order("name"),
         supabase.from("user_roles").select("user_id, role"),
         supabase.from("team_members").select("user_id, team_id, job_title"),
         supabase.from("teams").select("id, name, section"),
@@ -294,6 +294,7 @@ function StudentRow({
     name: string;
     email: string | null;
     section: string | null;
+    avatar_url?: string | null;
     team_name: string | null;
     job_title: string | null;
   };
@@ -306,7 +307,10 @@ function StudentRow({
   return (
     <tr className="border-b last:border-0 align-middle">
       <td className="py-2 pr-3">
-        <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8" />
+        <div className="flex items-center gap-2">
+          <StudentAvatar name={student.name} email={student.email} avatarUrl={student.avatar_url} size={28} />
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8" />
+        </div>
       </td>
       <td className="py-2 pr-3 text-muted-foreground">{student.email}</td>
       <td className="py-2 pr-3">
@@ -498,7 +502,7 @@ function TeamCard({
   const { data: allProfiles } = useQuery({
     queryKey: ["admin", "assignable-users", team.section ?? "_none"],
     queryFn: async () => {
-      let q = supabase.from("profiles").select("id, name, email, section").order("name");
+      let q = supabase.from("profiles").select("id, name, email, section, avatar_url").order("name");
       if (team.section) q = q.eq("section", team.section);
       else q = q.is("section", null);
       const { data: profs, error } = await q;

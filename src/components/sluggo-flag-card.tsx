@@ -15,6 +15,7 @@ type Flag = {
 type Row = {
   user_id: string;
   name: string;
+  avatar_url?: string | null;
   email: string;
   section: string | null;
   team: string | null;
@@ -39,7 +40,7 @@ export function SluggoFlagCard() {
       const sinceIso = since.toISOString();
 
       const [profilesRes, membersRes, teamsRes, authRes, fileRes, commentsRes, rolesRes] = await Promise.all([
-        supabase.from("profiles").select("id, name, email, section"),
+        supabase.from("profiles").select("id, name, email, section, avatar_url"),
         supabase.from("team_members").select("user_id, team_id"),
         supabase.from("teams").select("id, name, section"),
         supabase.from("auth_audit_log").select("user_id, event, created_at").eq("event", "signin"),
@@ -100,6 +101,7 @@ export function SluggoFlagCard() {
           return {
             user_id: p.id,
             name: p.name ?? "—",
+            avatar_url: p.avatar_url ?? null,
             email: p.email ?? "",
             section: p.section ?? null,
             team: teamByUser.get(p.id) ?? null,
@@ -203,8 +205,13 @@ export function SluggoFlagCard() {
                 {rows.map((r) => (
                   <tr key={r.user_id} className="border-b border-border/40">
                     <td className="py-2 pr-4">
-                      <div className="font-medium text-foreground">{r.name}</div>
-                      <div className="text-xs text-muted-foreground">{r.email}</div>
+                      <div className="flex items-center gap-2">
+                        <StudentAvatar name={r.name} email={r.email} avatarUrl={r.avatar_url} />
+                        <div>
+                          <div className="font-medium text-foreground">{r.name}</div>
+                          <div className="text-xs text-muted-foreground">{r.email}</div>
+                        </div>
+                      </div>
                     </td>
                     <td className="py-2 pr-4 text-muted-foreground">{r.section ?? "—"}</td>
                     <td className="py-2 pr-4 text-muted-foreground">{r.team ?? "—"}</td>

@@ -12,6 +12,7 @@ const WEIGHTS = { login: 1, upload: 5, comment: 3, reply: 2 } as const;
 type Row = {
   user_id: string;
   name: string;
+  avatar_url?: string | null;
   email: string;
   section: string | null;
   team: string | null;
@@ -38,7 +39,7 @@ export function StudentActivityScoreCard() {
     queryKey: ["student-activity-score", win],
     queryFn: async (): Promise<{ rows: Row[]; teams: { id: string; name: string }[] }> => {
       const [profilesRes, membersRes, teamsRes, authRes, fileRes, commentsRes] = await Promise.all([
-        supabase.from("profiles").select("id, name, email, section"),
+        supabase.from("profiles").select("id, name, email, section, avatar_url"),
         supabase.from("team_members").select("user_id, team_id"),
         supabase.from("teams").select("id, name, section"),
         (since
@@ -86,6 +87,7 @@ export function StudentActivityScoreCard() {
         return {
           user_id: p.id,
           name: p.name ?? "—",
+          avatar_url: p.avatar_url ?? null,
           email: p.email ?? "",
           section: p.section ?? null,
           team: teamByUser.get(p.id) ?? null,
@@ -175,8 +177,13 @@ export function StudentActivityScoreCard() {
                 {rows.map((r) => (
                   <tr key={r.user_id} className="border-b border-border/40">
                     <td className="py-2 pr-4">
-                      <div className="font-medium text-foreground">{r.name}</div>
-                      <div className="text-xs text-muted-foreground">{r.email}</div>
+                      <div className="flex items-center gap-2">
+                        <StudentAvatar name={r.name} email={r.email} avatarUrl={r.avatar_url} />
+                        <div>
+                          <div className="font-medium text-foreground">{r.name}</div>
+                          <div className="text-xs text-muted-foreground">{r.email}</div>
+                        </div>
+                      </div>
                     </td>
                     <td className="py-2 pr-4 text-muted-foreground">{r.section ?? "—"}</td>
                     <td className="py-2 pr-4 text-muted-foreground">{r.team ?? "—"}</td>

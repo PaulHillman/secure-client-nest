@@ -25,7 +25,7 @@ export function ViewAsStudentPicker() {
       const adminIds = new Set((adminRoles ?? []).map((r) => r.user_id));
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, name, first_name, last_name, email, section")
+        .select("id, name, first_name, last_name, email, section, avatar_url")
         .order("last_name", { ascending: true });
       if (error) throw error;
       return (data ?? []).filter((p) => !adminIds.has(p.id));
@@ -105,12 +105,17 @@ export function ViewAsStudentPicker() {
                 onClick={() => pick(s)}
                 className="w-full text-left rounded px-2 py-1.5 text-sm hover:bg-accent"
               >
-                <div className="truncate">
-                  {s.first_name && s.last_name ? `${s.first_name} ${s.last_name}` : s.name || s.email}
-                </div>
-                <div className="truncate text-xs text-muted-foreground">
-                  {s.email}
-                  {s.section ? ` · Section ${s.section}` : ""}
+                <div className="flex items-center gap-2 min-w-0">
+                  <StudentAvatar name={s.name} email={s.email} avatarUrl={s.avatar_url} size={26} />
+                  <div className="min-w-0">
+                    <div className="truncate">
+                      {s.first_name && s.last_name ? `${s.first_name} ${s.last_name}` : s.name || s.email}
+                    </div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      {s.email}
+                      {s.section ? ` · Section ${s.section}` : ""}
+                    </div>
+                  </div>
                 </div>
               </button>
             ))
