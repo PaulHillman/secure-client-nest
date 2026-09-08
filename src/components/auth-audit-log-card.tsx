@@ -1,3 +1,4 @@
+import { StudentAvatar } from "@/components/student-avatar";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,7 @@ type Row = {
   user_agent: string | null;
   created_at: string;
   profile_name: string | null;
+  profile_avatar?: string | null;
   profile_email: string | null;
 };
 
@@ -28,18 +30,19 @@ export function AuthAuditLogCard() {
         .limit(limit);
       if (error) throw error;
       const ids = Array.from(new Set((logs ?? []).map((l) => l.user_id)));
-      let profilesById = new Map<string, { name: string | null; email: string | null }>();
+      let profilesById = new Map<string, { name: string | null; email: string | null; avatar_url: string | null }>();
       if (ids.length) {
         const { data: profs } = await supabase
           .from("profiles")
-          .select("id, name, email")
+          .select("id, name, email, avatar_url")
           .in("id", ids);
-        profilesById = new Map((profs ?? []).map((p) => [p.id, { name: p.name, email: p.email }]));
+        profilesById = new Map((profs ?? []).map((p) => [p.id, { name: p.name, email: p.email, avatar_url: p.avatar_url }]));
       }
       return (logs ?? []).map((l) => ({
         ...l,
         event: l.event as "signin" | "signout",
         profile_name: profilesById.get(l.user_id)?.name ?? null,
+        profile_avatar: profilesById.get(l.user_id)?.avatar_url ?? null,
         profile_email: profilesById.get(l.user_id)?.email ?? null,
       }));
     },
@@ -94,7 +97,10 @@ export function AuthAuditLogCard() {
                       {new Date(r.created_at).toLocaleString()}
                     </td>
                     <td className="py-2 pr-4">
-                      <div className="font-medium text-foreground">{r.profile_name ?? "—"}</div>
+                      <div className="flex items-center gap-2">
+                        <StudentAvatar name={r.profile_name} email={r.profile_email} avatarUrl={r.profile_avatar} size={24} />
+                        <div className="font-medium text-foreground">{r.profile_name ?? "—"}</div>
+                      </div>
                       <div className="text-xs text-muted-foreground">{r.profile_email ?? r.user_id.slice(0, 8)}</div>
                     </td>
                     <td className="py-2 pr-4">

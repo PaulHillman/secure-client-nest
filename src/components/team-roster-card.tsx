@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users } from "lucide-react";
+import { StudentName } from "@/components/student-avatar";
 
 const JOB_ORDER = [
   "PM",
@@ -29,7 +30,7 @@ export function TeamRosterCard() {
       ] = await Promise.all([
         supabase.from("teams").select("id, name, section"),
         supabase.from("team_members").select("team_id, user_id, job_title"),
-        supabase.from("profiles").select("id, name, email"),
+        supabase.from("profiles").select("id, name, email, avatar_url"),
       ]);
       if (tErr) throw tErr;
       if (mErr) throw mErr;
@@ -44,6 +45,7 @@ export function TeamRosterCard() {
             job_title: m.job_title ?? null,
             name: profMap.get(m.user_id)?.name ?? "—",
             email: profMap.get(m.user_id)?.email ?? null,
+            avatar_url: profMap.get(m.user_id)?.avatar_url ?? null,
           }))
           .sort((a, b) => {
             const r = jobRank(a.job_title) - jobRank(b.job_title);
@@ -113,7 +115,7 @@ export function TeamRosterCard() {
                         <td className="py-2 pr-3 font-medium">
                           {idx === 0 ? t.name : ""}
                         </td>
-                        <td className="py-2 pr-3">{m.name}</td>
+                        <td className="py-2 pr-3"><StudentName name={m.name} email={m.email} avatarUrl={m.avatar_url} /></td>
                         <td className="py-2 pr-3 text-muted-foreground">{m.email ?? "—"}</td>
                         <td className="py-2 pr-3">
                           {m.job_title ? (
