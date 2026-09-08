@@ -201,7 +201,7 @@ function MemberCard({ member, teamId }: { member: Member; teamId: string }) {
       const { error } = await supabase
         .from("profiles")
         .update({ phone_number: phone.trim() || null })
-        .eq("id", p.id);
+        .eq("id", p?.id ?? "");
       if (error) throw error;
     },
     onSuccess: () => {
@@ -305,7 +305,7 @@ function MemberCard({ member, teamId }: { member: Member; teamId: string }) {
                 Strongest skills
               </div>
               <div className="mt-1 flex flex-wrap gap-1">
-                {p.top_skills.map((skill: string) => (
+                {(p?.top_skills ?? []).map((skill: string) => (
                   <Badge key={skill} variant="secondary" className="text-[10px]">
                     {skillLabel(skill)}
                   </Badge>
@@ -316,7 +316,7 @@ function MemberCard({ member, teamId }: { member: Member; teamId: string }) {
           {(p?.skills_learn?.length ?? 0) > 0 && (
             <div className="mt-2 text-xs text-muted-foreground">
               <span className="font-medium text-foreground">Wants to develop:</span>{" "}
-              {p.skills_learn
+              {(p?.skills_learn ?? [])
                 .slice(0, 3)
                 .map((skill: string) => skillLabel(skill))
                 .join(", ")}
