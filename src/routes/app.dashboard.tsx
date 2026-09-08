@@ -19,6 +19,8 @@ import { CrossTeamComparisonCard } from "@/components/cross-team-comparison-card
 import { MyProfileCard } from "@/components/my-profile-card";
 import { AvailabilityGridCard } from "@/components/availability-grid-card";
 import { ProfileCompletionCard } from "@/components/profile-completion-card";
+import { RoleSelectCard } from "@/components/role-select-card";
+
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — ClientVault" }] }),
@@ -156,6 +158,11 @@ function Dashboard() {
       <div className="mt-6">
         <AvailabilityGridCard />
       </div>
+
+      <div className="my-6">
+        <RoleSelectCard />
+      </div>
+
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c) => (
