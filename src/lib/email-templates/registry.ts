@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react'
+import { template as profileIncompleteTemplate } from './profile-incomplete'
 
 export interface TemplateEntry {
   component: ComponentType<any>
