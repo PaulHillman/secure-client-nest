@@ -2,13 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { completionStatus } from "@/lib/profile-completion";
 
-const SELECTABLE = [
+const BASE_ROLES = [
   "PM",
   "Communication Specialist",
   "Video Specialist",
   "Company Liaison",
   "Client Vault & Tech Administrator",
 ];
+const SIX_MEMBER_EXTRA = "Researcher";
 
 /** What the signed-in student may pick right now, and who already holds what. */
 export const getRoleOptions = createServerFn({ method: "GET" })
