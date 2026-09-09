@@ -27,6 +27,7 @@ export function RoleSelectCard() {
       toast.success(`You are now the ${res.role}.`);
       void qc.invalidateQueries({ queryKey: ["role-options"] });
       void qc.invalidateQueries({ queryKey: ["my-profile"] });
+      void qc.invalidateQueries({ queryKey: ["team"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
