@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Database } from "@/integrations/supabase/types";
 
 import { VAULT_ADMIN_ROLE } from "@/components/vault-admin-duties-card";
+import { RoleSelectCard } from "@/components/role-select-card";
 
 export const Route = createFileRoute("/app/teams/$teamId")({
   head: () => ({ meta: [{ title: "Team — ClientVault" }] }),
@@ -136,6 +137,12 @@ function TeamDetail() {
       <div className="mt-6">
         <ProjectArchCard variant="wide" />
       </div>
+
+      {isMember && (
+        <div className="mt-6">
+          <RoleSelectCard />
+        </div>
+      )}
 
       <section className="mt-8">
         <div className="flex items-center gap-2 mb-4">
