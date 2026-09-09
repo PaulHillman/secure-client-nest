@@ -30,6 +30,16 @@ export const SELECTABLE_ROLES: { value: TeamJob; blurb: string }[] = [
   },
 ];
 
+/** Extra role offered only to teams with 6 members. */
+export const RESEARCHER_ROLE = {
+  value: "Researcher" as TeamJob,
+  blurb: "Researches the client company and industry, and keeps the team's findings in the vault.",
+};
+
+export function selectableRoles(memberCount: number) {
+  return memberCount >= 6 ? [...SELECTABLE_ROLES, RESEARCHER_ROLE] : SELECTABLE_ROLES;
+}
+
 export const UNASSIGNED: TeamJob = "Unassigned";
 
 export function roleBlurb(role: string) {

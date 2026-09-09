@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { claimTeamRole, getRoleOptions } from "@/lib/team-role.functions";
-import { SELECTABLE_ROLES } from "@/lib/team-roles";
+import { selectableRoles } from "@/lib/team-roles";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,7 +49,7 @@ export function RoleSelectCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
-        {SELECTABLE_ROLES.map((role) => {
+        {selectableRoles(data.memberCount).map((role) => {
           const mine = data.currentRole === role.value;
           const heldBy = takenBy.get(role.value);
           const disabled = !data.canSelect || !!heldBy || mine || mutation.isPending;

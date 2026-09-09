@@ -2,13 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { completionStatus } from "@/lib/profile-completion";
 
-const SELECTABLE = [
+const BASE_ROLES = [
   "PM",
   "Communication Specialist",
   "Video Specialist",
   "Company Liaison",
   "Client Vault & Tech Administrator",
 ];
+const SIX_MEMBER_EXTRA = "Researcher";
 
 /** What the signed-in student may pick right now, and who already holds what. */
 export const getRoleOptions = createServerFn({ method: "GET" })
@@ -34,13 +35,16 @@ export const getRoleOptions = createServerFn({ method: "GET" })
     });
 
     let taken: { role: string; name: string }[] = [];
+    let memberCount = 0;
     if (membership?.team_id) {
       const { data: mates } = await supabase
         .from("team_members")
         .select("user_id, job_title")
         .eq("team_id", membership.team_id);
+      memberCount = (mates ?? []).length;
+      const allowed = memberCount >= 6 ? [...BASE_ROLES, SIX_MEMBER_EXTRA] : BASE_ROLES;
       const others = (mates ?? []).filter(
-        (m) => m.user_id !== userId && SELECTABLE.includes(m.job_title as string),
+        (m) => m.user_id !== userId && allowed.includes(m.job_title as string),
       );
       if (others.length) {
         const { data: names } = await supabase
@@ -63,6 +67,7 @@ export const getRoleOptions = createServerFn({ method: "GET" })
       currentRole: (membership?.job_title as string) ?? null,
       canSelect: status.complete,
       missing: status.missing,
+      memberCount,
       taken,
     };
   });
@@ -71,7 +76,8 @@ export const getRoleOptions = createServerFn({ method: "GET" })
 export const claimTeamRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { role: string }) => {
-    if (!SELECTABLE.includes(input.role)) throw new Error("That is not a selectable role.");
+    if (![...BASE_ROLES, SIX_MEMBER_EXTRA].includes(input.role))
+      throw new Error("That is not a selectable role.");
     return input;
   })
   .handler(async ({ data, context }) => {
@@ -101,6 +107,9 @@ export const claimTeamRole = createServerFn({ method: "POST" })
       .from("team_members")
       .select("user_id, job_title")
       .eq("team_id", membership.team_id);
+    if (data.role === SIX_MEMBER_EXTRA && (mates ?? []).length < 6) {
+      throw new Error("Researcher is only offered to teams with 6 members.");
+    }
     const clash = (mates ?? []).find((m) => m.user_id !== userId && m.job_title === data.role);
     if (clash) throw new Error(`${data.role} is already taken on your team.`);
 
