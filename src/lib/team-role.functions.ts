@@ -76,7 +76,8 @@ export const getRoleOptions = createServerFn({ method: "GET" })
 export const claimTeamRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { role: string }) => {
-    if (!SELECTABLE.includes(input.role)) throw new Error("That is not a selectable role.");
+    if (![...BASE_ROLES, SIX_MEMBER_EXTRA].includes(input.role))
+      throw new Error("That is not a selectable role.");
     return input;
   })
   .handler(async ({ data, context }) => {
@@ -106,6 +107,9 @@ export const claimTeamRole = createServerFn({ method: "POST" })
       .from("team_members")
       .select("user_id, job_title")
       .eq("team_id", membership.team_id);
+    if (data.role === SIX_MEMBER_EXTRA && (mates ?? []).length < 6) {
+      throw new Error("Researcher is only offered to teams with 6 members.");
+    }
     const clash = (mates ?? []).find((m) => m.user_id !== userId && m.job_title === data.role);
     if (clash) throw new Error(`${data.role} is already taken on your team.`);
 
