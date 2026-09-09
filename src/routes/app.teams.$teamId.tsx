@@ -137,6 +137,12 @@ function TeamDetail() {
         <ProjectArchCard variant="wide" />
       </div>
 
+      {isMember && (
+        <div className="mt-6">
+          <RoleSelectCard />
+        </div>
+      )}
+
       <section className="mt-8">
         <div className="flex items-center gap-2 mb-4">
           <Users className="h-5 w-5 text-gold" />
