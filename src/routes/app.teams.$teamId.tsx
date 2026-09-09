@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Database } from "@/integrations/supabase/types";
 
 import { VAULT_ADMIN_ROLE } from "@/components/vault-admin-duties-card";
+import { RoleSelectCard } from "@/components/role-select-card";
 
 export const Route = createFileRoute("/app/teams/$teamId")({
   head: () => ({ meta: [{ title: "Team — ClientVault" }] }),
