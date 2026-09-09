@@ -35,13 +35,16 @@ export const getRoleOptions = createServerFn({ method: "GET" })
     });
 
     let taken: { role: string; name: string }[] = [];
+    let memberCount = 0;
     if (membership?.team_id) {
       const { data: mates } = await supabase
         .from("team_members")
         .select("user_id, job_title")
         .eq("team_id", membership.team_id);
+      memberCount = (mates ?? []).length;
+      const allowed = memberCount >= 6 ? [...BASE_ROLES, SIX_MEMBER_EXTRA] : BASE_ROLES;
       const others = (mates ?? []).filter(
-        (m) => m.user_id !== userId && SELECTABLE.includes(m.job_title as string),
+        (m) => m.user_id !== userId && allowed.includes(m.job_title as string),
       );
       if (others.length) {
         const { data: names } = await supabase
@@ -64,6 +67,7 @@ export const getRoleOptions = createServerFn({ method: "GET" })
       currentRole: (membership?.job_title as string) ?? null,
       canSelect: status.complete,
       missing: status.missing,
+      memberCount,
       taken,
     };
   });
