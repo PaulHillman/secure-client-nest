@@ -153,7 +153,6 @@ function Dashboard() {
 
       {isAdmin && (
         <div className="mb-6 space-y-6">
-          <SubmissionReviewCard />
           <ReadinessBoardCard />
           <div id="proofs" className="scroll-mt-6 space-y-6">
             <ProofReviewQueueCard />
