@@ -52,7 +52,9 @@ export const getTeamProofs = createServerFn({ method: "GET" })
         : Promise.resolve({ data: [] as { id: string; name: string; avatar_url: string | null }[] }),
       supabase
         .from("proof_submissions")
-        .select("id, user_id, proof_key, submitted_at, feedback, feedback_status, file_name, response")
+        .select(
+          "id, user_id, proof_key, submitted_at, feedback, feedback_status, file_name, response, review_status, review_note, reviewed_at",
+        )
         .eq("team_id", data.teamId),
       supabase.from("proof_materials").select("proof_key, ready, extra_instructions"),
     ]);
@@ -65,7 +67,8 @@ export const getTeamProofs = createServerFn({ method: "GET" })
       const assigned = proofsForRole(m.job_title)
         .filter((p) => p.role !== "Researcher" || memberCount >= 6)
         .map((p) => p.key);
-      const done = (subs ?? []).filter((s) => s.user_id === m.user_id).map((s) => s.proof_key);
+      const own = (subs ?? []).filter((s) => s.user_id === m.user_id);
+      const done = own.map((s) => s.proof_key);
       return {
         userId: m.user_id,
         name: profile?.name ?? "Student",
@@ -73,6 +76,12 @@ export const getTeamProofs = createServerFn({ method: "GET" })
         role: m.job_title,
         assigned,
         completed: assigned.filter((k) => done.includes(k)),
+        approved: assigned.filter((k) =>
+          own.some((s) => s.proof_key === k && s.review_status === "approved"),
+        ),
+        sentBack: assigned.filter((k) =>
+          own.some((s) => s.proof_key === k && s.review_status === "sent_back"),
+        ),
       };
     });
 
@@ -93,6 +102,9 @@ export const getTeamProofs = createServerFn({ method: "GET" })
                 feedbackStatus: sub.feedback_status,
                 fileName: sub.file_name,
                 answers: asAnswers(sub.response),
+                reviewStatus: sub.review_status,
+                reviewNote: sub.review_note,
+                reviewedAt: sub.reviewed_at,
               }
             : null,
         };
@@ -180,22 +192,57 @@ export const submitProof = createServerFn({ method: "POST" })
     if (proof.needsMaterials && material?.ready !== true)
       throw new Error("Your professor has not posted the material for this activity yet.");
 
-    const { data: inserted, error } = await supabase
+    // A submission the professor sent back is the one case a student may redo.
+    const { data: existing } = await supabase
       .from("proof_submissions")
-      .insert({
-        user_id: userId,
-        team_id: data.teamId,
-        proof_key: proof.key,
-        role_at_submission: membership.job_title,
-        response: data.answers,
-        file_path: data.filePath ?? null,
-        file_name: data.fileName ?? null,
-      })
-      .select("id, submitted_at")
-      .single();
-    if (error) {
-      if (error.code === "23505") throw new Error("You have already completed this activity.");
-      throw new Error(error.message);
+      .select("id, review_status, resubmit_count")
+      .eq("user_id", userId)
+      .eq("proof_key", proof.key)
+      .maybeSingle();
+
+    let inserted: { id: string; submitted_at: string };
+    if (existing) {
+      if (existing.review_status !== "sent_back")
+        throw new Error("You have already submitted this activity.");
+      const { data: updated, error: updateError } = await supabase
+        .from("proof_submissions")
+        .update({
+          team_id: data.teamId,
+          role_at_submission: membership.job_title,
+          response: data.answers,
+          file_path: data.filePath ?? null,
+          file_name: data.fileName ?? null,
+          submitted_at: new Date().toISOString(),
+          review_status: "pending",
+          review_note: null,
+          reviewed_at: null,
+          reviewed_by: null,
+          resubmit_count: (existing.resubmit_count ?? 0) + 1,
+        })
+        .eq("id", existing.id)
+        .select("id, submitted_at")
+        .single();
+      if (updateError) throw new Error(updateError.message);
+      inserted = updated;
+    } else {
+      const { data: created, error } = await supabase
+        .from("proof_submissions")
+        .insert({
+          user_id: userId,
+          team_id: data.teamId,
+          proof_key: proof.key,
+          role_at_submission: membership.job_title,
+          response: data.answers,
+          file_path: data.filePath ?? null,
+          file_name: data.fileName ?? null,
+        })
+        .select("id, submitted_at")
+        .single();
+      if (error) {
+        if (error.code === "23505") throw new Error("You have already submitted this activity.");
+        throw new Error(error.message);
+      }
+      inserted = created;
     }
 
     // Completion is already recorded. Everything below is coaching only.
@@ -242,7 +289,9 @@ export const getProofOverview = createServerFn({ method: "GET" })
       await Promise.all([
         supabase.from("teams").select("id, name, display_name, section"),
         supabase.from("team_members").select("team_id, user_id, job_title"),
-        supabase.from("proof_submissions").select("user_id, proof_key, submitted_at, feedback_status"),
+        supabase
+          .from("proof_submissions")
+          .select("user_id, proof_key, submitted_at, feedback_status, review_status"),
         supabase.from("proof_materials").select("proof_key, ready"),
       ]);
 
@@ -269,6 +318,30 @@ export const getProofOverview = createServerFn({ method: "GET" })
             role: m.job_title,
             assigned,
             completed: done,
+            approved: (subs ?? [])
+              .filter(
+                (s) =>
+                  s.user_id === m.user_id &&
+                  assigned.includes(s.proof_key) &&
+                  s.review_status === "approved",
+              )
+              .map((s) => s.proof_key),
+            awaiting: (subs ?? [])
+              .filter(
+                (s) =>
+                  s.user_id === m.user_id &&
+                  assigned.includes(s.proof_key) &&
+                  s.review_status === "pending",
+              )
+              .map((s) => s.proof_key),
+            sentBack: (subs ?? [])
+              .filter(
+                (s) =>
+                  s.user_id === m.user_id &&
+                  assigned.includes(s.proof_key) &&
+                  s.review_status === "sent_back",
+              )
+              .map((s) => s.proof_key),
           };
         });
         return {
@@ -326,5 +399,117 @@ export const saveProofMaterial = createServerFn({ method: "POST" })
       .from("proof_materials")
       .upsert(patch as never, { onConflict: "proof_key" });
     if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Everything waiting on the professor's decision, oldest first. */
+export const getProofReviewQueue = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    if (!(await isAdmin(supabase, userId))) throw new Error("Admins only.");
+
+    const { data: subs } = await supabase
+      .from("proof_submissions")
+      .select(
+        "id, user_id, team_id, proof_key, response, file_path, file_name, submitted_at, review_status, review_note, resubmit_count, feedback",
+      )
+      .eq("review_status", "pending")
+      .order("submitted_at", { ascending: true })
+      .limit(60);
+
+    const rows = subs ?? [];
+    const ids = Array.from(new Set(rows.map((s) => s.user_id)));
+    const teamIds = Array.from(new Set(rows.map((s) => s.team_id).filter(Boolean) as string[]));
+
+    const [{ data: profiles }, { data: teams }] = await Promise.all([
+      ids.length
+        ? supabase.from("profiles").select("id, name, avatar_url").in("id", ids)
+        : Promise.resolve({ data: [] as { id: string; name: string; avatar_url: string | null }[] }),
+      teamIds.length
+        ? supabase.from("teams").select("id, name, display_name, section").in("id", teamIds)
+        : Promise.resolve({
+            data: [] as { id: string; name: string; display_name: string | null; section: string | null }[],
+          }),
+    ]);
+
+    return await Promise.all(
+      rows.map(async (s) => {
+        const profile = (profiles ?? []).find((p) => p.id === s.user_id);
+        const team = (teams ?? []).find((t) => t.id === s.team_id);
+        let fileUrl: string | null = null;
+        if (s.file_path) {
+          const { data: signed } = await supabase.storage
+            .from("proofs")
+            .createSignedUrl(s.file_path, 60 * 60);
+          fileUrl = signed?.signedUrl ?? null;
+        }
+        const proof = proofByKey(s.proof_key);
+        return {
+          id: s.id,
+          proofKey: s.proof_key,
+          proofTitle: proof?.title ?? s.proof_key,
+          role: proof?.role ?? null,
+          studentName: profile?.name ?? "Student",
+          avatarUrl: profile?.avatar_url ?? null,
+          teamLabel: team ? team.display_name || team.name : "—",
+          section: team?.section ?? "",
+          submittedAt: s.submitted_at,
+          resubmitCount: s.resubmit_count ?? 0,
+          answers: asAnswers(s.response),
+          fileName: s.file_name,
+          fileUrl,
+          feedback: s.feedback,
+        };
+      }),
+    );
+  });
+
+/** Professor approves a submission, or sends it back with a note to fix. */
+export const reviewProof = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { submissionId: string; decision: "approved" | "sent_back"; note?: string }) => {
+    if (!input?.submissionId) throw new Error("Missing submission.");
+    if (input.decision !== "approved" && input.decision !== "sent_back")
+      throw new Error("Unknown decision.");
+    if (input.decision === "sent_back" && !(input.note ?? "").trim())
+      throw new Error("Please write a note saying what to fix.");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    if (!(await isAdmin(supabase, userId))) throw new Error("Admins only.");
+
+    const { data: sub } = await supabase
+      .from("proof_submissions")
+      .select("id, user_id, team_id, proof_key")
+      .eq("id", data.submissionId)
+      .maybeSingle();
+    if (!sub) throw new Error("Submission not found.");
+
+    const { error } = await supabase
+      .from("proof_submissions")
+      .update({
+        review_status: data.decision,
+        review_note: data.decision === "sent_back" ? (data.note ?? "").trim() : null,
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: userId,
+      })
+      .eq("id", sub.id);
+    if (error) throw new Error(error.message);
+
+    const title = proofByKey(sub.proof_key)?.title ?? sub.proof_key;
+    // The PM is copied automatically on every team notification.
+    await supabase.from("notifications").insert({
+      user_id: sub.user_id,
+      team_id: sub.team_id,
+      actor_id: userId,
+      kind: "proof_review",
+      message:
+        data.decision === "approved"
+          ? `Your "${title}" activity was approved.`
+          : `Your "${title}" activity was sent back: ${(data.note ?? "").trim()}`,
+    });
+
     return { ok: true };
   });

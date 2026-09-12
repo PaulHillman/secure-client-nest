@@ -13,7 +13,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { StudentName } from "@/components/student-avatar";
-import { CheckCircle2, ChevronsUpDown, Clock, Lock } from "lucide-react";
+import { CheckCircle2, ChevronsUpDown, Clock, Lock, RotateCcw } from "lucide-react";
 
 /**
  * The student's own role activities, and — for anyone on the team — a roll-up
@@ -55,6 +55,8 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
                 const proof = proofByKey(item.key);
                 if (!proof) return null;
                 const done = !!item.submission;
+                const approved = item.submission?.reviewStatus === "approved";
+                const sentBack = item.submission?.reviewStatus === "sent_back";
                 return (
                   <div
                     key={item.key}
@@ -69,10 +71,27 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
                       </p>
                       {done ? (
                         <>
-                          <p className="flex items-center gap-1.5 text-sm text-emerald-600">
-                            <CheckCircle2 className="size-4" /> Complete ·{" "}
-                            {new Date(item.submission!.submittedAt).toLocaleString()}
-                          </p>
+                          {sentBack ? (
+                            <p className="flex items-center gap-1.5 text-sm text-amber-600">
+                              <RotateCcw className="size-4" /> Sent back by your professor
+                            </p>
+                          ) : approved ? (
+                            <p className="flex items-center gap-1.5 text-sm text-emerald-600">
+                              <CheckCircle2 className="size-4" /> Approved ·{" "}
+                              {new Date(item.submission!.submittedAt).toLocaleString()}
+                            </p>
+                          ) : (
+                            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                              <Clock className="size-4" /> Submitted, awaiting your professor's
+                              review · {new Date(item.submission!.submittedAt).toLocaleString()}
+                            </p>
+                          )}
+                          {item.submission!.reviewNote ? (
+                            <p className="rounded-md bg-muted p-2 text-sm">
+                              <span className="font-medium">What to fix: </span>
+                              {item.submission!.reviewNote}
+                            </p>
+                          ) : null}
                           <p className="text-xs text-muted-foreground">
                             {FEEDBACK_STATUS_LABEL[item.submission!.feedbackStatus] ??
                               "Feedback pending"}
@@ -97,10 +116,16 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
                         </p>
                       )}
                     </div>
-                    {done ? (
+                    {approved ? (
                       <Badge variant="secondary">
-                        <Lock className="mr-1 size-3" /> Locked
+                        <Lock className="mr-1 size-3" /> Approved
                       </Badge>
+                    ) : sentBack ? (
+                      <Button size="sm" onClick={() => setOpenKey(item.key)}>
+                        Fix and resend
+                      </Button>
+                    ) : done ? (
+                      <Badge variant="secondary">Awaiting review</Badge>
                     ) : (
                       <Button size="sm" disabled={!item.open} onClick={() => setOpenKey(item.key)}>
                         Start
@@ -128,7 +153,9 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
                   <span className="text-muted-foreground">
                     {p.assigned.length === 0
                       ? "Needs a role"
-                      : `${p.completed.length} of ${p.assigned.length} done`}
+                      : `${p.approved.length} of ${p.assigned.length} approved${
+                          p.sentBack.length ? ` · ${p.sentBack.length} sent back` : ""
+                        }`}
                   </span>
                 </div>
               ))}
@@ -138,9 +165,18 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
       </Card>
 
       <ProofDialog
+        key={openKey ?? "none"}
         teamId={teamId}
         userId={userId}
         proofKey={openKey}
+        initialAnswers={
+          data.mine.find((m) => m.key === openKey)?.submission?.answers as
+            | Record<string, string>
+            | undefined
+        }
+        sentBackNote={
+          data.mine.find((m) => m.key === openKey)?.submission?.reviewNote ?? null
+        }
         onClose={() => setOpenKey(null)}
         onSubmitted={refresh}
       />

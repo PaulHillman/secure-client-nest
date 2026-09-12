@@ -23,16 +23,27 @@ type Props = {
   teamId: string;
   proofKey: string | null;
   userId: string;
+  /** Prefilled when the professor sent the work back to be fixed. */
+  initialAnswers?: Record<string, string>;
+  sentBackNote?: string | null;
   onClose: () => void;
   onSubmitted: () => void;
 };
 
-export function ProofDialog({ teamId, proofKey, userId, onClose, onSubmitted }: Props) {
+export function ProofDialog({
+  teamId,
+  proofKey,
+  userId,
+  initialAnswers,
+  sentBackNote,
+  onClose,
+  onSubmitted,
+}: Props) {
   const proof = proofKey ? proofByKey(proofKey) : undefined;
   const loadMaterial = useServerFn(getProofMaterial);
   const send = useServerFn(submitProof);
 
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>(initialAnswers ?? {});
   const [ack, setAck] = useState(false);
   const [file, setFile] = useState<{ path: string; name: string } | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -75,7 +86,7 @@ export function ProofDialog({ teamId, proofKey, userId, onClose, onSubmitted }: 
           acknowledged: ack,
         },
       });
-      toast.success("Recorded. This activity is complete — feedback follows shortly.");
+      toast.success("Sent to your professor for review.");
       onSubmitted();
       onClose();
     } catch (e) {
@@ -101,6 +112,13 @@ export function ProofDialog({ teamId, proofKey, userId, onClose, onSubmitted }: 
               <div className="flex gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
                 <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
                 <p>{proof.contactWarning}</p>
+              </div>
+            ) : null}
+
+            {sentBackNote ? (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+                <p className="font-medium">Sent back by your professor</p>
+                <p className="text-muted-foreground">{sentBackNote}</p>
               </div>
             ) : null}
 
@@ -209,8 +227,8 @@ export function ProofDialog({ teamId, proofKey, userId, onClose, onSubmitted }: 
             ) : null}
 
             <p className="text-xs text-muted-foreground">
-              You submit this once. Once recorded it is complete and locked — there is no redo and
-              no score.
+              Your professor reviews this. Once approved it is locked; if it is sent back you can
+              fix it and resend.
             </p>
 
             <DialogFooter>
@@ -223,7 +241,7 @@ export function ProofDialog({ teamId, proofKey, userId, onClose, onSubmitted }: 
                 ) : (
                   <Check className="mr-2 size-4" />
                 )}
-                Submit once
+                {sentBackNote ? "Resend" : "Submit"}
               </Button>
             </DialogFooter>
           </>
