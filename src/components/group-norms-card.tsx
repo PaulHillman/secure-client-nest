@@ -298,12 +298,7 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
                   <span>{AFFIRMATION_TEXT}</span>
                 </label>
                 <Button
-                  disabled={
-                    !affirmed ||
-                    approveMut.isPending ||
-                    editing ||
-                    (data.vagueFindings.length > 0 && !acceptVague)
-                  }
+                  disabled={!affirmed || approveMut.isPending || editing}
                   onClick={() => approveMut.mutate()}
                 >
                   Approve Group Norms
