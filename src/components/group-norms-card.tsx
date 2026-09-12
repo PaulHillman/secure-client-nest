@@ -73,7 +73,7 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
 
   if (isLoading || !data) {
     return (
-      <Card className="border-border/60">
+      <Card id="group-norms" className="border-border/60 scroll-mt-4">
         <CardHeader className="pb-3">
           <CardTitle className="font-display text-2xl">Group Norms</CardTitle>
         </CardHeader>
@@ -85,7 +85,7 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
   const set = (key: string, value: string) => setDraft((d) => ({ ...d, [key]: value }));
 
   return (
-    <Card className="border-border/60">
+    <Card id="group-norms" className="border-border/60 scroll-mt-4">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="font-display text-2xl flex items-center gap-2">
