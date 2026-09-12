@@ -318,6 +318,30 @@ export const getProofOverview = createServerFn({ method: "GET" })
             role: m.job_title,
             assigned,
             completed: done,
+            approved: (subs ?? [])
+              .filter(
+                (s) =>
+                  s.user_id === m.user_id &&
+                  assigned.includes(s.proof_key) &&
+                  s.review_status === "approved",
+              )
+              .map((s) => s.proof_key),
+            awaiting: (subs ?? [])
+              .filter(
+                (s) =>
+                  s.user_id === m.user_id &&
+                  assigned.includes(s.proof_key) &&
+                  s.review_status === "pending",
+              )
+              .map((s) => s.proof_key),
+            sentBack: (subs ?? [])
+              .filter(
+                (s) =>
+                  s.user_id === m.user_id &&
+                  assigned.includes(s.proof_key) &&
+                  s.review_status === "sent_back",
+              )
+              .map((s) => s.proof_key),
           };
         });
         return {
