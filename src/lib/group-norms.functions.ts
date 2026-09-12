@@ -56,7 +56,7 @@ export const getTeamNorms = createServerFn({ method: "GET" })
 
     const { data: norms } = await supabaseAdmin
       .from("group_norms")
-      .select("id, version, content, updated_at, updated_by")
+      .select("id, version, content, updated_at, updated_by, flagged_for_review, flagged_at")
       .eq("team_id", data.teamId)
       .maybeSingle();
 
