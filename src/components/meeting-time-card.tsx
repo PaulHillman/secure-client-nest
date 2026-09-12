@@ -288,6 +288,12 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                     Professor Hillman.
                   </p>
                 )}
+                {proposal && me?.agreement?.status !== "agreed" && (
+                  <p className="text-xs rounded-md border border-gold/40 bg-gold/10 px-3 py-2 text-foreground">
+                    Setting the time is not your approval — as PM you must also read and sign the
+                    agreement below, just like every other member.
+                  </p>
+                )}
 
               </div>
             )}
