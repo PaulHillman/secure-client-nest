@@ -1383,6 +1383,60 @@ export type Database = {
           },
         ]
       }
+      requirement_submissions: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          requirement_key: string
+          submit_count: number
+          submitted_at: string | null
+          submitted_by: string | null
+          team_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          requirement_key: string
+          submit_count?: number
+          submitted_at?: string | null
+          submitted_by?: string | null
+          team_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          requirement_key?: string
+          submit_count?: number
+          submitted_at?: string | null
+          submitted_by?: string | null
+          team_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requirement_submissions_requirement_key_fkey"
+            columns: ["requirement_key"]
+            isOneToOne: false
+            referencedRelation: "project_requirements"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "requirement_submissions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       semester_archives: {
         Row: {
           created_at: string

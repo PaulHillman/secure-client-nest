@@ -20,7 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StudentName } from "@/components/student-avatar";
-import { AlertTriangle, BellRing, ClipboardCheck, Clock } from "lucide-react";
+import { ModuleSubmissionDialog } from "@/components/module-submission-dialog";
+import { moduleForm } from "@/lib/modules";
+import { AlertTriangle, BellRing, ClipboardCheck, Clock, FileText } from "lucide-react";
 
 const UNOWNED = "__none__";
 
@@ -31,6 +33,7 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
   const saveOwner = useServerFn(setRequirementOwner);
   const nudge = useServerFn(nudgeMember);
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [formItem, setFormItem] = useState<{ key: string; title: string } | null>(null);
 
   const { data } = useQuery({
     queryKey: ["team-readiness", teamId],
@@ -156,6 +159,15 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              {moduleForm(item.key) && (
+                <Button
+                  size="sm"
+                  onClick={() => setFormItem({ key: item.key, title: item.title })}
+                >
+                  <FileText className="mr-1 h-3.5 w-3.5" />
+                  {item.status === "not_started" ? "Start this module" : "Open form"}
+                </Button>
+              )}
               <Select
                 value={item.status}
                 disabled={item.status === "approved" || busyKey === item.key}
@@ -215,6 +227,16 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
             </div>
           </div>
         ))}
+
+        {formItem && (
+          <ModuleSubmissionDialog
+            teamId={teamId}
+            moduleKey={formItem.key}
+            title={formItem.title}
+            open={!!formItem}
+            onOpenChange={(v) => !v && setFormItem(null)}
+          />
+        )}
       </CardContent>
     </Card>
   );

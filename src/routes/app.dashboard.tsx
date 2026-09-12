@@ -21,6 +21,7 @@ import { AvailabilityGridCard } from "@/components/availability-grid-card";
 import { ProfileCompletionCard } from "@/components/profile-completion-card";
 import { RoleSelectCard } from "@/components/role-select-card";
 import { ReadinessBoardCard } from "@/components/readiness-board-card";
+import { SubmissionReviewCard } from "@/components/submission-review-card";
 
 
 export const Route = createFileRoute("/app/dashboard")({
@@ -149,7 +150,8 @@ function Dashboard() {
       </header>
 
       {isAdmin && (
-        <div className="mb-6">
+        <div className="mb-6 space-y-6">
+          <SubmissionReviewCard />
           <ReadinessBoardCard />
         </div>
       )}
