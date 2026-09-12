@@ -211,13 +211,7 @@ function Dashboard() {
 
 
       {isAdmin && (
-        <div className="mt-6">
-          <ReadinessBoardCard />
-        </div>
-      )}
-
-      {isAdmin && (
-        <div className="mt-6">
+        <div id="roster" className="mt-6 scroll-mt-6">
           <TeamRosterCard />
         </div>
       )}
