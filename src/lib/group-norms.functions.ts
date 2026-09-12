@@ -221,15 +221,15 @@ export const approveTeamNorms = createServerFn({ method: "POST" })
     // Identity comes from the token; an admin viewing as a student approves as them.
     const userId =
       data.studentId && (await isAdmin(supabase, authUserId)) ? data.studentId : authUserId;
-    const { data: membership } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const db = userId === authUserId ? supabase : supabaseAdmin;
+    const { data: membership } = await db
       .from("team_members")
       .select("job_title")
       .eq("team_id", data.teamId)
       .eq("user_id", userId)
       .maybeSingle();
     if (!membership) throw new Error("Only a current member of this team can approve its norms.");
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: norms } = await supabaseAdmin
       .from("group_norms")
       .select("id, version, content")
