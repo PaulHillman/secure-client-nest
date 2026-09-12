@@ -269,7 +269,12 @@ export const submitProof = createServerFn({ method: "POST" })
       feedback = result.text;
       await supabaseAdmin
         .from("proof_submissions")
-        .update({ feedback, feedback_status: feedbackStatus, feedback_at: new Date().toISOString() })
+        .update({
+          feedback,
+          feedback_status: feedbackStatus,
+          feedback_at: new Date().toISOString(),
+          score: result.score ?? null,
+        })
         .eq("id", inserted.id);
     } catch {
       feedbackStatus = "unavailable";
