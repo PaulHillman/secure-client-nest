@@ -119,7 +119,7 @@ export function ModuleSubmissionDialog({
           ))}
         </div>
 
-        {data?.submittedAt && (
+        {data?.submittedAt && moduleKey !== "team_setup" && (
           <p className="text-xs text-muted-foreground">
             Last sent {new Date(data.submittedAt).toLocaleString()}
             {data.submittedByName ? ` by ${data.submittedByName}` : ""}
