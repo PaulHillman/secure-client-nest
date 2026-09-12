@@ -1265,6 +1265,124 @@ export type Database = {
         }
         Relationships: []
       }
+      project_requirements: {
+        Row: {
+          active: boolean
+          alias: string | null
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          module_number: number | null
+          order_index: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          alias?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          module_number?: number | null
+          order_index?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          alias?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          module_number?: number | null
+          order_index?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      requirement_nudges: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          requirement_key: string
+          sent_by: string
+          target_user_id: string
+          team_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          requirement_key: string
+          sent_by: string
+          target_user_id: string
+          team_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          requirement_key?: string
+          sent_by?: string
+          target_user_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requirement_nudges_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      requirement_openings: {
+        Row: {
+          created_at: string
+          due_at: string | null
+          id: string
+          opened_at: string
+          opened_by: string | null
+          requirement_key: string
+          section: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          opened_at?: string
+          opened_by?: string | null
+          requirement_key: string
+          section: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          due_at?: string | null
+          id?: string
+          opened_at?: string
+          opened_by?: string | null
+          requirement_key?: string
+          section?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "requirement_openings_requirement_key_fkey"
+            columns: ["requirement_key"]
+            isOneToOne: false
+            referencedRelation: "project_requirements"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
       semester_archives: {
         Row: {
           created_at: string
@@ -1494,6 +1612,66 @@ export type Database = {
           },
         ]
       }
+      team_requirement_status: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          owner_id: string | null
+          requirement_key: string
+          revision_note: string | null
+          status: Database["public"]["Enums"]["readiness_status"]
+          submitted_at: string | null
+          team_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          owner_id?: string | null
+          requirement_key: string
+          revision_note?: string | null
+          status?: Database["public"]["Enums"]["readiness_status"]
+          submitted_at?: string | null
+          team_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          owner_id?: string | null
+          requirement_key?: string
+          revision_note?: string | null
+          status?: Database["public"]["Enums"]["readiness_status"]
+          submitted_at?: string | null
+          team_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_requirement_status_requirement_key_fkey"
+            columns: ["requirement_key"]
+            isOneToOne: false
+            referencedRelation: "project_requirements"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "team_requirement_status_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           created_at: string
@@ -1568,6 +1746,12 @@ export type Database = {
       app_role: "admin" | "student"
       backlog_priority: "low" | "medium" | "high"
       backlog_status: "todo" | "in_progress" | "done" | "shelved"
+      readiness_status:
+        | "not_started"
+        | "in_progress"
+        | "submitted"
+        | "needs_revision"
+        | "approved"
       team_job:
         | "PM"
         | "Communication Specialist"
@@ -1713,6 +1897,13 @@ export const Constants = {
       app_role: ["admin", "student"],
       backlog_priority: ["low", "medium", "high"],
       backlog_status: ["todo", "in_progress", "done", "shelved"],
+      readiness_status: [
+        "not_started",
+        "in_progress",
+        "submitted",
+        "needs_revision",
+        "approved",
+      ],
       team_job: [
         "PM",
         "Communication Specialist",
