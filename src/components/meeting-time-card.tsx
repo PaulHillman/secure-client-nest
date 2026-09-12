@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarClock, Check, X, CircleDashed, MapPin, Video } from "lucide-react";
 import { toast } from "sonner";
 import { FACE_TO_FACE } from "@/lib/meeting-agreement";
-import { notifyMeetingChange } from "@/lib/meeting.functions";
+import { notifyMeetingChange, respondMeetingAgreement } from "@/lib/meeting.functions";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -33,7 +33,7 @@ function fmtTime(t: string) {
 }
 
 export function MeetingTimeCard({ teamId }: { teamId: string }) {
-  const { user } = useAuth();
+  const { user, viewAs } = useAuth();
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -156,7 +156,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
       toast.success(
         changed
           ? "Meeting details updated — approvals were reset and Professor Hillman was notified"
-          : "Proposal saved — teammates can now agree",
+          : "Proposal saved — every member, including you as PM, must now read and sign the agreement",
       );
       qc.invalidateQueries({ queryKey: ["meeting-time", teamId] });
       qc.invalidateQueries({ queryKey: ["admin-consensus"] });
@@ -184,28 +184,22 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
       const cleaned = (initials.trim() || derived).toUpperCase();
       if (!/^[A-Z]{2,4}$/.test(cleaned)) throw new Error("Enter 2–4 letter initials");
 
-      // upsert
-      const { error } = await supabase
-        .from("team_meeting_agreements")
-        .upsert(
-          {
-            proposal_id: proposal.id,
-            team_id: teamId,
-            user_id: user!.id,
-            initials: cleaned,
-            status,
-            responded_at: new Date().toISOString(),
-          },
-          { onConflict: "proposal_id,user_id" },
-        );
-      if (error) throw error;
-      // cache initials on profile
-      await supabase.from("profiles").update({ initials: cleaned }).eq("id", user!.id);
+      await respondMeetingAgreement({
+        data: {
+          teamId,
+          status,
+          initials: cleaned,
+          fullName: me?.name,
+          studentId: viewAs?.id,
+        },
+      });
     },
     onSuccess: (_d, status) => {
       toast.success(status === "agreed" ? "Agreement recorded" : "Marked as declined");
       qc.invalidateQueries({ queryKey: ["meeting-time", teamId] });
       qc.invalidateQueries({ queryKey: ["admin-consensus"] });
+      qc.invalidateQueries({ queryKey: ["meeting-commitment", teamId] });
+      qc.invalidateQueries({ queryKey: ["my-meeting-agreement"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -292,6 +286,12 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                   <p className="text-xs text-muted-foreground">
                     Changing the day, time, or place resets everyone's agreement and notifies
                     Professor Hillman.
+                  </p>
+                )}
+                {proposal && me?.agreement?.status !== "agreed" && (
+                  <p className="text-xs rounded-md border border-gold/40 bg-gold/10 px-3 py-2 text-foreground">
+                    Setting the time is not your approval — as PM you must also read and sign the
+                    agreement below, just like every other member.
                   </p>
                 )}
 

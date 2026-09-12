@@ -27,6 +27,81 @@ export const notifyMeetingChange = createServerFn({ method: "POST" })
     return { notified: rows.length };
   });
 
+/**
+ * Record a team member's response to the proposed meeting time. The PM must
+ * sign just like everyone else — proposing the time is not an approval.
+ * Admins may pass studentId when viewing as a student.
+ */
+export const respondMeetingAgreement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      teamId: string;
+      status: "agreed" | "declined";
+      initials: string;
+      fullName?: string;
+      studentId?: string;
+    }) => {
+      if (!input?.teamId || !input?.status) throw new Error("teamId and status are required");
+      if (input.status !== "agreed" && input.status !== "declined") throw new Error("Bad status");
+      return input;
+    },
+  )
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { AGREEMENT_VERSION, agreementText, meetingDetailsLine } = await import(
+      "@/lib/meeting-agreement"
+    );
+
+    const target = data.studentId ?? context.userId;
+    if (target !== context.userId) {
+      const { data: isAdmin } = await context.supabase.rpc("has_role", {
+        _user_id: context.userId,
+        _role: "admin",
+      });
+      if (!isAdmin) throw new Error("You cannot respond for another student");
+    }
+
+    const { data: member } = await supabaseAdmin
+      .from("team_members")
+      .select("id")
+      .eq("team_id", data.teamId)
+      .eq("user_id", target)
+      .maybeSingle();
+    if (!member) throw new Error("That student is not on this team");
+
+    const { data: proposal } = await supabaseAdmin
+      .from("team_meeting_proposals")
+      .select("*")
+      .eq("team_id", data.teamId)
+      .maybeSingle();
+    if (!proposal) throw new Error("No meeting time has been proposed yet");
+
+    const cleaned = (data.initials ?? "").trim().toUpperCase();
+    if (!/^[A-Z]{2,4}$/.test(cleaned)) throw new Error("Enter 2–4 letter initials");
+
+    const row: Record<string, unknown> = {
+      proposal_id: proposal.id,
+      team_id: data.teamId,
+      user_id: target,
+      initials: cleaned,
+      status: data.status,
+      responded_at: new Date().toISOString(),
+    };
+    if (data.status === "agreed") {
+      if (data.fullName?.trim()) row.full_name = data.fullName.trim();
+      row.agreement_version = AGREEMENT_VERSION;
+      row.agreement_text = agreementText(meetingDetailsLine(proposal as any));
+    }
+
+    const { error } = await supabaseAdmin
+      .from("team_meeting_agreements")
+      .upsert(row as any, { onConflict: "proposal_id,user_id" });
+    if (error) throw error;
+    await supabaseAdmin.from("profiles").update({ initials: cleaned }).eq("id", target);
+    return { ok: true };
+  });
+
 /** A meeting was held somewhere other than the agreed place/time — tell the PM and the professor. */
 export const notifyMeetingMoved = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

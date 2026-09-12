@@ -14,9 +14,9 @@ import { toast } from "sonner";
 import {
   AGREEMENT_CLAUSES,
   AGREEMENT_VERSION,
-  agreementText,
   meetingDetailsLine,
 } from "@/lib/meeting-agreement";
+import { respondMeetingAgreement } from "@/lib/meeting.functions";
 
 export const Route = createFileRoute("/app/agreement")({
   head: () => ({
@@ -40,7 +40,7 @@ export const Route = createFileRoute("/app/agreement")({
 });
 
 function AgreementPage() {
-  const { user } = useAuth();
+  const { user, viewAs } = useAuth();
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -107,22 +107,15 @@ function AgreementPage() {
       const cleaned = initials.trim().toUpperCase();
       if (name.length < 3) throw new Error("Type your full name");
       if (!/^[A-Z]{2,4}$/.test(cleaned)) throw new Error("Enter 2–4 letter initials");
-      const { error } = await supabase.from("team_meeting_agreements").upsert(
-        {
-          proposal_id: proposal.id,
-          team_id: data!.teamId!,
-          user_id: user!.id,
-          initials: cleaned,
-          full_name: name,
+      await respondMeetingAgreement({
+        data: {
+          teamId: data!.teamId!,
           status: "agreed",
-          agreement_version: AGREEMENT_VERSION,
-          agreement_text: agreementText(details),
-          responded_at: new Date().toISOString(),
+          initials: cleaned,
+          fullName: name,
+          studentId: viewAs?.id,
         },
-        { onConflict: "proposal_id,user_id" },
-      );
-      if (error) throw error;
-      await supabase.from("profiles").update({ initials: cleaned }).eq("id", user!.id);
+      });
     },
     onSuccess: () => {
       toast.success("Agreement signed and recorded");
