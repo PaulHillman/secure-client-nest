@@ -50,6 +50,7 @@ export const getTeamProofs = createServerFn({ method: "GET" })
     if (!me && !admin) throw new Error("You are not on this team.");
 
     const ids = list.map((m) => m.user_id);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [{ data: profiles }, { data: subs }, { data: materials }] = await Promise.all([
       ids.length
         ? supabase.from("profiles").select("id, name, avatar_url").in("id", ids)
@@ -60,7 +61,7 @@ export const getTeamProofs = createServerFn({ method: "GET" })
           "id, user_id, proof_key, submitted_at, feedback, feedback_status, file_name, response, review_status, review_note, reviewed_at, score",
         )
         .eq("team_id", data.teamId),
-      supabase.from("proof_materials").select("proof_key, ready, extra_instructions"),
+      supabaseAdmin.from("proof_materials").select("proof_key, ready"),
     ]);
 
     const readiness = new Map((materials ?? []).map((m) => [m.proof_key, m]));
@@ -100,7 +101,6 @@ export const getTeamProofs = createServerFn({ method: "GET" })
         return {
           key: p.key,
           open: !p.needsMaterials || mat?.ready === true,
-          extraInstructions: mat?.extra_instructions ?? null,
           submission: sub
             ? {
                 submittedAt: sub.submitted_at,
@@ -156,7 +156,9 @@ export const getProofMaterial = createServerFn({ method: "GET" })
 
     const sign = async (path: string | null) => {
       if (!path) return null;
-      const { data: signed } = await supabase.storage.from("proofs").createSignedUrl(path, 60 * 60);
+      const { data: signed } = await supabaseAdmin.storage
+        .from("proofs")
+        .createSignedUrl(path, 60 * 60);
       return signed?.signedUrl ?? null;
     };
 
@@ -419,7 +421,6 @@ export const saveProofMaterial = createServerFn({ method: "POST" })
       zipPath?: string | null;
       transcript?: string | null;
       answerKey?: string | null;
-      extraInstructions?: string | null;
     }) => {
       if (!proofByKey(input?.proofKey ?? "")) throw new Error("Unknown activity.");
       return input;
@@ -435,7 +436,6 @@ export const saveProofMaterial = createServerFn({ method: "POST" })
     if (data.zipPath !== undefined) patch["zip_path"] = data.zipPath;
     if (data.transcript !== undefined) patch["transcript_text"] = data.transcript;
     if (data.answerKey !== undefined) patch["answer_key"] = data.answerKey;
-    if (data.extraInstructions !== undefined) patch["extra_instructions"] = data.extraInstructions;
 
     const { error } = await supabase
       .from("proof_materials")

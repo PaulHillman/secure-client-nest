@@ -31,7 +31,6 @@ type Props = {
 };
 
 function prepareInitialAnswers(
-  proofKey: string | null,
   fields: { name: string; label: string }[],
   initialAnswers?: Record<string, string>,
 ) {
@@ -60,7 +59,7 @@ export function ProofDialog({
   const send = useServerFn(submitProof);
 
   const [answers, setAnswers] = useState<Record<string, string>>(() =>
-    prepareInitialAnswers(proofKey, proof?.fields ?? [], initialAnswers),
+    prepareInitialAnswers(proof?.fields ?? [], initialAnswers),
   );
   const [ack, setAck] = useState(false);
   const [file, setFile] = useState<{ path: string; name: string } | null>(null);

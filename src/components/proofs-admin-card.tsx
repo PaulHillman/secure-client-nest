@@ -33,7 +33,6 @@ export function ProofsAdminCard() {
   const [editKey, setEditKey] = useState<string>("comms_minutes");
   const [transcript, setTranscript] = useState("");
   const [answerKey, setAnswerKey] = useState("");
-  const [extra, setExtra] = useState("");
   const [busy, setBusy] = useState(false);
 
   const { data } = useQuery({ queryKey: ["proof-overview"], queryFn: () => fetchOverview() });
@@ -186,24 +185,6 @@ export function ProofsAdminCard() {
             </>
           ) : null}
 
-          <div className="space-y-1.5">
-            <Label htmlFor="proof-extra">Extra instructions shown to students</Label>
-            <Textarea
-              id="proof-extra"
-              rows={2}
-              value={extra}
-              onChange={(e) => setExtra(e.target.value)}
-            />
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={busy}
-              onClick={() => void persist({ extraInstructions: extra })}
-            >
-              {busy ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
-              Save instructions
-            </Button>
-          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

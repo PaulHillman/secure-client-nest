@@ -6,6 +6,46 @@
 
 import { proofByKey } from "@/lib/proofs";
 
+const PRIVATE_RUBRICS: Record<string, string[]> = {
+  pm_norms: [
+    "Uses the team's actual norms where they exist, without inventing team policy",
+    "Addresses the teammate directly and respectfully",
+    "Explains the impact and follows the agreed accountability process",
+  ],
+  comms_record: [
+    "Distinguishes a reference transcript from official minutes",
+    "Keeps useful records in the appropriate ClientVault location",
+    "Avoids duplicating client correspondence and updates the existing project record",
+  ],
+  liaison_interview: [
+    "Selects professional, open-ended questions that invite examples",
+    "Removes duplicates and weak yes-or-no questions",
+    "Uses a sensible interview order",
+  ],
+  liaison_loop: [
+    "Confirms the call details through the official client channel",
+    "Informs teammates and preserves the communication in ClientVault",
+    "Records and follows through on resulting team actions",
+  ],
+  video_disaster: [
+    "Addresses presentation, missing script, B-roll, participation, and consistency problems",
+    "Corrects important problems before recording and protects the final product",
+  ],
+  tech_zip: [
+    "Matches the required folder structure and naming",
+    "Keeps file extensions and required files intact",
+    "Uploads the completed ZIP",
+  ],
+  tech_presentation: [
+    "Checks the physical connection, input, and display settings",
+    "Tries sensible recovery steps and gives a practical backup plan",
+  ],
+  research_company: [
+    "Covers the company, industry, background, and role using credible public sources",
+    "Links sources to claims and separates verified facts from general role expectations",
+  ],
+};
+
 /**
  * Lists the entry names in a ZIP by walking the central directory.
  * No decompression, so it is cheap and works on a large archive.
@@ -64,8 +104,9 @@ export async function generateProofFeedback(input: FeedbackInput): Promise<Feedb
     `Activity: ${proof.title} (${proof.alias}) for the ${proof.role} role.`,
     `What the activity asked for:\n${proof.howTo}`,
   ];
-  if (proof.checklist.length) {
-    parts.push(`Private essential ideas for coaching:\n- ${proof.checklist.join("\n- ")}`);
+  const rubric = PRIVATE_RUBRICS[proof.key];
+  if (rubric?.length) {
+    parts.push(`Private essential ideas for coaching:\n- ${rubric.join("\n- ")}`);
   }
   if (proof.scenario) parts.push(`Scenario given to the student:\n${proof.scenario}`);
   if (input.transcript) parts.push(`Reference transcript of the recording:\n${input.transcript.slice(0, 12_000)}`);
