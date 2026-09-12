@@ -283,24 +283,11 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
             ) : (
               <div className="space-y-3 pt-1">
                 {data.vagueFindings.length > 0 && (
-                  <>
-                    <VagueNotice
-                      findings={data.vagueFindings}
-                      title="Warning: this document uses wording that cannot be measured"
-                      intro="You can still approve it, but it will be flagged for Prof Hillman to review at your kick-off meeting. Your PM can fix the wording first:"
-                    />
-                    <label className="flex items-start gap-3 text-sm">
-                      <Checkbox
-                        checked={acceptVague}
-                        onCheckedChange={(v) => setAcceptVague(v === true)}
-                        className="mt-0.5"
-                      />
-                      <span>
-                        I understand these agreements are not measurable, and I approve them
-                        anyway. Prof Hillman will review this at our kick-off meeting.
-                      </span>
-                    </label>
-                  </>
+                  <VagueNotice
+                    findings={data.vagueFindings}
+                    title="Warning: this document uses wording that cannot be measured"
+                    intro="You can still approve it. It will be noted for Prof Hillman's review before the kick-off meeting. Your PM can fix the wording first:"
+                  />
                 )}
                 <label className="flex items-start gap-3 text-sm">
                   <Checkbox
