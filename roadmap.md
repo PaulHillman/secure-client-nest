@@ -24,4 +24,4 @@
 ## Student dashboard readiness
 - [x] Show unfinished Team Readiness prominently at the top of the student dashboard
 - [x] State the student's next required action and link directly to Team Readiness
-- [ ] Verify the dashboard prompt and link in the preview
+- [x] Verify the dashboard prompt and link in the preview
