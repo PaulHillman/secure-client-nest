@@ -20,3 +20,8 @@
 - [x] Vault organisation proof — built; stays closed until the professor posts the ZIP + answer key
 - [x] Zach Guy research proof: mandatory "do not contact" acknowledgement
 - [x] One-time locked submissions, non-blocking written feedback, professor completion overview
+
+## Student dashboard readiness
+- [x] Show unfinished Team Readiness prominently at the top of the student dashboard
+- [x] State the student's next required action and link directly to Team Readiness
+- [ ] Verify the dashboard prompt and link in the preview
