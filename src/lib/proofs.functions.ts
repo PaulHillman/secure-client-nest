@@ -245,7 +245,7 @@ export const submitProof = createServerFn({ method: "POST" })
     if (existing) {
       if (existing.review_status !== "sent_back")
         throw new Error("You have already submitted this activity.");
-      const { data: updated, error: updateError } = await supabase
+      const { data: updated, error: updateError } = await db
         .from("proof_submissions")
         .update({
           team_id: data.teamId,
@@ -266,10 +266,10 @@ export const submitProof = createServerFn({ method: "POST" })
       if (updateError) throw new Error(updateError.message);
       inserted = updated;
     } else {
-      const { data: created, error } = await supabase
+      const { data: created, error } = await db
         .from("proof_submissions")
         .insert({
-          user_id: userId,
+          user_id: targetUserId,
           team_id: data.teamId,
           proof_key: proof.key,
           role_at_submission: membership.job_title,
