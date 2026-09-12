@@ -135,11 +135,15 @@ export const getProofMaterial = createServerFn({ method: "GET" })
       return signed?.signedUrl ?? null;
     };
 
+    // The voicemail activities are listening exercises: the student hears the
+    // message, they never read it. Only the minutes activity gets a transcript.
+    const hidesTranscript = data.proofKey === "pm_voicemail" || data.proofKey === "liaison_voicemail";
+
     return {
       ready: row.ready,
       audioUrl: await sign(row.audio_path),
       zipUrl: await sign(row.zip_path),
-      transcript: row.transcript_text,
+      transcript: hidesTranscript ? null : row.transcript_text,
       extraInstructions: row.extra_instructions,
     };
   });
