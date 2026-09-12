@@ -146,7 +146,7 @@ export function ModuleSubmissionDialog({
                   disabled={locked}
                   placeholder={f.placeholder}
                   value={answers[f.name] ?? ""}
-                  onChange={(e) => setAnswers((a) => ({ ...a, [f.name]: e.target.value }))}
+                  onChange={(e) => setField(f.name, e.target.value)}
                 />
               )}
               {f.help && <p className="text-xs text-muted-foreground">{f.help}</p>}
