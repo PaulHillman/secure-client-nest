@@ -132,6 +132,15 @@ function TeamDetail() {
         />
       </header>
 
+      {(team as { is_test?: boolean } | undefined)?.is_test && (
+        <div className="mt-4 rounded-md border border-gold/50 bg-gold/10 px-4 py-3 text-sm">
+          <strong className="font-semibold">Test team — practice only.</strong> Nothing here counts
+          toward grading or class statistics, and this team is left out of all automated reminder
+          and digest emails.
+        </div>
+      )}
+
+
       <CompanyFocusCard
         teamId={teamId}
         cf={cf as CompanyFocus | null}
