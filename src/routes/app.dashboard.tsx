@@ -23,7 +23,7 @@ import { RoleSelectCard } from "@/components/role-select-card";
 import { ReadinessBoardCard } from "@/components/readiness-board-card";
 import { ProofReviewQueueCard } from "@/components/proof-review-queue-card";
 import { ProofsAdminCard } from "@/components/proofs-admin-card";
-import { SubmissionReviewCard } from "@/components/submission-review-card";
+
 
 
 export const Route = createFileRoute("/app/dashboard")({
