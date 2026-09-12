@@ -110,12 +110,13 @@ export const saveModuleSubmission = createServerFn({ method: "POST" })
       .eq("team_id", data.teamId)
       .eq("requirement_key", data.key)
       .maybeSingle();
-    if (current?.status === "approved" && !admin) {
+    const isTeamSetup = data.key === "team_setup";
+
+    if (current?.status === "approved" && !admin && !isTeamSetup) {
       throw new Error("This module has been approved and can no longer be changed.");
     }
 
     const answers = asAnswers(data.answers);
-    const isTeamSetup = data.key === "team_setup";
 
     // Team Setup is saved directly; other modules still support draft/submit.
     const actuallySubmit = !isTeamSetup && data.submit;
