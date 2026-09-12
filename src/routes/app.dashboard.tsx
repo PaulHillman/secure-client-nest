@@ -180,6 +180,7 @@ function Dashboard() {
       {isAdmin && (
         <nav className="mb-6 flex flex-wrap gap-2 text-sm">
           {[
+            ["#proofs", "Role activities"],
             ["#kpis", "Gaps"],
             ["#roster", "Roster"],
             ["#contacts", "Client contacts"],
