@@ -21,6 +21,7 @@ import { AvailabilityGridCard } from "@/components/availability-grid-card";
 import { ProfileCompletionCard } from "@/components/profile-completion-card";
 import { RoleSelectCard } from "@/components/role-select-card";
 import { ReadinessBoardCard } from "@/components/readiness-board-card";
+import { ProofReviewQueueCard } from "@/components/proof-review-queue-card";
 import { ProofsAdminCard } from "@/components/proofs-admin-card";
 import { SubmissionReviewCard } from "@/components/submission-review-card";
 
