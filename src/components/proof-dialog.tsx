@@ -150,7 +150,9 @@ export function ProofDialog({
               </div>
             ) : null}
 
-            <p className="text-sm text-muted-foreground">{proof.howTo}</p>
+            {proof.key !== "pm_agenda" ? (
+              <p className="text-sm text-muted-foreground">{proof.howTo}</p>
+            ) : null}
 
             {material?.extraInstructions ? (
               <p className="rounded-md bg-muted p-3 text-sm">{material.extraInstructions}</p>

@@ -56,13 +56,7 @@ export const PROOFS: Proof[] = [
     howTo: "As the PM, what are the topics that should be on your agenda?",
     scenario:
       "Your team has met four times, and you’re heading to the client’s office for the interview in five days. Two members still haven’t posted their interview questions, and the research brief has come up a couple of times, although everyone seems to have a different idea about who is pulling it together. Someone mentions something the team discussed two weeks ago, but nobody is quite sure where that ended up. Last week’s notes are there somewhere, too—you haven’t really gone back through either. One member has missed the last two meetings. You meet together on Tuesday.",
-    checklist: [
-      "Review the previous two meetings' minutes to recover decisions and unfinished commitments relevant to interview preparation",
-      "Finalize interview questions by collecting missing submissions, reviewing them together, and selecting questions to ask",
-      "Assign and complete the research brief by confirming the responsible person and when it will be ready to inform the interview",
-      "Confirm interview logistics and team responsibilities, including attendance, arrival arrangements, questioners, note-taking, and absent-member coverage",
-      "Confirm that every remaining preparation task has an owner and deadline before the interview",
-    ],
+    checklist: [],
     maxScore: 5,
     fields: [
       {
