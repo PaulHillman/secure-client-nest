@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { isNormsComplete } from "@/lib/group-norms";
+import { isNormsComplete, normalizeNorms } from "@/lib/group-norms";
 import { proofsForRole } from "@/lib/proofs";
 import { teamLabel } from "@/lib/team-label";
 
@@ -92,7 +92,7 @@ export const getDashboardReadiness = createServerFn({ method: "GET" })
     const hasRole = !!role && role !== "Unassigned";
     const proofsDone = assignedProofs.length > 0 && remainingProofs.length === 0;
     const meetingDone = agreement?.status === "agreed";
-    const normsComplete = !!norms && isNormsComplete(norms.content);
+    const normsComplete = !!norms && isNormsComplete(normalizeNorms(norms.content));
     const normsDone = normsComplete && !!approval;
     const steps = [hasRole, proofsDone, meetingDone, normsDone];
     const doneCount = steps.filter(Boolean).length;
