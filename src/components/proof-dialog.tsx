@@ -215,14 +215,16 @@ export function ProofDialog({
               </Button>
             ) : null}
 
-            <div className="rounded-md border p-3 text-sm">
-              <p className="mb-1 font-medium">A strong response covers</p>
-              <ul className="list-disc space-y-0.5 pl-5 text-muted-foreground">
-                {proof.checklist.map((c) => (
-                  <li key={c}>{c}</li>
-                ))}
-              </ul>
-            </div>
+            {proof.key !== "pm_agenda" ? (
+              <div className="rounded-md border p-3 text-sm">
+                <p className="mb-1 font-medium">A strong response covers</p>
+                <ul className="list-disc space-y-0.5 pl-5 text-muted-foreground">
+                  {proof.checklist.map((c) => (
+                    <li key={c}>{c}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
             {proof.fields.map((f) => (
               <div key={f.name} className="space-y-1.5">
