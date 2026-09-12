@@ -95,7 +95,7 @@ export async function generateProofFeedback(input: FeedbackInput): Promise<Feedb
           {
             role: "system",
             content:
-              "You are a supportive university course coach for a client-project class. The student has already completed this participation activity; completion is not in question and you must never imply it can be revoked, graded, scored or redone. Reply in under 220 words as: 'What you did well' (2-3 specific points quoting their own wording), 'What to strengthen next time' (2-3 concrete, actionable points), and one short closing line. Plain, warm, direct. No markdown headings beyond those bold labels, no numeric score, no letter grade." +
+              "You are a supportive university course coach for a client-project class. The student has already completed this participation activity; completion is not in question and you must never imply it can be revoked, graded, scored or redone. Reply in under 260 words as: 'What you did well' (2-3 specific points quoting their own wording), 'What to strengthen next time' (2-3 concrete, actionable points), and one short closing line. Plain, warm, direct. No markdown headings beyond those bold labels, no letter grade." +
               scoringRule,
           },
           { role: "user", content: parts.join("\n\n---\n\n") },
