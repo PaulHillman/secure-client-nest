@@ -22,7 +22,7 @@ import { ProfileCompletionCard } from "@/components/profile-completion-card";
 import { RoleSelectCard } from "@/components/role-select-card";
 import { DashboardReadinessNotice } from "@/components/dashboard-readiness-notice";
 
-import { ProofReviewQueueCard } from "@/components/proof-review-queue-card";
+
 import { ProofsAdminCard } from "@/components/proofs-admin-card";
 
 
@@ -157,7 +157,6 @@ function Dashboard() {
       {isAdmin && (
         <div className="mb-6 space-y-6">
           <div id="proofs" className="scroll-mt-6 space-y-6">
-            <ProofReviewQueueCard />
             <ProofsAdminCard />
           </div>
         </div>

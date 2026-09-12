@@ -276,6 +276,7 @@ export const submitProof = createServerFn({ method: "POST" })
           response: data.answers,
           file_path: data.filePath ?? null,
           file_name: data.fileName ?? null,
+          review_status: "approved",
         })
         .select("id, submitted_at")
         .single();
