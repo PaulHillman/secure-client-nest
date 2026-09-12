@@ -149,9 +149,9 @@ export const saveModuleSubmission = createServerFn({ method: "POST" })
 
     const answers = asAnswers(data.answers);
 
-    // Review submissions are disabled: every module saves shared info directly.
+    // Review submissions are disabled: every module saves shared info directly,
+    // including partial work. Missing fields are reported back, never rejected.
     const missing = missingRequired(data.key, answers);
-    if (missing.length) throw new Error(`Still needed: ${missing.join(", ")}.`);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -185,7 +185,7 @@ export const saveModuleSubmission = createServerFn({ method: "POST" })
       );
     }
 
-    return { ok: true, submitted: false };
+    return { ok: true, submitted: false, missing };
   });
 
 /** Professor's review queue: every submitted module waiting on a decision. */
