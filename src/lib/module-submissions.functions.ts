@@ -185,7 +185,7 @@ export const saveModuleSubmission = createServerFn({ method: "POST" })
       );
     }
 
-    return { ok: true, submitted: false };
+    return { ok: true, submitted: false, missing };
   });
 
 /** Professor's review queue: every submitted module waiting on a decision. */

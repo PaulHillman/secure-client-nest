@@ -93,8 +93,10 @@ export function ModuleSubmissionDialog({
 
   const mutation = useMutation({
     mutationFn: (submit: boolean) => save({ data: { teamId, key: moduleKey, answers, submit } }),
-    onSuccess: () => {
-      toast.success("Saved.");
+    onSuccess: (res) => {
+      const missing = (res as { missing?: string[] } | undefined)?.missing ?? [];
+      if (missing.length) toast.success(`Saved. Still to fill in: ${missing.join(", ")}.`);
+      else toast.success("Saved.");
       void qc.invalidateQueries({ queryKey: ["module-submission", teamId, moduleKey] });
       void qc.invalidateQueries({ queryKey: ["team-readiness", teamId] });
       void qc.invalidateQueries({ queryKey: ["readiness-board"] });
