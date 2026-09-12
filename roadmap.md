@@ -26,3 +26,4 @@
 - [x] State the student's next required action and link directly to Team Readiness
 - [x] Verify the dashboard prompt and link in the preview
 - [x] Show the same actionable Team Readiness prompt at the top of the student's team page
+- [x] Make every Team Readiness role check use the student's assigned team role, including admin view-as

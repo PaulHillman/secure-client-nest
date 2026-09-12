@@ -29,20 +29,24 @@ function asAnswers(value: unknown): Record<string, string> {
  */
 export const getTeamProofs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { teamId: string }) => {
+  .inputValidator((input: { teamId: string; studentId?: string }) => {
     if (!input?.teamId) throw new Error("Missing team.");
     return input;
   })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const admin = await isAdmin(supabase, userId);
+    const targetUserId = data.studentId ?? userId;
+    if (targetUserId !== userId && !admin) {
+      throw new Error("You cannot view another student's role activities.");
+    }
 
     const { data: members } = await supabase
       .from("team_members")
       .select("user_id, job_title")
       .eq("team_id", data.teamId);
     const list = members ?? [];
-    const me = list.find((m) => m.user_id === userId);
+    const me = list.find((m) => m.user_id === targetUserId);
     if (!me && !admin) throw new Error("You are not on this team.");
 
     const ids = list.map((m) => m.user_id);
@@ -89,7 +93,9 @@ export const getTeamProofs = createServerFn({ method: "GET" })
     const mine = proofsForRole(myRole)
       .filter((p) => p.role !== "Researcher" || memberCount >= 6)
       .map((p) => {
-        const sub = (subs ?? []).find((s) => s.user_id === userId && s.proof_key === p.key);
+        const sub = (subs ?? []).find(
+          (s) => s.user_id === targetUserId && s.proof_key === p.key,
+        );
         const mat = readiness.get(p.key);
         return {
           key: p.key,

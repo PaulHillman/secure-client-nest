@@ -56,7 +56,7 @@ export function ProfileCompletionCard() {
           <AlertTriangle className="h-5 w-5 text-amber-600" /> Finish setting up your profile
         </CardTitle>
         <CardDescription>
-          Your team needs these three things before they can pick roles and set a meeting time.
+          Complete these three profile items so your team has the information it needs.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">

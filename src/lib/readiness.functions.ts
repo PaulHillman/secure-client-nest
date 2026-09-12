@@ -21,12 +21,13 @@ async function isAdmin(supabase: RoleChecker, userId: string) {
  */
 export const getTeamReadiness = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { teamId: string }) => {
+  .inputValidator((input: { teamId: string; studentId?: string }) => {
     if (!input?.teamId) throw new Error("Missing team.");
     return input;
   })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const targetUserId = data.studentId ?? userId;
 
     const { data: team } = await supabase
       .from("teams")
@@ -36,13 +37,16 @@ export const getTeamReadiness = createServerFn({ method: "GET" })
     if (!team) throw new Error("Team not found.");
 
     const admin = await isAdmin(supabase, userId);
+    if (targetUserId !== userId && !admin) {
+      throw new Error("You cannot view another student's team role.");
+    }
 
     const { data: members } = await supabase
       .from("team_members")
       .select("user_id, job_title")
       .eq("team_id", data.teamId);
     const memberIds = (members ?? []).map((m) => m.user_id);
-    const viewerMember = (members ?? []).find((m) => m.user_id === userId);
+    const viewerMember = (members ?? []).find((m) => m.user_id === targetUserId);
     if (!viewerMember && !admin) throw new Error("You are not on this team.");
 
     const section = team.section ?? "";
@@ -108,7 +112,7 @@ export const getTeamReadiness = createServerFn({ method: "GET" })
 
     return {
       team,
-      isAdmin: admin,
+      isAdmin: admin && targetUserId === userId,
       isPM: viewerMember?.job_title === "PM",
       members: (members ?? []).map((m) => ({
         userId: m.user_id,
