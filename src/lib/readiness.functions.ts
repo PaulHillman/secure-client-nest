@@ -272,7 +272,8 @@ export const getReadinessBoard = createServerFn({ method: "GET" })
         supabaseAdmin.from("team_members").select("team_id, job_title"),
       ]);
 
-    const byTeam = new Map<string, Map<string, (typeof statuses)[number]>>();
+    type StatusRow = NonNullable<typeof statuses>[number];
+    const byTeam = new Map<string, Map<string, StatusRow>>();
     for (const s of statuses ?? []) {
       if (!byTeam.has(s.team_id)) byTeam.set(s.team_id, new Map());
       byTeam.get(s.team_id)!.set(s.requirement_key, s);
