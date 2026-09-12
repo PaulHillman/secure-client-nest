@@ -94,23 +94,33 @@ export const PROOFS: Proof[] = [
     alias: "PM Proof C",
     needsMaterials: true,
     howTo:
-      "Listen to the voicemail from Professor Hillman. It contains several pieces of information your team needs. Explain how you would capture it, decide what matters most, and distribute the right details to the right teammates so nothing falls through the cracks. You are describing your process — do not actually call or message anyone.",
+      "Listen to the voicemail from Professor Hillman. It contains exactly five items your team needs to act on, mixed in with conversation that does not belong on a project action list. Outline the five items, name who on the team should know or own each one, and list what you deliberately left off. You are describing your process — do not actually call or message anyone.",
     scenario:
-      "Professor Hillman leaves you a voicemail with updates about the client project, deadlines, and something the team needs to confirm. You need to make sure every relevant teammate gets what they need.",
+      "Professor Hillman leaves you a voicemail before your team's kickoff meeting. Some of it is project business, some of it is course news, and some of it is just conversation. Your job is to separate them and get the right details to the right teammates.",
     checklist: [
-      "Captures the message accurately instead of relying on memory",
-      "Identifies the most important pieces of information",
-      "Decides which teammate needs which detail",
-      "Chooses a clear, trackable way to share it (not just a quick text)",
-      "Includes any follow-up actions, owners, and deadlines",
-      "Preserves the information in ClientVault where the team can find it later",
+      "All five project items identified — nothing missed",
+      "Each item paired with the teammate who should know or own it",
+      "Distractions and course-only news kept off the project action list",
+      "Follow-up actions and deadlines you set yourself where none were given",
+      "The message preserved in ClientVault where the team can find it later",
     ],
     fields: [
-      { name: "capture", label: "How would you capture and keep the voicemail contents?", required: true },
-      { name: "priorities", label: "What are the most important pieces of information?", required: true },
-      { name: "distribution", label: "Who would you tell what, and how?", required: true },
-      { name: "follow_up", label: "What follow-up actions, owners, and deadlines would you set?", required: true },
-      { name: "vault", label: "Where in ClientVault would you preserve this, and why?", required: true },
+      {
+        name: "five_items",
+        label: "The five items your team must act on — for each one, who on the team should know or own it",
+        help: "Numbered list of five. Be specific about names/roles and what each person needs to do.",
+        required: true,
+      },
+      {
+        name: "not_actions",
+        label: "What you deliberately left off the project action list, and why",
+        required: true,
+      },
+      {
+        name: "follow_up",
+        label: "Follow-up actions and deadlines you would set, and where you record this in ClientVault",
+        required: true,
+      },
     ],
   },
   {

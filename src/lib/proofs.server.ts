@@ -47,7 +47,12 @@ type FeedbackInput = {
   transcript?: string | null;
 };
 
-export type FeedbackResult = { status: "available" | "unavailable"; text: string | null };
+export type FeedbackResult = {
+  status: "available" | "unavailable";
+  text: string | null;
+  /** Key points found (voicemail proof), parsed from the SCORE line. */
+  score?: number | null;
+};
 
 /** Coaching feedback. Never a grade, never a pass/fail. */
 export async function generateProofFeedback(input: FeedbackInput): Promise<FeedbackResult> {
