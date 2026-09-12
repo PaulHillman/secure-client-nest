@@ -70,20 +70,10 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
 
   const approveMut = useMutation({
     mutationFn: () =>
-      approve({ data: { teamId, version: data!.version, acceptVagueWording: acceptVague } }),
-    onSuccess: (r) => {
-      if (!r.ok) {
-        toast.error("Read the wording warning and tick the box before approving.");
-        void qc.invalidateQueries({ queryKey: ["group-norms", teamId] });
-        return;
-      }
-      toast.success(
-        r.vagueFindings.length
-          ? "Approved. Prof Hillman will review the wording at your kick-off meeting."
-          : "Your approval has been recorded.",
-      );
+      approve({ data: { teamId, version: data!.version } }),
+    onSuccess: () => {
+      toast.success("Your approval has been recorded.");
       setAffirmed(false);
-      setAcceptVague(false);
       void qc.invalidateQueries({ queryKey: ["group-norms", teamId] });
     },
     onError: (e: Error) => toast.error(e.message),
