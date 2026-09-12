@@ -270,45 +270,19 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                     <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-end">
-                  <div>
-                    <Label className="text-xs">Where will you meet?</Label>
-                    <Input
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      placeholder="e.g. Library room 214, or Zoom link"
-                      maxLength={200}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">How will you meet?</Label>
-                    <Select value={mode} onValueChange={setMode}>
-                      <SelectTrigger><SelectValue placeholder="Pick a mode" /></SelectTrigger>
-                      <SelectContent>
-                        {MEETING_MODES.map((m) => (
-                          <SelectItem key={m} value={m}>{m}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div>
+                  <Label className="text-xs">Where will you meet?</Label>
+                  <Input
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="e.g. Pew Library, 4th floor"
+                    maxLength={200}
+                  />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
-                  {([["1st choice", c1, setC1], ["2nd choice", c2, setC2], ["3rd choice", c3, setC3]] as const).map(
-                    ([label, val, set]) => (
-                      <div key={label}>
-                        <Label className="text-xs">Mode preference · {label}</Label>
-                        <Select value={val} onValueChange={set as (v: string) => void}>
-                          <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
-                          <SelectContent>
-                            {MEETING_MODES.map((m) => (
-                              <SelectItem key={m} value={m}>{m}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ),
-                  )}
-                </div>
+                <p className="text-xs rounded-md border border-gold/40 bg-gold/10 px-3 py-2 text-foreground">
+                  Meetings must be held <span className="font-medium">in person, face to face</span>.
+                  Meeting over Zoom or virtually is not an option for this course.
+                </p>
                 <div>
                   <Button onClick={() => saveProposal.mutate()} disabled={saveProposal.isPending}>
                     {proposal ? "Update" : "Submit"}
