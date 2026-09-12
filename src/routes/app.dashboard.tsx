@@ -102,7 +102,7 @@ function Dashboard() {
       alert: (stats?.normsMissing ?? 0) > 0,
     },
     {
-      label: "No meeting consensus",
+      label: "No meeting time set",
       value: stats?.meetingMissing ?? "—",
       sub: total ? `of ${total} teams` : "",
       icon: CalendarX,
