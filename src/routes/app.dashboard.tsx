@@ -172,12 +172,6 @@ function Dashboard() {
 
 
       {isAdmin && (
-        <div className="mb-6">
-          <ReadinessBoardCard />
-        </div>
-      )}
-
-      {isAdmin && (
         <nav className="mb-6 flex flex-wrap gap-2 text-sm">
           {[
             ["#kpis", "Gaps"],
