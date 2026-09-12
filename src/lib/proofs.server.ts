@@ -82,7 +82,7 @@ export async function generateProofFeedback(input: FeedbackInput): Promise<Feedb
   // the student-facing feedback and kept as the professor's record.
   const maxScore = proof.maxScore ?? 5;
   const scoringRule = input.answerKey
-    ? ` After the closing line, add one final line in exactly this format: 'SCORE: N' where N is how many of the answer key's key points (out of ${maxScore}) the student's submission correctly identifies (0 if none). Judge by meaning, not exact wording.`
+    ? ` Before the closing line, add a section labelled 'What you missed' that lists, as short bullets, every key point from the answer key the student did not capture, each stated plainly so they know exactly what it was; if they captured them all, write 'Nothing — you caught every key point.' After the closing line, add one final line in exactly this format: 'SCORE: N' where N is how many of the answer key's key points (out of ${maxScore}) the student's submission correctly identifies (0 if none). Judge by meaning, not exact wording.`
     : "";
 
   try {
