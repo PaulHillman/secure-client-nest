@@ -97,16 +97,13 @@ export function ProofDialog({
 
   async function handleSubmit() {
     if (!proof) return;
-    if (isImpersonating) {
-      toast.error("You are viewing as a student, so you cannot submit their work.");
-      return;
-    }
     setSaving(true);
     try {
       const res = await send({
         data: {
           teamId,
           proofKey: proof.key,
+          studentId: viewAs?.id,
           answers,
           filePath: file?.path ?? null,
           fileName: file?.name ?? null,
