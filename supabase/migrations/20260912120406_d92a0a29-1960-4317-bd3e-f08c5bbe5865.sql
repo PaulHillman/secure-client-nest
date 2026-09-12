@@ -1,0 +1,2 @@
+ALTER TABLE public.proof_submissions ADD COLUMN IF NOT EXISTS score smallint;
+COMMENT ON COLUMN public.proof_submissions.score IS 'Key points found out of the answer-key total (voicemail proof). Coaching record only, not a grade.';

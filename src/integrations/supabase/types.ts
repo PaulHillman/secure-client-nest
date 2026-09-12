@@ -1357,6 +1357,7 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           role_at_submission: Database["public"]["Enums"]["team_job"] | null
+          score: number | null
           submitted_at: string
           team_id: string | null
           updated_at: string
@@ -1378,6 +1379,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           role_at_submission?: Database["public"]["Enums"]["team_job"] | null
+          score?: number | null
           submitted_at?: string
           team_id?: string | null
           updated_at?: string
@@ -1399,6 +1401,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           role_at_submission?: Database["public"]["Enums"]["team_job"] | null
+          score?: number | null
           submitted_at?: string
           team_id?: string | null
           updated_at?: string
