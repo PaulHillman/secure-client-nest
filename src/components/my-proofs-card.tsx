@@ -57,9 +57,9 @@ function Step({
 }
 
 /**
- * Team Readiness: the four things each member finishes before the team is
- * allowed to meet with the professor — role, role proof points, the meeting
- * commitment, and the group norms document.
+ * Team Readiness: the three things each member finishes before the team is
+ * allowed to meet with the professor — role, role proof points, and the
+ * group norms document.
  */
 export function MyProofsCard({ teamId, userId }: { teamId: string; userId: string }) {
   const { viewAs } = useAuth();
