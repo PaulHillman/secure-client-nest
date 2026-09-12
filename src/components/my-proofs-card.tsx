@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getTeamProofs } from "@/lib/proofs.functions";
-import { FEEDBACK_STATUS_LABEL, proofByKey } from "@/lib/proofs";
+import { FEEDBACK_STATUS_LABEL, proofByKey, proofMaxScore } from "@/lib/proofs";
 import { ProofDialog } from "@/components/proof-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +39,7 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
           <CardTitle>Role practice activities</CardTitle>
           <CardDescription>
             Short individual exercises for your role. Each one is submitted once, and submitting it
-            completes it. There is no score — you get written coaching afterwards.
+            completes it. You get written coaching straight away, including anything you missed.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -90,6 +90,13 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
                             <p className="rounded-md bg-muted p-2 text-sm">
                               <span className="font-medium">What to fix: </span>
                               {item.submission!.reviewNote}
+                            </p>
+                          ) : null}
+                          {item.submission!.score != null ? (
+                            <p className="text-sm font-medium">
+                              You captured {item.submission!.score} of{" "}
+                              {proofMaxScore(item.key)} key points — anything you missed is
+                              listed in your feedback below.
                             </p>
                           ) : null}
                           <p className="text-xs text-muted-foreground">

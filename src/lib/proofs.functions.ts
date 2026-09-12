@@ -53,7 +53,7 @@ export const getTeamProofs = createServerFn({ method: "GET" })
       supabase
         .from("proof_submissions")
         .select(
-          "id, user_id, proof_key, submitted_at, feedback, feedback_status, file_name, response, review_status, review_note, reviewed_at",
+          "id, user_id, proof_key, submitted_at, feedback, feedback_status, file_name, response, review_status, review_note, reviewed_at, score",
         )
         .eq("team_id", data.teamId),
       supabase.from("proof_materials").select("proof_key, ready, extra_instructions"),
@@ -99,6 +99,7 @@ export const getTeamProofs = createServerFn({ method: "GET" })
             ? {
                 submittedAt: sub.submitted_at,
                 feedback: sub.feedback,
+                score: sub.score ?? null,
                 feedbackStatus: sub.feedback_status,
                 fileName: sub.file_name,
                 answers: asAnswers(sub.response),
@@ -252,6 +253,7 @@ export const submitProof = createServerFn({ method: "POST" })
     // Completion is already recorded. Everything below is coaching only.
     let feedbackStatus = "pending";
     let feedback: string | null = null;
+    let score: number | null = null;
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { generateProofFeedback, listZipEntries } = await import("@/lib/proofs.server");
@@ -271,20 +273,28 @@ export const submitProof = createServerFn({ method: "POST" })
       });
       feedbackStatus = result.status;
       feedback = result.text;
+      score = result.score ?? null;
       await supabaseAdmin
         .from("proof_submissions")
         .update({
           feedback,
           feedback_status: feedbackStatus,
           feedback_at: new Date().toISOString(),
-          score: result.score ?? null,
+          score,
         })
         .eq("id", inserted.id);
     } catch {
       feedbackStatus = "unavailable";
     }
 
-    return { ok: true, submittedAt: inserted.submitted_at, feedback, feedbackStatus };
+    return {
+      ok: true,
+      submittedAt: inserted.submitted_at,
+      feedback,
+      feedbackStatus,
+      score: score ?? null,
+      maxScore: proof.maxScore ?? null,
+    };
   });
 
 /** Professor view: who has completed which activity, across the sections. */

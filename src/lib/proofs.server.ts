@@ -82,7 +82,7 @@ export async function generateProofFeedback(input: FeedbackInput): Promise<Feedb
   // the student-facing feedback and kept as the professor's record.
   const maxScore = proof.maxScore ?? 5;
   const scoringRule = input.answerKey
-    ? ` After the closing line, add one final line in exactly this format: 'SCORE: N' where N is how many of the answer key's key points (out of ${maxScore}) the student's submission correctly identifies (0 if none). Judge by meaning, not exact wording.`
+    ? ` Before the closing line, add a section labelled 'What you missed' that lists, as short bullets, every key point from the answer key the student did not capture, each stated plainly so they know exactly what it was; if they captured them all, write 'Nothing — you caught every key point.' After the closing line, add one final line in exactly this format: 'SCORE: N' where N is how many of the answer key's key points (out of ${maxScore}) the student's submission correctly identifies (0 if none). Judge by meaning, not exact wording.`
     : "";
 
   try {
@@ -95,7 +95,7 @@ export async function generateProofFeedback(input: FeedbackInput): Promise<Feedb
           {
             role: "system",
             content:
-              "You are a supportive university course coach for a client-project class. The student has already completed this participation activity; completion is not in question and you must never imply it can be revoked, graded, scored or redone. Reply in under 220 words as: 'What you did well' (2-3 specific points quoting their own wording), 'What to strengthen next time' (2-3 concrete, actionable points), and one short closing line. Plain, warm, direct. No markdown headings beyond those bold labels, no numeric score, no letter grade." +
+              "You are a supportive university course coach for a client-project class. The student has already completed this participation activity; completion is not in question and you must never imply it can be revoked, graded, scored or redone. Reply in under 260 words as: 'What you did well' (2-3 specific points quoting their own wording), 'What to strengthen next time' (2-3 concrete, actionable points), and one short closing line. Plain, warm, direct. No markdown headings beyond those bold labels, no letter grade." +
               scoringRule,
           },
           { role: "user", content: parts.join("\n\n---\n\n") },
