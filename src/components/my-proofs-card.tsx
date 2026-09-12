@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth-context";
 import { getTeamProofs } from "@/lib/proofs.functions";
 import { getTeamNorms } from "@/lib/group-norms.functions";
-import { supabase } from "@/integrations/supabase/client";
+
 import { FEEDBACK_STATUS_LABEL, proofByKey, proofMaxScore } from "@/lib/proofs";
 import { ProofDialog } from "@/components/proof-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
