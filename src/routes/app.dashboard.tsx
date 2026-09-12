@@ -153,6 +153,9 @@ function Dashboard() {
         <div className="mb-6 space-y-6">
           <SubmissionReviewCard />
           <ReadinessBoardCard />
+          <div id="proofs" className="scroll-mt-6">
+            <ProofsAdminCard />
+          </div>
         </div>
       )}
 
