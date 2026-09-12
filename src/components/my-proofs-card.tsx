@@ -249,37 +249,6 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
 
           <Step
             n={3}
-            title="Confirm your meeting commitment"
-            done={!!meetingDone}
-            action={
-              meetingDone ? undefined : meeting?.proposal ? (
-                <Button size="sm" variant="outline" asChild>
-                  <Link to="/app/agreement">Read &amp; sign the agreement</Link>
-                </Button>
-              ) : (
-                <Button size="sm" variant="outline" onClick={() => scrollTo("meeting-time")}>
-                  Set your meeting time
-                </Button>
-              )
-            }
-          >
-            {meetingDone ? (
-              <p>
-                You have agreed to your team's standing meeting time. Keep it — the team is counting
-                on you being there.
-              </p>
-            ) : meeting?.proposal ? (
-              <p>Your team has proposed a standing meeting time. Read it and agree to it.</p>
-            ) : (
-              <p>
-                Your team has not settled on a standing meeting time yet. The Project Manager
-                proposes it, then everyone agrees.
-              </p>
-            )}
-          </Step>
-
-          <Step
-            n={4}
             title="Write and approve your Group Norms"
             done={normsDone}
             action={
