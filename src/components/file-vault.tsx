@@ -300,6 +300,8 @@ function SubsectionBlock({
   onOpenComments: (f: FileRow, preset?: VaultStatus) => void;
   onRefresh: () => void;
 }) {
+  const isGroupNorms = sectionName === "Team Documents" && subName === "Group Norms";
+
   // Build slot list: per-member slots (one per member) + compiled + free-form extras
   const memberFiles = new Map<string, FileRow[]>();
   const compiledFiles: FileRow[] = [];
@@ -364,9 +366,13 @@ function SubsectionBlock({
           )}
         </div>
       ) : files.length === 0 ? (
-        <p className="text-xs text-muted-foreground italic py-2">
-          Nothing uploaded yet for {subName}.
-        </p>
+        isGroupNorms ? (
+          <GroupNormsVaultNote />
+        ) : (
+          <p className="text-xs text-muted-foreground italic py-2">
+            Nothing uploaded yet for {subName}.
+          </p>
+        )
       ) : (
         <div className="space-y-2">
           {files.map((f) => (
