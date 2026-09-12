@@ -293,34 +293,40 @@ export type Database = {
       }
       archived_group_norms: {
         Row: {
-          archive_document_path: string
+          archive_document_path: string | null
           archive_id: string
-          document_path: string
+          content: Json | null
+          document_path: string | null
           id: string
           is_locked: boolean | null
           locked_at: string | null
           team_id: string
           uploaded_at: string | null
+          version: number | null
         }
         Insert: {
-          archive_document_path: string
+          archive_document_path?: string | null
           archive_id: string
-          document_path: string
+          content?: Json | null
+          document_path?: string | null
           id: string
           is_locked?: boolean | null
           locked_at?: string | null
           team_id: string
           uploaded_at?: string | null
+          version?: number | null
         }
         Update: {
-          archive_document_path?: string
+          archive_document_path?: string | null
           archive_id?: string
-          document_path?: string
+          content?: Json | null
+          document_path?: string | null
           id?: string
           is_locked?: boolean | null
           locked_at?: string | null
           team_id?: string
           uploaded_at?: string | null
+          version?: number | null
         }
         Relationships: [
           {
@@ -339,6 +345,7 @@ export type Database = {
           id: string
           signed_at: string | null
           user_id: string
+          version: number | null
         }
         Insert: {
           archive_id: string
@@ -346,6 +353,7 @@ export type Database = {
           id: string
           signed_at?: string | null
           user_id: string
+          version?: number | null
         }
         Update: {
           archive_id?: string
@@ -353,6 +361,7 @@ export type Database = {
           id?: string
           signed_at?: string | null
           user_id?: string
+          version?: number | null
         }
         Relationships: [
           {
@@ -849,28 +858,40 @@ export type Database = {
       }
       group_norms: {
         Row: {
-          document_path: string
+          content: Json
+          document_path: string | null
           id: string
           is_locked: boolean
           locked_at: string | null
           team_id: string
+          updated_at: string
+          updated_by: string | null
           uploaded_at: string
+          version: number
         }
         Insert: {
-          document_path: string
+          content?: Json
+          document_path?: string | null
           id?: string
           is_locked?: boolean
           locked_at?: string | null
           team_id: string
+          updated_at?: string
+          updated_by?: string | null
           uploaded_at?: string
+          version?: number
         }
         Update: {
-          document_path?: string
+          content?: Json
+          document_path?: string | null
           id?: string
           is_locked?: boolean
           locked_at?: string | null
           team_id?: string
+          updated_at?: string
+          updated_by?: string | null
           uploaded_at?: string
+          version?: number
         }
         Relationships: [
           {
@@ -888,18 +909,21 @@ export type Database = {
           id: string
           signed_at: string
           user_id: string
+          version: number
         }
         Insert: {
           group_norms_id: string
           id?: string
           signed_at?: string
           user_id: string
+          version?: number
         }
         Update: {
           group_norms_id?: string
           id?: string
           signed_at?: string
           user_id?: string
+          version?: number
         }
         Relationships: [
           {
@@ -907,6 +931,51 @@ export type Database = {
             columns: ["group_norms_id"]
             isOneToOne: false
             referencedRelation: "group_norms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_norms_versions: {
+        Row: {
+          content: Json
+          created_at: string
+          group_norms_id: string
+          id: string
+          saved_by: string | null
+          team_id: string
+          version: number
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          group_norms_id: string
+          id?: string
+          saved_by?: string | null
+          team_id: string
+          version: number
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          group_norms_id?: string
+          id?: string
+          saved_by?: string | null
+          team_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_norms_versions_group_norms_id_fkey"
+            columns: ["group_norms_id"]
+            isOneToOne: false
+            referencedRelation: "group_norms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_norms_versions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]

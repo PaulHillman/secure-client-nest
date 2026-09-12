@@ -25,6 +25,8 @@ import { VAULT_ADMIN_ROLE } from "@/components/vault-admin-duties-card";
 import { RoleSelectCard } from "@/components/role-select-card";
 import { MyProofsCard } from "@/components/my-proofs-card";
 import { TeamReadinessCard } from "@/components/team-readiness-card";
+import { GroupNormsCard } from "@/components/group-norms-card";
+
 
 export const Route = createFileRoute("/app/teams/$teamId")({
   head: () => ({ meta: [{ title: "Team — ClientVault" }] }),
@@ -198,7 +200,10 @@ function TeamDetail() {
 
       <MeetingTimeCard teamId={teamId} />
 
+      <GroupNormsCard teamId={teamId} />
+
       <MeetingLogCard teamId={teamId} />
+
 
       <ManagerSubmissions teamId={teamId} />
 

@@ -137,22 +137,27 @@ export const archiveSemester = createServerFn({ method: "POST" })
       id: g.id,
       team_id: g.team_id,
       document_path: g.document_path,
-      archive_document_path: `archive/${archiveId}/${g.document_path}`,
+      archive_document_path: g.document_path ? `archive/${archiveId}/${g.document_path}` : null,
+      content: g.content,
+      version: g.version,
       is_locked: g.is_locked,
       locked_at: g.locked_at,
       uploaded_at: g.uploaded_at,
     }));
     await Promise.all(
-      gnRows.map((g) =>
-        supabaseAdmin.storage
-          .from(BUCKET)
-          .copy(g.document_path, g.archive_document_path)
-          .then((r: any) => {
-            if (r.error && !/exists/i.test(r.error.message))
-              console.warn(`[archive] gn copy fail: ${r.error.message}`);
-          }),
-      ),
+      gnRows
+        .filter((g) => g.document_path && g.archive_document_path)
+        .map((g) =>
+          supabaseAdmin.storage
+            .from(BUCKET)
+            .copy(g.document_path!, g.archive_document_path!)
+            .then((r: any) => {
+              if (r.error && !/exists/i.test(r.error.message))
+                console.warn(`[archive] gn copy fail: ${r.error.message}`);
+            }),
+        ),
     );
+
     if (gnRows.length) await supabaseAdmin.from("archived_group_norms").insert(gnRows);
 
     if (gns.length)
@@ -379,26 +384,31 @@ export const promoteArchive = createServerFn({ method: "POST" })
     // Group norms (parallel copies)
     if (agnRes.data?.length) {
       await Promise.all(
-        agnRes.data.map((g: any) =>
-          supabaseAdmin.storage
-            .from(BUCKET)
-            .copy(g.archive_document_path, g.document_path)
-            .then((r: any) => {
-              if (r.error && !/exists/i.test(r.error.message))
-                console.warn(`[promote] gn copy fail: ${r.error.message}`);
-            }),
-        ),
+        agnRes.data
+          .filter((g: any) => g.archive_document_path && g.document_path)
+          .map((g: any) =>
+            supabaseAdmin.storage
+              .from(BUCKET)
+              .copy(g.archive_document_path, g.document_path)
+              .then((r: any) => {
+                if (r.error && !/exists/i.test(r.error.message))
+                  console.warn(`[promote] gn copy fail: ${r.error.message}`);
+              }),
+          ),
       );
       await supabaseAdmin.from("group_norms").insert(
         agnRes.data.map((g: any) => ({
           id: g.id,
           team_id: g.team_id,
           document_path: g.document_path,
+          content: g.content ?? {},
+          version: g.version ?? 1,
           is_locked: g.is_locked,
           locked_at: g.locked_at,
           uploaded_at: g.uploaded_at,
         })),
       );
+
     }
     if (agnsRes.data?.length) await supabaseAdmin.from("group_norms_signatures").insert(stripArchive(agnsRes.data));
     if (amsRes.data?.length) await supabaseAdmin.from("manager_submissions").insert(stripArchive(amsRes.data));
