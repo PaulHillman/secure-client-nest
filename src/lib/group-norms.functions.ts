@@ -144,6 +144,11 @@ export const saveTeamNorms = createServerFn({ method: "POST" })
       .eq("user_id", userId)
       .maybeSingle();
     if (!membership && !admin) throw new Error("You are not on this team.");
+    if (membership && membership.job_title !== "PM" && !admin) {
+      throw new Error(
+        "The Project Manager writes the Group Norms document. Give your input to your PM — every member still approves it.",
+      );
+    }
 
     const next: NormsContent = normalizeNorms(data.content);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
