@@ -21,6 +21,7 @@ import { AvailabilityGridCard } from "@/components/availability-grid-card";
 import { ProfileCompletionCard } from "@/components/profile-completion-card";
 import { RoleSelectCard } from "@/components/role-select-card";
 import { ReadinessBoardCard } from "@/components/readiness-board-card";
+import { ProofsAdminCard } from "@/components/proofs-admin-card";
 import { SubmissionReviewCard } from "@/components/submission-review-card";
 
 
@@ -153,6 +154,9 @@ function Dashboard() {
         <div className="mb-6 space-y-6">
           <SubmissionReviewCard />
           <ReadinessBoardCard />
+          <div id="proofs" className="scroll-mt-6">
+            <ProofsAdminCard />
+          </div>
         </div>
       )}
 
@@ -176,6 +180,7 @@ function Dashboard() {
       {isAdmin && (
         <nav className="mb-6 flex flex-wrap gap-2 text-sm">
           {[
+            ["#proofs", "Role activities"],
             ["#kpis", "Gaps"],
             ["#roster", "Roster"],
             ["#contacts", "Client contacts"],

@@ -1,0 +1,98 @@
+/**
+ * Server-only helpers for the Stage C proofs: reading the file list out of an
+ * uploaded ZIP, and generating coaching feedback through the AI gateway.
+ * Feedback is advisory — a failure here never affects completion.
+ */
+
+import { proofByKey } from "@/lib/proofs";
+
+/**
+ * Lists the entry names in a ZIP by walking the central directory.
+ * No decompression, so it is cheap and works on a large archive.
+ */
+export function listZipEntries(buf: ArrayBuffer): string[] {
+  const view = new DataView(buf);
+  const bytes = new Uint8Array(buf);
+  // End of central directory: scan backwards for the 0x06054b50 signature.
+  let eocd = -1;
+  const min = Math.max(0, bytes.length - 66_000);
+  for (let i = bytes.length - 22; i >= min; i--) {
+    if (view.getUint32(i, true) === 0x06054b50) {
+      eocd = i;
+      break;
+    }
+  }
+  if (eocd < 0) return [];
+  const count = view.getUint16(eocd + 10, true);
+  let offset = view.getUint32(eocd + 16, true);
+  const names: string[] = [];
+  const decoder = new TextDecoder();
+  for (let i = 0; i < count; i++) {
+    if (offset + 46 > bytes.length) break;
+    if (view.getUint32(offset, true) !== 0x02014b50) break;
+    const nameLen = view.getUint16(offset + 28, true);
+    const extraLen = view.getUint16(offset + 30, true);
+    const commentLen = view.getUint16(offset + 32, true);
+    names.push(decoder.decode(bytes.subarray(offset + 46, offset + 46 + nameLen)));
+    offset += 46 + nameLen + extraLen + commentLen;
+  }
+  return names.filter((n) => !n.startsWith("__MACOSX/"));
+}
+
+type FeedbackInput = {
+  proofKey: string;
+  answers: Record<string, string>;
+  zipEntries?: string[];
+  answerKey?: string | null;
+  transcript?: string | null;
+};
+
+export type FeedbackResult = { status: "available" | "unavailable"; text: string | null };
+
+/** Coaching feedback. Never a grade, never a pass/fail. */
+export async function generateProofFeedback(input: FeedbackInput): Promise<FeedbackResult> {
+  const apiKey = process.env["LOVABLE_API_KEY"];
+  const proof = proofByKey(input.proofKey);
+  if (!apiKey || !proof) return { status: "unavailable", text: null };
+
+  const parts: string[] = [
+    `Activity: ${proof.title} (${proof.alias}) for the ${proof.role} role.`,
+    `What the activity asked for:\n${proof.howTo}`,
+    `Criteria a strong response covers:\n- ${proof.checklist.join("\n- ")}`,
+  ];
+  if (proof.scenario) parts.push(`Scenario given to the student:\n${proof.scenario}`);
+  if (input.transcript) parts.push(`Reference transcript of the recording:\n${input.transcript.slice(0, 12_000)}`);
+  if (input.answerKey) parts.push(`Expected structure (answer key):\n${input.answerKey.slice(0, 8_000)}`);
+  if (input.zipEntries?.length)
+    parts.push(`Files and folders in the student's uploaded ZIP:\n${input.zipEntries.slice(0, 400).join("\n")}`);
+  parts.push(
+    `Student's submission:\n${Object.entries(input.answers)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join("\n\n")
+      .slice(0, 12_000)}`,
+  );
+
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a supportive university course coach for a client-project class. The student has already completed this participation activity; completion is not in question and you must never imply it can be revoked, graded, scored or redone. Reply in under 220 words as: 'What you did well' (2-3 specific points quoting their own wording), 'What to strengthen next time' (2-3 concrete, actionable points), and one short closing line. Plain, warm, direct. No markdown headings beyond those bold labels, no numeric score, no letter grade.",
+          },
+          { role: "user", content: parts.join("\n\n---\n\n") },
+        ],
+      }),
+    });
+    if (!res.ok) return { status: "unavailable", text: null };
+    const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+    const text = json.choices?.[0]?.message?.content?.trim();
+    return text ? { status: "available", text } : { status: "unavailable", text: null };
+  } catch {
+    return { status: "unavailable", text: null };
+  }
+}

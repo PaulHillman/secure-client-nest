@@ -1304,6 +1304,101 @@ export type Database = {
         }
         Relationships: []
       }
+      proof_materials: {
+        Row: {
+          answer_key: string | null
+          audio_path: string | null
+          extra_instructions: string | null
+          proof_key: string
+          ready: boolean
+          transcript_text: string | null
+          updated_at: string
+          updated_by: string | null
+          zip_path: string | null
+        }
+        Insert: {
+          answer_key?: string | null
+          audio_path?: string | null
+          extra_instructions?: string | null
+          proof_key: string
+          ready?: boolean
+          transcript_text?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          zip_path?: string | null
+        }
+        Update: {
+          answer_key?: string | null
+          audio_path?: string | null
+          extra_instructions?: string | null
+          proof_key?: string
+          ready?: boolean
+          transcript_text?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          zip_path?: string | null
+        }
+        Relationships: []
+      }
+      proof_submissions: {
+        Row: {
+          created_at: string
+          feedback: string | null
+          feedback_at: string | null
+          feedback_status: string
+          file_name: string | null
+          file_path: string | null
+          id: string
+          proof_key: string
+          response: Json
+          role_at_submission: Database["public"]["Enums"]["team_job"] | null
+          submitted_at: string
+          team_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feedback?: string | null
+          feedback_at?: string | null
+          feedback_status?: string
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          proof_key: string
+          response?: Json
+          role_at_submission?: Database["public"]["Enums"]["team_job"] | null
+          submitted_at?: string
+          team_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feedback?: string | null
+          feedback_at?: string | null
+          feedback_status?: string
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          proof_key?: string
+          response?: Json
+          role_at_submission?: Database["public"]["Enums"]["team_job"] | null
+          submitted_at?: string
+          team_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proof_submissions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       requirement_nudges: {
         Row: {
           created_at: string
