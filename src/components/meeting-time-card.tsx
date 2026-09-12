@@ -18,7 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { CalendarClock, Check, X, CircleDashed, MapPin, Video } from "lucide-react";
 import { toast } from "sonner";
-import { MEETING_MODES } from "@/lib/meeting-agreement";
+import { FACE_TO_FACE } from "@/lib/meeting-agreement";
 import { notifyMeetingChange } from "@/lib/meeting.functions";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -97,20 +97,12 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
   const [day, setDay] = useState<string>("");
   const [time, setTime] = useState<string>("");
   const [location, setLocation] = useState<string>("");
-  const [mode, setMode] = useState<string>("");
-  const [c1, setC1] = useState<string>("");
-  const [c2, setC2] = useState<string>("");
-  const [c3, setC3] = useState<string>("");
 
   useEffect(() => {
     if (proposal) {
       setDay(String(proposal.day_of_week));
       setTime(proposal.meeting_time.slice(0, 5));
       setLocation((proposal as any).location ?? "");
-      setMode((proposal as any).meeting_mode ?? "");
-      setC1((proposal as any).mode_choice_1 ?? "");
-      setC2((proposal as any).mode_choice_2 ?? "");
-      setC3((proposal as any).mode_choice_3 ?? "");
     }
   }, [proposal?.id, proposal?.day_of_week, proposal?.meeting_time]);
 
@@ -121,10 +113,10 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
         day_of_week: Number(day),
         meeting_time: time,
         location: location.trim() || null,
-        meeting_mode: mode || null,
-        mode_choice_1: c1 || null,
-        mode_choice_2: c2 || null,
-        mode_choice_3: c3 || null,
+        meeting_mode: FACE_TO_FACE,
+        mode_choice_1: null,
+        mode_choice_2: null,
+        mode_choice_3: null,
       };
       let changed = false;
       if (proposal) {
