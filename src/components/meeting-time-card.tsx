@@ -290,7 +290,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                 </div>
                 {proposal && (
                   <p className="text-xs text-muted-foreground">
-                    Changing the day, time, place or mode resets everyone's agreement and notifies
+                    Changing the day, time, or place resets everyone's agreement and notifies
                     Professor Hillman.
                   </p>
                 )}
