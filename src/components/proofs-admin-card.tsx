@@ -112,10 +112,12 @@ export function ProofsAdminCard() {
             </label>
           </div>
 
-          {editing?.key === "comms_minutes" ? (
+          {editing?.needsMaterials && editing?.key !== "tech_zip" ? (
             <>
               <div className="space-y-1.5">
-                <Label htmlFor="proof-audio">Meeting recording</Label>
+                <Label htmlFor="proof-audio">
+                  {editing?.key === "comms_minutes" ? "Meeting recording" : "Audio message"}
+                </Label>
                 <input
                   id="proof-audio"
                   type="file"
