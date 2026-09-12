@@ -247,14 +247,14 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
                     </div>
                     {approved ? (
                       <Badge variant="secondary">
-                        <Lock className="mr-1 size-3" /> Approved
+                        <Lock className="mr-1 size-3" /> Submitted
                       </Badge>
                     ) : sentBack ? (
                       <Button size="sm" onClick={() => setOpenKey(item.key)}>
-                        Fix and resend
+                        Update
                       </Button>
                     ) : done ? (
-                      <Badge variant="secondary">Awaiting review</Badge>
+                      <Badge variant="secondary">Submitted</Badge>
                     ) : (
                       <Button size="sm" disabled={!item.open} onClick={() => setOpenKey(item.key)}>
                         Start
