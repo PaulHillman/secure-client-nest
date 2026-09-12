@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { claimTeamRole, getRoleOptions } from "@/lib/team-role.functions";
 import { selectableRoles } from "@/lib/team-roles";
+import { withAlias } from "@/lib/readiness";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,7 +63,7 @@ export function RoleSelectCard() {
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">{role.value}</span>
+                  <span className="font-medium">{withAlias(role.value)}</span>
                   {mine && <Badge>Your role</Badge>}
                   {heldBy && <Badge variant="secondary">Taken by {heldBy}</Badge>}
                 </div>

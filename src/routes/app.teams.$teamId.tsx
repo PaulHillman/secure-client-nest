@@ -23,6 +23,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 import { VAULT_ADMIN_ROLE } from "@/components/vault-admin-duties-card";
 import { RoleSelectCard } from "@/components/role-select-card";
+import { TeamReadinessCard } from "@/components/team-readiness-card";
 
 export const Route = createFileRoute("/app/teams/$teamId")({
   head: () => ({ meta: [{ title: "Team — ClientVault" }] }),
@@ -136,6 +137,10 @@ function TeamDetail() {
 
       <div className="mt-6">
         <ProjectArchCard variant="wide" />
+      </div>
+
+      <div className="mt-6">
+        <TeamReadinessCard teamId={teamId} />
       </div>
 
       {isMember && (
