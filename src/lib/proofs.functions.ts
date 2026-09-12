@@ -123,15 +123,33 @@ export const getTeamProofs = createServerFn({ method: "GET" })
 /** Signed links and text for the course material behind one activity. */
 export const getProofMaterial = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { proofKey: string }) => {
+  .inputValidator((input: { proofKey: string; teamId: string; studentId?: string }) => {
     if (!proofByKey(input?.proofKey ?? "")) throw new Error("Unknown activity.");
+    if (!input?.teamId) throw new Error("Missing team.");
     return input;
   })
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const { data: row } = await supabase
+    const { supabase, userId } = context;
+    const admin = await isAdmin(supabase, userId);
+    const targetUserId = data.studentId ?? userId;
+    if (targetUserId !== userId && !admin)
+      throw new Error("You cannot view another student's role activities.");
+
+    const proof = proofByKey(data.proofKey);
+    const { data: membership } = await supabase
+      .from("team_members")
+      .select("job_title")
+      .eq("team_id", data.teamId)
+      .eq("user_id", targetUserId)
+      .maybeSingle();
+    if (!membership && !admin) throw new Error("You are not on this team.");
+    if (membership && proof && membership.job_title !== proof.role)
+      throw new Error("This activity belongs to a different role.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
       .from("proof_materials")
-      .select("*")
+      .select("ready, audio_path, transcript_text, zip_path")
       .eq("proof_key", data.proofKey)
       .maybeSingle();
     if (!row) return { ready: false, audioUrl: null, zipUrl: null, transcript: null };
@@ -151,7 +169,6 @@ export const getProofMaterial = createServerFn({ method: "GET" })
       audioUrl: await sign(row.audio_path),
       zipUrl: await sign(row.zip_path),
       transcript: hidesTranscript ? null : row.transcript_text,
-      extraInstructions: row.extra_instructions,
     };
   });
 
@@ -195,7 +212,8 @@ export const submitProof = createServerFn({ method: "POST" })
     if (membership.job_title !== proof.role)
       throw new Error("This activity belongs to a different role.");
 
-    const { data: material } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: material } = await supabaseAdmin
       .from("proof_materials")
       .select("ready, transcript_text, answer_key")
       .eq("proof_key", proof.key)
@@ -261,7 +279,6 @@ export const submitProof = createServerFn({ method: "POST" })
     let feedback: string | null = null;
     let score: number | null = null;
     try {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { generateProofFeedback, listZipEntries } = await import("@/lib/proofs.server");
 
       let zipEntries: string[] | undefined;
@@ -270,23 +287,12 @@ export const submitProof = createServerFn({ method: "POST" })
         if (file) zipEntries = listZipEntries(await file.arrayBuffer());
       }
 
-      // The PM agenda rubric is instructor-only. Its row is hidden from students
-      // by RLS, so load it only after the authenticated submission is recorded.
-      const { data: instructorMaterial } =
-        proof.key === "pm_agenda"
-          ? await supabaseAdmin
-              .from("proof_materials")
-              .select("answer_key, transcript_text")
-              .eq("proof_key", proof.key)
-              .maybeSingle()
-          : { data: null };
-
       const result = await generateProofFeedback({
         proofKey: proof.key,
         answers: data.answers,
         zipEntries,
-        answerKey: instructorMaterial?.answer_key ?? material?.answer_key ?? null,
-        transcript: instructorMaterial?.transcript_text ?? material?.transcript_text ?? null,
+        answerKey: material?.answer_key ?? null,
+        transcript: material?.transcript_text ?? null,
       });
       feedbackStatus = result.status;
       feedback = result.text;

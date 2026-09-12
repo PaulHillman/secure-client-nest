@@ -30,6 +30,22 @@ type Props = {
   onSubmitted: () => void;
 };
 
+function prepareInitialAnswers(
+  proofKey: string | null,
+  fields: { name: string; label: string }[],
+  initialAnswers?: Record<string, string>,
+) {
+  if (!initialAnswers) return {};
+  if (fields.some((field) => (initialAnswers[field.name] ?? "").trim())) return initialAnswers;
+  if (fields.length !== 1) return initialAnswers;
+
+  const legacy = Object.entries(initialAnswers)
+    .filter(([, value]) => value.trim())
+    .map(([name, value]) => `${name.replaceAll("_", " ")}: ${value}`)
+    .join("\n\n");
+  return legacy ? { ...initialAnswers, [fields[0].name]: legacy } : initialAnswers;
+}
+
 export function ProofDialog({
   teamId,
   proofKey,
@@ -43,7 +59,9 @@ export function ProofDialog({
   const loadMaterial = useServerFn(getProofMaterial);
   const send = useServerFn(submitProof);
 
-  const [answers, setAnswers] = useState<Record<string, string>>(initialAnswers ?? {});
+  const [answers, setAnswers] = useState<Record<string, string>>(() =>
+    prepareInitialAnswers(proofKey, proof?.fields ?? [], initialAnswers),
+  );
   const [ack, setAck] = useState(false);
   const [file, setFile] = useState<{ path: string; name: string } | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -55,7 +73,7 @@ export function ProofDialog({
 
   const { data: material } = useQuery({
     queryKey: ["proof-material", proofKey],
-    queryFn: () => loadMaterial({ data: { proofKey: proofKey! } }),
+    queryFn: () => loadMaterial({ data: { proofKey: proofKey ?? "", teamId, studentId: userId } }),
     enabled: !!proofKey && (!!proof?.needsMaterials || !!proof?.requiresFile),
   });
 
@@ -154,10 +172,6 @@ export function ProofDialog({
               <p className="text-sm text-muted-foreground">{proof.howTo}</p>
             ) : null}
 
-            {material?.extraInstructions ? (
-              <p className="rounded-md bg-muted p-3 text-sm">{material.extraInstructions}</p>
-            ) : null}
-
             {proof.scenario ? (
               <div className="rounded-md border p-3 text-sm">
                 <p className="mb-1 font-medium">The situation</p>
@@ -215,17 +229,6 @@ export function ProofDialog({
                   <Download className="mr-2 size-4" /> Download the challenge files
                 </a>
               </Button>
-            ) : null}
-
-            {proof.key !== "pm_agenda" ? (
-              <div className="rounded-md border p-3 text-sm">
-                <p className="mb-1 font-medium">A strong response covers</p>
-                <ul className="list-disc space-y-0.5 pl-5 text-muted-foreground">
-                  {proof.checklist.map((c) => (
-                    <li key={c}>{c}</li>
-                  ))}
-                </ul>
-              </div>
             ) : null}
 
             {proof.fields.map((f) => (
