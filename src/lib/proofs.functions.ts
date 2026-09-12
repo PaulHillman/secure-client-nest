@@ -417,7 +417,7 @@ export const getProofReviewQueue = createServerFn({ method: "GET" })
     const { data: subs } = await supabase
       .from("proof_submissions")
       .select(
-        "id, user_id, team_id, proof_key, response, file_path, file_name, submitted_at, review_status, review_note, resubmit_count, feedback",
+        "id, user_id, team_id, proof_key, response, file_path, file_name, submitted_at, review_status, review_note, resubmit_count, feedback, score",
       )
       .eq("review_status", "pending")
       .order("submitted_at", { ascending: true })
@@ -465,6 +465,7 @@ export const getProofReviewQueue = createServerFn({ method: "GET" })
           fileName: s.file_name,
           fileUrl,
           feedback: s.feedback,
+          score: s.score ?? null,
         };
       }),
     );
