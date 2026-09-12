@@ -113,7 +113,6 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
       if (!row.as_agreed) setReasonFor(row.id);
       setTime("");
       setLocation("");
-      setMode("");
       setMinutes(false);
       qc.invalidateQueries({ queryKey: ["meeting-logs", teamId] });
       qc.invalidateQueries({ queryKey: ["meeting-gaps"] });
