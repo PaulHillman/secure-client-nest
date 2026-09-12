@@ -176,7 +176,25 @@ export function ProofDialog({
                       ? "Voicemail from your client contact"
                       : "Voicemail"}
                 </Label>
-                <audio controls src={material.audioUrl} className="w-full" />
+                <audio
+                  controls
+                  controlsList="nodownload"
+                  preload="metadata"
+                  autoPlay={false}
+                  src={material.audioUrl}
+                  className="w-full"
+                  aria-label="Recording for this activity"
+                  ref={(el) => {
+                    if (el) el.playbackRate = 1;
+                  }}
+                >
+                  Your browser cannot play this recording.
+                </audio>
+                <Button asChild variant="outline" size="sm" className="w-fit">
+                  <a href={material.audioUrl} download>
+                    <Download className="mr-2 size-4" /> Download the recording
+                  </a>
+                </Button>
               </div>
             ) : null}
 
