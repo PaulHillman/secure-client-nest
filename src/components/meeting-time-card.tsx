@@ -31,7 +31,7 @@ function fmtTime(t: string) {
 }
 
 export function MeetingTimeCard({ teamId }: { teamId: string }) {
-  const { user, viewAs } = useAuth();
+  const { user } = useAuth();
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
