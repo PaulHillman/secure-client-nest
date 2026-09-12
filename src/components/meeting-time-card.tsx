@@ -126,7 +126,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
               teamId,
               message: `Meeting time changed to ${DAYS[fields.day_of_week]} ${fmtTime(fields.meeting_time)}${
                 fields.location ? ` · ${fields.location}` : ""
-              }${fields.meeting_mode ? ` · ${fields.meeting_mode}` : ""} — all members must re-approve.`,
+              }${fields.meeting_mode ? ` · ${fields.meeting_mode}` : ""}.`,
             },
           });
         } catch {
@@ -138,52 +138,11 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
     onSuccess: (changed) => {
       toast.success(
         changed
-          ? "Meeting details updated — approvals were reset and Professor Hillman was notified"
-          : "Proposal saved — every member, including you as PM, must now read and sign the agreement",
+          ? "Meeting details updated — Professor Hillman was notified"
+          : "Meeting time saved",
       );
       qc.invalidateQueries({ queryKey: ["meeting-time", teamId] });
       qc.invalidateQueries({ queryKey: ["admin-consensus"] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-
-  // Member response
-  const [initials, setInitials] = useState("");
-  useEffect(() => {
-    if (me?.agreement?.initials) setInitials(me.agreement.initials);
-    else if (me?.savedInitials) setInitials(me.savedInitials);
-  }, [me?.agreement?.initials, me?.savedInitials]);
-
-  const respond = useMutation({
-    mutationFn: async (status: "agreed" | "declined") => {
-      if (!proposal) throw new Error("No proposal yet");
-      const derived = (me?.name ?? "")
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 3)
-        .map((s: string) => s[0]?.toUpperCase() ?? "")
-        .join("");
-      const cleaned = (initials.trim() || derived).toUpperCase();
-      if (!/^[A-Z]{2,4}$/.test(cleaned)) throw new Error("Enter 2–4 letter initials");
-
-      await respondMeetingAgreement({
-        data: {
-          teamId,
-          status,
-          initials: cleaned,
-          fullName: me?.name,
-          studentId: viewAs?.id,
-        },
-      });
-    },
-    onSuccess: (_d, status) => {
-      toast.success(status === "agreed" ? "Agreement recorded" : "Marked as declined");
-      qc.invalidateQueries({ queryKey: ["meeting-time", teamId] });
-      qc.invalidateQueries({ queryKey: ["admin-consensus"] });
-      qc.invalidateQueries({ queryKey: ["meeting-commitment"] });
-      qc.invalidateQueries({ queryKey: ["my-meeting-agreement"] });
-      qc.invalidateQueries({ queryKey: ["dashboard-team-readiness"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -194,9 +153,6 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
         <CardTitle className="font-display text-2xl flex items-center gap-2">
           <CalendarClock className="h-5 w-5 text-gold" />
           Weekly Meeting Time
-          {allAgreed && (
-            <Badge className="ml-2 bg-emerald-600 hover:bg-emerald-600">Consensus reached</Badge>
-          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
