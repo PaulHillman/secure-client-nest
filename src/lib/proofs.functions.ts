@@ -270,12 +270,23 @@ export const submitProof = createServerFn({ method: "POST" })
         if (file) zipEntries = listZipEntries(await file.arrayBuffer());
       }
 
+      // The PM agenda rubric is instructor-only. Its row is hidden from students
+      // by RLS, so load it only after the authenticated submission is recorded.
+      const { data: instructorMaterial } =
+        proof.key === "pm_agenda"
+          ? await supabaseAdmin
+              .from("proof_materials")
+              .select("answer_key, transcript_text")
+              .eq("proof_key", proof.key)
+              .maybeSingle()
+          : { data: null };
+
       const result = await generateProofFeedback({
         proofKey: proof.key,
         answers: data.answers,
         zipEntries,
-        answerKey: material?.answer_key ?? null,
-        transcript: material?.transcript_text ?? null,
+        answerKey: instructorMaterial?.answer_key ?? material?.answer_key ?? null,
+        transcript: instructorMaterial?.transcript_text ?? material?.transcript_text ?? null,
       });
       feedbackStatus = result.status;
       feedback = result.text;

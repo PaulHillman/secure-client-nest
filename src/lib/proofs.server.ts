@@ -63,8 +63,10 @@ export async function generateProofFeedback(input: FeedbackInput): Promise<Feedb
   const parts: string[] = [
     `Activity: ${proof.title} (${proof.alias}) for the ${proof.role} role.`,
     `What the activity asked for:\n${proof.howTo}`,
-    `Criteria a strong response covers:\n- ${proof.checklist.join("\n- ")}`,
   ];
+  if (proof.checklist.length) {
+    parts.push(`Criteria a strong response covers:\n- ${proof.checklist.join("\n- ")}`);
+  }
   if (proof.scenario) parts.push(`Scenario given to the student:\n${proof.scenario}`);
   if (input.transcript) parts.push(`Reference transcript of the recording:\n${input.transcript.slice(0, 12_000)}`);
   if (input.answerKey) parts.push(`Expected structure (answer key):\n${input.answerKey.slice(0, 8_000)}`);

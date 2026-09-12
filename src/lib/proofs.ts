@@ -53,22 +53,17 @@ export const PROOFS: Proof[] = [
     role: "PM",
     title: "Build an Agenda",
     alias: "PM Proof A",
-    howTo:
-      "Read the situation below and write one usable agenda for a 45 minute meeting. Give the purpose, what members must prepare, the discussion topics in order, the decisions or actions you intend to reach, and time allocations that actually fit 45 minutes. This is practice — it does not replace Professor Hillman's kickoff agenda.",
+    howTo: "As the PM, what are the topics that should be on your agenda?",
     scenario:
-      "Your team met once. The client proposal is due in five days, two members have not filed their interview questions, and nobody has confirmed who is writing the research brief. One member has missed the last two meetings. You have 45 minutes on Tuesday.",
-    checklist: [
-      "A clear purpose, not just a list of topics",
-      "Topics that genuinely need the whole team",
-      "What each member should prepare beforehand",
-      "The decisions or actions that must come out of it",
-      "Time allocations that add up to the meeting length",
-    ],
+      "Your team has met four times, and you’re heading to the client’s office for the interview in five days. Two members still haven’t posted their interview questions, and the research brief has come up a couple of times, although everyone seems to have a different idea about who is pulling it together. Someone mentions something the team discussed two weeks ago, but nobody is quite sure where that ended up. Last week’s notes are there somewhere, too—you haven’t really gone back through either. One member has missed the last two meetings. You meet together on Tuesday.",
+    checklist: [],
+    maxScore: 5,
     fields: [
-      { name: "purpose", label: "Meeting purpose", required: true },
-      { name: "preparation", label: "What members must prepare beforehand", required: true },
-      { name: "topics", label: "Discussion topics, in order, with time allocations", required: true },
-      { name: "decisions", label: "Decisions and actions you intend to reach", required: true },
+      {
+        name: "topics",
+        label: "As the PM, what are the topics that should be on your agenda?",
+        required: true,
+      },
     ],
   },
   {
