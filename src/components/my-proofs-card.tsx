@@ -93,8 +93,8 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
         <CardHeader>
           <CardTitle>Team Readiness</CardTitle>
           <CardDescription>
-            Every member of the team must finish all four steps below before the team is allowed to
-            meet with Prof Hillman. You have finished {doneCount} of 4.
+            Every member of the team must finish all three steps below before the team is allowed to
+            meet with Prof Hillman. You have finished {doneCount} of 3.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
