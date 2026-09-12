@@ -53,7 +53,11 @@ export function ModuleSubmissionDialog({
   const mutation = useMutation({
     mutationFn: (submit: boolean) => save({ data: { teamId, key: moduleKey, answers, submit } }),
     onSuccess: (r) => {
-      toast.success(r.submitted ? "Sent to your professor for review." : "Draft saved.");
+      if (moduleKey === "team_setup") {
+        toast.success("Team setup saved.");
+      } else {
+        toast.success(r.submitted ? "Sent to your professor for review." : "Draft saved.");
+      }
       void qc.invalidateQueries({ queryKey: ["module-submission", teamId, moduleKey] });
       void qc.invalidateQueries({ queryKey: ["team-readiness", teamId] });
       void qc.invalidateQueries({ queryKey: ["readiness-board"] });
@@ -64,7 +68,7 @@ export function ModuleSubmissionDialog({
   });
 
   if (!form) return null;
-  const locked = data?.status === "approved" && !data?.isAdmin;
+  const locked = moduleKey !== "team_setup" && data?.status === "approved" && !data?.isAdmin;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -115,7 +119,7 @@ export function ModuleSubmissionDialog({
           ))}
         </div>
 
-        {data?.submittedAt && (
+        {data?.submittedAt && moduleKey !== "team_setup" && (
           <p className="text-xs text-muted-foreground">
             Last sent {new Date(data.submittedAt).toLocaleString()}
             {data.submittedByName ? ` by ${data.submittedByName}` : ""}
@@ -124,16 +128,24 @@ export function ModuleSubmissionDialog({
         )}
 
         <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            disabled={locked || mutation.isPending}
-            onClick={() => mutation.mutate(false)}
-          >
-            Save draft
-          </Button>
-          <Button disabled={locked || mutation.isPending} onClick={() => mutation.mutate(true)}>
-            Send for review
-          </Button>
+          {moduleKey === "team_setup" ? (
+            <Button disabled={mutation.isPending} onClick={() => mutation.mutate(false)}>
+              Save
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                disabled={locked || mutation.isPending}
+                onClick={() => mutation.mutate(false)}
+              >
+                Save draft
+              </Button>
+              <Button disabled={locked || mutation.isPending} onClick={() => mutation.mutate(true)}>
+                Send for review
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

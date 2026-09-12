@@ -23,7 +23,7 @@ export const MODULE_FORMS: Record<string, ModuleForm> = {
   team_setup: {
     key: "team_setup",
     intro:
-      "Confirm the basics of your team. Everyone must be holding a role before this can be submitted.",
+      "Confirm the basics of your team. This information is shared with your team and your professor, and you can update it any time.",
     fields: [
       { name: "team_name", label: "Team name", kind: "text", required: true },
       { name: "pm_name", label: "Project Manager", kind: "text", required: true },
