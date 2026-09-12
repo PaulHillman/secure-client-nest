@@ -52,7 +52,9 @@ export const getTeamProofs = createServerFn({ method: "GET" })
         : Promise.resolve({ data: [] as { id: string; name: string; avatar_url: string | null }[] }),
       supabase
         .from("proof_submissions")
-        .select("id, user_id, proof_key, submitted_at, feedback, feedback_status, file_name, response")
+        .select(
+          "id, user_id, proof_key, submitted_at, feedback, feedback_status, file_name, response, review_status, review_note, reviewed_at",
+        )
         .eq("team_id", data.teamId),
       supabase.from("proof_materials").select("proof_key, ready, extra_instructions"),
     ]);
