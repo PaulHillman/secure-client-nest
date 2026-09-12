@@ -136,6 +136,7 @@ export const PROOFS: Proof[] = [
     title: "Create Minutes Using Audio and an Optional Transcript",
     alias: "Communications Proof A",
     needsMaterials: true,
+    maxScore: 8,
     howTo:
       "Listen to the supplied recording, and consult the reference transcript if it helps. Write one set of minutes below. Capture the decisions, actions, owners, deadlines and next meeting; leave out the irrelevant chatter. If a detail is not stated in the recording, write that it is not stated. Write minutes — do not paste the transcript.",
     checklist: [
