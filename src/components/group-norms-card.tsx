@@ -131,8 +131,8 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
         <p className="text-sm text-muted-foreground">{NORMS_INTRO}</p>
         {!data.canEdit && data.isMember && (
           <p className="text-sm text-muted-foreground">
-            Your Project Manager writes this document. Give them your input — every member
-            still reads and approves it here.
+            Your Project Manager is taking the lead writing this document and will gather input
+            from the team. Every member — including the PM — still reads and approves it here.
           </p>
         )}
       </CardHeader>
