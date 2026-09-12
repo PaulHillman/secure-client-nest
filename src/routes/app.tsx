@@ -36,7 +36,6 @@ function AppLayout() {
   const nav = [
     { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/app/teams", label: "Teams", icon: Users },
-    
     { to: "/app/vault", label: "File Vault", icon: FolderOpen },
     ...(isAdmin
       ? [
