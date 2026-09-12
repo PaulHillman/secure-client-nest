@@ -55,7 +55,7 @@ export function ProofDialog({
   onClose,
   onSubmitted,
 }: Props) {
-  const { isImpersonating } = useAuth();
+  const { isImpersonating, viewAs } = useAuth();
   const proof = proofKey ? proofByKey(proofKey) : undefined;
   const loadMaterial = useServerFn(getProofMaterial);
   const send = useServerFn(submitProof);
