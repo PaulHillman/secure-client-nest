@@ -156,7 +156,7 @@ function TeamDetail() {
       </div>
 
       {isMember && (
-        <div className="mt-6">
+        <div id="your-role" className="mt-6 scroll-mt-4">
           <RoleSelectCard />
         </div>
       )}
@@ -207,7 +207,9 @@ function TeamDetail() {
 
       <TeamAvailabilityCard teamId={teamId} />
 
-      <MeetingTimeCard teamId={teamId} />
+      <div id="meeting-time" className="scroll-mt-4">
+        <MeetingTimeCard teamId={teamId} />
+      </div>
 
       <GroupNormsCard teamId={teamId} />
 
