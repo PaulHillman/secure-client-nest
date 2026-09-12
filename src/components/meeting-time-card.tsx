@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarClock, Check, X, CircleDashed, MapPin, Video } from "lucide-react";
 import { toast } from "sonner";
 import { FACE_TO_FACE } from "@/lib/meeting-agreement";
-import { notifyMeetingChange } from "@/lib/meeting.functions";
+import { notifyMeetingChange, respondMeetingAgreement } from "@/lib/meeting.functions";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -33,7 +33,7 @@ function fmtTime(t: string) {
 }
 
 export function MeetingTimeCard({ teamId }: { teamId: string }) {
-  const { user } = useAuth();
+  const { user, viewAs } = useAuth();
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
