@@ -2,7 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { READINESS_STATUSES, TEAM_SETTABLE, type ReadinessStatus } from "@/lib/readiness";
 
-async function isAdmin(supabase: { rpc: (n: string, a: unknown) => Promise<{ data: unknown }> }, userId: string) {
+type RoleChecker = {
+  rpc: (
+    fn: "has_role",
+    args: { _user_id: string; _role: "admin" },
+  ) => PromiseLike<{ data: boolean | null }>;
+};
+
+async function isAdmin(supabase: RoleChecker, userId: string) {
   const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
   return data === true;
 }
@@ -37,6 +44,9 @@ export const getTeamReadiness = createServerFn({ method: "GET" })
     const viewerMember = (members ?? []).find((m) => m.user_id === userId);
     if (!viewerMember && !admin) throw new Error("You are not on this team.");
 
+    const section = team.section ?? "";
+
+    // Openings are per section, so only this team's section is read.
     const [{ data: requirements }, { data: openings }, { data: statuses }, { data: profiles }] =
       await Promise.all([
         supabase
@@ -44,26 +54,17 @@ export const getTeamReadiness = createServerFn({ method: "GET" })
           .select("key, title, alias, description, module_number, order_index")
           .eq("active", true)
           .order("order_index"),
-        supabase.from("requirement_openings").select("requirement_key, due_at, opened_at"),
+        supabase
+          .from("requirement_openings")
+          .select("requirement_key, due_at, opened_at")
+          .eq("section", section),
         supabase.from("team_requirement_status").select("*").eq("team_id", data.teamId),
         memberIds.length
           ? supabase.from("profiles").select("id, name, avatar_url").in("id", memberIds)
           : Promise.resolve({ data: [] as { id: string; name: string; avatar_url: string | null }[] }),
       ]);
 
-    const section = team.section ?? "";
-    const openByKey = new Map(
-      (openings ?? [])
-        .filter((o) => !section || true)
-        .map((o) => [o.requirement_key, o]),
-    );
-    // Openings are per section; re-read scoped so other sections do not leak in.
-    const { data: mySectionOpenings } = await supabase
-      .from("requirement_openings")
-      .select("requirement_key, due_at, opened_at")
-      .eq("section", section);
-    openByKey.clear();
-    for (const o of mySectionOpenings ?? []) openByKey.set(o.requirement_key, o);
+    const openByKey = new Map((openings ?? []).map((o) => [o.requirement_key, o]));
 
     const statusByKey = new Map((statuses ?? []).map((s) => [s.requirement_key, s]));
     const profileById = new Map((profiles ?? []).map((p) => [p.id, p]));
