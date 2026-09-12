@@ -242,6 +242,13 @@ export const approveTeamNorms = createServerFn({ method: "POST" })
       throw new Error(`Every section must be completed before approval. Still needed: ${missing.join(", ")}.`);
     }
 
+    // Vague wording does not block approval, but it must be acknowledged and
+    // it flags the document for Prof Hillman to review at the kick-off meeting.
+    const vagueFindings = findVagueLanguage(normalizeNorms(norms.content));
+    if (vagueFindings.length && !data.acceptVagueWording) {
+      return { ok: false as const, needsAcknowledgement: true, vagueFindings, version: norms.version };
+    }
+
     const { error } = await supabaseAdmin.from("group_norms_signatures").insert({
       group_norms_id: norms.id,
       user_id: userId,
@@ -250,5 +257,21 @@ export const approveTeamNorms = createServerFn({ method: "POST" })
     });
     if (error && !/duplicate key/i.test(error.message)) throw error;
 
-    return { ok: true, version: norms.version };
+    if (vagueFindings.length) {
+      await supabaseAdmin
+        .from("group_norms")
+        .update({
+          flagged_for_review: true,
+          flagged_at: new Date().toISOString(),
+          vague_flags: vagueFindings,
+        })
+        .eq("id", norms.id);
+    }
+
+    return {
+      ok: true as const,
+      needsAcknowledgement: false,
+      vagueFindings,
+      version: norms.version,
+    };
   });
