@@ -21,6 +21,13 @@
 - [x] Zach Guy research proof: mandatory "do not contact" acknowledgement
 - [x] One-time locked submissions, non-blocking written feedback, professor completion overview
 
+## Simplified role proof instructions
+- [x] Inventory all twelve proof activities and their student/admin entry points
+- [x] Replace detailed student checklists with short action prompts
+- [x] Preserve scenarios, media, ZIP upload, no-contact acknowledgement, and legacy responses
+- [x] Align private feedback with concise, equivalent answers and established score maxima
+- [ ] Verify every role's rendered proof dialog and final build
+
 ## Student dashboard readiness
 - [x] Show unfinished Team Readiness prominently at the top of the student dashboard
 - [x] State the student's next required action and link directly to Team Readiness
