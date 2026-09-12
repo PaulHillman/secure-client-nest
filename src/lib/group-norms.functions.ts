@@ -208,10 +208,12 @@ export const saveTeamNorms = createServerFn({ method: "POST" })
 /** Record this member's own approval of the current version. */
 export const approveTeamNorms = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { teamId: string; version: number }) => {
-    if (!input?.teamId || !Number.isInteger(input?.version)) throw new Error("Missing team or version.");
-    return input;
-  })
+  .inputValidator(
+    (input: { teamId: string; version: number; acceptVagueWording?: boolean }) => {
+      if (!input?.teamId || !Number.isInteger(input?.version)) throw new Error("Missing team or version.");
+      return input;
+    },
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
