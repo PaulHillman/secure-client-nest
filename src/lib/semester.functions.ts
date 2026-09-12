@@ -137,22 +137,27 @@ export const archiveSemester = createServerFn({ method: "POST" })
       id: g.id,
       team_id: g.team_id,
       document_path: g.document_path,
-      archive_document_path: `archive/${archiveId}/${g.document_path}`,
+      archive_document_path: g.document_path ? `archive/${archiveId}/${g.document_path}` : null,
+      content: g.content,
+      version: g.version,
       is_locked: g.is_locked,
       locked_at: g.locked_at,
       uploaded_at: g.uploaded_at,
     }));
     await Promise.all(
-      gnRows.map((g) =>
-        supabaseAdmin.storage
-          .from(BUCKET)
-          .copy(g.document_path, g.archive_document_path)
-          .then((r: any) => {
-            if (r.error && !/exists/i.test(r.error.message))
-              console.warn(`[archive] gn copy fail: ${r.error.message}`);
-          }),
-      ),
+      gnRows
+        .filter((g) => g.document_path && g.archive_document_path)
+        .map((g) =>
+          supabaseAdmin.storage
+            .from(BUCKET)
+            .copy(g.document_path!, g.archive_document_path!)
+            .then((r: any) => {
+              if (r.error && !/exists/i.test(r.error.message))
+                console.warn(`[archive] gn copy fail: ${r.error.message}`);
+            }),
+        ),
     );
+
     if (gnRows.length) await supabaseAdmin.from("archived_group_norms").insert(gnRows);
 
     if (gns.length)
