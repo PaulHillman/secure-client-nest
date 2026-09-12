@@ -2,7 +2,12 @@ export const DEFAULT_PM_DUTIES: { title: string; details: string }[] = [
   {
     title: "Team name, PM and meeting time submitted",
     details:
-      "Set the management firm (team) name, confirm the Project Manager, and enter the agreed meeting day, time and place in ClientVault.",
+      "Set the management firm (team) name, confirm the Project Manager, and enter the agreed meeting day, time, place and mode in ClientVault.",
+  },
+  {
+    title: "Every member has signed the meeting agreement",
+    details:
+      "Chase every teammate until all signatures are in. Any change to day, time, place or mode clears the signatures and they must sign again.",
   },
   {
     title: "All four team roles assigned",

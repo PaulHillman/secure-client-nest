@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StudentAvatar } from "@/components/student-avatar";
@@ -14,10 +15,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarClock, MapPin, Video } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { CalendarClock, Check, X, CircleDashed, MapPin, Video } from "lucide-react";
 import { toast } from "sonner";
 import { FACE_TO_FACE } from "@/lib/meeting-agreement";
-import { notifyMeetingChange } from "@/lib/meeting.functions";
+import { notifyMeetingChange, respondMeetingAgreement } from "@/lib/meeting.functions";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -31,7 +33,7 @@ function fmtTime(t: string) {
 }
 
 export function MeetingTimeCard({ teamId }: { teamId: string }) {
-  const { user } = useAuth();
+  const { user, viewAs } = useAuth();
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -59,12 +61,25 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
       }
       const pmap = new Map(profiles.map((p) => [p.id, p]));
 
+      let agreements: any[] = [];
+      if (proposal) {
+        const { data: agData, error: aErr } = await supabase
+          .from("team_meeting_agreements")
+          .select("*")
+          .eq("proposal_id", proposal.id);
+        if (aErr) throw aErr;
+        agreements = agData ?? [];
+      }
+      const amap = new Map(agreements.map((a) => [a.user_id, a]));
+
       const roster = (members ?? []).map((m) => ({
         user_id: m.user_id,
         job_title: m.job_title,
         name: pmap.get(m.user_id)?.name ?? "Unknown",
         email: pmap.get(m.user_id)?.email ?? null,
         avatarUrl: pmap.get(m.user_id)?.avatar_url ?? null,
+        savedInitials: pmap.get(m.user_id)?.initials ?? "",
+        agreement: amap.get(m.user_id) ?? null,
       }));
 
       return { proposal, roster };
@@ -75,6 +90,8 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
   const roster = data?.roster ?? [];
   const me = roster.find((r) => r.user_id === user?.id);
   const isPM = me?.job_title === "PM";
+  const allAgreed =
+    !!proposal && roster.length > 0 && roster.every((r) => r.agreement?.status === "agreed");
 
   // PM form state
   const [day, setDay] = useState<string>("");
@@ -126,7 +143,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
               teamId,
               message: `Meeting time changed to ${DAYS[fields.day_of_week]} ${fmtTime(fields.meeting_time)}${
                 fields.location ? ` · ${fields.location}` : ""
-              }${fields.meeting_mode ? ` · ${fields.meeting_mode}` : ""}.`,
+              }${fields.meeting_mode ? ` · ${fields.meeting_mode}` : ""} — all members must re-approve.`,
             },
           });
         } catch {
@@ -138,11 +155,52 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
     onSuccess: (changed) => {
       toast.success(
         changed
-          ? "Meeting details updated — Professor Hillman was notified"
-          : "Meeting time saved",
+          ? "Meeting details updated — approvals were reset and Professor Hillman was notified"
+          : "Proposal saved — every member, including you as PM, must now read and sign the agreement",
       );
       qc.invalidateQueries({ queryKey: ["meeting-time", teamId] });
       qc.invalidateQueries({ queryKey: ["admin-consensus"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
+  // Member response
+  const [initials, setInitials] = useState("");
+  useEffect(() => {
+    if (me?.agreement?.initials) setInitials(me.agreement.initials);
+    else if (me?.savedInitials) setInitials(me.savedInitials);
+  }, [me?.agreement?.initials, me?.savedInitials]);
+
+  const respond = useMutation({
+    mutationFn: async (status: "agreed" | "declined") => {
+      if (!proposal) throw new Error("No proposal yet");
+      const derived = (me?.name ?? "")
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 3)
+        .map((s: string) => s[0]?.toUpperCase() ?? "")
+        .join("");
+      const cleaned = (initials.trim() || derived).toUpperCase();
+      if (!/^[A-Z]{2,4}$/.test(cleaned)) throw new Error("Enter 2–4 letter initials");
+
+      await respondMeetingAgreement({
+        data: {
+          teamId,
+          status,
+          initials: cleaned,
+          fullName: me?.name,
+          studentId: viewAs?.id,
+        },
+      });
+    },
+    onSuccess: (_d, status) => {
+      toast.success(status === "agreed" ? "Agreement recorded" : "Marked as declined");
+      qc.invalidateQueries({ queryKey: ["meeting-time", teamId] });
+      qc.invalidateQueries({ queryKey: ["admin-consensus"] });
+      qc.invalidateQueries({ queryKey: ["meeting-commitment"] });
+      qc.invalidateQueries({ queryKey: ["my-meeting-agreement"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-team-readiness"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -153,6 +211,9 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
         <CardTitle className="font-display text-2xl flex items-center gap-2">
           <CalendarClock className="h-5 w-5 text-gold" />
           Weekly Meeting Time
+          {allAgreed && (
+            <Badge className="ml-2 bg-emerald-600 hover:bg-emerald-600">Consensus reached</Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -224,19 +285,29 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                 </div>
                 {proposal && (
                   <p className="text-xs text-muted-foreground">
-                    Changing the day, time, or place notifies Professor Hillman.
+                    Changing the day, time, or place resets everyone's agreement and notifies
+                    Professor Hillman.
+                  </p>
+                )}
+                {proposal && me?.agreement?.status !== "agreed" && (
+                  <p className="text-xs rounded-md border border-gold/40 bg-gold/10 px-3 py-2 text-foreground">
+                    Setting the time is not your approval — as PM you must also read and sign the
+                    agreement below, just like every other member.
                   </p>
                 )}
 
               </div>
             )}
 
-            {/* Roster */}
+            {/* Roster + statuses */}
             <div>
-              <div className="text-sm font-medium mb-2">Team members</div>
+              <div className="text-sm font-medium mb-2">
+                Team agreement ({roster.filter((r) => r.agreement?.status === "agreed").length}/{roster.length})
+              </div>
               <ul className="divide-y rounded-md border">
                 {roster.map((r) => {
                   const isMe = r.user_id === user?.id;
+                  const status = r.agreement?.status;
                   return (
                     <li key={r.user_id} className="p-3 flex items-center gap-3">
                       <StudentAvatar name={r.name} email={r.email} avatarUrl={r.avatarUrl} size={32} />
@@ -246,11 +317,62 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                         </div>
                         <div className="text-xs text-gold">{r.job_title}</div>
                       </div>
+                      <div className="flex items-center gap-2">
+                        {status === "agreed" && (
+                          <Badge className="bg-emerald-600 hover:bg-emerald-600">
+                            <Check className="h-3 w-3 mr-1" />
+                            Agreed · {r.agreement!.initials}
+                          </Badge>
+                        )}
+                        {status === "declined" && (
+                          <Badge variant="destructive">
+                            <X className="h-3 w-3 mr-1" />
+                            Declined · {r.agreement!.initials}
+                          </Badge>
+                        )}
+                        {!status && (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            <CircleDashed className="h-3 w-3 mr-1" />
+                            Pending
+                          </Badge>
+                        )}
+                      </div>
                     </li>
                   );
                 })}
               </ul>
             </div>
+
+            {/* My response — every member including PM signs the agreement */}
+            {me && proposal && (
+              <div className="rounded-md border p-3 space-y-3">
+                <div className="text-xs font-medium uppercase tracking-wide">
+                  {me.agreement?.status === "agreed" ? "You have signed" : "Your approval is required"}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Every member must read and sign the Meeting Time Agreement, including the rule that
+                  whoever needs a time change is responsible for negotiating the new time, updating
+                  ClientVault, and notifying Professor Hillman.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild>
+                    <Link to="/app/agreement">
+                      <Check className="h-4 w-4 mr-1" />
+                      {me.agreement?.status === "agreed" ? "Review my signature" : "Read & sign the agreement"}
+                    </Link>
+                  </Button>
+                  {me.agreement?.status !== "declined" && (
+                    <Button
+                      variant="outline"
+                      onClick={() => respond.mutate("declined")}
+                      disabled={respond.isPending}
+                    >
+                      <X className="h-4 w-4 mr-1" /> I do not agree
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
 
           </>
         )}
