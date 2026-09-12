@@ -375,6 +375,7 @@ function SubsectionBlock({
         )
       ) : (
         <div className="space-y-2">
+          {isGroupNorms && <GroupNormsVaultNote />}
           {files.map((f) => (
             <FileLine
               key={f.id}
