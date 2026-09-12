@@ -184,23 +184,15 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
       const cleaned = (initials.trim() || derived).toUpperCase();
       if (!/^[A-Z]{2,4}$/.test(cleaned)) throw new Error("Enter 2–4 letter initials");
 
-      // upsert
-      const { error } = await supabase
-        .from("team_meeting_agreements")
-        .upsert(
-          {
-            proposal_id: proposal.id,
-            team_id: teamId,
-            user_id: user!.id,
-            initials: cleaned,
-            status,
-            responded_at: new Date().toISOString(),
-          },
-          { onConflict: "proposal_id,user_id" },
-        );
-      if (error) throw error;
-      // cache initials on profile
-      await supabase.from("profiles").update({ initials: cleaned }).eq("id", user!.id);
+      await respondMeetingAgreement({
+        data: {
+          teamId,
+          status,
+          initials: cleaned,
+          fullName: me?.name,
+          studentId: viewAs?.id,
+        },
+      });
     },
     onSuccess: (_d, status) => {
       toast.success(status === "agreed" ? "Agreement recorded" : "Marked as declined");
