@@ -85,6 +85,8 @@ export const getModuleSubmission = createServerFn({ method: "GET" })
           const s = (v ?? "").trim();
           if (!s) return "";
           if (/example\.invalid/i.test(s)) return "";
+          // Placeholder wording recorded when a detail is genuinely unknown.
+          if (/not (supplied|provided|available|known)|^(unknown|n\/?a|tbd|none)$/i.test(s)) return "";
           return s;
         };
         defaults = {
