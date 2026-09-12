@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth-context";
@@ -271,9 +272,13 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
             title="Confirm your meeting commitment"
             done={!!meetingDone}
             action={
-              meetingDone ? undefined : (
+              meetingDone ? undefined : meeting?.proposal ? (
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/app/agreement">Read &amp; sign the agreement</Link>
+                </Button>
+              ) : (
                 <Button size="sm" variant="outline" onClick={() => scrollTo("meeting-time")}>
-                  {meeting?.proposal ? "Agree to the meeting time" : "Set your meeting time"}
+                  Set your meeting time
                 </Button>
               )
             }

@@ -198,8 +198,9 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
       toast.success(status === "agreed" ? "Agreement recorded" : "Marked as declined");
       qc.invalidateQueries({ queryKey: ["meeting-time", teamId] });
       qc.invalidateQueries({ queryKey: ["admin-consensus"] });
-      qc.invalidateQueries({ queryKey: ["meeting-commitment", teamId] });
+      qc.invalidateQueries({ queryKey: ["meeting-commitment"] });
       qc.invalidateQueries({ queryKey: ["my-meeting-agreement"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-team-readiness"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
