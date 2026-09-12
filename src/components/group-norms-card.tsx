@@ -38,7 +38,7 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<NormsContent>({});
   const [affirmed, setAffirmed] = useState(false);
-  const [acceptVague, setAcceptVague] = useState(false);
+  
 
   useEffect(() => {
     if (data) setDraft(normalizeNorms(data.content));
