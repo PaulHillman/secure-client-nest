@@ -6,8 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarClock, AlertTriangle, CheckCircle2 } from "lucide-react";
 
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
 export function ConsensusStatusCard() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin-consensus"],
