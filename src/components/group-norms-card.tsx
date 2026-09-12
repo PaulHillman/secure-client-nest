@@ -9,6 +9,7 @@ import {
 } from "@/lib/group-norms.functions";
 import {
   AFFIRMATION_TEXT,
+  findVagueLanguage,
   NORMS_INTRO,
   NORM_SECTIONS,
   normalizeNorms,
@@ -21,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StudentAvatar } from "@/components/student-avatar";
-import { CheckCircle2, Clock, FileSignature, Pencil, ScrollText } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, FileSignature, Pencil, ScrollText } from "lucide-react";
 
 export function GroupNormsCard({ teamId }: { teamId: string }) {
   const qc = useQueryClient();
@@ -37,6 +38,7 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<NormsContent>({});
   const [affirmed, setAffirmed] = useState(false);
+  const [acceptVague, setAcceptVague] = useState(false);
 
   useEffect(() => {
     if (data) setDraft(normalizeNorms(data.content));
@@ -45,6 +47,11 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
   const dirty = useMemo(
     () => (data ? !sameNorms(normalizeNorms(data.content), normalizeNorms(draft)) : false),
     [data, draft],
+  );
+
+  const draftFindings = useMemo(
+    () => findVagueLanguage(normalizeNorms(draft)),
+    [draft],
   );
 
   const saveMut = useMutation({
@@ -62,10 +69,21 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
   });
 
   const approveMut = useMutation({
-    mutationFn: () => approve({ data: { teamId, version: data!.version } }),
-    onSuccess: () => {
-      toast.success("Your approval has been recorded.");
+    mutationFn: () =>
+      approve({ data: { teamId, version: data!.version, acceptVagueWording: acceptVague } }),
+    onSuccess: (r) => {
+      if (!r.ok) {
+        toast.error("Read the wording warning and tick the box before approving.");
+        void qc.invalidateQueries({ queryKey: ["group-norms", teamId] });
+        return;
+      }
+      toast.success(
+        r.vagueFindings.length
+          ? "Approved. Prof Hillman will review the wording at your kick-off meeting."
+          : "Your approval has been recorded.",
+      );
       setAffirmed(false);
+      setAcceptVague(false);
       void qc.invalidateQueries({ queryKey: ["group-norms", teamId] });
     },
     onError: (e: Error) => toast.error(e.message),
