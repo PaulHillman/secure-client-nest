@@ -1351,6 +1351,11 @@ export type Database = {
           id: string
           proof_key: string
           response: Json
+          resubmit_count: number
+          review_note: string | null
+          review_status: string
+          reviewed_at: string | null
+          reviewed_by: string | null
           role_at_submission: Database["public"]["Enums"]["team_job"] | null
           submitted_at: string
           team_id: string | null
@@ -1367,6 +1372,11 @@ export type Database = {
           id?: string
           proof_key: string
           response?: Json
+          resubmit_count?: number
+          review_note?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           role_at_submission?: Database["public"]["Enums"]["team_job"] | null
           submitted_at?: string
           team_id?: string | null
@@ -1383,6 +1393,11 @@ export type Database = {
           id?: string
           proof_key?: string
           response?: Json
+          resubmit_count?: number
+          review_note?: string | null
+          review_status?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           role_at_submission?: Database["public"]["Enums"]["team_job"] | null
           submitted_at?: string
           team_id?: string | null
