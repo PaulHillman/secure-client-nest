@@ -16,7 +16,7 @@ export type NormSection = {
 export const NORMS_TITLE = "Group Norms";
 
 export const NORMS_INTRO =
-  "Develop these norms together and record your team's agreed expectations in each section. The guidance explains what to decide; each team writes its own agreements. Every member must log into ClientVault, read the saved document, and approve it personally. The PM coordinates completion and sees pending approvals.";
+  "The Project Manager leads this document and writes it, gathering input from the whole team. Every agreement must be objective and measurable — exact times, exact counts, no ranges and no \"as soon as possible\". Every member then reads the saved document and approves it personally.";
 
 export const NORM_SECTIONS: NormSection[] = [
   {
