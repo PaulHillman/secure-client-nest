@@ -156,7 +156,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
       toast.success(
         changed
           ? "Meeting details updated — approvals were reset and Professor Hillman was notified"
-          : "Proposal saved — teammates can now agree",
+          : "Proposal saved — every member, including you as PM, must now read and sign the agreement",
       );
       qc.invalidateQueries({ queryKey: ["meeting-time", teamId] });
       qc.invalidateQueries({ queryKey: ["admin-consensus"] });
@@ -198,6 +198,8 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
       toast.success(status === "agreed" ? "Agreement recorded" : "Marked as declined");
       qc.invalidateQueries({ queryKey: ["meeting-time", teamId] });
       qc.invalidateQueries({ queryKey: ["admin-consensus"] });
+      qc.invalidateQueries({ queryKey: ["meeting-commitment", teamId] });
+      qc.invalidateQueries({ queryKey: ["my-meeting-agreement"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
