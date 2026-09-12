@@ -321,9 +321,9 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
               </p>
             ) : !norms?.exists || !norms?.complete ? (
               <p>
-                Your team has not finished its group norms document yet. Write your agreements
-                together — every section, including all three accountability levels — then each
-                member reads and approves it personally.
+                The Project Manager takes the lead writing this document, gathering input from the
+                whole team. Every section, including all three accountability levels, must be filled
+                in. Then every member — including the PM — reads and approves it personally.
               </p>
             ) : (
               <p>
