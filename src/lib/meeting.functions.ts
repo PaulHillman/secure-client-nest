@@ -78,7 +78,7 @@ export const notifyMeetingGaps = createServerFn({ method: "POST" })
     const sinceDate = since.toISOString().slice(0, 10);
 
     const [teamsRes, membersRes, logsRes, adminsRes] = await Promise.all([
-      supabaseAdmin.from("teams").select("id, name, display_name, section"),
+      supabaseAdmin.from("teams").select("id, name, display_name, section").eq("is_test", false),
       supabaseAdmin.from("team_members").select("team_id, user_id, job_title"),
       supabaseAdmin.from("meeting_logs").select("team_id, meeting_date, minutes_posted").gte("meeting_date", sinceDate),
       supabaseAdmin.from("user_roles").select("user_id").eq("role", "admin"),

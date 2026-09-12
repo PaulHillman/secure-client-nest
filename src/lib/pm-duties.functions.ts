@@ -26,7 +26,7 @@ export const notifyOverdueDuties = createServerFn({ method: "POST" })
           .eq("active", true)
           .not("due_at", "is", null)
           .lt("due_at", nowIso),
-        supabaseAdmin.from("teams").select("id, name, display_name, section"),
+        supabaseAdmin.from("teams").select("id, name, display_name, section").eq("is_test", false),
         supabaseAdmin.from("pm_duty_completions").select("duty_id, team_id"),
         supabaseAdmin.from("user_roles").select("user_id").eq("role", "admin"),
         supabaseAdmin.from("notifications").select("message, user_id").eq("kind", "pm_duty_overdue"),

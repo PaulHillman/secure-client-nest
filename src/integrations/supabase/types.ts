@@ -1914,6 +1914,7 @@ export type Database = {
           description: string | null
           display_name: string | null
           id: string
+          is_test: boolean
           name: string
           section: string | null
           updated_at: string
@@ -1923,6 +1924,7 @@ export type Database = {
           description?: string | null
           display_name?: string | null
           id?: string
+          is_test?: boolean
           name: string
           section?: string | null
           updated_at?: string
@@ -1932,6 +1934,7 @@ export type Database = {
           description?: string | null
           display_name?: string | null
           id?: string
+          is_test?: boolean
           name?: string
           section?: string | null
           updated_at?: string

@@ -262,7 +262,7 @@ export const getReadinessBoard = createServerFn({ method: "GET" })
 
     const [{ data: teams }, { data: requirements }, { data: statuses }, { data: openings }, { data: members }] =
       await Promise.all([
-        supabaseAdmin.from("teams").select("id, name, display_name, section").order("section").order("name"),
+        supabaseAdmin.from("teams").select("id, name, display_name, section").eq("is_test", false).order("section").order("name"),
         supabaseAdmin
           .from("project_requirements")
           .select("key, title, alias, module_number, order_index")
