@@ -88,6 +88,32 @@ export const PROOFS: Proof[] = [
     ],
   },
   {
+    key: "pm_voicemail",
+    role: "PM",
+    title: "Handle a Voicemail from Professor Hillman",
+    alias: "PM Proof C",
+    needsMaterials: true,
+    howTo:
+      "Listen to the voicemail from Professor Hillman. It contains several pieces of information your team needs. Explain how you would capture it, decide what matters most, and distribute the right details to the right teammates so nothing falls through the cracks. You are describing your process — do not actually call or message anyone.",
+    scenario:
+      "Professor Hillman leaves you a voicemail with updates about the client project, deadlines, and something the team needs to confirm. You need to make sure every relevant teammate gets what they need.",
+    checklist: [
+      "Captures the message accurately instead of relying on memory",
+      "Identifies the most important pieces of information",
+      "Decides which teammate needs which detail",
+      "Chooses a clear, trackable way to share it (not just a quick text)",
+      "Includes any follow-up actions, owners, and deadlines",
+      "Preserves the information in ClientVault where the team can find it later",
+    ],
+    fields: [
+      { name: "capture", label: "How would you capture and keep the voicemail contents?", required: true },
+      { name: "priorities", label: "What are the most important pieces of information?", required: true },
+      { name: "distribution", label: "Who would you tell what, and how?", required: true },
+      { name: "follow_up", label: "What follow-up actions, owners, and deadlines would you set?", required: true },
+      { name: "vault", label: "Where in ClientVault would you preserve this, and why?", required: true },
+    ],
+  },
+  {
     key: "comms_minutes",
     role: "Communication Specialist",
     title: "Create Minutes Using Audio and an Optional Transcript",
