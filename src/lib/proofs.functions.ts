@@ -289,7 +289,9 @@ export const getProofOverview = createServerFn({ method: "GET" })
       await Promise.all([
         supabase.from("teams").select("id, name, display_name, section"),
         supabase.from("team_members").select("team_id, user_id, job_title"),
-        supabase.from("proof_submissions").select("user_id, proof_key, submitted_at, feedback_status"),
+        supabase
+          .from("proof_submissions")
+          .select("user_id, proof_key, submitted_at, feedback_status, review_status"),
         supabase.from("proof_materials").select("proof_key, ready"),
       ]);
 
