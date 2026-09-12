@@ -68,7 +68,7 @@ export function ModuleSubmissionDialog({
   });
 
   if (!form) return null;
-  const locked = data?.status === "approved" && !data?.isAdmin;
+  const locked = moduleKey !== "team_setup" && data?.status === "approved" && !data?.isAdmin;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
