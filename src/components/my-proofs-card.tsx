@@ -106,7 +106,7 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
 
   return (
     <>
-      <Card>
+      <Card id="team-readiness" className="scroll-mt-4">
         <CardHeader>
           <CardTitle>Team Readiness</CardTitle>
           <CardDescription>
