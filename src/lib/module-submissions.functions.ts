@@ -83,8 +83,8 @@ export const getModuleSubmission = createServerFn({ method: "GET" })
     };
   });
 
-/** Save a module answer sheet. Team Setup is shared team info and is saved only;
- * every other module can be drafted or submitted for professor review. */
+/** Save a module answer sheet. All modules are shared team info, saved only —
+ * the send-for-review workflow is disabled until the professor asks for it back. */
 export const saveModuleSubmission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { teamId: string; key: string; answers: Record<string, string>; submit: boolean }) => {
@@ -118,18 +118,9 @@ export const saveModuleSubmission = createServerFn({ method: "POST" })
 
     const answers = asAnswers(data.answers);
 
-    // Team Setup is saved directly; other modules still support draft/submit.
-    const actuallySubmit = !isTeamSetup && data.submit;
-
-    if (actuallySubmit) {
-      const missing = missingRequired(data.key, answers);
-      if (missing.length) throw new Error(`Still needed: ${missing.join(", ")}.`);
-    }
-
-    if (isTeamSetup) {
-      const missing = missingRequired(data.key, answers);
-      if (missing.length) throw new Error(`Still needed: ${missing.join(", ")}.`);
-    }
+    // Review submissions are disabled: every module saves shared info directly.
+    const missing = missingRequired(data.key, answers);
+    if (missing.length) throw new Error(`Still needed: ${missing.join(", ")}.`);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
