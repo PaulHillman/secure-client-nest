@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getTeamProofs } from "@/lib/proofs.functions";
+import { getTeamNorms } from "@/lib/group-norms.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { FEEDBACK_STATUS_LABEL, proofByKey, proofMaxScore } from "@/lib/proofs";
 import { ProofDialog } from "@/components/proof-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,15 +15,54 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { StudentName } from "@/components/student-avatar";
-import { CheckCircle2, ChevronsUpDown, Clock, Lock, RotateCcw } from "lucide-react";
+import { CheckCircle2, ChevronsUpDown, Circle, Clock, Lock, RotateCcw } from "lucide-react";
+
+function scrollTo(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function Step({
+  n,
+  title,
+  done,
+  children,
+  action,
+}: {
+  n: number;
+  title: string;
+  done: boolean;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex gap-3 rounded-md border p-3">
+      <div className="pt-0.5">
+        {done ? (
+          <CheckCircle2 className="size-5 text-emerald-600" />
+        ) : (
+          <Circle className="size-5 text-muted-foreground" />
+        )}
+      </div>
+      <div className="min-w-0 flex-1 space-y-2">
+        <p className="font-medium">
+          Step {n} · {title}
+        </p>
+        <div className="space-y-2 text-sm text-muted-foreground">{children}</div>
+        {action}
+      </div>
+    </div>
+  );
+}
 
 /**
- * The student's own role activities, and — for anyone on the team — a roll-up
- * of who still owes theirs, so the PM can chase without the professor doing it.
+ * Team Readiness: the four things each member finishes before the team is
+ * allowed to meet with the professor — role, role proof points, the meeting
+ * commitment, and the group norms document.
  */
 export function MyProofsCard({ teamId, userId }: { teamId: string; userId: string }) {
   const qc = useQueryClient();
   const fetchProofs = useServerFn(getTeamProofs);
+  const fetchNorms = useServerFn(getTeamNorms);
   const [openKey, setOpenKey] = useState<string | null>(null);
 
   const { data } = useQuery({
@@ -29,23 +70,87 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
     queryFn: () => fetchProofs({ data: { teamId } }),
   });
 
+  const { data: norms } = useQuery({
+    queryKey: ["group-norms", teamId],
+    queryFn: () => fetchNorms({ data: { teamId } }),
+  });
+
+  const { data: meeting } = useQuery({
+    queryKey: ["meeting-commitment", teamId, userId],
+    queryFn: async () => {
+      const { data: proposal } = await supabase
+        .from("team_meeting_proposals")
+        .select("id, day_of_week, meeting_time")
+        .eq("team_id", teamId)
+        .maybeSingle();
+      if (!proposal) return { proposal: null, mine: null as { status: string } | null };
+      const { data: mine } = await supabase
+        .from("team_meeting_agreements")
+        .select("status, responded_at")
+        .eq("proposal_id", proposal.id)
+        .eq("user_id", userId)
+        .maybeSingle();
+      return { proposal, mine };
+    },
+  });
+
   if (!data) return null;
   const refresh = () => void qc.invalidateQueries({ queryKey: ["team-proofs", teamId] });
+
+  const hasRole = !!data.myRole && data.myRole !== "Unassigned";
+  const proofsDone = data.mine.length > 0 && data.mine.every((m) => !!m.submission);
+  const meetingDone = meeting?.mine?.status === "agreed";
+  const normsDone = !!norms?.complete && !!norms?.myApprovalAt;
+  const steps = [hasRole, proofsDone, meetingDone, normsDone];
+  const doneCount = steps.filter(Boolean).length;
 
   return (
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Role practice activities</CardTitle>
+          <CardTitle>Team Readiness</CardTitle>
           <CardDescription>
-            Short individual exercises for your role. Each one is submitted once, and submitting it
-            completes it. You get written coaching straight away, including anything you missed.
+            Every member of the team must finish all four steps below before the team is allowed to
+            meet with Prof Hillman. You have finished {doneCount} of 4.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Step
+            n={1}
+            title="Know your role"
+            done={hasRole}
+            action={
+              hasRole ? undefined : (
+                <Button size="sm" variant="outline" onClick={() => scrollTo("your-role")}>
+                  Choose your role
+                </Button>
+              )
+            }
+          >
+            {hasRole ? (
+              <p>
+                You are the team's <span className="font-medium text-foreground">{data.myRole}</span>
+                . The activities in step 2 are exactly what this role is expected to deliver.
+              </p>
+            ) : (
+              <p>Your role has not been set yet. Pick it first — everything else follows from it.</p>
+            )}
+          </Step>
+
+          <Step
+            n={2}
+            title="Work through your role's proof points"
+            done={proofsDone}
+          >
+            <p>
+              Short individual exercises for your role. Each one is submitted once, and submitting it
+              completes it. You get written coaching straight away, including anything you missed.
+            </p>
+          </Step>
+
           {data.mine.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              {data.myRole && data.myRole !== "Unassigned"
+              {hasRole
                 ? "No activities are assigned to your role."
                 : "Pick your role above and your activities will appear here."}
             </p>
