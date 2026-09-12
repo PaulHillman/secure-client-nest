@@ -142,7 +142,6 @@ export const claimTeamRole = createServerFn({ method: "POST" })
     const clash = (mates ?? []).find((m) => m.user_id !== userId && m.job_title === data.role);
     if (clash) throw new Error(`${data.role} is already taken on your team.`);
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("team_members")
       .update({ job_title: data.role as never })
