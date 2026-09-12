@@ -177,6 +177,7 @@ export const getProofMaterial = createServerFn({ method: "GET" })
 /**
  * Records one attempt. One per student per activity, locked immediately.
  * Feedback is attempted afterwards and can never undo the completion.
+ * Professors may preview activities as a student, but never submit for them.
  */
 export const submitProof = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -184,6 +185,7 @@ export const submitProof = createServerFn({ method: "POST" })
     (input: {
       teamId: string;
       proofKey: string;
+      studentId?: string;
       answers: Record<string, string>;
       filePath?: string | null;
       fileName?: string | null;
@@ -203,6 +205,10 @@ export const submitProof = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const proof = proofByKey(data.proofKey)!;
+
+    if (data.studentId && data.studentId !== userId) {
+      throw new Error("You cannot submit an activity for another student.");
+    }
 
     const { data: membership } = await supabase
       .from("team_members")

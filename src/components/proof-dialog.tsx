@@ -101,6 +101,7 @@ export function ProofDialog({
         data: {
           teamId,
           proofKey: proof.key,
+          studentId: userId,
           answers,
           filePath: file?.path ?? null,
           fileName: file?.name ?? null,
@@ -293,7 +294,7 @@ export function ProofDialog({
               <Button variant="ghost" onClick={onClose}>
                 Cancel
               </Button>
-              <Button onClick={handleSubmit} disabled={saving || uploading}>
+              <Button onClick={handleSubmit} disabled={saving || uploading || material?.ready === false}>
                 {saving ? (
                   <Loader2 className="mr-2 size-4 animate-spin" />
                 ) : (
