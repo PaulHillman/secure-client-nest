@@ -122,6 +122,8 @@ function AgreementPage() {
       qc.invalidateQueries({ queryKey: ["my-meeting-agreement", user?.id] });
       qc.invalidateQueries({ queryKey: ["meeting-time", data?.teamId] });
       qc.invalidateQueries({ queryKey: ["admin-consensus"] });
+      qc.invalidateQueries({ queryKey: ["meeting-commitment"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-team-readiness"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
