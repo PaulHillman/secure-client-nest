@@ -165,7 +165,34 @@ function Dashboard() {
       </div>
 
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {isAdmin && (
+        <div className="mb-6">
+          <ReadinessBoardCard />
+        </div>
+      )}
+
+      {isAdmin && (
+        <nav className="mb-6 flex flex-wrap gap-2 text-sm">
+          {[
+            ["#kpis", "Gaps"],
+            ["#roster", "Roster"],
+            ["#contacts", "Client contacts"],
+            ["#arch", "Project arch"],
+            ["#meetings", "Meetings"],
+            ["#activity", "Activity"],
+          ].map(([href, label]) => (
+            <a
+              key={href}
+              href={href}
+              className="rounded-full border border-border/60 px-3 py-1 text-muted-foreground hover:border-gold hover:text-foreground"
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
+      )}
+
+      <div id="kpis" className="grid grid-cols-2 lg:grid-cols-4 gap-4 scroll-mt-6">
         {cards.map((c) => (
           <Card key={c.label} className="border-border/60">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
