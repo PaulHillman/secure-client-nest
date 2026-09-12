@@ -31,19 +31,23 @@ export type NormsRoster = {
 /** The team's group norms document, its approvals and its history. */
 export const getTeamNorms = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { teamId: string }) => {
+  .inputValidator((input: { teamId: string; studentId?: string }) => {
     if (!input?.teamId) throw new Error("Missing team.");
     return input;
   })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const admin = await isAdmin(supabase, userId);
+    const targetUserId = data.studentId ?? userId;
+    if (targetUserId !== userId && !admin) {
+      throw new Error("You cannot view another student's Group Norms progress.");
+    }
 
     const { data: membership } = await supabase
       .from("team_members")
       .select("job_title")
       .eq("team_id", data.teamId)
-      .eq("user_id", userId)
+      .eq("user_id", targetUserId)
       .maybeSingle();
     if (!membership && !admin) throw new Error("You are not on this team.");
 
@@ -105,14 +109,14 @@ export const getTeamNorms = createServerFn({ method: "GET" })
       roster,
       approvedCount: roster.filter((r) => r.approvedAt).length,
       total: roster.length,
-      myApprovalAt: approvedAtByUser.get(userId) ?? null,
+      myApprovalAt: approvedAtByUser.get(targetUserId) ?? null,
       missing: missingNorms(content),
       complete: isNormsComplete(content),
       isMember: !!membership,
       isPM: membership?.job_title === "PM",
       isAdmin: admin,
-      canEdit: !!membership || admin,
-      canApprove: !!membership,
+      canEdit: targetUserId === userId && (!!membership || admin),
+      canApprove: targetUserId === userId && !!membership,
       history: (history ?? []).map((h) => ({ version: h.version, createdAt: h.created_at })),
     };
   });

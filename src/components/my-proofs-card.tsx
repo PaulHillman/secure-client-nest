@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useAuth } from "@/lib/auth-context";
 import { getTeamProofs } from "@/lib/proofs.functions";
 import { getTeamNorms } from "@/lib/group-norms.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -73,7 +74,7 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
 
   const { data: norms } = useQuery({
     queryKey: ["group-norms", teamId],
-    queryFn: () => fetchNorms({ data: { teamId } }),
+    queryFn: () => fetchNorms({ data: { teamId, studentId: viewAs?.id } }),
   });
 
   const { data: meeting } = useQuery({
