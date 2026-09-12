@@ -52,13 +52,11 @@ export function ModuleSubmissionDialog({
 
   const mutation = useMutation({
     mutationFn: (submit: boolean) => save({ data: { teamId, key: moduleKey, answers, submit } }),
-    onSuccess: (r) => {
+    onSuccess: () => {
       toast.success("Saved.");
       void qc.invalidateQueries({ queryKey: ["module-submission", teamId, moduleKey] });
       void qc.invalidateQueries({ queryKey: ["team-readiness", teamId] });
       void qc.invalidateQueries({ queryKey: ["readiness-board"] });
-      void qc.invalidateQueries({ queryKey: ["submission-queue"] });
-      if (r.submitted) onOpenChange(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -115,13 +113,6 @@ export function ModuleSubmissionDialog({
           ))}
         </div>
 
-        {data?.submittedAt && moduleKey !== "team_setup" && (
-          <p className="text-xs text-muted-foreground">
-            Last sent {new Date(data.submittedAt).toLocaleString()}
-            {data.submittedByName ? ` by ${data.submittedByName}` : ""}
-            {data.submitCount > 1 ? ` · sent ${data.submitCount} times` : ""}
-          </p>
-        )}
 
         <DialogFooter className="gap-2">
           <Button disabled={locked || mutation.isPending} onClick={() => mutation.mutate(false)}>
