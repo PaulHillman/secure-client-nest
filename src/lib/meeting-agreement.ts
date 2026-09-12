@@ -1,10 +1,9 @@
 export const AGREEMENT_VERSION = "1.0";
 
-export const MEETING_MODES = [
-  "In person (face-to-face)",
-  "Zoom",
-  "Virtual reality (Meta Quest headsets)",
-] as const;
+export const FACE_TO_FACE = "In person (face-to-face)";
+
+// Face-to-face is the only acceptable meeting mode.
+export const MEETING_MODES = [FACE_TO_FACE] as const;
 
 export const DAYS = [
   "Sunday",
