@@ -39,7 +39,7 @@ export const Route = createFileRoute("/app/agreement")({
 });
 
 function AgreementPage() {
-  const { user } = useAuth();
+  const { user, viewAs } = useAuth();
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
