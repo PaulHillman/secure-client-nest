@@ -235,6 +235,53 @@ export const PROOFS: Proof[] = [
     ],
   },
   {
+    key: "liaison_voicemail",
+    role: "Company Liaison",
+    title: "Handle a Voicemail from the Client Contact",
+    alias: "Liaison Proof C",
+    needsMaterials: true,
+    maxScore: 8,
+    howTo:
+      "Listen to the voicemail from Jimmy Lightening at Acme Plumbing. He is rushed and interrupted, and he mixes firm instructions in with chatter. Capture every instruction your team must act on, put the most consequential ones first, keep the exact numbers and restrictions, and list the chatter you deliberately left out. Then say what you, as the Liaison, will do to reply and follow up. This is practice — do not contact anyone.",
+    scenario:
+      "Your client contact leaves one voicemail with all the logistics for the interview visit. He talks fast, interrupts himself, and does not repeat anything. Some details would stop the interview happening if you missed them; others barely matter.",
+    checklist: [
+      "The questions deadline: one combined list, at least 36 hours ahead, by email and text, with the actual questions in both",
+      "Arrival and security: 20 minutes early, photo ID for all five, badges, ask for Jimmy in Sales, wait in the lobby for an escort",
+      "No recording of any kind — no audio, video or AI transcription; phones away, paper and pens",
+      "85 minutes maximum, including introductions and wrap-up; arriving late does not move the finish",
+      "Parking: east-side Visitor entrance and Visitor spaces only",
+      "A tour afterwards for all five, separate from the 85 minutes, length not yet confirmed",
+      "Bring the gate ticket in and get it validated at security",
+      "Lobby coffee is optional and at your own cost — and must not delay check-in",
+      "Most consequential items first, exact numbers preserved",
+      "Chatter and interruptions left off the team summary",
+    ],
+    fields: [
+      {
+        name: "items",
+        label: "Everything the team must act on, most important first",
+        help: "Number them. Keep his exact figures and restrictions. Say who on your team needs each one.",
+        required: true,
+      },
+      {
+        name: "omitted",
+        label: "What you deliberately left out of the team summary, and why",
+        required: true,
+      },
+      {
+        name: "unconfirmed",
+        label: "Anything he did not confirm or state, that you must not invent",
+        required: true,
+      },
+      {
+        name: "follow_up",
+        label: "Your reply to Jimmy and your follow-up plan, and where you record this in ClientVault",
+        required: true,
+      },
+    ],
+  },
+  {
     key: "video_disaster",
     role: "Video Specialist",
     title: "Production Day Disaster",
