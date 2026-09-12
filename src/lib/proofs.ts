@@ -35,7 +35,14 @@ export type Proof = {
   needsMaterials?: boolean;
   /** Real person: an unmissable do-not-contact warning plus a required tick. */
   contactWarning?: string;
+  /** How many key points the answer key holds, for the professor's record. */
+  maxScore?: number;
 };
+
+/** Key points recorded for a proof with an answer key. */
+export function proofMaxScore(key: string): number {
+  return proofByKey(key)?.maxScore ?? 5;
+}
 
 export const CONTACT_WARNING =
   "Zach Guy is a real person, and Professor Hillman knows him personally. Research him from public sources only. Do not email, message, call, or contact him or anyone at Steelcase for this activity.";
