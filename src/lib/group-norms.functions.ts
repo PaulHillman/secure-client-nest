@@ -180,13 +180,13 @@ export const saveTeamNorms = createServerFn({ method: "POST" })
         content: next,
         saved_by: userId,
       });
-      return { version: 1, newVersion: true };
+      return { version: 1, newVersion: true, vagueFindings: findVagueLanguage(next) };
     }
 
     const prev = normalizeNorms(existing.content);
     if (sameNorms(prev, next)) {
       // Nothing changed: approvals stay intact.
-      return { version: existing.version, newVersion: false };
+      return { version: existing.version, newVersion: false, vagueFindings: findVagueLanguage(next) };
     }
 
     const version = existing.version + 1;
@@ -202,7 +202,7 @@ export const saveTeamNorms = createServerFn({ method: "POST" })
       content: next,
       saved_by: userId,
     });
-    return { version, newVersion: true };
+    return { version, newVersion: true, vagueFindings: findVagueLanguage(next) };
   });
 
 /** Record this member's own approval of the current version. */
