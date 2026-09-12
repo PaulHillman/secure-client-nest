@@ -37,6 +37,10 @@ export function ModuleSubmissionDialog({
   const fetchOne = useServerFn(getModuleSubmission);
   const save = useServerFn(saveModuleSubmission);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  // Which team/module the current field values belong to, so switching teams or
+  // modules never shows stale values, and typing is never overwritten on reload.
+  const hydratedFor = useRef<string | null>(null);
+  const touched = useRef<Set<string>>(new Set());
 
   const form = moduleForm(moduleKey);
 
