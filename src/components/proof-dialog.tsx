@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { getProofMaterial, submitProof } from "@/lib/proofs.functions";
 import { proofByKey, proofMaxScore } from "@/lib/proofs";
 import {
@@ -54,6 +55,7 @@ export function ProofDialog({
   onClose,
   onSubmitted,
 }: Props) {
+  const { isImpersonating } = useAuth();
   const proof = proofKey ? proofByKey(proofKey) : undefined;
   const loadMaterial = useServerFn(getProofMaterial);
   const send = useServerFn(submitProof);
@@ -95,13 +97,16 @@ export function ProofDialog({
 
   async function handleSubmit() {
     if (!proof) return;
+    if (isImpersonating) {
+      toast.error("You are viewing as a student, so you cannot submit their work.");
+      return;
+    }
     setSaving(true);
     try {
       const res = await send({
         data: {
           teamId,
           proofKey: proof.key,
-          studentId: userId,
           answers,
           filePath: file?.path ?? null,
           fileName: file?.name ?? null,
@@ -290,6 +295,13 @@ export function ProofDialog({
               fix it and resend.
             </p>
 
+            {isImpersonating ? (
+              <p className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+                You are viewing this as a student, so submitting is turned off. Only the student can
+                send their own work.
+              </p>
+            ) : null}
+
             <DialogFooter>
               <Button variant="ghost" onClick={onClose}>
                 Cancel
@@ -299,6 +311,7 @@ export function ProofDialog({
                 disabled={
                   saving ||
                   uploading ||
+                  isImpersonating ||
                   ((proof.needsMaterials || proof.requiresFile) && material?.ready !== true)
                 }
               >
