@@ -38,7 +38,7 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<NormsContent>({});
   const [affirmed, setAffirmed] = useState(false);
-  const [acceptVague, setAcceptVague] = useState(false);
+  
 
   useEffect(() => {
     if (data) setDraft(normalizeNorms(data.content));
@@ -70,20 +70,10 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
 
   const approveMut = useMutation({
     mutationFn: () =>
-      approve({ data: { teamId, version: data!.version, acceptVagueWording: acceptVague } }),
-    onSuccess: (r) => {
-      if (!r.ok) {
-        toast.error("Read the wording warning and tick the box before approving.");
-        void qc.invalidateQueries({ queryKey: ["group-norms", teamId] });
-        return;
-      }
-      toast.success(
-        r.vagueFindings.length
-          ? "Approved. Prof Hillman will review the wording at your kick-off meeting."
-          : "Your approval has been recorded.",
-      );
+      approve({ data: { teamId, version: data!.version } }),
+    onSuccess: () => {
+      toast.success("Your approval has been recorded.");
       setAffirmed(false);
-      setAcceptVague(false);
       void qc.invalidateQueries({ queryKey: ["group-norms", teamId] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -283,24 +273,11 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
             ) : (
               <div className="space-y-3 pt-1">
                 {data.vagueFindings.length > 0 && (
-                  <>
-                    <VagueNotice
-                      findings={data.vagueFindings}
-                      title="Warning: this document uses wording that cannot be measured"
-                      intro="You can still approve it, but it will be flagged for Prof Hillman to review at your kick-off meeting. Your PM can fix the wording first:"
-                    />
-                    <label className="flex items-start gap-3 text-sm">
-                      <Checkbox
-                        checked={acceptVague}
-                        onCheckedChange={(v) => setAcceptVague(v === true)}
-                        className="mt-0.5"
-                      />
-                      <span>
-                        I understand these agreements are not measurable, and I approve them
-                        anyway. Prof Hillman will review this at our kick-off meeting.
-                      </span>
-                    </label>
-                  </>
+                  <VagueNotice
+                    findings={data.vagueFindings}
+                    title="Warning: this document uses wording that cannot be measured"
+                    intro="You can still approve it. It will be noted for Prof Hillman's review before the kick-off meeting. Your PM can fix the wording first:"
+                  />
                 )}
                 <label className="flex items-start gap-3 text-sm">
                   <Checkbox
@@ -311,12 +288,7 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
                   <span>{AFFIRMATION_TEXT}</span>
                 </label>
                 <Button
-                  disabled={
-                    !affirmed ||
-                    approveMut.isPending ||
-                    editing ||
-                    (data.vagueFindings.length > 0 && !acceptVague)
-                  }
+                  disabled={!affirmed || approveMut.isPending || editing}
                   onClick={() => approveMut.mutate()}
                 >
                   Approve Group Norms
