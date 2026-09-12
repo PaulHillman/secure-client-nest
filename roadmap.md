@@ -25,3 +25,4 @@
 - [x] Show unfinished Team Readiness prominently at the top of the student dashboard
 - [x] State the student's next required action and link directly to Team Readiness
 - [x] Verify the dashboard prompt and link in the preview
+- [x] Show the same actionable Team Readiness prompt at the top of the student's team page

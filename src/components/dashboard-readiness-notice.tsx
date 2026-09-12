@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
 import { getDashboardReadiness } from "@/lib/dashboard-readiness.functions";
 
-export function DashboardReadinessNotice() {
+export function DashboardReadinessNotice({ teamId }: { teamId?: string } = {}) {
   const { user, isAdmin, viewAs } = useAuth();
   const fetchReadiness = useServerFn(getDashboardReadiness);
   const studentId = viewAs?.id ?? user?.id;
@@ -18,7 +18,7 @@ export function DashboardReadinessNotice() {
     queryFn: () => fetchReadiness({ data: viewAs ? { studentId: viewAs.id } : {} }),
   });
 
-  if (isAdmin || !data || data.complete) return null;
+  if (isAdmin || !data || data.complete || (teamId && data.teamId !== teamId)) return null;
 
   return (
     <Card className="mb-8 border-gold/60 bg-gold/10 shadow-sm">
