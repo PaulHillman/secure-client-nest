@@ -70,8 +70,8 @@ export function ProofReviewQueueCard() {
                 </div>
                 <div className="flex items-center gap-2">
                   {s.score != null ? (
-                    <Badge variant={s.score >= 5 ? "default" : "outline"}>
-                      Found {s.score}/5 items
+                    <Badge variant={s.score >= proofMaxScore(s.proofKey) ? "default" : "outline"}>
+                      Found {s.score}/{proofMaxScore(s.proofKey)} items
                     </Badge>
                   ) : null}
                   {s.resubmitCount > 0 ? <Badge variant="outline">Resent</Badge> : null}
