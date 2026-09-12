@@ -83,7 +83,8 @@ export const getModuleSubmission = createServerFn({ method: "GET" })
     };
   });
 
-/** Save a draft, or submit it for the professor to review. */
+/** Save a module answer sheet. Team Setup is shared team info and is saved only;
+ * every other module can be drafted or submitted for professor review. */
 export const saveModuleSubmission = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { teamId: string; key: string; answers: Record<string, string>; submit: boolean }) => {
@@ -114,20 +115,19 @@ export const saveModuleSubmission = createServerFn({ method: "POST" })
     }
 
     const answers = asAnswers(data.answers);
+    const isTeamSetup = data.key === "team_setup";
 
-    if (data.submit) {
+    // Team Setup is saved directly; other modules still support draft/submit.
+    const actuallySubmit = !isTeamSetup && data.submit;
+
+    if (actuallySubmit) {
       const missing = missingRequired(data.key, answers);
       if (missing.length) throw new Error(`Still needed: ${missing.join(", ")}.`);
+    }
 
-      if (data.key === "team_setup") {
-        const { data: members } = await supabase
-          .from("team_members")
-          .select("job_title")
-          .eq("team_id", data.teamId);
-        if ((members ?? []).some((m) => !m.job_title || m.job_title === "Unassigned")) {
-          throw new Error("Every member needs a role before team setup can be submitted.");
-        }
-      }
+    if (isTeamSetup) {
+      const missing = missingRequired(data.key, answers);
+      if (missing.length) throw new Error(`Still needed: ${missing.join(", ")}.`);
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -146,7 +146,7 @@ export const saveModuleSubmission = createServerFn({ method: "POST" })
         requirement_key: data.key,
         answers,
         updated_by: userId,
-        ...(data.submit
+        ...(actuallySubmit
           ? {
               submitted_by: userId,
               submitted_at: now,
@@ -158,7 +158,7 @@ export const saveModuleSubmission = createServerFn({ method: "POST" })
     );
     if (error) throw error;
 
-    if (data.submit) {
+    if (actuallySubmit) {
       const { error: statusError } = await supabaseAdmin.from("team_requirement_status").upsert(
         {
           team_id: data.teamId,
@@ -171,7 +171,8 @@ export const saveModuleSubmission = createServerFn({ method: "POST" })
         { onConflict: "team_id,requirement_key" },
       );
       if (statusError) throw statusError;
-    } else if (!current || current.status === "not_started") {
+    } else if (!current || current.status === "not_started" || isTeamSetup) {
+      // Team Setup is always treated as in-progress shared info so it stays editable.
       await supabaseAdmin.from("team_requirement_status").upsert(
         {
           team_id: data.teamId,
@@ -183,7 +184,7 @@ export const saveModuleSubmission = createServerFn({ method: "POST" })
       );
     }
 
-    return { ok: true, submitted: data.submit };
+    return { ok: true, submitted: actuallySubmit };
   });
 
 /** Professor's review queue: every submitted module waiting on a decision. */
