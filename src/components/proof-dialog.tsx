@@ -55,7 +55,7 @@ export function ProofDialog({
   onClose,
   onSubmitted,
 }: Props) {
-  const { isImpersonating } = useAuth();
+  const { isImpersonating, viewAs } = useAuth();
   const proof = proofKey ? proofByKey(proofKey) : undefined;
   const loadMaterial = useServerFn(getProofMaterial);
   const send = useServerFn(submitProof);
@@ -97,16 +97,13 @@ export function ProofDialog({
 
   async function handleSubmit() {
     if (!proof) return;
-    if (isImpersonating) {
-      toast.error("You are viewing as a student, so you cannot submit their work.");
-      return;
-    }
     setSaving(true);
     try {
       const res = await send({
         data: {
           teamId,
           proofKey: proof.key,
+          studentId: viewAs?.id,
           answers,
           filePath: file?.path ?? null,
           fileName: file?.name ?? null,
@@ -292,8 +289,7 @@ export function ProofDialog({
 
             {isImpersonating ? (
               <p className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
-                You are viewing this as a student, so submitting is turned off. Only the student can
-                send their own work.
+                You are viewing as {viewAs?.name}. Anything you submit here is saved as their work.
               </p>
             ) : null}
 
@@ -306,7 +302,6 @@ export function ProofDialog({
                 disabled={
                   saving ||
                   uploading ||
-                  isImpersonating ||
                   ((proof.needsMaterials || proof.requiresFile) && material?.ready !== true)
                 }
               >
