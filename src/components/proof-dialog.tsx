@@ -295,6 +295,13 @@ export function ProofDialog({
               fix it and resend.
             </p>
 
+            {isImpersonating ? (
+              <p className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
+                You are viewing this as a student, so submitting is turned off. Only the student can
+                send their own work.
+              </p>
+            ) : null}
+
             <DialogFooter>
               <Button variant="ghost" onClick={onClose}>
                 Cancel
@@ -304,6 +311,7 @@ export function ProofDialog({
                 disabled={
                   saving ||
                   uploading ||
+                  isImpersonating ||
                   ((proof.needsMaterials || proof.requiresFile) && material?.ready !== true)
                 }
               >
