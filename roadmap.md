@@ -15,7 +15,8 @@
 - [x] Revision note shown to the whole team; PM notified of every decision
 
 ## Stage C — ten proofs
-- [ ] Eight proofs needing no assets from the professor
-- [ ] Meeting minutes proof — blocked on professor's recording + transcript
-- [ ] Vault organisation proof — blocked on professor's messy ZIP, README, answer key
-- [ ] Zach Guy research proof: mandatory "do not contact" acknowledgement
+- [x] Eight proofs needing no assets from the professor
+- [x] Meeting minutes proof — built; stays closed until the professor posts the recording + transcript
+- [x] Vault organisation proof — built; stays closed until the professor posts the ZIP + answer key
+- [x] Zach Guy research proof: mandatory "do not contact" acknowledgement
+- [x] One-time locked submissions, non-blocking written feedback, professor completion overview
