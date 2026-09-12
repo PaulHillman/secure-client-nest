@@ -131,40 +131,18 @@ export const saveModuleSubmission = createServerFn({ method: "POST" })
       .eq("requirement_key", data.key)
       .maybeSingle();
 
-    const now = new Date().toISOString();
     const { error } = await supabaseAdmin.from("requirement_submissions").upsert(
       {
         team_id: data.teamId,
         requirement_key: data.key,
         answers,
         updated_by: userId,
-        ...(actuallySubmit
-          ? {
-              submitted_by: userId,
-              submitted_at: now,
-              submit_count: (existing?.submit_count ?? 0) + 1,
-            }
-          : {}),
       },
       { onConflict: "team_id,requirement_key" },
     );
     if (error) throw error;
 
-    if (actuallySubmit) {
-      const { error: statusError } = await supabaseAdmin.from("team_requirement_status").upsert(
-        {
-          team_id: data.teamId,
-          requirement_key: data.key,
-          status: "submitted",
-          revision_note: null,
-          submitted_at: now,
-          updated_by: userId,
-        },
-        { onConflict: "team_id,requirement_key" },
-      );
-      if (statusError) throw statusError;
-    } else if (!current || current.status === "not_started" || isTeamSetup) {
-      // Team Setup is always treated as in-progress shared info so it stays editable.
+    if (!current || current.status === "not_started") {
       await supabaseAdmin.from("team_requirement_status").upsert(
         {
           team_id: data.teamId,
@@ -176,7 +154,7 @@ export const saveModuleSubmission = createServerFn({ method: "POST" })
       );
     }
 
-    return { ok: true, submitted: actuallySubmit };
+    return { ok: true, submitted: false };
   });
 
 /** Professor's review queue: every submitted module waiting on a decision. */
