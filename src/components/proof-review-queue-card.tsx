@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { getProofReviewQueue, reviewProof } from "@/lib/proofs.functions";
+import { proofMaxScore } from "@/lib/proofs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -70,8 +71,8 @@ export function ProofReviewQueueCard() {
                 </div>
                 <div className="flex items-center gap-2">
                   {s.score != null ? (
-                    <Badge variant={s.score >= 5 ? "default" : "outline"}>
-                      Found {s.score}/5 items
+                    <Badge variant={s.score >= proofMaxScore(s.proofKey) ? "default" : "outline"}>
+                      Found {s.score}/{proofMaxScore(s.proofKey)} items
                     </Badge>
                   ) : null}
                   {s.resubmitCount > 0 ? <Badge variant="outline">Resent</Badge> : null}

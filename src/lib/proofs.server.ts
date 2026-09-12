@@ -80,8 +80,9 @@ export async function generateProofFeedback(input: FeedbackInput): Promise<Feedb
   // With an answer key (the voicemail proof), also record how many of the
   // expected key points the student found. The SCORE line is stripped from
   // the student-facing feedback and kept as the professor's record.
+  const maxScore = proof.maxScore ?? 5;
   const scoringRule = input.answerKey
-    ? " After the closing line, add one final line in exactly this format: 'SCORE: N' where N is how many of the answer key's key points the student's submission correctly identifies (0 if none). Judge by meaning, not exact wording."
+    ? ` After the closing line, add one final line in exactly this format: 'SCORE: N' where N is how many of the answer key's key points (out of ${maxScore}) the student's submission correctly identifies (0 if none). Judge by meaning, not exact wording.`
     : "";
 
   try {
@@ -109,7 +110,7 @@ export async function generateProofFeedback(input: FeedbackInput): Promise<Feedb
     let score: number | null = null;
     const scoreMatch = text.match(/SCORE:\s*(\d+)\s*$/im);
     if (scoreMatch) {
-      score = Math.max(0, Math.min(5, parseInt(scoreMatch[1]!, 10)));
+      score = Math.max(0, Math.min(maxScore, parseInt(scoreMatch[1]!, 10)));
       text = text.replace(/\n?SCORE:\s*\d+\s*$/im, "").trim();
     }
     return { status: "available", text, score };
