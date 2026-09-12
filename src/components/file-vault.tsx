@@ -394,6 +394,76 @@ function SubsectionBlock({
   );
 }
 
+function GroupNormsVaultNote() {
+  const [downloading, setDownloading] = useState(false);
+
+  const downloadTemplate = async () => {
+    setDownloading(true);
+    try {
+      const { data: tpl, error } = await supabase
+        .from("files")
+        .select("id, file_name, current_version_id")
+        .is("team_id", null)
+        .eq("is_template", true)
+        .eq("section", "Team Documents")
+        .eq("subsection", "Group Norms")
+        .maybeSingle();
+      if (error) throw error;
+      if (!tpl?.current_version_id) {
+        toast.error("The shared template is not available yet");
+        return;
+      }
+      const { data: ver } = await supabase
+        .from("file_versions")
+        .select("storage_path")
+        .eq("id", tpl.current_version_id)
+        .maybeSingle();
+      if (!ver) {
+        toast.error("The shared template is not available yet");
+        return;
+      }
+      const { data: signed, error: sErr } = await supabase.storage
+        .from("vault")
+        .createSignedUrl(ver.storage_path, 60, { download: tpl.file_name });
+      if (sErr || !signed) {
+        toast.error("Could not generate download link");
+        return;
+      }
+      window.open(signed.signedUrl, "_blank");
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  return (
+    <div className="rounded border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground space-y-1.5">
+      <p>
+        Group norms are written and approved in the{" "}
+        <a
+          href="#group-norms"
+          className="text-primary underline underline-offset-2"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById("group-norms")?.scrollIntoView({ behavior: "smooth" });
+          }}
+        >
+          Group Norms section
+        </a>{" "}
+        on this page — every member reads and approves there, so nothing needs to be uploaded here.
+      </p>
+      <button
+        type="button"
+        onClick={downloadTemplate}
+        disabled={downloading}
+        className="inline-flex items-center gap-1 text-primary underline underline-offset-2 disabled:opacity-50"
+      >
+        <Download className="h-3 w-3" />
+        {downloading ? "Preparing download…" : "Download the shared Group Norms template (guidance only)"}
+      </button>
+    </div>
+  );
+}
+
 type RowCommonProps = {
   verMap: Map<string, VersionRow[]>;
   isAdmin: boolean;
