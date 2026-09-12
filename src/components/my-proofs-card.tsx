@@ -350,8 +350,8 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
                   <span className="text-muted-foreground">
                     {p.assigned.length === 0
                       ? "Needs a role"
-                      : `${p.approved.length} of ${p.assigned.length} approved${
-                          p.sentBack.length ? ` · ${p.sentBack.length} sent back` : ""
+                      : `${p.completed.length} of ${p.assigned.length} done${
+                          p.sentBack.length ? ` · ${p.sentBack.length} need an update` : ""
                         }`}
                   </span>
                 </div>
