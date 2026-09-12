@@ -242,12 +242,10 @@ export const approveTeamNorms = createServerFn({ method: "POST" })
       throw new Error(`Every section must be completed before approval. Still needed: ${missing.join(", ")}.`);
     }
 
-    // Vague wording does not block approval, but it must be acknowledged and
-    // it flags the document for Prof Hillman to review at the kick-off meeting.
+    // Vague wording never blocks approval; it is simply recorded so it can appear
+    // in the summary report before the kick-off meeting.
     const vagueFindings = findVagueLanguage(normalizeNorms(norms.content));
-    if (vagueFindings.length && !data.acceptVagueWording) {
-      return { ok: false as const, needsAcknowledgement: true, vagueFindings, version: norms.version };
-    }
+
 
     const { error } = await supabaseAdmin.from("group_norms_signatures").insert({
       group_norms_id: norms.id,
