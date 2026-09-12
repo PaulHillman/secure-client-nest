@@ -249,6 +249,69 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
             </div>
           )}
 
+          <Step
+            n={3}
+            title="Confirm your meeting commitment"
+            done={!!meetingDone}
+            action={
+              meetingDone ? undefined : (
+                <Button size="sm" variant="outline" onClick={() => scrollTo("meeting-time")}>
+                  {meeting?.proposal ? "Agree to the meeting time" : "Set your meeting time"}
+                </Button>
+              )
+            }
+          >
+            {meetingDone ? (
+              <p>
+                You have agreed to your team's standing meeting time. Keep it — the team is counting
+                on you being there.
+              </p>
+            ) : meeting?.proposal ? (
+              <p>Your team has proposed a standing meeting time. Read it and agree to it.</p>
+            ) : (
+              <p>
+                Your team has not settled on a standing meeting time yet. The Project Manager
+                proposes it, then everyone agrees.
+              </p>
+            )}
+          </Step>
+
+          <Step
+            n={4}
+            title="Write and approve your Group Norms"
+            done={normsDone}
+            action={
+              normsDone ? undefined : (
+                <Button size="sm" variant="outline" onClick={() => scrollTo("group-norms")}>
+                  {norms?.complete
+                    ? "Read and approve the group norms"
+                    : norms?.exists
+                      ? "Finish the group norms"
+                      : "Start the group norms"}
+                </Button>
+              )
+            }
+          >
+            {normsDone ? (
+              <p>
+                You have approved version {norms?.version} of your team's group norms. If the wording
+                changes, everyone approves again.
+              </p>
+            ) : !norms?.exists || !norms?.complete ? (
+              <p>
+                Your team has not finished its group norms document yet. Write your agreements
+                together — every section, including all three accountability levels — then each
+                member reads and approves it personally.
+              </p>
+            ) : (
+              <p>
+                The document is written and waiting for you. Read it and approve it yourself — nobody
+                can approve on your behalf.
+              </p>
+            )}
+          </Step>
+
+
           <Collapsible>
             <CollapsibleTrigger asChild>
               <Button variant="outline" size="sm">
