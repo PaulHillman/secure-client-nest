@@ -150,6 +150,12 @@ function TeamDetail() {
         </div>
       )}
 
+      {isMember && user && (
+        <div className="mt-6">
+          <MyProofsCard teamId={teamId} userId={user.id} />
+        </div>
+      )}
+
       <section className="mt-8">
         <div className="flex items-center gap-2 mb-4">
           <Users className="h-5 w-5 text-gold" />
