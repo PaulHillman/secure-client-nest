@@ -159,6 +159,15 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              {moduleForm(item.key) && (
+                <Button
+                  size="sm"
+                  onClick={() => setFormItem({ key: item.key, title: item.title })}
+                >
+                  <FileText className="mr-1 h-3.5 w-3.5" />
+                  {item.status === "not_started" ? "Start this module" : "Open form"}
+                </Button>
+              )}
               <Select
                 value={item.status}
                 disabled={item.status === "approved" || busyKey === item.key}
