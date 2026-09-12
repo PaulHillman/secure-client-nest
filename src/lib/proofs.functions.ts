@@ -205,22 +205,26 @@ export const submitProof = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const proof = proofByKey(data.proofKey)!;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    if (data.studentId && data.studentId !== userId) {
+    const targetUserId = data.studentId ?? userId;
+    if (targetUserId !== userId && !(await isAdmin(supabase, userId))) {
       throw new Error("You cannot submit an activity for another student.");
     }
+    // When the professor is viewing as a student, writes go through the admin client
+    // because RLS scopes the student's rows to the student.
+    const db = targetUserId === userId ? supabase : supabaseAdmin;
 
-    const { data: membership } = await supabase
+    const { data: membership } = await db
       .from("team_members")
       .select("job_title")
       .eq("team_id", data.teamId)
-      .eq("user_id", userId)
+      .eq("user_id", targetUserId)
       .maybeSingle();
     if (!membership) throw new Error("You are not on this team.");
     if (membership.job_title !== proof.role)
       throw new Error("This activity belongs to a different role.");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: material } = await supabaseAdmin
       .from("proof_materials")
       .select("ready, transcript_text, answer_key")
@@ -230,10 +234,10 @@ export const submitProof = createServerFn({ method: "POST" })
       throw new Error("Your professor has not posted the material for this activity yet.");
 
     // A submission the professor sent back is the one case a student may redo.
-    const { data: existing } = await supabase
+    const { data: existing } = await db
       .from("proof_submissions")
       .select("id, review_status, resubmit_count")
-      .eq("user_id", userId)
+      .eq("user_id", targetUserId)
       .eq("proof_key", proof.key)
       .maybeSingle();
 
