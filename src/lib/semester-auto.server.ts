@@ -96,7 +96,7 @@ async function createArchiveSnapshot(
     gnRows
       .filter((g) => g.document_path && g.archive_document_path)
       .map((g) =>
-        supabaseAdmin.storage.from(BUCKET).copy(g.document_path, g.archive_document_path).then((r: any) => {
+        supabaseAdmin.storage.from(BUCKET).copy(g.document_path as string, g.archive_document_path as string).then((r: any) => {
           if (r.error && !/exists/i.test(r.error.message)) console.warn(`[auto-archive] gn copy fail: ${r.error.message}`);
         }),
       ),
