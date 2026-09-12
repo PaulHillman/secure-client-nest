@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StudentName } from "@/components/student-avatar";
+import { useAuth } from "@/lib/auth-context";
 import { ModuleSubmissionDialog } from "@/components/module-submission-dialog";
 import { moduleForm } from "@/lib/modules";
 import { AlertTriangle, BellRing, ClipboardCheck, Clock, FileText } from "lucide-react";
@@ -27,6 +28,7 @@ import { AlertTriangle, BellRing, ClipboardCheck, Clock, FileText } from "lucide
 const UNOWNED = "__none__";
 
 export function TeamReadinessCard({ teamId }: { teamId: string }) {
+  const { viewAs } = useAuth();
   const qc = useQueryClient();
   const fetchBoard = useServerFn(getTeamReadiness);
   const saveStatus = useServerFn(setRequirementStatus);
@@ -37,7 +39,7 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
 
   const { data } = useQuery({
     queryKey: ["team-readiness", teamId],
-    queryFn: () => fetchBoard({ data: { teamId } }),
+    queryFn: () => fetchBoard({ data: { teamId, studentId: viewAs?.id } }),
   });
 
   const refresh = () => {
