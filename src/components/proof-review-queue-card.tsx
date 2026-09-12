@@ -69,6 +69,11 @@ export function ProofReviewQueueCard() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
+                  {s.score != null ? (
+                    <Badge variant={s.score >= 5 ? "default" : "outline"}>
+                      Found {s.score}/5 items
+                    </Badge>
+                  ) : null}
                   {s.resubmitCount > 0 ? <Badge variant="outline">Resent</Badge> : null}
                   <Badge variant="secondary">{s.proofTitle}</Badge>
                 </div>

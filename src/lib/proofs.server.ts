@@ -47,7 +47,12 @@ type FeedbackInput = {
   transcript?: string | null;
 };
 
-export type FeedbackResult = { status: "available" | "unavailable"; text: string | null };
+export type FeedbackResult = {
+  status: "available" | "unavailable";
+  text: string | null;
+  /** Key points found (voicemail proof), parsed from the SCORE line. */
+  score?: number | null;
+};
 
 /** Coaching feedback. Never a grade, never a pass/fail. */
 export async function generateProofFeedback(input: FeedbackInput): Promise<FeedbackResult> {
@@ -72,6 +77,13 @@ export async function generateProofFeedback(input: FeedbackInput): Promise<Feedb
       .slice(0, 12_000)}`,
   );
 
+  // With an answer key (the voicemail proof), also record how many of the
+  // expected key points the student found. The SCORE line is stripped from
+  // the student-facing feedback and kept as the professor's record.
+  const scoringRule = input.answerKey
+    ? " After the closing line, add one final line in exactly this format: 'SCORE: N' where N is how many of the answer key's key points the student's submission correctly identifies (0 if none). Judge by meaning, not exact wording."
+    : "";
+
   try {
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -82,7 +94,8 @@ export async function generateProofFeedback(input: FeedbackInput): Promise<Feedb
           {
             role: "system",
             content:
-              "You are a supportive university course coach for a client-project class. The student has already completed this participation activity; completion is not in question and you must never imply it can be revoked, graded, scored or redone. Reply in under 220 words as: 'What you did well' (2-3 specific points quoting their own wording), 'What to strengthen next time' (2-3 concrete, actionable points), and one short closing line. Plain, warm, direct. No markdown headings beyond those bold labels, no numeric score, no letter grade.",
+              "You are a supportive university course coach for a client-project class. The student has already completed this participation activity; completion is not in question and you must never imply it can be revoked, graded, scored or redone. Reply in under 220 words as: 'What you did well' (2-3 specific points quoting their own wording), 'What to strengthen next time' (2-3 concrete, actionable points), and one short closing line. Plain, warm, direct. No markdown headings beyond those bold labels, no numeric score, no letter grade." +
+              scoringRule,
           },
           { role: "user", content: parts.join("\n\n---\n\n") },
         ],
@@ -90,8 +103,16 @@ export async function generateProofFeedback(input: FeedbackInput): Promise<Feedb
     });
     if (!res.ok) return { status: "unavailable", text: null };
     const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-    const text = json.choices?.[0]?.message?.content?.trim();
-    return text ? { status: "available", text } : { status: "unavailable", text: null };
+    let text = json.choices?.[0]?.message?.content?.trim();
+    if (!text) return { status: "unavailable", text: null };
+
+    let score: number | null = null;
+    const scoreMatch = text.match(/SCORE:\s*(\d+)\s*$/im);
+    if (scoreMatch) {
+      score = Math.max(0, Math.min(5, parseInt(scoreMatch[1]!, 10)));
+      text = text.replace(/\n?SCORE:\s*\d+\s*$/im, "").trim();
+    }
+    return { status: "available", text, score };
   } catch {
     return { status: "unavailable", text: null };
   }
