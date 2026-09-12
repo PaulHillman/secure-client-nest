@@ -102,6 +102,9 @@ export const getTeamProofs = createServerFn({ method: "GET" })
                 feedbackStatus: sub.feedback_status,
                 fileName: sub.file_name,
                 answers: asAnswers(sub.response),
+                reviewStatus: sub.review_status,
+                reviewNote: sub.review_note,
+                reviewedAt: sub.reviewed_at,
               }
             : null,
         };
