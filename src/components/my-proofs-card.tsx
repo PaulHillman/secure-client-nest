@@ -69,10 +69,27 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
                       </p>
                       {done ? (
                         <>
-                          <p className="flex items-center gap-1.5 text-sm text-emerald-600">
-                            <CheckCircle2 className="size-4" /> Complete ·{" "}
-                            {new Date(item.submission!.submittedAt).toLocaleString()}
-                          </p>
+                          {sentBack ? (
+                            <p className="flex items-center gap-1.5 text-sm text-amber-600">
+                              <RotateCcw className="size-4" /> Sent back by your professor
+                            </p>
+                          ) : approved ? (
+                            <p className="flex items-center gap-1.5 text-sm text-emerald-600">
+                              <CheckCircle2 className="size-4" /> Approved ·{" "}
+                              {new Date(item.submission!.submittedAt).toLocaleString()}
+                            </p>
+                          ) : (
+                            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                              <Clock className="size-4" /> Submitted, awaiting your professor's
+                              review · {new Date(item.submission!.submittedAt).toLocaleString()}
+                            </p>
+                          )}
+                          {item.submission!.reviewNote ? (
+                            <p className="rounded-md bg-muted p-2 text-sm">
+                              <span className="font-medium">What to fix: </span>
+                              {item.submission!.reviewNote}
+                            </p>
+                          ) : null}
                           <p className="text-xs text-muted-foreground">
                             {FEEDBACK_STATUS_LABEL[item.submission!.feedbackStatus] ??
                               "Feedback pending"}
