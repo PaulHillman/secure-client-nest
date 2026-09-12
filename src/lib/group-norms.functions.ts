@@ -192,7 +192,7 @@ export const saveTeamNorms = createServerFn({ method: "POST" })
     const version = existing.version + 1;
     const { error } = await supabaseAdmin
       .from("group_norms")
-      .update({ content: next, version, updated_by: userId, updated_at: new Date().toISOString() })
+      .update({ content: next, version, updated_by: userId, updated_at: new Date().toISOString(), flagged_for_review: false, flagged_at: null, vague_flags: [] })
       .eq("id", existing.id);
     if (error) throw error;
     await supabaseAdmin.from("group_norms_versions").insert({
