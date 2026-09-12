@@ -128,16 +128,24 @@ export function ModuleSubmissionDialog({
         )}
 
         <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            disabled={locked || mutation.isPending}
-            onClick={() => mutation.mutate(false)}
-          >
-            Save draft
-          </Button>
-          <Button disabled={locked || mutation.isPending} onClick={() => mutation.mutate(true)}>
-            Send for review
-          </Button>
+          {moduleKey === "team_setup" ? (
+            <Button disabled={mutation.isPending} onClick={() => mutation.mutate(false)}>
+              Save
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                disabled={locked || mutation.isPending}
+                onClick={() => mutation.mutate(false)}
+              >
+                Save draft
+              </Button>
+              <Button disabled={locked || mutation.isPending} onClick={() => mutation.mutate(true)}>
+                Send for review
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
