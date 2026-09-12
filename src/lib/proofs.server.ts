@@ -6,6 +6,46 @@
 
 import { proofByKey } from "@/lib/proofs";
 
+const PRIVATE_RUBRICS: Record<string, string[]> = {
+  pm_norms: [
+    "Uses the team's actual norms where they exist, without inventing team policy",
+    "Addresses the teammate directly and respectfully",
+    "Explains the impact and follows the agreed accountability process",
+  ],
+  comms_record: [
+    "Distinguishes a reference transcript from official minutes",
+    "Keeps useful records in the appropriate ClientVault location",
+    "Avoids duplicating client correspondence and updates the existing project record",
+  ],
+  liaison_interview: [
+    "Selects professional, open-ended questions that invite examples",
+    "Removes duplicates and weak yes-or-no questions",
+    "Uses a sensible interview order",
+  ],
+  liaison_loop: [
+    "Confirms the call details through the official client channel",
+    "Informs teammates and preserves the communication in ClientVault",
+    "Records and follows through on resulting team actions",
+  ],
+  video_disaster: [
+    "Addresses presentation, missing script, B-roll, participation, and consistency problems",
+    "Corrects important problems before recording and protects the final product",
+  ],
+  tech_zip: [
+    "Matches the required folder structure and naming",
+    "Keeps file extensions and required files intact",
+    "Uploads the completed ZIP",
+  ],
+  tech_presentation: [
+    "Checks the physical connection, input, and display settings",
+    "Tries sensible recovery steps and gives a practical backup plan",
+  ],
+  research_company: [
+    "Covers the company, industry, background, and role using credible public sources",
+    "Links sources to claims and separates verified facts from general role expectations",
+  ],
+};
+
 /**
  * Lists the entry names in a ZIP by walking the central directory.
  * No decompression, so it is cheap and works on a large archive.
@@ -64,8 +104,9 @@ export async function generateProofFeedback(input: FeedbackInput): Promise<Feedb
     `Activity: ${proof.title} (${proof.alias}) for the ${proof.role} role.`,
     `What the activity asked for:\n${proof.howTo}`,
   ];
-  if (proof.checklist.length) {
-    parts.push(`Criteria a strong response covers:\n- ${proof.checklist.join("\n- ")}`);
+  const rubric = PRIVATE_RUBRICS[proof.key];
+  if (rubric?.length) {
+    parts.push(`Private essential ideas for coaching:\n- ${rubric.join("\n- ")}`);
   }
   if (proof.scenario) parts.push(`Scenario given to the student:\n${proof.scenario}`);
   if (input.transcript) parts.push(`Reference transcript of the recording:\n${input.transcript.slice(0, 12_000)}`);
@@ -84,7 +125,7 @@ export async function generateProofFeedback(input: FeedbackInput): Promise<Feedb
   // the student-facing feedback and kept as the professor's record.
   const maxScore = proof.maxScore ?? 5;
   const scoringRule = input.answerKey
-    ? ` Before the closing line, add a section labelled 'What you missed' that lists, as short bullets, every key point from the answer key the student did not capture, each stated plainly so they know exactly what it was; if they captured them all, write 'Nothing — you caught every key point.' After the closing line, add one final line in exactly this format: 'SCORE: N' where N is how many of the answer key's key points (out of ${maxScore}) the student's submission correctly identifies (0 if none). Judge by meaning, not exact wording.`
+    ? ` Before the closing line, add a section labelled 'What you missed' that lists, as short bullets, every key point from the answer key the student did not capture, each stated plainly so they know exactly what it was; if they captured them all, write 'Nothing — you caught every key point.' After the closing line, add one final line in exactly this format: 'SCORE: N' where N is how many of the answer key's key points (out of ${maxScore}) the student's submission correctly identifies (0 if none). Judge by meaning, not exact wording. Accept concise answers and combined or reordered points when coverage is clear.`
     : "";
 
   try {
@@ -97,7 +138,7 @@ export async function generateProofFeedback(input: FeedbackInput): Promise<Feedb
           {
             role: "system",
             content:
-              "You are a supportive university course coach for a client-project class. The student has already completed this participation activity; completion is not in question and you must never imply it can be revoked, graded, scored or redone. Reply in under 260 words as: 'What you did well' (2-3 specific points quoting their own wording), 'What to strengthen next time' (2-3 concrete, actionable points), and one short closing line. Plain, warm, direct. No markdown headings beyond those bold labels, no letter grade." +
+              "You are a supportive university course coach for a client-project class. Judge basic understanding and essential task coverage, not essay length, formatting, exhaustive detail, or wording. Accept concise answers and reasonable equivalent language. Never require a removed response format, time allocation, or extra detail that the student was not asked to provide. The student has already completed this participation activity; completion is not in question and you must never imply it can be revoked, graded, scored or redone. Reply in under 180 words as: 'What you did well' (1-2 specific points), 'What to strengthen next time' (up to 2 concrete points), and one short closing line. Plain, warm, direct. No markdown headings beyond those bold labels, no letter grade." +
               scoringRule,
           },
           { role: "user", content: parts.join("\n\n---\n\n") },

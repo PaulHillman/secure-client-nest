@@ -14,12 +14,19 @@
 - [x] Professor review queue: read answers, approve / send back with revision note
 - [x] Revision note shown to the whole team; PM notified of every decision
 
-## Stage C — ten proofs
+## Stage C — twelve proofs
 - [x] Eight proofs needing no assets from the professor
 - [x] Meeting minutes proof — built; stays closed until the professor posts the recording + transcript
 - [x] Vault organisation proof — built; stays closed until the professor posts the ZIP + answer key
 - [x] Zach Guy research proof: mandatory "do not contact" acknowledgement
 - [x] One-time locked submissions, non-blocking written feedback, professor completion overview
+
+## Simplified role proof instructions
+- [x] Inventory all twelve proof activities and their student/admin entry points
+- [x] Replace detailed student checklists with short action prompts
+- [x] Preserve scenarios, media, ZIP upload, no-contact acknowledgement, and legacy responses
+- [x] Align private feedback with concise, equivalent answers and established score maxima
+- [x] Verify every role's rendered proof dialog and final build
 
 ## Student dashboard readiness
 - [x] Show unfinished Team Readiness prominently at the top of the student dashboard

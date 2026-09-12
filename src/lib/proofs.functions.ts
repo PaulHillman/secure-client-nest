@@ -50,6 +50,7 @@ export const getTeamProofs = createServerFn({ method: "GET" })
     if (!me && !admin) throw new Error("You are not on this team.");
 
     const ids = list.map((m) => m.user_id);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [{ data: profiles }, { data: subs }, { data: materials }] = await Promise.all([
       ids.length
         ? supabase.from("profiles").select("id, name, avatar_url").in("id", ids)
@@ -60,7 +61,7 @@ export const getTeamProofs = createServerFn({ method: "GET" })
           "id, user_id, proof_key, submitted_at, feedback, feedback_status, file_name, response, review_status, review_note, reviewed_at, score",
         )
         .eq("team_id", data.teamId),
-      supabase.from("proof_materials").select("proof_key, ready, extra_instructions"),
+      supabaseAdmin.from("proof_materials").select("proof_key, ready"),
     ]);
 
     const readiness = new Map((materials ?? []).map((m) => [m.proof_key, m]));
@@ -100,7 +101,6 @@ export const getTeamProofs = createServerFn({ method: "GET" })
         return {
           key: p.key,
           open: !p.needsMaterials || mat?.ready === true,
-          extraInstructions: mat?.extra_instructions ?? null,
           submission: sub
             ? {
                 submittedAt: sub.submitted_at,
@@ -123,22 +123,42 @@ export const getTeamProofs = createServerFn({ method: "GET" })
 /** Signed links and text for the course material behind one activity. */
 export const getProofMaterial = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { proofKey: string }) => {
+  .inputValidator((input: { proofKey: string; teamId: string; studentId?: string }) => {
     if (!proofByKey(input?.proofKey ?? "")) throw new Error("Unknown activity.");
+    if (!input?.teamId) throw new Error("Missing team.");
     return input;
   })
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const { data: row } = await supabase
+    const { supabase, userId } = context;
+    const admin = await isAdmin(supabase, userId);
+    const targetUserId = data.studentId ?? userId;
+    if (targetUserId !== userId && !admin)
+      throw new Error("You cannot view another student's role activities.");
+
+    const proof = proofByKey(data.proofKey);
+    const { data: membership } = await supabase
+      .from("team_members")
+      .select("job_title")
+      .eq("team_id", data.teamId)
+      .eq("user_id", targetUserId)
+      .maybeSingle();
+    if (!membership && !admin) throw new Error("You are not on this team.");
+    if (membership && proof && membership.job_title !== proof.role)
+      throw new Error("This activity belongs to a different role.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
       .from("proof_materials")
-      .select("*")
+      .select("ready, audio_path, transcript_text, zip_path")
       .eq("proof_key", data.proofKey)
       .maybeSingle();
     if (!row) return { ready: false, audioUrl: null, zipUrl: null, transcript: null };
 
     const sign = async (path: string | null) => {
       if (!path) return null;
-      const { data: signed } = await supabase.storage.from("proofs").createSignedUrl(path, 60 * 60);
+      const { data: signed } = await supabaseAdmin.storage
+        .from("proofs")
+        .createSignedUrl(path, 60 * 60);
       return signed?.signedUrl ?? null;
     };
 
@@ -151,13 +171,13 @@ export const getProofMaterial = createServerFn({ method: "GET" })
       audioUrl: await sign(row.audio_path),
       zipUrl: await sign(row.zip_path),
       transcript: hidesTranscript ? null : row.transcript_text,
-      extraInstructions: row.extra_instructions,
     };
   });
 
 /**
  * Records one attempt. One per student per activity, locked immediately.
  * Feedback is attempted afterwards and can never undo the completion.
+ * Professors may preview activities as a student, but never submit for them.
  */
 export const submitProof = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -165,6 +185,7 @@ export const submitProof = createServerFn({ method: "POST" })
     (input: {
       teamId: string;
       proofKey: string;
+      studentId?: string;
       answers: Record<string, string>;
       filePath?: string | null;
       fileName?: string | null;
@@ -185,6 +206,10 @@ export const submitProof = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const proof = proofByKey(data.proofKey)!;
 
+    if (data.studentId && data.studentId !== userId) {
+      throw new Error("You cannot submit an activity for another student.");
+    }
+
     const { data: membership } = await supabase
       .from("team_members")
       .select("job_title")
@@ -195,7 +220,8 @@ export const submitProof = createServerFn({ method: "POST" })
     if (membership.job_title !== proof.role)
       throw new Error("This activity belongs to a different role.");
 
-    const { data: material } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: material } = await supabaseAdmin
       .from("proof_materials")
       .select("ready, transcript_text, answer_key")
       .eq("proof_key", proof.key)
@@ -261,7 +287,6 @@ export const submitProof = createServerFn({ method: "POST" })
     let feedback: string | null = null;
     let score: number | null = null;
     try {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { generateProofFeedback, listZipEntries } = await import("@/lib/proofs.server");
 
       let zipEntries: string[] | undefined;
@@ -270,23 +295,12 @@ export const submitProof = createServerFn({ method: "POST" })
         if (file) zipEntries = listZipEntries(await file.arrayBuffer());
       }
 
-      // The PM agenda rubric is instructor-only. Its row is hidden from students
-      // by RLS, so load it only after the authenticated submission is recorded.
-      const { data: instructorMaterial } =
-        proof.key === "pm_agenda"
-          ? await supabaseAdmin
-              .from("proof_materials")
-              .select("answer_key, transcript_text")
-              .eq("proof_key", proof.key)
-              .maybeSingle()
-          : { data: null };
-
       const result = await generateProofFeedback({
         proofKey: proof.key,
         answers: data.answers,
         zipEntries,
-        answerKey: instructorMaterial?.answer_key ?? material?.answer_key ?? null,
-        transcript: instructorMaterial?.transcript_text ?? material?.transcript_text ?? null,
+        answerKey: material?.answer_key ?? null,
+        transcript: material?.transcript_text ?? null,
       });
       feedbackStatus = result.status;
       feedback = result.text;
@@ -413,7 +427,6 @@ export const saveProofMaterial = createServerFn({ method: "POST" })
       zipPath?: string | null;
       transcript?: string | null;
       answerKey?: string | null;
-      extraInstructions?: string | null;
     }) => {
       if (!proofByKey(input?.proofKey ?? "")) throw new Error("Unknown activity.");
       return input;
@@ -429,7 +442,6 @@ export const saveProofMaterial = createServerFn({ method: "POST" })
     if (data.zipPath !== undefined) patch["zip_path"] = data.zipPath;
     if (data.transcript !== undefined) patch["transcript_text"] = data.transcript;
     if (data.answerKey !== undefined) patch["answer_key"] = data.answerKey;
-    if (data.extraInstructions !== undefined) patch["extra_instructions"] = data.extraInstructions;
 
     const { error } = await supabase
       .from("proof_materials")
