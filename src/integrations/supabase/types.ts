@@ -860,6 +860,8 @@ export type Database = {
         Row: {
           content: Json
           document_path: string | null
+          flagged_at: string | null
+          flagged_for_review: boolean
           id: string
           is_locked: boolean
           locked_at: string | null
@@ -867,11 +869,14 @@ export type Database = {
           updated_at: string
           updated_by: string | null
           uploaded_at: string
+          vague_flags: Json
           version: number
         }
         Insert: {
           content?: Json
           document_path?: string | null
+          flagged_at?: string | null
+          flagged_for_review?: boolean
           id?: string
           is_locked?: boolean
           locked_at?: string | null
@@ -879,11 +884,14 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           uploaded_at?: string
+          vague_flags?: Json
           version?: number
         }
         Update: {
           content?: Json
           document_path?: string | null
+          flagged_at?: string | null
+          flagged_for_review?: boolean
           id?: string
           is_locked?: boolean
           locked_at?: string | null
@@ -891,6 +899,7 @@ export type Database = {
           updated_at?: string
           updated_by?: string | null
           uploaded_at?: string
+          vague_flags?: Json
           version?: number
         }
         Relationships: [
