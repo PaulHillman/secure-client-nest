@@ -132,7 +132,7 @@ export const claimTeamRole = createServerFn({ method: "POST" })
       throw new Error(`Finish your profile first — still missing: ${status.missing.join(", ")}.`);
     }
 
-    const { data: mates } = await supabase
+    const { data: mates } = await db
       .from("team_members")
       .select("user_id, job_title")
       .eq("team_id", membership.team_id);
