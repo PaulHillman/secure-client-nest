@@ -69,32 +69,21 @@ export const getDashboardReadiness = createServerFn({ method: "GET" })
     const submittedKeys = new Set((submissions ?? []).map((row) => row.proof_key));
     const remainingProofs = assignedProofs.filter((proof) => !submittedKeys.has(proof.key));
 
-    const [{ data: agreement }, { data: approval }] = await Promise.all([
-      proposal
-        ? supabase
-            .from("team_meeting_agreements")
-            .select("status")
-            .eq("proposal_id", proposal.id)
-            .eq("user_id", targetUserId)
-            .maybeSingle()
-        : Promise.resolve({ data: null as { status: string } | null }),
-      norms
-        ? supabase
-            .from("group_norms_signatures")
-            .select("signed_at")
-            .eq("group_norms_id", norms.id)
-            .eq("version", norms.version)
-            .eq("user_id", targetUserId)
-            .maybeSingle()
-        : Promise.resolve({ data: null as { signed_at: string } | null }),
-    ]);
+    const { data: approval } = norms
+      ? await supabase
+          .from("group_norms_signatures")
+          .select("signed_at")
+          .eq("group_norms_id", norms.id)
+          .eq("version", norms.version)
+          .eq("user_id", targetUserId)
+          .maybeSingle()
+      : { data: null as { signed_at: string } | null };
 
     const hasRole = !!role && role !== "Unassigned";
     const proofsDone = assignedProofs.length > 0 && remainingProofs.length === 0;
-    const meetingDone = agreement?.status === "agreed";
     const normsComplete = !!norms && isNormsComplete(normalizeNorms(norms.content));
     const normsDone = normsComplete && !!approval;
-    const steps = [hasRole, proofsDone, meetingDone, normsDone];
+    const steps = [hasRole, proofsDone, normsDone];
     const doneCount = steps.filter(Boolean).length;
 
     let nextAction = "Choose your team role";
@@ -104,12 +93,7 @@ export const getDashboardReadiness = createServerFn({ method: "GET" })
       detail = remainingProofs.length
         ? `${remainingProofs.length} role ${remainingProofs.length === 1 ? "activity remains" : "activities remain"}.`
         : "Review the activities assigned to your role.";
-    } else if (hasRole && proofsDone && !meetingDone) {
-      nextAction = proposal ? "Confirm your meeting commitment" : "Set your team meeting time";
-      detail = proposal
-        ? "Read the proposed standing meeting time and record your agreement."
-        : "Your team still needs to establish its standing meeting time.";
-    } else if (hasRole && proofsDone && meetingDone && !normsDone) {
+    } else if (hasRole && proofsDone && !normsDone) {
       nextAction = normsComplete ? "Approve your Group Norms" : "Complete your Group Norms";
       detail = normsComplete
         ? "Read the saved norms and approve the current version personally."
@@ -120,7 +104,7 @@ export const getDashboardReadiness = createServerFn({ method: "GET" })
       teamId,
       teamName: teamLabel(team),
       doneCount,
-      complete: doneCount === 4,
+      complete: doneCount === 3,
       nextAction,
       detail,
     };

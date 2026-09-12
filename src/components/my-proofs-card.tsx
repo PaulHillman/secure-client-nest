@@ -78,33 +78,13 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
     queryFn: () => fetchNorms({ data: { teamId, studentId: viewAs?.id } }),
   });
 
-  const { data: meeting } = useQuery({
-    queryKey: ["meeting-commitment", teamId, userId],
-    queryFn: async () => {
-      const { data: proposal } = await supabase
-        .from("team_meeting_proposals")
-        .select("id, day_of_week, meeting_time")
-        .eq("team_id", teamId)
-        .maybeSingle();
-      if (!proposal) return { proposal: null, mine: null as { status: string } | null };
-      const { data: mine } = await supabase
-        .from("team_meeting_agreements")
-        .select("status, responded_at")
-        .eq("proposal_id", proposal.id)
-        .eq("user_id", userId)
-        .maybeSingle();
-      return { proposal, mine };
-    },
-  });
-
   if (!data) return null;
   const refresh = () => void qc.invalidateQueries({ queryKey: ["team-proofs", teamId] });
 
   const hasRole = !!data.myRole && data.myRole !== "Unassigned";
   const proofsDone = data.mine.length > 0 && data.mine.every((m) => !!m.submission);
-  const meetingDone = meeting?.mine?.status === "agreed";
   const normsDone = !!norms?.complete && !!norms?.myApprovalAt;
-  const steps = [hasRole, proofsDone, meetingDone, normsDone];
+  const steps = [hasRole, proofsDone, normsDone];
   const doneCount = steps.filter(Boolean).length;
 
   return (
