@@ -16,7 +16,7 @@ export type NormSection = {
 export const NORMS_TITLE = "Group Norms";
 
 export const NORMS_INTRO =
-  "The Project Manager leads this document and writes it, gathering input from the whole team. Every agreement must be objective and measurable — exact times, exact counts, no ranges and no \"as soon as possible\". Every member then reads the saved document and approves it personally.";
+  "The Project Manager leads this document and writes it, gathering input from the whole team. Every agreement must be objective and measurable — exact times, exact counts, no ranges and no \"as soon as possible\". Then every member — including the PM — reads the saved document and approves it personally.";
 
 export const NORM_SECTIONS: NormSection[] = [
   {
