@@ -55,6 +55,8 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
                 const proof = proofByKey(item.key);
                 if (!proof) return null;
                 const done = !!item.submission;
+                const approved = item.submission?.reviewStatus === "approved";
+                const sentBack = item.submission?.reviewStatus === "sent_back";
                 return (
                   <div
                     key={item.key}
