@@ -224,29 +224,19 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                 </div>
                 {proposal && (
                   <p className="text-xs text-muted-foreground">
-                    Changing the day, time, or place resets everyone's agreement and notifies
-                    Professor Hillman.
-                  </p>
-                )}
-                {proposal && me?.agreement?.status !== "agreed" && (
-                  <p className="text-xs rounded-md border border-gold/40 bg-gold/10 px-3 py-2 text-foreground">
-                    Setting the time is not your approval — as PM you must also read and sign the
-                    agreement below, just like every other member.
+                    Changing the day, time, or place notifies Professor Hillman.
                   </p>
                 )}
 
               </div>
             )}
 
-            {/* Roster + statuses */}
+            {/* Roster */}
             <div>
-              <div className="text-sm font-medium mb-2">
-                Team agreement ({roster.filter((r) => r.agreement?.status === "agreed").length}/{roster.length})
-              </div>
+              <div className="text-sm font-medium mb-2">Team members</div>
               <ul className="divide-y rounded-md border">
                 {roster.map((r) => {
                   const isMe = r.user_id === user?.id;
-                  const status = r.agreement?.status;
                   return (
                     <li key={r.user_id} className="p-3 flex items-center gap-3">
                       <StudentAvatar name={r.name} email={r.email} avatarUrl={r.avatarUrl} size={32} />
@@ -256,62 +246,11 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                         </div>
                         <div className="text-xs text-gold">{r.job_title}</div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {status === "agreed" && (
-                          <Badge className="bg-emerald-600 hover:bg-emerald-600">
-                            <Check className="h-3 w-3 mr-1" />
-                            Agreed · {r.agreement!.initials}
-                          </Badge>
-                        )}
-                        {status === "declined" && (
-                          <Badge variant="destructive">
-                            <X className="h-3 w-3 mr-1" />
-                            Declined · {r.agreement!.initials}
-                          </Badge>
-                        )}
-                        {!status && (
-                          <Badge variant="outline" className="text-muted-foreground">
-                            <CircleDashed className="h-3 w-3 mr-1" />
-                            Pending
-                          </Badge>
-                        )}
-                      </div>
                     </li>
                   );
                 })}
               </ul>
             </div>
-
-            {/* My response — every member including PM signs the agreement */}
-            {me && proposal && (
-              <div className="rounded-md border p-3 space-y-3">
-                <div className="text-xs font-medium uppercase tracking-wide">
-                  {me.agreement?.status === "agreed" ? "You have signed" : "Your approval is required"}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Every member must read and sign the Meeting Time Agreement, including the rule that
-                  whoever needs a time change is responsible for negotiating the new time, updating
-                  ClientVault, and notifying Professor Hillman.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Button asChild>
-                    <Link to="/app/agreement">
-                      <Check className="h-4 w-4 mr-1" />
-                      {me.agreement?.status === "agreed" ? "Review my signature" : "Read & sign the agreement"}
-                    </Link>
-                  </Button>
-                  {me.agreement?.status !== "declined" && (
-                    <Button
-                      variant="outline"
-                      onClick={() => respond.mutate("declined")}
-                      disabled={respond.isPending}
-                    >
-                      <X className="h-4 w-4 mr-1" /> I do not agree
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
 
           </>
         )}
