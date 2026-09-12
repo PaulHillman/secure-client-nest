@@ -43,7 +43,7 @@ export function SluggoFlagCard() {
       const [profilesRes, membersRes, teamsRes, authRes, fileRes, commentsRes, rolesRes] = await Promise.all([
         supabase.from("profiles").select("id, name, email, section, avatar_url"),
         supabase.from("team_members").select("user_id, team_id"),
-        supabase.from("teams").select("id, name, section"),
+        supabase.from("teams").select("id, name, section").eq("is_test", false),
         supabase.from("auth_audit_log").select("user_id, event, created_at").eq("event", "signin"),
         supabase.from("file_audit_log").select("actor_id, action").eq("action", "insert"),
         supabase.from("file_comments").select("author_id"),

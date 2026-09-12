@@ -15,7 +15,7 @@ export function ConsensusStatusCard() {
     queryFn: async () => {
       const [{ data: teams, error: tErr }, { data: members, error: mErr }, { data: proposals, error: pErr }, { data: agreements, error: aErr }, { data: profiles }] =
         await Promise.all([
-          supabase.from("teams").select("id, name, section"),
+          supabase.from("teams").select("id, name, section").eq("is_test", false),
           supabase.from("team_members").select("team_id, user_id"),
           supabase.from("team_meeting_proposals").select("*"),
           supabase.from("team_meeting_agreements").select("proposal_id, user_id, status"),

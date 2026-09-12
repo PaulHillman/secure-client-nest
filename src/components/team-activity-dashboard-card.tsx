@@ -53,7 +53,7 @@ export function TeamActivityDashboardCard() {
     queryKey: ["team-activity-dashboard", win],
     queryFn: async (): Promise<Row[]> => {
       const [teamsRes, membersRes, authRes, fileAuditRes, commentsRes, filesRes, profilesRes] = await Promise.all([
-        supabase.from("teams").select("id, name, section"),
+        supabase.from("teams").select("id, name, section").eq("is_test", false),
         supabase.from("team_members").select("user_id, team_id"),
         since
           ? supabase.from("auth_audit_log").select("user_id, event, created_at").eq("event", "signin").gte("created_at", since)

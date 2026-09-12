@@ -14,7 +14,7 @@ export function MeetingGapsCard() {
     queryKey: ["meeting-gaps"],
     queryFn: async () => {
       const [{ data: teams }, { data: logs }] = await Promise.all([
-        supabase.from("teams").select("id, name, display_name, section"),
+        supabase.from("teams").select("id, name, display_name, section").eq("is_test", false),
         supabase.from("meeting_logs").select("team_id, meeting_date, meeting_time, minutes_posted, as_agreed"),
       ]);
       const byTeam = new Map<string, any[]>();
