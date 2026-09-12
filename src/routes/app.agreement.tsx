@@ -13,6 +13,7 @@ import { CalendarClock, CheckCircle2, MapPin, Video } from "lucide-react";
 import { toast } from "sonner";
 import {
   AGREEMENT_CLAUSES,
+  AGREEMENT_VERSION,
   meetingDetailsLine,
 } from "@/lib/meeting-agreement";
 import { respondMeetingAgreement } from "@/lib/meeting.functions";
