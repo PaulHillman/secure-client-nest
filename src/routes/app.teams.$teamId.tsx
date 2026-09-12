@@ -210,6 +210,13 @@ function MemberCard({ member, teamId }: { member: Member; teamId: string }) {
 
   const [editing, setEditing] = useState(false);
   const [phone, setPhone] = useState(p?.phone_number ?? "");
+  const [expanded, setExpanded] = useState(false);
+
+  const hasSkills =
+    (p?.top_skills?.length ?? 0) > 0 ||
+    (p?.skills_learn?.length ?? 0) > 0 ||
+    !!p?.work_style ||
+    suggestedRoles.length > 0;
 
   const save = useMutation({
     mutationFn: async () => {
@@ -314,35 +321,49 @@ function MemberCard({ member, teamId }: { member: Member; teamId: string }) {
               </>
             )}
           </div>
-          {(p?.top_skills?.length ?? 0) > 0 && (
-            <div className="mt-3">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Strongest skills
-              </div>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {(p?.top_skills ?? []).map((skill: string) => (
-                  <Badge key={skill} variant="secondary" className="text-[10px]">
-                    {skillLabel(skill)}
-                  </Badge>
-                ))}
-              </div>
-            </div>
+          {hasSkills && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2 h-7 px-2 text-xs -ml-2"
+              onClick={() => setExpanded((v) => !v)}
+            >
+              {expanded ? "Hide skills" : "Show skills"}
+            </Button>
           )}
-          {(p?.skills_learn?.length ?? 0) > 0 && (
-            <div className="mt-2 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">Wants to develop:</span>{" "}
-              {(p?.skills_learn ?? [])
-                .slice(0, 3)
-                .map((skill: string) => skillLabel(skill))
-                .join(", ")}
-            </div>
-          )}
-          {p?.work_style && (
-            <p className="mt-2 line-clamp-3 text-xs text-muted-foreground">“{p.work_style}”</p>
-          )}
-          {suggestedRoles.length > 0 && (
-            <div className="mt-2 text-[10px] text-muted-foreground">
-              Possible role fit: {suggestedRoles.map((match) => match.role).join(" · ")}
+          {expanded && (
+            <div className="mt-1">
+              {(p?.top_skills?.length ?? 0) > 0 && (
+                <div className="mt-2">
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Strongest skills
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {(p?.top_skills ?? []).map((skill: string) => (
+                      <Badge key={skill} variant="secondary" className="text-[10px]">
+                        {skillLabel(skill)}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(p?.skills_learn?.length ?? 0) > 0 && (
+                <div className="mt-2 text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">Wants to develop:</span>{" "}
+                  {(p?.skills_learn ?? [])
+                    .slice(0, 3)
+                    .map((skill: string) => skillLabel(skill))
+                    .join(", ")}
+                </div>
+              )}
+              {p?.work_style && (
+                <p className="mt-2 line-clamp-3 text-xs text-muted-foreground">“{p.work_style}”</p>
+              )}
+              {suggestedRoles.length > 0 && (
+                <div className="mt-2 text-[10px] text-muted-foreground">
+                  Possible role fit: {suggestedRoles.map((match) => match.role).join(" · ")}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -350,6 +371,7 @@ function MemberCard({ member, teamId }: { member: Member; teamId: string }) {
     </Card>
   );
 }
+
 
 function TeamNameHeader({
   team,
