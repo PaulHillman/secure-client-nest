@@ -192,22 +192,57 @@ export const submitProof = createServerFn({ method: "POST" })
     if (proof.needsMaterials && material?.ready !== true)
       throw new Error("Your professor has not posted the material for this activity yet.");
 
-    const { data: inserted, error } = await supabase
+    // A submission the professor sent back is the one case a student may redo.
+    const { data: existing } = await supabase
       .from("proof_submissions")
-      .insert({
-        user_id: userId,
-        team_id: data.teamId,
-        proof_key: proof.key,
-        role_at_submission: membership.job_title,
-        response: data.answers,
-        file_path: data.filePath ?? null,
-        file_name: data.fileName ?? null,
-      })
-      .select("id, submitted_at")
-      .single();
-    if (error) {
-      if (error.code === "23505") throw new Error("You have already completed this activity.");
-      throw new Error(error.message);
+      .select("id, review_status, resubmit_count")
+      .eq("user_id", userId)
+      .eq("proof_key", proof.key)
+      .maybeSingle();
+
+    let inserted: { id: string; submitted_at: string };
+    if (existing) {
+      if (existing.review_status !== "sent_back")
+        throw new Error("You have already submitted this activity.");
+      const { data: updated, error: updateError } = await supabase
+        .from("proof_submissions")
+        .update({
+          team_id: data.teamId,
+          role_at_submission: membership.job_title,
+          response: data.answers,
+          file_path: data.filePath ?? null,
+          file_name: data.fileName ?? null,
+          submitted_at: new Date().toISOString(),
+          review_status: "pending",
+          review_note: null,
+          reviewed_at: null,
+          reviewed_by: null,
+          resubmit_count: (existing.resubmit_count ?? 0) + 1,
+        })
+        .eq("id", existing.id)
+        .select("id, submitted_at")
+        .single();
+      if (updateError) throw new Error(updateError.message);
+      inserted = updated;
+    } else {
+      const { data: created, error } = await supabase
+        .from("proof_submissions")
+        .insert({
+          user_id: userId,
+          team_id: data.teamId,
+          proof_key: proof.key,
+          role_at_submission: membership.job_title,
+          response: data.answers,
+          file_path: data.filePath ?? null,
+          file_name: data.fileName ?? null,
+        })
+        .select("id, submitted_at")
+        .single();
+      if (error) {
+        if (error.code === "23505") throw new Error("You have already submitted this activity.");
+        throw new Error(error.message);
+      }
+      inserted = created;
     }
 
     // Completion is already recorded. Everything below is coaching only.
