@@ -18,7 +18,6 @@ import { Route as AppVaultRouteImport } from './routes/app.vault'
 import { Route as AppTeamsRouteImport } from './routes/app.teams'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppBacklogRouteImport } from './routes/app.backlog'
-import { Route as AppAgreementRouteImport } from './routes/app.agreement'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppTeamsTeamIdRouteImport } from './routes/app.teams.$teamId'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
@@ -71,11 +70,6 @@ const AppBacklogRoute = AppBacklogRouteImport.update({
   path: '/backlog',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAgreementRoute = AppAgreementRouteImport.update({
-  id: '/agreement',
-  path: '/agreement',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppAdminRoute = AppAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -117,7 +111,6 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/set-password': typeof SetPasswordRoute
   '/app/admin': typeof AppAdminRoute
-  '/app/agreement': typeof AppAgreementRoute
   '/app/backlog': typeof AppBacklogRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
@@ -135,7 +128,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/set-password': typeof SetPasswordRoute
   '/app/admin': typeof AppAdminRoute
-  '/app/agreement': typeof AppAgreementRoute
   '/app/backlog': typeof AppBacklogRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
@@ -154,7 +146,6 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/set-password': typeof SetPasswordRoute
   '/app/admin': typeof AppAdminRoute
-  '/app/agreement': typeof AppAgreementRoute
   '/app/backlog': typeof AppBacklogRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
@@ -174,7 +165,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/set-password'
     | '/app/admin'
-    | '/app/agreement'
     | '/app/backlog'
     | '/app/dashboard'
     | '/app/teams'
@@ -192,7 +182,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/set-password'
     | '/app/admin'
-    | '/app/agreement'
     | '/app/backlog'
     | '/app/dashboard'
     | '/app/teams'
@@ -210,7 +199,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/set-password'
     | '/app/admin'
-    | '/app/agreement'
     | '/app/backlog'
     | '/app/dashboard'
     | '/app/teams'
@@ -299,13 +287,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBacklogRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/agreement': {
-      id: '/app/agreement'
-      path: '/agreement'
-      fullPath: '/app/agreement'
-      preLoaderRoute: typeof AppAgreementRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/admin': {
       id: '/app/admin'
       path: '/admin'
@@ -365,7 +346,6 @@ const AppTeamsRouteWithChildren = AppTeamsRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
-  AppAgreementRoute: typeof AppAgreementRoute
   AppBacklogRoute: typeof AppBacklogRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppTeamsRoute: typeof AppTeamsRouteWithChildren
@@ -375,7 +355,6 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
-  AppAgreementRoute: AppAgreementRoute,
   AppBacklogRoute: AppBacklogRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppTeamsRoute: AppTeamsRouteWithChildren,

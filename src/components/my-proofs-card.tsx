@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth-context";
 import { getTeamProofs } from "@/lib/proofs.functions";
 import { getTeamNorms } from "@/lib/group-norms.functions";
-import { supabase } from "@/integrations/supabase/client";
+
 import { FEEDBACK_STATUS_LABEL, proofByKey, proofMaxScore } from "@/lib/proofs";
 import { ProofDialog } from "@/components/proof-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,9 +57,9 @@ function Step({
 }
 
 /**
- * Team Readiness: the four things each member finishes before the team is
- * allowed to meet with the professor — role, role proof points, the meeting
- * commitment, and the group norms document.
+ * Team Readiness: the three things each member finishes before the team is
+ * allowed to meet with the professor — role, role proof points, and the
+ * group norms document.
  */
 export function MyProofsCard({ teamId, userId }: { teamId: string; userId: string }) {
   const { viewAs } = useAuth();
@@ -78,33 +78,13 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
     queryFn: () => fetchNorms({ data: { teamId, studentId: viewAs?.id } }),
   });
 
-  const { data: meeting } = useQuery({
-    queryKey: ["meeting-commitment", teamId, userId],
-    queryFn: async () => {
-      const { data: proposal } = await supabase
-        .from("team_meeting_proposals")
-        .select("id, day_of_week, meeting_time")
-        .eq("team_id", teamId)
-        .maybeSingle();
-      if (!proposal) return { proposal: null, mine: null as { status: string } | null };
-      const { data: mine } = await supabase
-        .from("team_meeting_agreements")
-        .select("status, responded_at")
-        .eq("proposal_id", proposal.id)
-        .eq("user_id", userId)
-        .maybeSingle();
-      return { proposal, mine };
-    },
-  });
-
   if (!data) return null;
   const refresh = () => void qc.invalidateQueries({ queryKey: ["team-proofs", teamId] });
 
   const hasRole = !!data.myRole && data.myRole !== "Unassigned";
   const proofsDone = data.mine.length > 0 && data.mine.every((m) => !!m.submission);
-  const meetingDone = meeting?.mine?.status === "agreed";
   const normsDone = !!norms?.complete && !!norms?.myApprovalAt;
-  const steps = [hasRole, proofsDone, meetingDone, normsDone];
+  const steps = [hasRole, proofsDone, normsDone];
   const doneCount = steps.filter(Boolean).length;
 
   return (
@@ -113,8 +93,8 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
         <CardHeader>
           <CardTitle>Team Readiness</CardTitle>
           <CardDescription>
-            Every member of the team must finish all four steps below before the team is allowed to
-            meet with Prof Hillman. You have finished {doneCount} of 4.
+            Every member of the team must finish all three steps below before the team is allowed to
+            meet with Prof Hillman. You have finished {doneCount} of 3.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -269,37 +249,6 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
 
           <Step
             n={3}
-            title="Confirm your meeting commitment"
-            done={!!meetingDone}
-            action={
-              meetingDone ? undefined : meeting?.proposal ? (
-                <Button size="sm" variant="outline" asChild>
-                  <Link to="/app/agreement">Read &amp; sign the agreement</Link>
-                </Button>
-              ) : (
-                <Button size="sm" variant="outline" onClick={() => scrollTo("meeting-time")}>
-                  Set your meeting time
-                </Button>
-              )
-            }
-          >
-            {meetingDone ? (
-              <p>
-                You have agreed to your team's standing meeting time. Keep it — the team is counting
-                on you being there.
-              </p>
-            ) : meeting?.proposal ? (
-              <p>Your team has proposed a standing meeting time. Read it and agree to it.</p>
-            ) : (
-              <p>
-                Your team has not settled on a standing meeting time yet. The Project Manager
-                proposes it, then everyone agrees.
-              </p>
-            )}
-          </Step>
-
-          <Step
-            n={4}
             title="Write and approve your Group Norms"
             done={normsDone}
             action={

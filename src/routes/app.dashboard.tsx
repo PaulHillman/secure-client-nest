@@ -42,24 +42,18 @@ function Dashboard() {
         { data: teams, error: tErr },
         { data: norms, error: nErr },
         { data: proposals, error: pErr },
-        { data: agreements, error: aErr },
-        { data: members, error: mErr },
         { data: cf, error: cErr },
         { count: filesCount },
       ] = await Promise.all([
         supabase.from("teams").select("id, name"),
         supabase.from("group_norms").select("team_id, is_locked"),
         supabase.from("team_meeting_proposals").select("id, team_id"),
-        supabase.from("team_meeting_agreements").select("proposal_id, status"),
-        supabase.from("team_members").select("team_id, user_id"),
         supabase.from("company_focus").select("team_id, company_name, contact_person"),
         supabase.from("files").select("id", { count: "exact", head: true }),
       ]);
       if (tErr) throw tErr;
       if (nErr) throw nErr;
       if (pErr) throw pErr;
-      if (aErr) throw aErr;
-      if (mErr) throw mErr;
       if (cErr) throw cErr;
 
       const allTeams = teams ?? [];
@@ -69,17 +63,6 @@ function Dashboard() {
       const proposalByTeam = new Map(
         (proposals ?? []).filter((p) => p.team_id).map((p) => [p.team_id as string, p]),
       );
-      const memberCount = new Map<string, number>();
-      (members ?? []).forEach((m) => {
-        if (!m.team_id) return;
-        memberCount.set(m.team_id, (memberCount.get(m.team_id) ?? 0) + 1);
-      });
-      const agreedCount = new Map<string, number>();
-      (agreements ?? []).forEach((a) => {
-        if (a.status === "agreed") {
-          agreedCount.set(a.proposal_id, (agreedCount.get(a.proposal_id) ?? 0) + 1);
-        }
-      });
       const cfByTeam = new Map(
         (cf ?? []).filter((c) => c.team_id).map((c) => [c.team_id as string, c]),
       );
@@ -90,11 +73,7 @@ function Dashboard() {
       for (const t of allTeams) {
         if (!lockedNorms.has(t.id)) normsMissing++;
 
-        const proposal = proposalByTeam.get(t.id);
-        const total = memberCount.get(t.id) ?? 0;
-        const agreed = proposal ? agreedCount.get(proposal.id) ?? 0 : 0;
-        const hasConsensus = !!proposal && total > 0 && agreed >= total;
-        if (!hasConsensus) meetingMissing++;
+        if (!proposalByTeam.has(t.id)) meetingMissing++;
 
         const c = cfByTeam.get(t.id);
         const hasClient =
@@ -123,7 +102,7 @@ function Dashboard() {
       alert: (stats?.normsMissing ?? 0) > 0,
     },
     {
-      label: "No meeting consensus",
+      label: "No meeting time set",
       value: stats?.meetingMissing ?? "—",
       sub: total ? `of ${total} teams` : "",
       icon: CalendarX,
