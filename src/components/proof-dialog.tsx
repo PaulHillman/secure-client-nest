@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getProofMaterial, submitProof } from "@/lib/proofs.functions";
-import { proofByKey } from "@/lib/proofs";
+import { proofByKey, proofMaxScore } from "@/lib/proofs";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +48,10 @@ export function ProofDialog({
   const [file, setFile] = useState<{ path: string; name: string } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState<{
+    score: number | null;
+    feedback: string | null;
+  } | null>(null);
 
   const { data: material } = useQuery({
     queryKey: ["proof-material", proofKey],
@@ -76,7 +80,7 @@ export function ProofDialog({
     if (!proof) return;
     setSaving(true);
     try {
-      await send({
+      const res = await send({
         data: {
           teamId,
           proofKey: proof.key,
@@ -88,7 +92,7 @@ export function ProofDialog({
       });
       toast.success("Sent to your professor for review.");
       onSubmitted();
-      onClose();
+      setResult({ score: res?.score ?? null, feedback: res?.feedback ?? null });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not record your submission.");
     } finally {
