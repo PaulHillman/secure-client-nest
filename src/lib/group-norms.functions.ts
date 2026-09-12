@@ -116,9 +116,8 @@ export const getTeamNorms = createServerFn({ method: "GET" })
       isMember: !!membership,
       isPM: membership?.job_title === "PM",
       isAdmin: admin,
-      canEdit:
-        targetUserId === userId && (membership?.job_title === "PM" || admin),
-      canApprove: targetUserId === userId && !!membership,
+      canEdit: membership?.job_title === "PM" || (admin && targetUserId === userId),
+      canApprove: !!membership,
       vagueFindings: findVagueLanguage(content),
       flaggedForReview: norms?.flagged_for_review === true,
       flaggedAt: norms?.flagged_at ?? null,
@@ -129,13 +128,15 @@ export const getTeamNorms = createServerFn({ method: "GET" })
 /** Save the shared document. Changed wording starts a new version. */
 export const saveTeamNorms = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { teamId: string; content: Record<string, string> }) => {
+  .inputValidator((input: { teamId: string; content: Record<string, string>; studentId?: string }) => {
     if (!input?.teamId) throw new Error("Missing team.");
     return input;
   })
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const admin = await isAdmin(supabase, userId);
+    const { supabase, userId: authUserId } = context;
+    const admin = await isAdmin(supabase, authUserId);
+    // An admin viewing as a student writes as that student.
+    const userId = data.studentId && admin ? data.studentId : authUserId;
 
     const { data: membership } = await supabase
       .from("team_members")
@@ -209,25 +210,25 @@ export const saveTeamNorms = createServerFn({ method: "POST" })
 export const approveTeamNorms = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { teamId: string; version: number }) => {
+    (input: { teamId: string; version: number; studentId?: string }) => {
       if (!input?.teamId || !Number.isInteger(input?.version)) throw new Error("Missing team or version.");
       return input;
     },
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-
-    // Identity comes from the token; only a current member of this team may approve,
-    // and only for themselves.
-    const { data: membership } = await supabase
+    const { supabase, userId: authUserId } = context;
+    // Identity comes from the token; an admin viewing as a student approves as them.
+    const userId =
+      data.studentId && (await isAdmin(supabase, authUserId)) ? data.studentId : authUserId;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const db = userId === authUserId ? supabase : supabaseAdmin;
+    const { data: membership } = await db
       .from("team_members")
       .select("job_title")
       .eq("team_id", data.teamId)
       .eq("user_id", userId)
       .maybeSingle();
     if (!membership) throw new Error("Only a current member of this team can approve its norms.");
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: norms } = await supabaseAdmin
       .from("group_norms")
       .select("id, version, content")
