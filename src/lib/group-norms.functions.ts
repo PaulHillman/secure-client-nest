@@ -129,13 +129,15 @@ export const getTeamNorms = createServerFn({ method: "GET" })
 /** Save the shared document. Changed wording starts a new version. */
 export const saveTeamNorms = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { teamId: string; content: Record<string, string> }) => {
+  .inputValidator((input: { teamId: string; content: Record<string, string>; studentId?: string }) => {
     if (!input?.teamId) throw new Error("Missing team.");
     return input;
   })
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const admin = await isAdmin(supabase, userId);
+    const { supabase, userId: authUserId } = context;
+    const admin = await isAdmin(supabase, authUserId);
+    // An admin viewing as a student writes as that student.
+    const userId = data.studentId && admin ? data.studentId : authUserId;
 
     const { data: membership } = await supabase
       .from("team_members")
