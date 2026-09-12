@@ -141,7 +141,7 @@ export function ProofDialog({
 
             {material?.audioUrl ? (
               <div className="space-y-2">
-                <Label>Meeting recording</Label>
+                <Label>{proof.key === "comms_minutes" ? "Meeting recording" : "Audio message"}</Label>
                 <audio controls src={material.audioUrl} className="w-full" />
               </div>
             ) : null}
