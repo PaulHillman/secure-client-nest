@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SetPasswordRouteImport } from './routes/set-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -25,6 +26,11 @@ import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/pub
 import { Route as ApiPublicHooksProfileRemindersRouteImport } from './routes/api/public/hooks/profile-reminders'
 import { Route as ApiPublicHooksAutoArchiveRouteImport } from './routes/api/public/hooks/auto-archive'
 
+const SetPasswordRoute = SetPasswordRouteImport.update({
+  id: '/set-password',
+  path: '/set-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -109,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/set-password': typeof SetPasswordRoute
   '/app/admin': typeof AppAdminRoute
   '/app/agreement': typeof AppAgreementRoute
   '/app/backlog': typeof AppBacklogRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/set-password': typeof SetPasswordRoute
   '/app/admin': typeof AppAdminRoute
   '/app/agreement': typeof AppAgreementRoute
   '/app/backlog': typeof AppBacklogRoute
@@ -144,6 +152,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/set-password': typeof SetPasswordRoute
   '/app/admin': typeof AppAdminRoute
   '/app/agreement': typeof AppAgreementRoute
   '/app/backlog': typeof AppBacklogRoute
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/set-password'
     | '/app/admin'
     | '/app/agreement'
     | '/app/backlog'
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/set-password'
     | '/app/admin'
     | '/app/agreement'
     | '/app/backlog'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/login'
+    | '/set-password'
     | '/app/admin'
     | '/app/agreement'
     | '/app/backlog'
@@ -215,6 +227,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  SetPasswordRoute: typeof SetPasswordRoute
   ApiPublicHooksAutoArchiveRoute: typeof ApiPublicHooksAutoArchiveRoute
   ApiPublicHooksProfileRemindersRoute: typeof ApiPublicHooksProfileRemindersRoute
   ApiPublicHooksWeeklyDigestRoute: typeof ApiPublicHooksWeeklyDigestRoute
@@ -223,6 +236,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/set-password': {
+      id: '/set-password'
+      path: '/set-password'
+      fullPath: '/set-password'
+      preLoaderRoute: typeof SetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -369,6 +389,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  SetPasswordRoute: SetPasswordRoute,
   ApiPublicHooksAutoArchiveRoute: ApiPublicHooksAutoArchiveRoute,
   ApiPublicHooksProfileRemindersRoute: ApiPublicHooksProfileRemindersRoute,
   ApiPublicHooksWeeklyDigestRoute: ApiPublicHooksWeeklyDigestRoute,
