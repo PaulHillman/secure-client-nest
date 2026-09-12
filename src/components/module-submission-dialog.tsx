@@ -138,7 +138,7 @@ export function ModuleSubmissionDialog({
                   disabled={locked}
                   placeholder={f.placeholder}
                   value={answers[f.name] ?? ""}
-                  onChange={(e) => setAnswers((a) => ({ ...a, [f.name]: e.target.value }))}
+                  onChange={(e) => setField(f.name, e.target.value)}
                 />
               ) : (
                 <Input
