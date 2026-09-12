@@ -22,17 +22,19 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StudentAvatar } from "@/components/student-avatar";
+import { useAuth } from "@/lib/auth-context";
 import { AlertTriangle, CheckCircle2, Clock, FileSignature, Pencil, ScrollText } from "lucide-react";
 
 export function GroupNormsCard({ teamId }: { teamId: string }) {
   const qc = useQueryClient();
+  const { viewAs } = useAuth();
   const fetchNorms = useServerFn(getTeamNorms);
   const save = useServerFn(saveTeamNorms);
   const approve = useServerFn(approveTeamNorms);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["group-norms", teamId],
-    queryFn: () => fetchNorms({ data: { teamId } }),
+    queryKey: ["group-norms", teamId, viewAs?.id],
+    queryFn: () => fetchNorms({ data: { teamId, studentId: viewAs?.id } }),
   });
 
   const [editing, setEditing] = useState(false);
@@ -55,7 +57,7 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
   );
 
   const saveMut = useMutation({
-    mutationFn: () => save({ data: { teamId, content: draft } }),
+    mutationFn: () => save({ data: { teamId, content: draft, studentId: viewAs?.id } }),
     onSuccess: (r) => {
       toast.success(
         r.newVersion
@@ -63,18 +65,18 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
           : "Saved. Nothing changed, so approvals stay in place.",
       );
       setEditing(false);
-      void qc.invalidateQueries({ queryKey: ["group-norms", teamId] });
+      void qc.invalidateQueries({ queryKey: ["group-norms", teamId, viewAs?.id] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const approveMut = useMutation({
     mutationFn: () =>
-      approve({ data: { teamId, version: data!.version } }),
+      approve({ data: { teamId, version: data!.version, studentId: viewAs?.id } }),
     onSuccess: () => {
       toast.success("Your approval has been recorded.");
       setAffirmed(false);
-      void qc.invalidateQueries({ queryKey: ["group-norms", teamId] });
+      void qc.invalidateQueries({ queryKey: ["group-norms", teamId, viewAs?.id] });
     },
     onError: (e: Error) => toast.error(e.message),
   });

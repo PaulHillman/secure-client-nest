@@ -23,7 +23,7 @@ export function RoleSelectCard() {
   });
 
   const mutation = useMutation({
-    mutationFn: (role: string) => claim({ data: { role } }),
+    mutationFn: (role: string) => claim({ data: { role, studentId: viewAs?.id } }),
     onSuccess: (res) => {
       toast.success(`You are now the ${res.role}.`);
       void qc.invalidateQueries({ queryKey: ["role-options"] });
