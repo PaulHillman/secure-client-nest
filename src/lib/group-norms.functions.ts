@@ -209,7 +209,7 @@ export const saveTeamNorms = createServerFn({ method: "POST" })
 export const approveTeamNorms = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { teamId: string; version: number; acceptVagueWording?: boolean }) => {
+    (input: { teamId: string; version: number }) => {
       if (!input?.teamId || !Number.isInteger(input?.version)) throw new Error("Missing team or version.");
       return input;
     },
