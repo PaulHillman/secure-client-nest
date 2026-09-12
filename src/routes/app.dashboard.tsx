@@ -218,16 +218,17 @@ function Dashboard() {
 
       {isAdmin && (
         <div className="mt-6">
+          <span id="contacts" className="block scroll-mt-6" />
           <ClientContactsCard />
         </div>
       )}
 
-      <div className="mt-6">
+      <div id="arch" className="mt-6 scroll-mt-6">
         <ProjectArchCard />
       </div>
 
       {isAdmin && (
-        <div className="mt-6">
+        <div id="meetings" className="mt-6 scroll-mt-6">
           <MeetingGapsCard />
         </div>
       )}
@@ -240,7 +241,7 @@ function Dashboard() {
 
 
       {isAdmin && (
-        <div className="mt-6">
+        <div id="activity" className="mt-6 scroll-mt-6">
           <AuthAuditLogCard />
         </div>
       )}
