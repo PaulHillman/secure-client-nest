@@ -180,17 +180,12 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
                         <>
                           {sentBack ? (
                             <p className="flex items-center gap-1.5 text-sm text-amber-600">
-                              <RotateCcw className="size-4" /> Sent back by your professor
-                            </p>
-                          ) : approved ? (
-                            <p className="flex items-center gap-1.5 text-sm text-emerald-600">
-                              <CheckCircle2 className="size-4" /> Approved ·{" "}
-                              {new Date(item.submission!.submittedAt).toLocaleString()}
+                              <RotateCcw className="size-4" /> Needs an update
                             </p>
                           ) : (
-                            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                              <Clock className="size-4" /> Submitted, awaiting your professor's
-                              review · {new Date(item.submission!.submittedAt).toLocaleString()}
+                            <p className="flex items-center gap-1.5 text-sm text-emerald-600">
+                              <CheckCircle2 className="size-4" /> Submitted ·{" "}
+                              {new Date(item.submission!.submittedAt).toLocaleString()}
                             </p>
                           )}
                           {item.submission!.reviewNote ? (

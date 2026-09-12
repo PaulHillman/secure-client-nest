@@ -113,7 +113,7 @@ export function ProofDialog({
           acknowledged: ack,
         },
       });
-      toast.success("Sent to your professor for review.");
+      toast.success("Submitted.");
       onSubmitted();
       setResult({ score: res?.score ?? null, feedback: res?.feedback ?? null });
     } catch (e) {
@@ -168,7 +168,7 @@ export function ProofDialog({
 
             {sentBackNote ? (
               <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
-                <p className="font-medium">Sent back by your professor</p>
+                <p className="font-medium">Please update this</p>
                 <p className="text-muted-foreground">{sentBackNote}</p>
               </div>
             ) : null}
@@ -291,8 +291,7 @@ export function ProofDialog({
             ) : null}
 
             <p className="text-xs text-muted-foreground">
-              Your professor reviews this. Once approved it is locked; if it is sent back you can
-              fix it and resend.
+              Your answer is recorded when you submit it.
             </p>
 
             {isImpersonating ? (
