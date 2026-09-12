@@ -148,6 +148,12 @@ function Dashboard() {
         <h1 className="font-display text-4xl mt-1">Your workspace</h1>
       </header>
 
+      {isAdmin && (
+        <div className="mb-6">
+          <ReadinessBoardCard />
+        </div>
+      )}
+
       <div className="mb-6">
         <ProfileCompletionCard />
       </div>
