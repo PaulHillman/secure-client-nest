@@ -9,6 +9,7 @@ import {
 } from "@/lib/group-norms.functions";
 import {
   AFFIRMATION_TEXT,
+  findVagueLanguage,
   NORMS_INTRO,
   NORM_SECTIONS,
   normalizeNorms,
@@ -21,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { StudentAvatar } from "@/components/student-avatar";
-import { CheckCircle2, Clock, FileSignature, Pencil, ScrollText } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, FileSignature, Pencil, ScrollText } from "lucide-react";
 
 export function GroupNormsCard({ teamId }: { teamId: string }) {
   const qc = useQueryClient();
@@ -37,6 +38,7 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<NormsContent>({});
   const [affirmed, setAffirmed] = useState(false);
+  const [acceptVague, setAcceptVague] = useState(false);
 
   useEffect(() => {
     if (data) setDraft(normalizeNorms(data.content));
@@ -45,6 +47,11 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
   const dirty = useMemo(
     () => (data ? !sameNorms(normalizeNorms(data.content), normalizeNorms(draft)) : false),
     [data, draft],
+  );
+
+  const draftFindings = useMemo(
+    () => findVagueLanguage(normalizeNorms(draft)),
+    [draft],
   );
 
   const saveMut = useMutation({
@@ -62,10 +69,21 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
   });
 
   const approveMut = useMutation({
-    mutationFn: () => approve({ data: { teamId, version: data!.version } }),
-    onSuccess: () => {
-      toast.success("Your approval has been recorded.");
+    mutationFn: () =>
+      approve({ data: { teamId, version: data!.version, acceptVagueWording: acceptVague } }),
+    onSuccess: (r) => {
+      if (!r.ok) {
+        toast.error("Read the wording warning and tick the box before approving.");
+        void qc.invalidateQueries({ queryKey: ["group-norms", teamId] });
+        return;
+      }
+      toast.success(
+        r.vagueFindings.length
+          ? "Approved. Prof Hillman will review the wording at your kick-off meeting."
+          : "Your approval has been recorded.",
+      );
       setAffirmed(false);
+      setAcceptVague(false);
       void qc.invalidateQueries({ queryKey: ["group-norms", teamId] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -92,6 +110,11 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
             <ScrollText className="h-5 w-5 text-gold" />
             Group Norms
             {data.exists && <Badge variant="secondary">Version {data.version}</Badge>}
+            {data.flaggedForReview && (
+              <Badge variant="outline" className="border-amber-500 text-amber-600">
+                <AlertTriangle className="h-3 w-3 mr-1" /> Flagged for Prof Hillman
+              </Badge>
+            )}
             {data.exists && data.approvedCount === data.total && data.total > 0 && (
               <Badge className="bg-emerald-600 hover:bg-emerald-600">
                 <CheckCircle2 className="h-3 w-3 mr-1" /> Fully approved
@@ -106,6 +129,12 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
           )}
         </div>
         <p className="text-sm text-muted-foreground">{NORMS_INTRO}</p>
+        {!data.canEdit && data.isMember && (
+          <p className="text-sm text-muted-foreground">
+            Your Project Manager writes this document. Give them your input — every member
+            still reads and approves it here.
+          </p>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-6">
@@ -159,6 +188,14 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
             </section>
           ))}
         </div>
+
+        {editing && (
+          <VagueNotice
+            findings={draftFindings}
+            title="Make this measurable before you save"
+            intro="Group Norms have to be enforceable. These phrases cannot be measured:"
+          />
+        )}
 
         {editing && (
           <div className="flex flex-wrap items-center gap-3">
@@ -245,6 +282,26 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
               </p>
             ) : (
               <div className="space-y-3 pt-1">
+                {data.vagueFindings.length > 0 && (
+                  <>
+                    <VagueNotice
+                      findings={data.vagueFindings}
+                      title="Warning: this document uses wording that cannot be measured"
+                      intro="You can still approve it, but it will be flagged for Prof Hillman to review at your kick-off meeting. Your PM can fix the wording first:"
+                    />
+                    <label className="flex items-start gap-3 text-sm">
+                      <Checkbox
+                        checked={acceptVague}
+                        onCheckedChange={(v) => setAcceptVague(v === true)}
+                        className="mt-0.5"
+                      />
+                      <span>
+                        I understand these agreements are not measurable, and I approve them
+                        anyway. Prof Hillman will review this at our kick-off meeting.
+                      </span>
+                    </label>
+                  </>
+                )}
                 <label className="flex items-start gap-3 text-sm">
                   <Checkbox
                     checked={affirmed}
@@ -254,7 +311,12 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
                   <span>{AFFIRMATION_TEXT}</span>
                 </label>
                 <Button
-                  disabled={!affirmed || approveMut.isPending || editing}
+                  disabled={
+                    !affirmed ||
+                    approveMut.isPending ||
+                    editing ||
+                    (data.vagueFindings.length > 0 && !acceptVague)
+                  }
                   onClick={() => approveMut.mutate()}
                 >
                   Approve Group Norms
@@ -270,6 +332,34 @@ export function GroupNormsCard({ teamId }: { teamId: string }) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function VagueNotice({
+  findings,
+  title,
+  intro,
+}: {
+  findings: { label: string; phrase: string; reason: string }[];
+  title: string;
+  intro: string;
+}) {
+  if (!findings.length) return null;
+  return (
+    <div className="rounded-lg border border-amber-500/60 bg-amber-500/5 p-4 space-y-2">
+      <h4 className="text-sm font-medium flex items-center gap-2 text-amber-600">
+        <AlertTriangle className="h-4 w-4" />
+        {title}
+      </h4>
+      <p className="text-xs text-muted-foreground">{intro}</p>
+      <ul className="space-y-1 text-xs">
+        {findings.map((f, i) => (
+          <li key={`${f.label}-${f.phrase}-${i}`}>
+            <span className="font-medium">{f.label}:</span> “{f.phrase}” — {f.reason}.
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

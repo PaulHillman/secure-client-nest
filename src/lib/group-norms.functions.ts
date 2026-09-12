@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
+  findVagueLanguage,
   isNormsComplete,
   missingNorms,
   normalizeNorms,
@@ -55,7 +56,7 @@ export const getTeamNorms = createServerFn({ method: "GET" })
 
     const { data: norms } = await supabaseAdmin
       .from("group_norms")
-      .select("id, version, content, updated_at, updated_by")
+      .select("id, version, content, updated_at, updated_by, flagged_for_review, flagged_at")
       .eq("team_id", data.teamId)
       .maybeSingle();
 
@@ -115,8 +116,12 @@ export const getTeamNorms = createServerFn({ method: "GET" })
       isMember: !!membership,
       isPM: membership?.job_title === "PM",
       isAdmin: admin,
-      canEdit: targetUserId === userId && (!!membership || admin),
+      canEdit:
+        targetUserId === userId && (membership?.job_title === "PM" || admin),
       canApprove: targetUserId === userId && !!membership,
+      vagueFindings: findVagueLanguage(content),
+      flaggedForReview: norms?.flagged_for_review === true,
+      flaggedAt: norms?.flagged_at ?? null,
       history: (history ?? []).map((h) => ({ version: h.version, createdAt: h.created_at })),
     };
   });
@@ -139,6 +144,11 @@ export const saveTeamNorms = createServerFn({ method: "POST" })
       .eq("user_id", userId)
       .maybeSingle();
     if (!membership && !admin) throw new Error("You are not on this team.");
+    if (membership && membership.job_title !== "PM" && !admin) {
+      throw new Error(
+        "The Project Manager writes the Group Norms document. Give your input to your PM — every member still approves it.",
+      );
+    }
 
     const next: NormsContent = normalizeNorms(data.content);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -170,19 +180,19 @@ export const saveTeamNorms = createServerFn({ method: "POST" })
         content: next,
         saved_by: userId,
       });
-      return { version: 1, newVersion: true };
+      return { version: 1, newVersion: true, vagueFindings: findVagueLanguage(next) };
     }
 
     const prev = normalizeNorms(existing.content);
     if (sameNorms(prev, next)) {
       // Nothing changed: approvals stay intact.
-      return { version: existing.version, newVersion: false };
+      return { version: existing.version, newVersion: false, vagueFindings: findVagueLanguage(next) };
     }
 
     const version = existing.version + 1;
     const { error } = await supabaseAdmin
       .from("group_norms")
-      .update({ content: next, version, updated_by: userId, updated_at: new Date().toISOString() })
+      .update({ content: next, version, updated_by: userId, updated_at: new Date().toISOString(), flagged_for_review: false, flagged_at: null, vague_flags: [] })
       .eq("id", existing.id);
     if (error) throw error;
     await supabaseAdmin.from("group_norms_versions").insert({
@@ -192,16 +202,18 @@ export const saveTeamNorms = createServerFn({ method: "POST" })
       content: next,
       saved_by: userId,
     });
-    return { version, newVersion: true };
+    return { version, newVersion: true, vagueFindings: findVagueLanguage(next) };
   });
 
 /** Record this member's own approval of the current version. */
 export const approveTeamNorms = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { teamId: string; version: number }) => {
-    if (!input?.teamId || !Number.isInteger(input?.version)) throw new Error("Missing team or version.");
-    return input;
-  })
+  .inputValidator(
+    (input: { teamId: string; version: number; acceptVagueWording?: boolean }) => {
+      if (!input?.teamId || !Number.isInteger(input?.version)) throw new Error("Missing team or version.");
+      return input;
+    },
+  )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
@@ -230,6 +242,13 @@ export const approveTeamNorms = createServerFn({ method: "POST" })
       throw new Error(`Every section must be completed before approval. Still needed: ${missing.join(", ")}.`);
     }
 
+    // Vague wording does not block approval, but it must be acknowledged and
+    // it flags the document for Prof Hillman to review at the kick-off meeting.
+    const vagueFindings = findVagueLanguage(normalizeNorms(norms.content));
+    if (vagueFindings.length && !data.acceptVagueWording) {
+      return { ok: false as const, needsAcknowledgement: true, vagueFindings, version: norms.version };
+    }
+
     const { error } = await supabaseAdmin.from("group_norms_signatures").insert({
       group_norms_id: norms.id,
       user_id: userId,
@@ -238,5 +257,21 @@ export const approveTeamNorms = createServerFn({ method: "POST" })
     });
     if (error && !/duplicate key/i.test(error.message)) throw error;
 
-    return { ok: true, version: norms.version };
+    if (vagueFindings.length) {
+      await supabaseAdmin
+        .from("group_norms")
+        .update({
+          flagged_for_review: true,
+          flagged_at: new Date().toISOString(),
+          vague_flags: vagueFindings,
+        })
+        .eq("id", norms.id);
+    }
+
+    return {
+      ok: true as const,
+      needsAcknowledgement: false,
+      vagueFindings,
+      version: norms.version,
+    };
   });

@@ -16,7 +16,7 @@ export type NormSection = {
 export const NORMS_TITLE = "Group Norms";
 
 export const NORMS_INTRO =
-  "Develop these norms together and record your team's agreed expectations in each section. The guidance explains what to decide; each team writes its own agreements. Every member must log into ClientVault, read the saved document, and approve it personally. The PM coordinates completion and sees pending approvals.";
+  "The Project Manager leads this document and writes it, gathering input from the whole team. Every agreement must be objective and measurable — exact times, exact counts, no ranges and no \"as soon as possible\". Every member then reads the saved document and approves it personally.";
 
 export const NORM_SECTIONS: NormSection[] = [
   {
@@ -149,4 +149,91 @@ export function missingNorms(content: NormsContent): string[] {
 
 export function isNormsComplete(content: NormsContent) {
   return missingNorms(content).length === 0;
+}
+
+/* ---------------- Objective-language check ----------------
+ * Norms must be measurable. Ranges of time and soft words like "reasonable"
+ * or "as soon as possible" cannot be enforced, so we point them out.
+ */
+
+export type VagueFinding = {
+  /** Field key the phrase was found in. */
+  key: string;
+  /** Human label of the section (and level) it sits in. */
+  label: string;
+  /** The exact wording we found. */
+  phrase: string;
+  /** Why it is a problem, in plain words. */
+  reason: string;
+};
+
+const VAGUE_PATTERNS: { re: RegExp; reason: string }[] = [
+  {
+    // 5-10 minutes, 1 to 2 days, 24–48 hours
+    re: /\b\d+\s*(?:-|–|—|\/|\s+to\s+)\s*\d+\s*(?:min(?:ute)?s?|hours?|hrs?|days?|weeks?)\b/gi,
+    reason: "a range of times is not a single, enforceable deadline — pick one number",
+  },
+  {
+    re: /\b(?:a\s+few|a\s+couple\s+of|several|some)\s+(?:min(?:ute)?s?|hours?|days?|weeks?)\b/gi,
+    reason: "\"a few\" is not measurable — state an exact amount of time",
+  },
+  {
+    re: /\b(?:about|around|approximately|roughly|or\s+so|give\s+or\s+take|more\s+or\s+less|ish)\b/gi,
+    reason: "approximate wording cannot be measured — state the exact standard",
+  },
+  {
+    re: /\b(?:as\s+soon\s+as\s+possible|asap|soon|shortly|promptly|quickly|in\s+a\s+timely\s+manner|timely)\b/gi,
+    reason: "this has no deadline attached — state a specific time limit",
+  },
+  {
+    re: /\b(?:reasonable|reasonably|acceptable|appropriate|adequate|sufficient|fair(?:ly)?\s+quickly)\b/gi,
+    reason: "people disagree on what this means — define the measurable standard",
+  },
+  {
+    re: /\b(?:try\s+to|attempt\s+to|do\s+(?:your|their|our)\s+best|make\s+an\s+effort|as\s+much\s+as\s+possible|when\s+possible|if\s+possible)\b/gi,
+    reason: "this is an effort, not a commitment — state what must actually happen",
+  },
+  {
+    re: /\b(?:frequently|regularly|often|periodically|from\s+time\s+to\s+time|usually|generally|typically|mostly)\b/gi,
+    reason: "state how often, with a number or a named day",
+  },
+  {
+    re: /\b(?:mostly\s+on\s+time|generally\s+on\s+time|not\s+too\s+late|a\s+little\s+late|slightly\s+late|excessive(?:ly)?|too\s+(?:many|much|late|long)|repeatedly|multiple\s+times)\b/gi,
+    reason: "define the exact count or minutes that crosses the line",
+  },
+  {
+    re: /\b(?:etc\.?|and\s+so\s+on|among\s+other\s+things)\b/gi,
+    reason: "list the actual items instead of leaving them open",
+  },
+];
+
+function labelFor(key: string): string {
+  for (const s of NORM_SECTIONS) {
+    if (s.key === key) return s.title;
+    const level = s.levels?.find((l) => l.key === key);
+    if (level) return `${s.title} — ${level.label}`;
+  }
+  return key;
+}
+
+/** Every vague phrase in the document, in document order. */
+export function findVagueLanguage(content: NormsContent): VagueFinding[] {
+  const out: VagueFinding[] = [];
+  for (const key of normFieldKeys()) {
+    const text = (content[key] ?? "").trim();
+    if (!text) continue;
+    const seen = new Set<string>();
+    for (const { re, reason } of VAGUE_PATTERNS) {
+      re.lastIndex = 0;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(text)) !== null) {
+        const phrase = m[0].trim();
+        const dedupe = phrase.toLowerCase();
+        if (seen.has(dedupe)) continue;
+        seen.add(dedupe);
+        out.push({ key, label: labelFor(key), phrase, reason });
+      }
+    }
+  }
+  return out;
 }
