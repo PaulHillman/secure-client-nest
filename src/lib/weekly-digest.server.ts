@@ -22,7 +22,7 @@ export async function buildWeeklyDigests(supabaseAdmin: SupabaseClient): Promise
   const sinceIso = since.toISOString();
 
   const [teamsRes, membersRes, profilesRes, uploadsRes, loginsRes] = await Promise.all([
-    supabaseAdmin.from("teams").select("id, name, display_name, section"),
+    supabaseAdmin.from("teams").select("id, name, display_name, section").eq("is_test", false),
     supabaseAdmin.from("team_members").select("team_id, user_id, job_title"),
     supabaseAdmin.from("profiles").select("id, name, email"),
     supabaseAdmin

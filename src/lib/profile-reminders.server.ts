@@ -20,23 +20,28 @@ export type ReminderTarget = {
 export async function findIncompleteStudents(
   supabaseAdmin: SupabaseClient,
 ): Promise<ReminderTarget[]> {
-  const [profilesRes, availRes, membersRes, rolesRes] = await Promise.all([
+  const [profilesRes, availRes, membersRes, rolesRes, testTeamsRes] = await Promise.all([
     supabaseAdmin.from("profiles").select("id, name, email, avatar_url, skills_have, skills_learn"),
     supabaseAdmin.from("student_availability").select("user_id"),
     supabaseAdmin.from("team_members").select("user_id, team_id"),
     supabaseAdmin.from("user_roles").select("user_id, role").eq("role", "admin"),
+    supabaseAdmin.from("teams").select("id").eq("is_test", true),
   ]);
-  for (const r of [profilesRes, availRes, membersRes, rolesRes]) {
+  for (const r of [profilesRes, availRes, membersRes, rolesRes, testTeamsRes]) {
     if (r.error) throw r.error;
   }
 
   const hasAvail = new Set((availRes.data ?? []).map((a: any) => a.user_id));
   const teamByUser = new Map((membersRes.data ?? []).map((m: any) => [m.user_id, m.team_id]));
   const admins = new Set((rolesRes.data ?? []).map((a: any) => a.user_id));
+  const testTeams = new Set((testTeamsRes.data ?? []).map((t: any) => t.id));
 
   const targets: ReminderTarget[] = [];
   for (const p of (profilesRes.data ?? []) as any[]) {
     if (admins.has(p.id)) continue;
+    // Practice fixtures never get reminders.
+    if (testTeams.has(teamByUser.get(p.id))) continue;
+    if (typeof p.email === "string" && p.email.toLowerCase().endsWith("@example.invalid")) continue;
     const status = completionStatus({
       skillsHave: p.skills_have,
       skillsLearn: p.skills_learn,
