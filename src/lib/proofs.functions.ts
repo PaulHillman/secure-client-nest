@@ -1,0 +1,330 @@
+import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { missingProofFields, PROOFS, proofByKey, proofsForRole } from "@/lib/proofs";
+
+type RoleChecker = {
+  rpc: (
+    fn: "has_role",
+    args: { _user_id: string; _role: "admin" },
+  ) => PromiseLike<{ data: boolean | null }>;
+};
+
+async function isAdmin(supabase: RoleChecker, userId: string) {
+  const { data } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+  return data === true;
+}
+
+function asAnswers(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof v === "string") out[k] = v;
+  }
+  return out;
+}
+
+/**
+ * Everything the proofs panel needs for one team: the viewer's own assigned
+ * activities and their state, plus every member's progress so the PM can chase.
+ */
+export const getTeamProofs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { teamId: string }) => {
+    if (!input?.teamId) throw new Error("Missing team.");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const admin = await isAdmin(supabase, userId);
+
+    const { data: members } = await supabase
+      .from("team_members")
+      .select("user_id, job_title")
+      .eq("team_id", data.teamId);
+    const list = members ?? [];
+    const me = list.find((m) => m.user_id === userId);
+    if (!me && !admin) throw new Error("You are not on this team.");
+
+    const ids = list.map((m) => m.user_id);
+    const [{ data: profiles }, { data: subs }, { data: materials }] = await Promise.all([
+      ids.length
+        ? supabase.from("profiles").select("id, name, avatar_url").in("id", ids)
+        : Promise.resolve({ data: [] as { id: string; name: string; avatar_url: string | null }[] }),
+      supabase
+        .from("proof_submissions")
+        .select("id, user_id, proof_key, submitted_at, feedback, feedback_status, file_name, response")
+        .eq("team_id", data.teamId),
+      supabase.from("proof_materials").select("proof_key, ready, extra_instructions"),
+    ]);
+
+    const readiness = new Map((materials ?? []).map((m) => [m.proof_key, m]));
+    const memberCount = list.length;
+
+    const people = list.map((m) => {
+      const profile = (profiles ?? []).find((p) => p.id === m.user_id);
+      const assigned = proofsForRole(m.job_title)
+        .filter((p) => p.role !== "Researcher" || memberCount >= 6)
+        .map((p) => p.key);
+      const done = (subs ?? []).filter((s) => s.user_id === m.user_id).map((s) => s.proof_key);
+      return {
+        userId: m.user_id,
+        name: profile?.name ?? "Student",
+        avatarUrl: profile?.avatar_url ?? null,
+        role: m.job_title,
+        assigned,
+        completed: assigned.filter((k) => done.includes(k)),
+      };
+    });
+
+    const myRole = me?.job_title ?? null;
+    const mine = proofsForRole(myRole)
+      .filter((p) => p.role !== "Researcher" || memberCount >= 6)
+      .map((p) => {
+        const sub = (subs ?? []).find((s) => s.user_id === userId && s.proof_key === p.key);
+        const mat = readiness.get(p.key);
+        return {
+          key: p.key,
+          open: !p.needsMaterials || mat?.ready === true,
+          extraInstructions: mat?.extra_instructions ?? null,
+          submission: sub
+            ? {
+                submittedAt: sub.submitted_at,
+                feedback: sub.feedback,
+                feedbackStatus: sub.feedback_status,
+                fileName: sub.file_name,
+                answers: asAnswers(sub.response),
+              }
+            : null,
+        };
+      });
+
+    return { myRole, memberCount, mine, people, isAdmin: admin };
+  });
+
+/** Signed links and text for the course material behind one activity. */
+export const getProofMaterial = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { proofKey: string }) => {
+    if (!proofByKey(input?.proofKey ?? "")) throw new Error("Unknown activity.");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: row } = await supabase
+      .from("proof_materials")
+      .select("*")
+      .eq("proof_key", data.proofKey)
+      .maybeSingle();
+    if (!row) return { ready: false, audioUrl: null, zipUrl: null, transcript: null };
+
+    const sign = async (path: string | null) => {
+      if (!path) return null;
+      const { data: signed } = await supabase.storage.from("proofs").createSignedUrl(path, 60 * 60);
+      return signed?.signedUrl ?? null;
+    };
+
+    return {
+      ready: row.ready,
+      audioUrl: await sign(row.audio_path),
+      zipUrl: await sign(row.zip_path),
+      transcript: row.transcript_text,
+      extraInstructions: row.extra_instructions,
+    };
+  });
+
+/**
+ * Records one attempt. One per student per activity, locked immediately.
+ * Feedback is attempted afterwards and can never undo the completion.
+ */
+export const submitProof = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      teamId: string;
+      proofKey: string;
+      answers: Record<string, string>;
+      filePath?: string | null;
+      fileName?: string | null;
+      acknowledged?: boolean;
+    }) => {
+      if (!input?.teamId) throw new Error("Missing team.");
+      const proof = proofByKey(input?.proofKey ?? "");
+      if (!proof) throw new Error("Unknown activity.");
+      const missing = missingProofFields(proof.key, input.answers ?? {});
+      if (missing.length) throw new Error(`Please complete: ${missing.join(", ")}`);
+      if (proof.requiresFile && !input.filePath) throw new Error("Please upload your file first.");
+      if (proof.contactWarning && !input.acknowledged)
+        throw new Error("Please tick the no-contact acknowledgement.");
+      return input;
+    },
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const proof = proofByKey(data.proofKey)!;
+
+    const { data: membership } = await supabase
+      .from("team_members")
+      .select("job_title")
+      .eq("team_id", data.teamId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!membership) throw new Error("You are not on this team.");
+    if (membership.job_title !== proof.role)
+      throw new Error("This activity belongs to a different role.");
+
+    const { data: material } = await supabase
+      .from("proof_materials")
+      .select("ready, transcript_text, answer_key")
+      .eq("proof_key", proof.key)
+      .maybeSingle();
+    if (proof.needsMaterials && material?.ready !== true)
+      throw new Error("Your professor has not posted the material for this activity yet.");
+
+    const { data: inserted, error } = await supabase
+      .from("proof_submissions")
+      .insert({
+        user_id: userId,
+        team_id: data.teamId,
+        proof_key: proof.key,
+        role_at_submission: membership.job_title,
+        response: data.answers,
+        file_path: data.filePath ?? null,
+        file_name: data.fileName ?? null,
+      })
+      .select("id, submitted_at")
+      .single();
+    if (error) {
+      if (error.code === "23505") throw new Error("You have already completed this activity.");
+      throw new Error(error.message);
+    }
+
+    // Completion is already recorded. Everything below is coaching only.
+    let feedbackStatus = "pending";
+    let feedback: string | null = null;
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { generateProofFeedback, listZipEntries } = await import("@/lib/proofs.server");
+
+      let zipEntries: string[] | undefined;
+      if (proof.requiresFile && data.filePath) {
+        const { data: file } = await supabaseAdmin.storage.from("proofs").download(data.filePath);
+        if (file) zipEntries = listZipEntries(await file.arrayBuffer());
+      }
+
+      const result = await generateProofFeedback({
+        proofKey: proof.key,
+        answers: data.answers,
+        zipEntries,
+        answerKey: material?.answer_key ?? null,
+        transcript: material?.transcript_text ?? null,
+      });
+      feedbackStatus = result.status;
+      feedback = result.text;
+      await supabaseAdmin
+        .from("proof_submissions")
+        .update({ feedback, feedback_status: feedbackStatus, feedback_at: new Date().toISOString() })
+        .eq("id", inserted.id);
+    } catch {
+      feedbackStatus = "unavailable";
+    }
+
+    return { ok: true, submittedAt: inserted.submitted_at, feedback, feedbackStatus };
+  });
+
+/** Professor view: who has completed which activity, across the sections. */
+export const getProofOverview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    if (!(await isAdmin(supabase, userId))) throw new Error("Admins only.");
+
+    const [{ data: teams }, { data: members }, { data: subs }, { data: materials }] =
+      await Promise.all([
+        supabase.from("teams").select("id, name, display_name, section"),
+        supabase.from("team_members").select("team_id, user_id, job_title"),
+        supabase.from("proof_submissions").select("user_id, proof_key, submitted_at, feedback_status"),
+        supabase.from("proof_materials").select("proof_key, ready"),
+      ]);
+
+    const ids = (members ?? []).map((m) => m.user_id);
+    const { data: profiles } = ids.length
+      ? await supabase.from("profiles").select("id, name, avatar_url").in("id", ids)
+      : { data: [] as { id: string; name: string; avatar_url: string | null }[] };
+
+    const rows = (teams ?? [])
+      .map((t) => {
+        const list = (members ?? []).filter((m) => m.team_id === t.id);
+        const people = list.map((m) => {
+          const profile = (profiles ?? []).find((p) => p.id === m.user_id);
+          const assigned = proofsForRole(m.job_title)
+            .filter((p) => p.role !== "Researcher" || list.length >= 6)
+            .map((p) => p.key);
+          const done = (subs ?? [])
+            .filter((s) => s.user_id === m.user_id && assigned.includes(s.proof_key))
+            .map((s) => s.proof_key);
+          return {
+            userId: m.user_id,
+            name: profile?.name ?? "Student",
+            avatarUrl: profile?.avatar_url ?? null,
+            role: m.job_title,
+            assigned,
+            completed: done,
+          };
+        });
+        return {
+          teamId: t.id,
+          section: t.section ?? "",
+          label: t.display_name || t.name,
+          name: t.name,
+          people,
+        };
+      })
+      .sort((a, b) => a.section.localeCompare(b.section) || a.name.localeCompare(b.name));
+
+    return {
+      rows,
+      materials: PROOFS.map((p) => ({
+        key: p.key,
+        title: p.title,
+        role: p.role,
+        needsMaterials: !!p.needsMaterials,
+        ready: (materials ?? []).find((m) => m.proof_key === p.key)?.ready ?? false,
+      })),
+    };
+  });
+
+/** Professor uploads or edits the material behind an activity. */
+export const saveProofMaterial = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (input: {
+      proofKey: string;
+      ready?: boolean;
+      audioPath?: string | null;
+      zipPath?: string | null;
+      transcript?: string | null;
+      answerKey?: string | null;
+      extraInstructions?: string | null;
+    }) => {
+      if (!proofByKey(input?.proofKey ?? "")) throw new Error("Unknown activity.");
+      return input;
+    },
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    if (!(await isAdmin(supabase, userId))) throw new Error("Admins only.");
+
+    const patch: Record<string, unknown> = { proof_key: data.proofKey, updated_by: userId };
+    if (data.ready !== undefined) patch["ready"] = data.ready;
+    if (data.audioPath !== undefined) patch["audio_path"] = data.audioPath;
+    if (data.zipPath !== undefined) patch["zip_path"] = data.zipPath;
+    if (data.transcript !== undefined) patch["transcript_text"] = data.transcript;
+    if (data.answerKey !== undefined) patch["answer_key"] = data.answerKey;
+    if (data.extraInstructions !== undefined) patch["extra_instructions"] = data.extraInstructions;
+
+    const { error } = await supabase
+      .from("proof_materials")
+      .upsert(patch as never, { onConflict: "proof_key" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
