@@ -220,6 +220,26 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
                               </p>
                             </details>
                           ) : null}
+                          <details className="mt-1 text-sm">
+                            <summary className="cursor-pointer text-muted-foreground">
+                              Read your submission
+                            </summary>
+                            <div className="mt-2 space-y-2">
+                              {Object.entries(item.submission!.answers).map(([name, value]) => (
+                                <div key={name}>
+                                  <p className="font-medium capitalize">
+                                    {name.replaceAll("_", " ")}
+                                  </p>
+                                  <p className="whitespace-pre-wrap text-muted-foreground">{value}</p>
+                                </div>
+                              ))}
+                              {item.submission!.fileName ? (
+                                <p className="text-muted-foreground">
+                                  Attached file: {item.submission!.fileName}
+                                </p>
+                              ) : null}
+                            </div>
+                          </details>
                         </>
                       ) : item.open ? (
                         <p className="text-sm text-muted-foreground">Not submitted</p>

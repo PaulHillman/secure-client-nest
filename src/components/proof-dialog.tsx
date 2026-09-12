@@ -71,7 +71,7 @@ export function ProofDialog({
   } | null>(null);
 
   const { data: material } = useQuery({
-    queryKey: ["proof-material", proofKey],
+    queryKey: ["proof-material", teamId, userId, proofKey],
     queryFn: () => loadMaterial({ data: { proofKey: proofKey ?? "", teamId, studentId: userId } }),
     enabled: !!proofKey && (!!proof?.needsMaterials || !!proof?.requiresFile),
   });
