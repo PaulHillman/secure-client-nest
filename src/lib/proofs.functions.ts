@@ -67,7 +67,8 @@ export const getTeamProofs = createServerFn({ method: "GET" })
       const assigned = proofsForRole(m.job_title)
         .filter((p) => p.role !== "Researcher" || memberCount >= 6)
         .map((p) => p.key);
-      const done = (subs ?? []).filter((s) => s.user_id === m.user_id).map((s) => s.proof_key);
+      const own = (subs ?? []).filter((s) => s.user_id === m.user_id);
+      const done = own.map((s) => s.proof_key);
       return {
         userId: m.user_id,
         name: profile?.name ?? "Student",
@@ -75,6 +76,12 @@ export const getTeamProofs = createServerFn({ method: "GET" })
         role: m.job_title,
         assigned,
         completed: assigned.filter((k) => done.includes(k)),
+        approved: assigned.filter((k) =>
+          own.some((s) => s.proof_key === k && s.review_status === "approved"),
+        ),
+        sentBack: assigned.filter((k) =>
+          own.some((s) => s.proof_key === k && s.review_status === "sent_back"),
+        ),
       };
     });
 
