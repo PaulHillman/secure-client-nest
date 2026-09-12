@@ -26,6 +26,7 @@ import { RoleSelectCard } from "@/components/role-select-card";
 import { MyProofsCard } from "@/components/my-proofs-card";
 import { TeamReadinessCard } from "@/components/team-readiness-card";
 import { GroupNormsCard } from "@/components/group-norms-card";
+import { DashboardReadinessNotice } from "@/components/dashboard-readiness-notice";
 
 
 export const Route = createFileRoute("/app/teams/$teamId")({
@@ -140,6 +141,11 @@ function TeamDetail() {
         </div>
       )}
 
+      {isMember && (
+        <div className="mt-6">
+          <DashboardReadinessNotice teamId={teamId} />
+        </div>
+      )}
 
       <CompanyFocusCard
         teamId={teamId}
