@@ -18,7 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { CalendarClock, Check, X, CircleDashed, MapPin, Video } from "lucide-react";
 import { toast } from "sonner";
-import { MEETING_MODES } from "@/lib/meeting-agreement";
+import { FACE_TO_FACE } from "@/lib/meeting-agreement";
 import { notifyMeetingChange } from "@/lib/meeting.functions";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -97,20 +97,12 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
   const [day, setDay] = useState<string>("");
   const [time, setTime] = useState<string>("");
   const [location, setLocation] = useState<string>("");
-  const [mode, setMode] = useState<string>("");
-  const [c1, setC1] = useState<string>("");
-  const [c2, setC2] = useState<string>("");
-  const [c3, setC3] = useState<string>("");
 
   useEffect(() => {
     if (proposal) {
       setDay(String(proposal.day_of_week));
       setTime(proposal.meeting_time.slice(0, 5));
       setLocation((proposal as any).location ?? "");
-      setMode((proposal as any).meeting_mode ?? "");
-      setC1((proposal as any).mode_choice_1 ?? "");
-      setC2((proposal as any).mode_choice_2 ?? "");
-      setC3((proposal as any).mode_choice_3 ?? "");
     }
   }, [proposal?.id, proposal?.day_of_week, proposal?.meeting_time]);
 
@@ -121,10 +113,10 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
         day_of_week: Number(day),
         meeting_time: time,
         location: location.trim() || null,
-        meeting_mode: mode || null,
-        mode_choice_1: c1 || null,
-        mode_choice_2: c2 || null,
-        mode_choice_3: c3 || null,
+        meeting_mode: FACE_TO_FACE,
+        mode_choice_1: null,
+        mode_choice_2: null,
+        mode_choice_3: null,
       };
       let changed = false;
       if (proposal) {
@@ -278,45 +270,19 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                     <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-end">
-                  <div>
-                    <Label className="text-xs">Where will you meet?</Label>
-                    <Input
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      placeholder="e.g. Library room 214, or Zoom link"
-                      maxLength={200}
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-xs">How will you meet?</Label>
-                    <Select value={mode} onValueChange={setMode}>
-                      <SelectTrigger><SelectValue placeholder="Pick a mode" /></SelectTrigger>
-                      <SelectContent>
-                        {MEETING_MODES.map((m) => (
-                          <SelectItem key={m} value={m}>{m}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div>
+                  <Label className="text-xs">Where will you meet?</Label>
+                  <Input
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="e.g. Pew Library, 4th floor"
+                    maxLength={200}
+                  />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end">
-                  {([["1st choice", c1, setC1], ["2nd choice", c2, setC2], ["3rd choice", c3, setC3]] as const).map(
-                    ([label, val, set]) => (
-                      <div key={label}>
-                        <Label className="text-xs">Mode preference · {label}</Label>
-                        <Select value={val} onValueChange={set as (v: string) => void}>
-                          <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
-                          <SelectContent>
-                            {MEETING_MODES.map((m) => (
-                              <SelectItem key={m} value={m}>{m}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ),
-                  )}
-                </div>
+                <p className="text-xs rounded-md border border-gold/40 bg-gold/10 px-3 py-2 text-foreground">
+                  Meetings must be held <span className="font-medium">in person, face to face</span>.
+                  Meeting over Zoom or virtually is not an option for this course.
+                </p>
                 <div>
                   <Button onClick={() => saveProposal.mutate()} disabled={saveProposal.isPending}>
                     {proposal ? "Update" : "Submit"}
@@ -324,7 +290,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                 </div>
                 {proposal && (
                   <p className="text-xs text-muted-foreground">
-                    Changing the day, time, place or mode resets everyone's agreement and notifies
+                    Changing the day, time, or place resets everyone's agreement and notifies
                     Professor Hillman.
                   </p>
                 )}

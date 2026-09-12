@@ -8,16 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { NotebookPen, AlertTriangle, MapPin, Check } from "lucide-react";
 import { toast } from "sonner";
-import { MEETING_MODES, DAYS, fmtTime } from "@/lib/meeting-agreement";
+import { FACE_TO_FACE, DAYS, fmtTime } from "@/lib/meeting-agreement";
 import { notifyMeetingMoved } from "@/lib/meeting.functions";
 
 function todayISO() {
@@ -66,7 +59,8 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
   const [date, setDate] = useState(todayISO());
   const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
-  const [mode, setMode] = useState("");
+  // Meetings are always face to face; no mode choice is offered.
+  const mode = FACE_TO_FACE;
   const [minutes, setMinutes] = useState(false);
   const [reasonFor, setReasonFor] = useState<string | null>(null);
   const [reason, setReason] = useState("");
@@ -112,7 +106,6 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
       if (!row.as_agreed) setReasonFor(row.id);
       setTime("");
       setLocation("");
-      setMode("");
       setMinutes(false);
       qc.invalidateQueries({ queryKey: ["meeting-logs", teamId] });
       qc.invalidateQueries({ queryKey: ["meeting-gaps"] });
@@ -222,22 +215,11 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
                   placeholder={proposal?.location ?? "Room, building or link"}
                 />
               </div>
-              <div>
-                <Label className="text-xs">How it was held</Label>
-                <Select value={mode} onValueChange={setMode}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Pick a mode" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MEETING_MODES.map((m) => (
-                      <SelectItem key={m} value={m}>
-                        {m}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Meetings are held in person, face to face — Zoom or virtual meetings do not count for
+              this course.
+            </p>
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
