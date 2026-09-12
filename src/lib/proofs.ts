@@ -102,8 +102,9 @@ export const PROOFS: Proof[] = [
     alias: "Communications Proof B",
     howTo: "Where should each item in this situation be kept in ClientVault, if at all?",
     scenario:
-      "Five items land in your inbox this week: (1) an auto-generated transcript of Tuesday's meeting, (2) the finished minutes you wrote from it, (3) a team-wide email confirming the shoot date, (4) a client email the Company Liaison has already filed in the vault, (5) an update to the team's management/project information — the manager's title changed.",
+      "Six items land in your inbox this week: (1) an auto-generated transcript of Tuesday's meeting, (2) the finished minutes you wrote from it, (3) a team-wide email confirming the shoot date, (4) a client email the Company Liaison has already filed in the vault, (5) an update to the team's management/project information — the manager's title changed, (6) a duplicate copy of the finished meeting minutes that has already been filed correctly.\n\nFolders you can use: Meetings (with date subfolders), Client Communications, Client Research, B-Roll, Group Norms — or Do Not File.",
     fields: [{ name: "response", label: "Where should the items be kept?", required: true }],
+
   },
   {
     key: "liaison_interview",

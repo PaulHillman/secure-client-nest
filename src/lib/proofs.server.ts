@@ -14,9 +14,12 @@ const PRIVATE_RUBRICS: Record<string, string[]> = {
   ],
   comms_record: [
     "Distinguishes a reference transcript from official minutes",
-    "Keeps useful records in the appropriate ClientVault location",
+    "Keeps useful records in the appropriate ClientVault location (Meetings with date subfolders, Client Communications, Client Research, B-Roll, Group Norms)",
     "Avoids duplicating client correspondence and updates the existing project record",
+    "Marks the duplicate copy of the already-filed minutes as Do Not File, because refiling it clutters the vault and duplicates the official record",
+    "Accepts concise, equivalent wording and reasonable folder names; do not require exact folder labels",
   ],
+
   liaison_interview: [
     "Selects professional, open-ended questions that invite examples",
     "Removes duplicates and weak yes-or-no questions",
