@@ -290,10 +290,6 @@ export function ProofDialog({
               </label>
             ) : null}
 
-            <p className="text-xs text-muted-foreground">
-              Your answer is recorded when you submit it.
-            </p>
-
             {isImpersonating ? (
               <p className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm">
                 You are viewing this as a student, so submitting is turned off. Only the student can
