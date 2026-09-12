@@ -14,18 +14,35 @@ const SIX_MEMBER_EXTRA = "Researcher";
 /** What the signed-in student may pick right now, and who already holds what. */
 export const getRoleOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input?: { studentId?: string }) => input ?? {})
+  .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const targetUserId = data.studentId ?? userId;
+    if (targetUserId !== userId) {
+      const { data: admin } = await supabase.rpc("has_role", {
+        _user_id: userId,
+        _role: "admin",
+      });
+      if (!admin) throw new Error("You cannot view another student's role.");
+    }
 
     const { data: membership } = await supabase
       .from("team_members")
       .select("id, team_id, job_title")
-      .eq("user_id", userId)
+      .eq("user_id", targetUserId)
       .maybeSingle();
 
     const [{ data: profile }, { data: avail }] = await Promise.all([
-      supabase.from("profiles").select("skills_have, skills_learn").eq("id", userId).maybeSingle(),
-      supabase.from("student_availability").select("user_id").eq("user_id", userId).maybeSingle(),
+      supabase
+        .from("profiles")
+        .select("skills_have, skills_learn")
+        .eq("id", targetUserId)
+        .maybeSingle(),
+      supabase
+        .from("student_availability")
+        .select("user_id")
+        .eq("user_id", targetUserId)
+        .maybeSingle(),
     ]);
 
     const status = completionStatus({
@@ -44,7 +61,7 @@ export const getRoleOptions = createServerFn({ method: "GET" })
       memberCount = (mates ?? []).length;
       const allowed = memberCount >= 6 ? [...BASE_ROLES, SIX_MEMBER_EXTRA] : BASE_ROLES;
       const others = (mates ?? []).filter(
-        (m) => m.user_id !== userId && allowed.includes(m.job_title as string),
+        (m) => m.user_id !== targetUserId && allowed.includes(m.job_title as string),
       );
       if (others.length) {
         const { data: names } = await supabase

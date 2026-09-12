@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Lock, Loader2, UserCheck } from "lucide-react";
 
 export function RoleSelectCard() {
-  const { user } = useAuth();
+  const { user, viewAs } = useAuth();
   const qc = useQueryClient();
   const fetchOptions = useServerFn(getRoleOptions);
   const claim = useServerFn(claimTeamRole);
@@ -19,7 +19,7 @@ export function RoleSelectCard() {
   const { data } = useQuery({
     queryKey: ["role-options", user?.id],
     enabled: !!user,
-    queryFn: () => fetchOptions(),
+    queryFn: () => fetchOptions({ data: viewAs ? { studentId: viewAs.id } : {} }),
   });
 
   const mutation = useMutation({
@@ -34,6 +34,8 @@ export function RoleSelectCard() {
   });
 
   if (!user || !data || !data.hasTeam) return null;
+
+  if (data.currentRole && data.currentRole !== "Unassigned") return null;
 
   const takenBy = new Map(data.taken.map((t) => [t.role, t.name]));
 

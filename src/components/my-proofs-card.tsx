@@ -60,6 +60,7 @@ function Step({
  * commitment, and the group norms document.
  */
 export function MyProofsCard({ teamId, userId }: { teamId: string; userId: string }) {
+  const { viewAs } = useAuth();
   const qc = useQueryClient();
   const fetchProofs = useServerFn(getTeamProofs);
   const fetchNorms = useServerFn(getTeamNorms);
@@ -67,7 +68,7 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
 
   const { data } = useQuery({
     queryKey: ["team-proofs", teamId],
-    queryFn: () => fetchProofs({ data: { teamId } }),
+    queryFn: () => fetchProofs({ data: { teamId, studentId: viewAs?.id } }),
   });
 
   const { data: norms } = useQuery({
