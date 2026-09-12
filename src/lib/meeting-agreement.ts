@@ -25,7 +25,7 @@ export function fmtTime(t: string) {
 export const AGREEMENT_CLAUSES = [
   "I agree to the weekly meeting day, time, place and meeting mode listed above for my team, and I will attend and participate every week.",
   "If I need this meeting time changed at any point in the semester, it is MY responsibility — not the Project Manager's and not the rest of the team's — to find a new day and time that works for every member and to obtain their agreement.",
-  "Any new meeting day, time, place or mode must be entered in ClientVault so that every team member can re-approve it.",
+  "Any new meeting day, time, or place must be entered in ClientVault so that every team member can re-approve it. Meetings are always held in person, face to face — Zoom or virtual meetings are not an option.",
   "Professor Hillman must be notified whenever the meeting day or time changes.",
   "I understand that changing any of these details clears all prior approvals, and every member of my team must approve the new time before it counts as agreed.",
 ];
