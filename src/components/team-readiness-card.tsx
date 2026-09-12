@@ -227,6 +227,16 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
             </div>
           </div>
         ))}
+
+        {formItem && (
+          <ModuleSubmissionDialog
+            teamId={teamId}
+            moduleKey={formItem.key}
+            title={formItem.title}
+            open={!!formItem}
+            onOpenChange={(v) => !v && setFormItem(null)}
+          />
+        )}
       </CardContent>
     </Card>
   );
