@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { StudentAvatar } from "@/components/student-avatar";
@@ -15,11 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { CalendarClock, Check, X, CircleDashed, MapPin, Video } from "lucide-react";
+import { CalendarClock, MapPin, Video } from "lucide-react";
 import { toast } from "sonner";
 import { FACE_TO_FACE } from "@/lib/meeting-agreement";
-import { notifyMeetingChange, respondMeetingAgreement } from "@/lib/meeting.functions";
+import { notifyMeetingChange } from "@/lib/meeting.functions";
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -61,25 +59,12 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
       }
       const pmap = new Map(profiles.map((p) => [p.id, p]));
 
-      let agreements: any[] = [];
-      if (proposal) {
-        const { data: agData, error: aErr } = await supabase
-          .from("team_meeting_agreements")
-          .select("*")
-          .eq("proposal_id", proposal.id);
-        if (aErr) throw aErr;
-        agreements = agData ?? [];
-      }
-      const amap = new Map(agreements.map((a) => [a.user_id, a]));
-
       const roster = (members ?? []).map((m) => ({
         user_id: m.user_id,
         job_title: m.job_title,
         name: pmap.get(m.user_id)?.name ?? "Unknown",
         email: pmap.get(m.user_id)?.email ?? null,
         avatarUrl: pmap.get(m.user_id)?.avatar_url ?? null,
-        savedInitials: pmap.get(m.user_id)?.initials ?? "",
-        agreement: amap.get(m.user_id) ?? null,
       }));
 
       return { proposal, roster };
@@ -90,8 +75,6 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
   const roster = data?.roster ?? [];
   const me = roster.find((r) => r.user_id === user?.id);
   const isPM = me?.job_title === "PM";
-  const allAgreed =
-    !!proposal && roster.length > 0 && roster.every((r) => r.agreement?.status === "agreed");
 
   // PM form state
   const [day, setDay] = useState<string>("");
