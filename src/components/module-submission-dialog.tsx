@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -37,6 +37,10 @@ export function ModuleSubmissionDialog({
   const fetchOne = useServerFn(getModuleSubmission);
   const save = useServerFn(saveModuleSubmission);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  // Which team/module the current field values belong to, so switching teams or
+  // modules never shows stale values, and typing is never overwritten on reload.
+  const hydratedFor = useRef<string | null>(null);
+  const touched = useRef<Set<string>>(new Set());
 
   const form = moduleForm(moduleKey);
 
@@ -46,9 +50,46 @@ export function ModuleSubmissionDialog({
     enabled: open,
   });
 
+  const scope = `${teamId}|${moduleKey}`;
+
+  // Clear out previous team/module values as soon as the dialog opens elsewhere.
   useEffect(() => {
-    if (data) setAnswers(data.answers);
-  }, [data]);
+    if (!open) return;
+    if (hydratedFor.current !== null && hydratedFor.current !== scope) {
+      hydratedFor.current = null;
+      touched.current = new Set();
+      setAnswers({});
+    }
+  }, [open, scope]);
+
+  useEffect(() => {
+    if (!open || !data) return;
+    const defaults = (data as { defaults?: Record<string, string> }).defaults ?? {};
+    const saved = data.answers ?? {};
+    if (hydratedFor.current !== scope) {
+      hydratedFor.current = scope;
+      setAnswers({ ...defaults, ...saved });
+      return;
+    }
+    // Later refetches: fill only fields the user has not touched and that are blank.
+    setAnswers((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const [k, v] of Object.entries({ ...defaults, ...saved })) {
+        if (touched.current.has(k)) continue;
+        if ((next[k] ?? "").trim()) continue;
+        if (!v) continue;
+        next[k] = v;
+        changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [open, data, scope]);
+
+  const setField = (name: string, value: string) => {
+    touched.current.add(name);
+    setAnswers((a) => ({ ...a, [name]: value }));
+  };
 
   const mutation = useMutation({
     mutationFn: (submit: boolean) => save({ data: { teamId, key: moduleKey, answers, submit } }),
@@ -97,7 +138,7 @@ export function ModuleSubmissionDialog({
                   disabled={locked}
                   placeholder={f.placeholder}
                   value={answers[f.name] ?? ""}
-                  onChange={(e) => setAnswers((a) => ({ ...a, [f.name]: e.target.value }))}
+                  onChange={(e) => setField(f.name, e.target.value)}
                 />
               ) : (
                 <Input
@@ -105,7 +146,7 @@ export function ModuleSubmissionDialog({
                   disabled={locked}
                   placeholder={f.placeholder}
                   value={answers[f.name] ?? ""}
-                  onChange={(e) => setAnswers((a) => ({ ...a, [f.name]: e.target.value }))}
+                  onChange={(e) => setField(f.name, e.target.value)}
                 />
               )}
               {f.help && <p className="text-xs text-muted-foreground">{f.help}</p>}

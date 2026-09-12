@@ -43,7 +43,8 @@ export const MODULE_FORMS: Record<string, ModuleForm> = {
   },
   client_proposal: {
     key: "client_proposal",
-    intro: "The company you want to work with, and why. Your professor approves or sends this back.",
+    intro:
+      "The company you want to work with, and why. Details already recorded for your team's company are filled in as a starting point — edit anything and save. You can come back and update this any time.",
     fields: [
       { name: "company_name", label: "Company name", kind: "text", required: true },
       { name: "manager_name", label: "Manager name", kind: "text", required: true },

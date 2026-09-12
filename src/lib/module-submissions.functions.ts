@@ -71,8 +71,39 @@ export const getModuleSubmission = createServerFn({ method: "GET" })
     }
     void submitter;
 
+    // Suggested starting values from the team's assigned company. These are only
+    // used for fields the team has not filled in yet; nothing is saved here.
+    let defaults: Answers = {};
+    if (data.key === "client_proposal") {
+      const { data: cf } = await supabase
+        .from("company_focus")
+        .select("company_name, contact_person, contact_job_title, industry, employee_count, hq_address")
+        .eq("team_id", data.teamId)
+        .maybeSingle();
+      if (cf) {
+        const clean = (v: string | null | undefined) => {
+          const s = (v ?? "").trim();
+          if (!s) return "";
+          if (/example\.invalid/i.test(s)) return "";
+          // Placeholder wording recorded when a detail is genuinely unknown.
+          if (/not (supplied|provided|available|known)|^(unknown|n\/?a|tbd|none)$/i.test(s)) return "";
+          return s;
+        };
+        defaults = {
+          company_name: clean(cf.company_name),
+          manager_name: clean(cf.contact_person),
+          manager_title: clean(cf.contact_job_title),
+          industry: clean(cf.industry),
+          company_size: clean(cf.employee_count),
+          location: clean(cf.hq_address),
+        };
+        for (const k of Object.keys(defaults)) if (!defaults[k]) delete defaults[k];
+      }
+    }
+
     return {
       answers: asAnswers(row?.answers),
+      defaults,
       submittedAt: row?.submitted_at ?? null,
       submittedByName,
       submitCount: row?.submit_count ?? 0,
