@@ -68,12 +68,12 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
   const [openKey, setOpenKey] = useState<string | null>(null);
 
   const { data } = useQuery({
-    queryKey: ["team-proofs", teamId],
+    queryKey: ["team-proofs", teamId, viewAs?.id ?? userId],
     queryFn: () => fetchProofs({ data: { teamId, studentId: viewAs?.id } }),
   });
 
   const { data: norms } = useQuery({
-    queryKey: ["group-norms", teamId],
+    queryKey: ["group-norms-readiness", teamId, viewAs?.id ?? userId],
     queryFn: () => fetchNorms({ data: { teamId, studentId: viewAs?.id } }),
   });
 

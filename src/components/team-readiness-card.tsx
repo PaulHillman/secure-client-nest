@@ -38,7 +38,7 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
   const [formItem, setFormItem] = useState<{ key: string; title: string } | null>(null);
 
   const { data } = useQuery({
-    queryKey: ["team-readiness", teamId],
+    queryKey: ["team-readiness", teamId, viewAs?.id],
     queryFn: () => fetchBoard({ data: { teamId, studentId: viewAs?.id } }),
   });
 
