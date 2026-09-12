@@ -211,16 +211,16 @@ export const saveTeamNorms = createServerFn({ method: "POST" })
 export const approveTeamNorms = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (input: { teamId: string; version: number }) => {
+    (input: { teamId: string; version: number; studentId?: string }) => {
       if (!input?.teamId || !Number.isInteger(input?.version)) throw new Error("Missing team or version.");
       return input;
     },
   )
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-
-    // Identity comes from the token; only a current member of this team may approve,
-    // and only for themselves.
+    const { supabase, userId: authUserId } = context;
+    // Identity comes from the token; an admin viewing as a student approves as them.
+    const userId =
+      data.studentId && (await isAdmin(supabase, authUserId)) ? data.studentId : authUserId;
     const { data: membership } = await supabase
       .from("team_members")
       .select("job_title")
