@@ -20,6 +20,7 @@ import { MyProfileCard } from "@/components/my-profile-card";
 import { AvailabilityGridCard } from "@/components/availability-grid-card";
 import { ProfileCompletionCard } from "@/components/profile-completion-card";
 import { RoleSelectCard } from "@/components/role-select-card";
+import { DashboardReadinessNotice } from "@/components/dashboard-readiness-notice";
 
 import { ProofReviewQueueCard } from "@/components/proof-review-queue-card";
 import { ProofsAdminCard } from "@/components/proofs-admin-card";
@@ -150,6 +151,8 @@ function Dashboard() {
         <p className="text-sm text-muted-foreground">Welcome back</p>
         <h1 className="font-display text-4xl mt-1">Your workspace</h1>
       </header>
+
+      <DashboardReadinessNotice />
 
       {isAdmin && (
         <div className="mb-6 space-y-6">
