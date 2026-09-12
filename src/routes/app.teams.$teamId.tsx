@@ -23,6 +23,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 import { VAULT_ADMIN_ROLE } from "@/components/vault-admin-duties-card";
 import { RoleSelectCard } from "@/components/role-select-card";
+import { MyProofsCard } from "@/components/my-proofs-card";
 import { TeamReadinessCard } from "@/components/team-readiness-card";
 
 export const Route = createFileRoute("/app/teams/$teamId")({
