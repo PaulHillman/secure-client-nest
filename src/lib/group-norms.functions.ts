@@ -116,8 +116,12 @@ export const getTeamNorms = createServerFn({ method: "GET" })
       isMember: !!membership,
       isPM: membership?.job_title === "PM",
       isAdmin: admin,
-      canEdit: targetUserId === userId && (!!membership || admin),
+      canEdit:
+        targetUserId === userId && (membership?.job_title === "PM" || admin),
       canApprove: targetUserId === userId && !!membership,
+      vagueFindings: findVagueLanguage(content),
+      flaggedForReview: norms?.flagged_for_review === true,
+      flaggedAt: norms?.flagged_at ?? null,
       history: (history ?? []).map((h) => ({ version: h.version, createdAt: h.created_at })),
     };
   });
