@@ -110,7 +110,7 @@ function Dashboard() {
         files: filesCount ?? 0,
       };
     },
-    enabled: !!user,
+    enabled: !!user && isAdmin,
   });
 
   const total = stats?.totalTeams ?? 0;
