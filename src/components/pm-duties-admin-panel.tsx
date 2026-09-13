@@ -198,53 +198,14 @@ export function PmDutiesAdminPanel() {
               {duties.map((d) => {
                 const doneCount = teams.filter((t) => compKey.has(`${d.id}:${t.id}`)).length;
                 return (
-                  <li key={d.id} className="rounded-md border border-border/60 p-3 space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Input
-                        className="h-8 flex-1 min-w-[200px]"
-                        defaultValue={d.title}
-                        onBlur={(e) =>
-                          e.target.value !== d.title &&
-                          update.mutate({ id: d.id, patch: { title: e.target.value } })
-                        }
-                      />
-                      <Input
-                        type="datetime-local"
-                        className="h-8 w-[210px]"
-                        defaultValue={toLocalInput(d.due_at)}
-                        onChange={(e) =>
-                          update.mutate({
-                            id: d.id,
-                            patch: { due_at: e.target.value ? new Date(e.target.value).toISOString() : null },
-                          })
-                        }
-                      />
-                      <Badge variant={doneCount === teams.length ? "secondary" : "outline"}>
-                        {doneCount}/{teams.length} teams
-                      </Badge>
-                      <Button
-                        size="sm"
-                        variant={d.active ? "outline" : "secondary"}
-                        onClick={() => update.mutate({ id: d.id, patch: { active: !d.active } })}
-                      >
-                        {d.active ? "Active" : "Hidden"}
-                      </Button>
-                      <Button size="icon" variant="ghost" onClick={() => remove.mutate(d.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Due {fmtDue(d.due_at)}</p>
-                    <Textarea
-                      rows={2}
-                      className="text-xs"
-                      placeholder="What it involves (optional) — shown to the team"
-                      defaultValue={d.details ?? ""}
-                      onBlur={(e) => {
-                        const v = e.target.value.trim() || null;
-                        if (v !== (d.details ?? null)) update.mutate({ id: d.id, patch: { details: v } });
-                      }}
-                    />
-                  </li>
+                  <MilestoneRow
+                    key={d.id}
+                    duty={d}
+                    doneCount={doneCount}
+                    teamCount={teams.length}
+                    update={update}
+                    remove={remove}
+                  />
                 );
               })}
             </ul>
