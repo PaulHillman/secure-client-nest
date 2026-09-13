@@ -126,7 +126,7 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : duties.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No responsibilities have been published yet.</p>
+          <p className="text-sm text-muted-foreground">No milestones have been published yet.</p>
         ) : (
           <ul className="space-y-3">
             {duties.map((d) => {
@@ -147,7 +147,14 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium">{d.title}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium">{d.title}</p>
+                      {myRole && (d.target_roles ?? []).includes(myRole) ? (
+                        <Badge variant="outline" className="border-gold/50 text-gold">
+                          <Star className="h-3 w-3 mr-1" /> Flagged for your role
+                        </Badge>
+                      ) : null}
+                    </div>
                     {d.details ? (
                       <p className="text-xs text-muted-foreground mt-0.5">{d.details}</p>
                     ) : null}
