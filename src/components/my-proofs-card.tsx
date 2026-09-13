@@ -81,6 +81,8 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
   const qc = useQueryClient();
   const fetchProofs = useServerFn(getTeamProofs);
   const fetchNorms = useServerFn(getTeamNorms);
+  const fetchStudy = useServerFn(getRoleStudy);
+  const toggleStudy = useServerFn(toggleRoleStudyItem);
   const [openKey, setOpenKey] = useState<string | null>(null);
 
   const { data } = useQuery({
