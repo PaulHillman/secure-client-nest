@@ -23,7 +23,7 @@ type Member = {
 };
 
 export function TeamSkillsMap({ members }: { members: Member[] }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const contributors = new Map<string, string[]>();
   for (const member of members) {
