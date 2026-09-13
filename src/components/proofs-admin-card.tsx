@@ -81,7 +81,8 @@ export function ProofsAdminCard() {
       <CardHeader>
         <CardTitle>Role practice activities</CardTitle>
         <CardDescription>
-          Twelve short individual exercises. Students submit each once; submitting completes it. Four
+          Eleven short individual exercises. Students submit each once; submitting completes it.
+          Four
           use course material posted below.
         </CardDescription>
       </CardHeader>
