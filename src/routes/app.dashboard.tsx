@@ -201,6 +201,7 @@ function Dashboard() {
         </nav>
       )}
 
+      {isAdmin && (
       <div id="kpis" className="grid grid-cols-2 lg:grid-cols-4 gap-4 scroll-mt-6">
         {cards.map((c) => (
           <Card key={c.label} className="border-border/60">
