@@ -167,10 +167,12 @@ export const PROOFS: Proof[] = [
     alias: "Tech Proof A",
     needsMaterials: true,
     requiresFile: true,
-    fileHint: "Upload your finished .zip (max 100MB).",
-    howTo: "Organize the challenge files as directed, then upload your completed ZIP.",
+    fileHint: "Upload your finished Team No. 5 - Client Vault - Completed.zip (max 100MB).",
+    howTo:
+      "Download the starter ZIP below, extract it, and open the 'Team No. 5 - Client Vault' folder. Read READ_ME!.rtf and follow it exactly: rename and move the files it lists, keep every file extension, and leave the other files where they are. Do not change the contents of any document, image, PDF, presentation or video — this is only about names, locations and folders. When you are done, zip the completed 'Team No. 5 - Client Vault' folder, name it 'Team No. 5 - Client Vault - Completed.zip', and upload it here.",
     fields: [],
   },
+
   {
     key: "tech_presentation",
     role: "Client Vault & Tech Administrator",
