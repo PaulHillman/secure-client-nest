@@ -163,13 +163,13 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
           </Step>
 
           {data.mine.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="ml-4 border-l-2 pl-3 text-sm text-muted-foreground sm:ml-6 border-emerald-500/50">
               {hasRole
                 ? "No activities are assigned to your role."
                 : "Pick your role above and your activities will appear here."}
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="ml-4 space-y-2 border-l-2 pl-3 sm:ml-6 border-emerald-500/50">
               {data.mine.map((item) => {
                 const proof = proofByKey(item.key);
                 if (!proof) return null;
