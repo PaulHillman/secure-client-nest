@@ -1628,6 +1628,38 @@ export type Database = {
           },
         ]
       }
+      role_study_progress: {
+        Row: {
+          checked: number[]
+          role: string
+          team_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          checked?: number[]
+          role: string
+          team_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          checked?: number[]
+          role?: string
+          team_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_study_progress_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       semester_archives: {
         Row: {
           created_at: string
