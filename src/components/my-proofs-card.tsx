@@ -95,6 +95,21 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
     queryFn: () => fetchNorms({ data: { teamId, studentId: viewAs?.id } }),
   });
 
+  const { data: study } = useQuery({
+    queryKey: ["role-study", teamId, viewAs?.id ?? userId],
+    queryFn: () => fetchStudy({ data: { studentId: viewAs?.id } }),
+  });
+
+  const studyMutation = useMutation({
+    mutationFn: (v: { index: number; checked: boolean }) =>
+      toggleStudy({ data: { teamId, index: v.index, checked: v.checked, studentId: viewAs?.id } }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["role-study", teamId] });
+      void qc.invalidateQueries({ queryKey: ["dashboard-team-readiness"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const { data: meeting } = useQuery({
     queryKey: ["meeting-commitment", teamId, userId],
     queryFn: async () => {
