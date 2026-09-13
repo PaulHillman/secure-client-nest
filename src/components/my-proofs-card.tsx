@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { getTeamProofs } from "@/lib/proofs.functions";
 import { getTeamNorms } from "@/lib/group-norms.functions";
+import { getRoleStudy, toggleRoleStudyItem } from "@/lib/role-study.functions";
+import { ROLE_STUDIES, roleStudy } from "@/lib/role-study";
 import { supabase } from "@/integrations/supabase/client";
 import { FEEDBACK_STATUS_LABEL, proofByKey, proofMaxScore } from "@/lib/proofs";
 import { ProofDialog } from "@/components/proof-dialog";
@@ -17,6 +20,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { StudentName } from "@/components/student-avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCircle2, ChevronsUpDown, Circle, Clock, Lock, RotateCcw } from "lucide-react";
 
 function scrollTo(id: string) {
@@ -77,6 +81,8 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
   const qc = useQueryClient();
   const fetchProofs = useServerFn(getTeamProofs);
   const fetchNorms = useServerFn(getTeamNorms);
+  const fetchStudy = useServerFn(getRoleStudy);
+  const toggleStudy = useServerFn(toggleRoleStudyItem);
   const [openKey, setOpenKey] = useState<string | null>(null);
 
   const { data } = useQuery({
@@ -87,6 +93,21 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
   const { data: norms } = useQuery({
     queryKey: ["group-norms-readiness", teamId, viewAs?.id ?? userId],
     queryFn: () => fetchNorms({ data: { teamId, studentId: viewAs?.id } }),
+  });
+
+  const { data: study } = useQuery({
+    queryKey: ["role-study", teamId, viewAs?.id ?? userId],
+    queryFn: () => fetchStudy({ data: { studentId: viewAs?.id } }),
+  });
+
+  const studyMutation = useMutation({
+    mutationFn: (v: { index: number; checked: boolean }) =>
+      toggleStudy({ data: { teamId, index: v.index, checked: v.checked, studentId: viewAs?.id } }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["role-study", teamId] });
+      void qc.invalidateQueries({ queryKey: ["dashboard-team-readiness"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const { data: meeting } = useQuery({
@@ -112,10 +133,12 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
   const refresh = () => void qc.invalidateQueries({ queryKey: ["team-proofs", teamId] });
 
   const hasRole = !!data.myRole && data.myRole !== "Unassigned";
+  const studyDone =
+    hasRole && (study ? study.itemCount === 0 || study.done : false);
   const proofsDone = data.mine.length > 0 && data.mine.every((m) => !!m.submission);
   const meetingDone = meeting?.mine?.status === "agreed";
   const normsDone = !!norms?.complete && !!norms?.myApprovalAt;
-  const steps = [hasRole, proofsDone, meetingDone, normsDone];
+  const steps = [studyDone, proofsDone, meetingDone, normsDone];
   const doneCount = steps.filter(Boolean).length;
 
   return (
@@ -131,8 +154,8 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
         <CardContent className="space-y-4">
           <Step
             n={1}
-            title="Know your role"
-            done={hasRole}
+            title="Study your role"
+            done={studyDone}
             action={
               hasRole ? undefined : (
                 <Button size="sm" variant="outline" onClick={() => scrollTo("your-role")}>
@@ -142,12 +165,78 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
             }
           >
             {hasRole ? (
-              <p>
-                You are the team's <span className="font-medium text-foreground">{data.myRole}</span>
-                . The activities in step 2 are exactly what this role is expected to deliver.
-              </p>
+              <>
+                <p>
+                  You are the team's{" "}
+                  <span className="font-medium text-foreground">{data.myRole}</span>. Tick every
+                  line in your role's checklist to finish this step — the activities in step 2 are
+                  exactly what this role is expected to deliver.
+                </p>
+                {(() => {
+                  const mine = roleStudy(data.myRole);
+                  if (!mine) return null;
+                  const checked = new Set(study?.checked ?? []);
+                  return (
+                    <div className="space-y-2">
+                      <p className="text-sm italic text-muted-foreground">{mine.blurb}</p>
+                      <ul className="space-y-1.5">
+                        {mine.items.map((item, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <Checkbox
+                              id={`study-${i}`}
+                              className="mt-0.5"
+                              checked={checked.has(i)}
+                              disabled={studyMutation.isPending}
+                              onCheckedChange={(v) =>
+                                studyMutation.mutate({ index: i, checked: v === true })
+                              }
+                            />
+                            <label
+                              htmlFor={`study-${i}`}
+                              className={`cursor-pointer text-sm leading-snug ${
+                                checked.has(i)
+                                  ? "text-muted-foreground line-through"
+                                  : "text-foreground"
+                              }`}
+                            >
+                              {item}
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-xs text-muted-foreground">
+                        {checked.size} of {mine.items.length} ticked
+                        {study?.done ? " — step complete." : "."}
+                      </p>
+                    </div>
+                  );
+                })()}
+                <Collapsible>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="px-0">
+                      <ChevronsUpDown className="mr-2 size-4" /> Read the other roles
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2 space-y-4">
+                    {ROLE_STUDIES.filter((r) => r.role !== data.myRole).map((r) => (
+                      <div key={r.role}>
+                        <p className="text-sm font-medium text-foreground">{r.role}</p>
+                        <p className="text-xs italic text-muted-foreground">{r.blurb}</p>
+                        <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">
+                          {r.items.map((item, i) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              </>
             ) : (
-              <p>Your role has not been set yet. Pick it first — everything else follows from it.</p>
+              <p>
+                Your role has not been set yet. Pick it first, then tick every line in its
+                checklist — everything else follows from it.
+              </p>
             )}
           </Step>
 

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isNormsComplete, normalizeNorms } from "@/lib/group-norms";
 import { proofsForRole } from "@/lib/proofs";
+import { roleStudy } from "@/lib/role-study";
 import { teamLabel } from "@/lib/team-label";
 
 type RoleChecker = {
@@ -69,7 +70,7 @@ export const getDashboardReadiness = createServerFn({ method: "GET" })
     const submittedKeys = new Set((submissions ?? []).map((row) => row.proof_key));
     const remainingProofs = assignedProofs.filter((proof) => !submittedKeys.has(proof.key));
 
-    const [{ data: agreement }, { data: approval }] = await Promise.all([
+    const [{ data: agreement }, { data: approval }, { data: studyRow }] = await Promise.all([
       proposal
         ? supabase
             .from("team_meeting_agreements")
@@ -87,19 +88,32 @@ export const getDashboardReadiness = createServerFn({ method: "GET" })
             .eq("user_id", targetUserId)
             .maybeSingle()
         : Promise.resolve({ data: null as { signed_at: string } | null }),
+      (supabase as any)
+        .from("role_study_progress")
+        .select("role, checked")
+        .eq("user_id", targetUserId)
+        .maybeSingle() as Promise<{ data: { role: string; checked: number[] } | null }>,
     ]);
 
     const hasRole = !!role && role !== "Unassigned";
+    const study = roleStudy(role);
+    const studyDone =
+      hasRole &&
+      (!study ||
+        (studyRow?.role === study.role && (studyRow?.checked?.length ?? 0) >= study.items.length));
     const proofsDone = assignedProofs.length > 0 && remainingProofs.length === 0;
     const meetingDone = agreement?.status === "agreed";
     const normsComplete = !!norms && isNormsComplete(normalizeNorms(norms.content));
     const normsDone = normsComplete && !!approval;
-    const steps = [hasRole, proofsDone, meetingDone, normsDone];
+    const steps = [studyDone, proofsDone, meetingDone, normsDone];
     const doneCount = steps.filter(Boolean).length;
 
     let nextAction = "Choose your team role";
     let detail = "Choose your role so ClientVault can show the activities required for your job.";
-    if (hasRole && !proofsDone) {
+    if (hasRole && !studyDone) {
+      nextAction = "Study your role";
+      detail = "Tick every line in your role's checklist to finish this step.";
+    } else if (hasRole && studyDone && !proofsDone) {
       nextAction = "Complete your role proof points";
       detail = remainingProofs.length
         ? `${remainingProofs.length} role ${remainingProofs.length === 1 ? "activity remains" : "activities remain"}.`
