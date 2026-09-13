@@ -120,6 +120,7 @@ function AgreementPage() {
     },
     onSuccess: () => {
       toast.success("Agreement signed and recorded");
+      setShowContinue(true);
       qc.invalidateQueries({ queryKey: ["my-meeting-agreement", user?.id] });
       qc.invalidateQueries({ queryKey: ["meeting-time", data?.teamId] });
       qc.invalidateQueries({ queryKey: ["admin-consensus"] });
