@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 import { FileVault } from "@/components/file-vault";
 import { NON_COMPETITION_SECTIONS } from "@/lib/vault-structure";
 import { Link } from "@tanstack/react-router";
@@ -28,13 +29,32 @@ type SortKey = "az" | "za";
 type SectionFilter = "all" | "03" | "04";
 
 function VaultPage() {
+  const { user, isAdmin } = useAuth();
   const { team: teamFromUrl } = Route.useSearch();
   const [teamId, setTeamId] = useState<string | undefined>(teamFromUrl);
   const [sort, setSort] = useState<SortKey>("az");
   const [section, setSection] = useState<SectionFilter>("all");
 
-  const { data: teams, isLoading } = useQuery({
+  // Students only ever see their own team's vault.
+  const { data: myTeam, isLoading: myTeamLoading } = useQuery({
+    queryKey: ["my-vault-team", user?.id],
+    enabled: !!user && !isAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("team_members")
+        .select("team_id, teams(name, is_test)")
+        .eq("user_id", user!.id);
+      if (error) throw error;
+      const mine = (data ?? []).find(
+        (t) => t.teams && !(t.teams as { is_test?: boolean }).is_test,
+      );
+      return mine ?? null;
+    },
+  });
+
+  const { data: teams, isLoading: teamsLoading } = useQuery({
     queryKey: ["vault-teams"],
+    enabled: !!isAdmin,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("teams")
@@ -59,10 +79,12 @@ function VaultPage() {
   }, [teams, sort, section]);
 
   useEffect(() => {
-    if (teamFromUrl) setTeamId(teamFromUrl);
-  }, [teamFromUrl]);
+    if (isAdmin && teamFromUrl) setTeamId(teamFromUrl);
+  }, [isAdmin, teamFromUrl]);
 
+  // Admin: keep the picked team valid against the filtered list.
   useEffect(() => {
+    if (!isAdmin) return;
     if (options.length === 0) {
       if (teamId) setTeamId(undefined);
       return;
@@ -70,7 +92,10 @@ function VaultPage() {
     if (!teamId || !options.some((o) => o.id === teamId)) {
       setTeamId(options[0].id);
     }
-  }, [options, teamId]);
+  }, [isAdmin, options, teamId]);
+
+  const isLoading = isAdmin ? teamsLoading : myTeamLoading;
+  const effectiveTeamId = isAdmin ? teamId : myTeam?.team_id;
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -80,69 +105,71 @@ function VaultPage() {
           <h1 className="font-display text-4xl">File Vault</h1>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
-          Browse files across every team.
+          {isAdmin ? "Browse files across every team." : "Your team's shared files."}
         </p>
       </header>
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end max-w-3xl">
-        <div>
-          <label className="text-sm font-medium mb-2 block">Select team</label>
-          <Select value={teamId} onValueChange={setTeamId}>
-            <SelectTrigger>
-              <SelectValue placeholder={isLoading ? "Loading…" : "Pick a team"} />
-            </SelectTrigger>
-            <SelectContent>
-              {options.map((o) => (
-                <SelectItem key={o.id} value={o.id}>
-                  {o.label}
-                  {o.section ? ` (§${o.section})` : ""}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {isAdmin && (
+        <div className="mb-6 grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end max-w-3xl">
+          <div>
+            <label className="text-sm font-medium mb-2 block">Select team</label>
+            <Select value={teamId} onValueChange={setTeamId}>
+              <SelectTrigger>
+                <SelectValue placeholder={isLoading ? "Loading…" : "Pick a team"} />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((o) => (
+                  <SelectItem key={o.id} value={o.id}>
+                    {o.label}
+                    {o.section ? ` (§${o.section})` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div>
-          <label className="text-sm font-medium mb-2 block">Section</label>
-          <Select value={section} onValueChange={(v) => setSection(v as SectionFilter)}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All sections</SelectItem>
-              <SelectItem value="03">§03 only</SelectItem>
-              <SelectItem value="04">§04 only</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+          <div>
+            <label className="text-sm font-medium mb-2 block">Section</label>
+            <Select value={section} onValueChange={(v) => setSection(v as SectionFilter)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All sections</SelectItem>
+                <SelectItem value="03">§03 only</SelectItem>
+                <SelectItem value="04">§04 only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div>
-          <label className="text-sm font-medium mb-2 block">Sort</label>
-          <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="az">A → Z</SelectItem>
-              <SelectItem value="za">Z → A</SelectItem>
-            </SelectContent>
-          </Select>
+          <div>
+            <label className="text-sm font-medium mb-2 block">Sort</label>
+            <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="az">A → Z</SelectItem>
+                <SelectItem value="za">Z → A</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-      </div>
+      )}
 
-      {teamId ? (
+      {effectiveTeamId ? (
         <>
           <p className="mb-4 text-sm text-muted-foreground">
             Competition submissions have moved to{" "}
             <Link to="/app/competitions" className="text-gold underline underline-offset-2">Competitions</Link>.
           </p>
-          <FileVault teamId={teamId} sections={NON_COMPETITION_SECTIONS} />
+          <FileVault teamId={effectiveTeamId} sections={NON_COMPETITION_SECTIONS} />
         </>
       ) : (
         !isLoading && (
           <Card className="border-dashed">
             <CardContent className="py-12 text-center text-muted-foreground">
-              No teams match these filters.
+              {isAdmin ? "No teams match these filters." : "You are not assigned to a team yet."}
             </CardContent>
           </Card>
         )
