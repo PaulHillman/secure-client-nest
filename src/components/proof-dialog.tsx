@@ -70,6 +70,7 @@ export function ProofDialog({
   const [result, setResult] = useState<{
     score: number | null;
     feedback: string | null;
+    transcript: string | null;
   } | null>(null);
 
   const { data: material } = useQuery({
@@ -112,7 +113,11 @@ export function ProofDialog({
       });
       toast.success("Submitted.");
       onSubmitted();
-      setResult({ score: res?.score ?? null, feedback: res?.feedback ?? null });
+      setResult({
+        score: res?.score ?? null,
+        feedback: res?.feedback ?? null,
+        transcript: res?.transcript ?? null,
+      });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not record your submission.");
     } finally {
@@ -143,6 +148,16 @@ export function ProofDialog({
                 Your work is recorded. Written feedback will appear on your team page shortly.
               </p>
             )}
+            {result.transcript ? (
+              <details className="rounded-md border p-3 text-sm" open>
+                <summary className="cursor-pointer font-medium">
+                  Transcript of the recording
+                </summary>
+                <pre className="mt-2 whitespace-pre-wrap text-muted-foreground">
+                  {result.transcript}
+                </pre>
+              </details>
+            ) : null}
             <DialogFooter>
               <Button onClick={onClose}>Close</Button>
             </DialogFooter>
