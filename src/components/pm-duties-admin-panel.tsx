@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Trash2, Bell, ClipboardList } from "lucide-react";
-import { DEFAULT_PM_DUTIES, dutyState, fmtDue } from "@/lib/pm-duties";
+import { DEFAULT_PM_DUTIES, MILESTONE_ROLES, dutyState, fmtDue } from "@/lib/pm-duties";
 import { notifyOverdueDuties } from "@/lib/pm-duties.functions";
 
 function toLocalInput(iso: string | null) {
@@ -26,6 +26,12 @@ export function PmDutiesAdminPanel() {
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
   const [due, setDue] = useState("");
+  const [roles, setRoles] = useState<string[]>([]);
+
+  const toggleRole = (r: string) =>
+    setRoles((cur) => (cur.includes(r) ? cur.filter((x) => x !== r) : [...cur, r]));
+  const toggleAllRoles = () =>
+    setRoles((cur) => (cur.length === MILESTONE_ROLES.length ? [] : [...MILESTONE_ROLES]));
   const notify = useServerFn(notifyOverdueDuties);
 
   const { data, isLoading } = useQuery({
@@ -35,7 +41,7 @@ export function PmDutiesAdminPanel() {
         await Promise.all([
           supabase
             .from("pm_duties")
-            .select("id, title, details, due_at, order_index, active")
+            .select("id, title, details, due_at, order_index, active, target_roles")
             .order("due_at", { ascending: true, nullsFirst: false })
             .order("order_index", { ascending: true }),
           supabase.from("teams").select("id, name, display_name, section").eq("is_test", false),
@@ -55,6 +61,7 @@ export function PmDutiesAdminPanel() {
         title: title.trim(),
         details: details.trim() || null,
         due_at: due ? new Date(due).toISOString() : null,
+        target_roles: roles,
         order_index: (data?.duties.length ?? 0) + 1,
       });
       if (error) throw error;
@@ -63,14 +70,15 @@ export function PmDutiesAdminPanel() {
       setTitle("");
       setDetails("");
       setDue("");
+      setRoles([]);
       qc.invalidateQueries({ queryKey });
-      toast.success("Responsibility added");
+      toast.success("Milestone added");
     },
     onError: (e: any) => toast.error(e.message ?? "Could not add"),
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: { title?: string; details?: string | null; due_at?: string | null; active?: boolean } }) => {
+    mutationFn: async ({ id, patch }: { id: string; patch: { title?: string; details?: string | null; due_at?: string | null; active?: boolean; target_roles?: string[] } }) => {
       const { error } = await supabase.from("pm_duties").update(patch).eq("id", id);
       if (error) throw error;
     },
