@@ -88,6 +88,7 @@ function AgreementPage() {
   const [fullName, setFullName] = useState("");
   const [initials, setInitials] = useState("");
   const [checked, setChecked] = useState(false);
+  const [showContinue, setShowContinue] = useState(false);
 
   useEffect(() => {
     if (mine) {
