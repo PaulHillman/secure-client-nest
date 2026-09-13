@@ -71,6 +71,9 @@ export const VAULT_STRUCTURE: VaultSection[] = [
 
 export const SECTION_NAMES = VAULT_STRUCTURE.map((s) => s.name);
 
+export const COMPETITION_SECTIONS = VAULT_STRUCTURE.filter((s) => s.name.startsWith("Competition"));
+export const NON_COMPETITION_SECTIONS = VAULT_STRUCTURE.filter((s) => !s.name.startsWith("Competition"));
+
 export function findSubsection(section: string, sub: string): VaultSubsection | undefined {
   return VAULT_STRUCTURE.find((s) => s.name === section)?.subsections.find((x) => x.name === sub);
 }

@@ -43,6 +43,7 @@ import {
   VAULT_STATUSES,
   STATUS_TONE,
   findSubsection,
+  type VaultSection,
   type VaultStatus,
 } from "@/lib/vault-structure";
 
@@ -83,7 +84,16 @@ function fmtSize(bytes?: number | null) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function FileVault({ teamId }: { teamId: string }) {
+export function FileVault({
+  teamId,
+  sections,
+  title = "File Vault",
+}: {
+  teamId: string;
+  sections?: VaultSection[];
+  title?: string;
+}) {
+  const structure = sections ?? VAULT_STRUCTURE;
   const { user, isAdmin } = useAuth();
   const qc = useQueryClient();
 
@@ -169,7 +179,7 @@ export function FileVault({ teamId }: { teamId: string }) {
       <div className="flex items-center justify-between gap-2 mb-4">
         <div className="flex items-center gap-2">
           <FolderOpen className="h-5 w-5 text-gold" />
-          <h2 className="font-display text-2xl">File Vault</h2>
+          <h2 className="font-display text-2xl">{title}</h2>
           <span className="text-xs text-muted-foreground">({totalCount} files)</span>
         </div>
         {user && (
@@ -187,10 +197,10 @@ export function FileVault({ teamId }: { teamId: string }) {
       ) : (
         <Accordion
           type="multiple"
-          defaultValue={VAULT_STRUCTURE.map((s) => s.name)}
+          defaultValue={structure.map((s) => s.name)}
           className="space-y-2"
         >
-          {VAULT_STRUCTURE.map((section) => {
+          {structure.map((section) => {
             const subMap = grouped.get(section.name);
             const sectionCount = subMap
               ? Array.from(subMap.values()).reduce((a, b) => a + b.length, 0)
