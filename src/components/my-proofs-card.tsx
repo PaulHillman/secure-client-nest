@@ -23,6 +23,13 @@ function scrollTo(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+const STEP_TONES: Record<number, { card: string; chip: string; bar: string }> = {
+  1: { card: "border-sky-500/40 bg-sky-500/5", chip: "bg-sky-500/15 text-sky-700 dark:text-sky-300", bar: "border-sky-500/50" },
+  2: { card: "border-emerald-500/40 bg-emerald-500/5", chip: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300", bar: "border-emerald-500/50" },
+  3: { card: "border-amber-500/40 bg-amber-500/5", chip: "bg-amber-500/15 text-amber-700 dark:text-amber-300", bar: "border-amber-500/50" },
+  4: { card: "border-violet-500/40 bg-violet-500/5", chip: "bg-violet-500/15 text-violet-700 dark:text-violet-300", bar: "border-violet-500/50" },
+};
+
 function Step({
   n,
   title,
@@ -36,8 +43,9 @@ function Step({
   children: React.ReactNode;
   action?: React.ReactNode;
 }) {
+  const tone = STEP_TONES[n];
   return (
-    <div className="flex gap-3 rounded-md border p-3">
+    <div className={`flex gap-3 rounded-md border border-l-4 p-3 ${tone?.card ?? ""}`}>
       <div className="pt-0.5">
         {done ? (
           <CheckCircle2 className="size-5 text-emerald-600" />
@@ -46,8 +54,11 @@ function Step({
         )}
       </div>
       <div className="min-w-0 flex-1 space-y-2">
-        <p className="font-medium">
-          Step {n} · {title}
+        <p className="flex items-center gap-2 font-medium">
+          <span className={`rounded px-1.5 py-0.5 text-xs font-semibold ${tone?.chip ?? ""}`}>
+            Step {n}
+          </span>
+          {title}
         </p>
         <div className="space-y-2 text-sm text-muted-foreground">{children}</div>
         {action}
@@ -152,13 +163,13 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
           </Step>
 
           {data.mine.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="ml-4 border-l-2 pl-3 text-sm text-muted-foreground sm:ml-6 border-emerald-500/50">
               {hasRole
                 ? "No activities are assigned to your role."
                 : "Pick your role above and your activities will appear here."}
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="ml-4 space-y-2 border-l-2 pl-3 sm:ml-6 border-emerald-500/50">
               {data.mine.map((item) => {
                 const proof = proofByKey(item.key);
                 if (!proof) return null;
@@ -168,7 +179,7 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
                 return (
                   <div
                     key={item.key}
-                    className="flex flex-wrap items-start justify-between gap-3 rounded-md border p-3"
+                    className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3"
                   >
                     <div className="min-w-0 space-y-1">
                       <p className="flex items-center gap-2 font-medium">
