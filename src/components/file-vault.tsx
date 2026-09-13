@@ -42,7 +42,6 @@ import {
   VAULT_STRUCTURE,
   VAULT_STATUSES,
   STATUS_TONE,
-  findSubsection,
   type VaultSection,
   type VaultStatus,
 } from "@/lib/vault-structure";
