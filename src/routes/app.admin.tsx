@@ -4,6 +4,8 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
+import { deleteStudent } from "@/lib/students.functions";
+import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -162,6 +164,16 @@ function StudentsPanel() {
     },
     onSuccess: () => {
       toast.success("Student updated");
+      qc.invalidateQueries({ queryKey: ["admin", "students"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteFn = useServerFn(deleteStudent);
+  const removeStudent = useMutation({
+    mutationFn: (id: string) => deleteFn({ data: { studentId: id } }),
+    onSuccess: (r) => {
+      toast.success(`${r.name} has been removed. Their vault files were kept.`);
       qc.invalidateQueries({ queryKey: ["admin", "students"] });
     },
     onError: (e: Error) => toast.error(e.message),
