@@ -37,7 +37,7 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
           .order("order_index", { ascending: true }),
         supabase
           .from("pm_duty_completions")
-          .select("id, duty_id, completed_at, completed_by")
+          .select("id, duty_id, completed_at, completed_by, notes")
           .eq("team_id", teamId),
       ]);
       if (dErr) throw dErr;
@@ -47,33 +47,55 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
     },
   });
 
-  const toggle = useMutation({
-    mutationFn: async ({ dutyId, done }: { dutyId: string; done: boolean }) => {
-      if (done) {
-        const { error } = await supabase
-          .from("pm_duty_completions")
-          .delete()
-          .eq("duty_id", dutyId)
-          .eq("team_id", teamId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("pm_duty_completions").insert({
-          duty_id: dutyId,
-          team_id: teamId,
-          completed_by: user?.id ?? null,
-          completed_at: new Date().toISOString(),
-        });
-        if (error) throw error;
-      }
+  const runCheck = useServerFn(checkDutyRequirements);
+  const runComplete = useServerFn(completeDuty);
+
+  const undo = useMutation({
+    mutationFn: async (dutyId: string) => {
+      const { error } = await supabase
+        .from("pm_duty_completions")
+        .delete()
+        .eq("duty_id", dutyId)
+        .eq("team_id", teamId);
+      if (error) throw error;
     },
-    onSuccess: (_r, v) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey });
-      toast.success(v.done ? "Marked as not done" : "Marked complete");
+      toast.success("Marked as not done");
     },
     onError: (e: any) => toast.error(e.message ?? "Could not update"),
   });
 
+  const complete = useMutation({
+    mutationFn: async ({ dutyId, override }: { dutyId: string; override: boolean }) =>
+      runComplete({ data: { teamId, dutyId, override } }),
+    onSuccess: (_r, v) => {
+      setBlocker(null);
+      qc.invalidateQueries({ queryKey });
+      toast.success(
+        v.override
+          ? "Marked complete as an override — Prof Hillman will see the missing items."
+          : "Marked complete",
+      );
+    },
+    onError: (e: any) => toast.error(e.message ?? "Could not update"),
+  });
+
+  const attempt = useMutation({
+    mutationFn: async (dutyId: string) => ({
+      dutyId,
+      result: await runCheck({ data: { teamId, dutyId } }),
+    }),
+    onSuccess: ({ dutyId, result }) => {
+      if (result.ok) complete.mutate({ dutyId, override: false });
+      else setBlocker({ dutyId, title: result.title, missing: result.missing });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Could not check this item"),
+  });
+
+  const busy = undo.isPending || complete.isPending || attempt.isPending;
   const duties = data ?? [];
+
 
   return (
     <Card className="border-border/60 mt-6">
