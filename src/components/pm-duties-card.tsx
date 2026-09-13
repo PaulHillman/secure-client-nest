@@ -1,17 +1,33 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ClipboardList, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { dutyState, fmtDue } from "@/lib/pm-duties";
+import { checkDutyRequirements, completeDuty } from "@/lib/pm-duties.functions";
+
 
 export function PmDutiesCard({ teamId }: { teamId: string }) {
-  const { user } = useAuth();
   const qc = useQueryClient();
   const queryKey = ["pm-duties", teamId];
+  const [blocker, setBlocker] = useState<{
+    dutyId: string;
+    title: string;
+    missing: string[];
+  } | null>(null);
+
 
   const { data, isLoading } = useQuery({
     queryKey,
@@ -25,7 +41,7 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
           .order("order_index", { ascending: true }),
         supabase
           .from("pm_duty_completions")
-          .select("id, duty_id, completed_at, completed_by")
+          .select("id, duty_id, completed_at, completed_by, notes")
           .eq("team_id", teamId),
       ]);
       if (dErr) throw dErr;
@@ -35,33 +51,55 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
     },
   });
 
-  const toggle = useMutation({
-    mutationFn: async ({ dutyId, done }: { dutyId: string; done: boolean }) => {
-      if (done) {
-        const { error } = await supabase
-          .from("pm_duty_completions")
-          .delete()
-          .eq("duty_id", dutyId)
-          .eq("team_id", teamId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("pm_duty_completions").insert({
-          duty_id: dutyId,
-          team_id: teamId,
-          completed_by: user?.id ?? null,
-          completed_at: new Date().toISOString(),
-        });
-        if (error) throw error;
-      }
+  const runCheck = useServerFn(checkDutyRequirements);
+  const runComplete = useServerFn(completeDuty);
+
+  const undo = useMutation({
+    mutationFn: async (dutyId: string) => {
+      const { error } = await supabase
+        .from("pm_duty_completions")
+        .delete()
+        .eq("duty_id", dutyId)
+        .eq("team_id", teamId);
+      if (error) throw error;
     },
-    onSuccess: (_r, v) => {
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey });
-      toast.success(v.done ? "Marked as not done" : "Marked complete");
+      toast.success("Marked as not done");
     },
     onError: (e: any) => toast.error(e.message ?? "Could not update"),
   });
 
+  const complete = useMutation({
+    mutationFn: async ({ dutyId, override }: { dutyId: string; override: boolean }) =>
+      runComplete({ data: { teamId, dutyId, override } }),
+    onSuccess: (_r, v) => {
+      setBlocker(null);
+      qc.invalidateQueries({ queryKey });
+      toast.success(
+        v.override
+          ? "Marked complete as an override — Prof Hillman will see the missing items."
+          : "Marked complete",
+      );
+    },
+    onError: (e: any) => toast.error(e.message ?? "Could not update"),
+  });
+
+  const attempt = useMutation({
+    mutationFn: async (dutyId: string) => ({
+      dutyId,
+      result: await runCheck({ data: { teamId, dutyId } }),
+    }),
+    onSuccess: ({ dutyId, result }) => {
+      if (result.ok) complete.mutate({ dutyId, override: false });
+      else setBlocker({ dutyId, title: result.title, missing: result.missing });
+    },
+    onError: (e: any) => toast.error(e.message ?? "Could not check this item"),
+  });
+
+  const busy = undo.isPending || complete.isPending || attempt.isPending;
   const duties = data ?? [];
+
 
   return (
     <Card className="border-border/60 mt-6">
@@ -113,13 +151,18 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
                           Completed {fmtDue(d.completion?.completed_at)}
                         </Badge>
                       ) : null}
+                      {d.completion?.notes ? (
+                        <Badge variant="outline" className="border-amber-500/40 text-amber-500">
+                          Marked complete as an override
+                        </Badge>
+                      ) : null}
                     </div>
                   </div>
                   <Button
                     size="sm"
                     variant={done ? "outline" : "default"}
-                    disabled={toggle.isPending}
-                    onClick={() => toggle.mutate({ dutyId: d.id, done })}
+                    disabled={busy}
+                    onClick={() => (done ? undo.mutate(d.id) : attempt.mutate(d.id))}
                   >
                     {done ? "Undo" : "Mark complete"}
                   </Button>
@@ -129,6 +172,44 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
           </ul>
         )}
       </CardContent>
+
+      <Dialog open={!!blocker} onOpenChange={(v) => !v && setBlocker(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              This is not finished yet
+            </DialogTitle>
+            <DialogDescription>
+              ClientVault cannot confirm “{blocker?.title}”. These items are still outstanding:
+            </DialogDescription>
+          </DialogHeader>
+          <ul className="list-disc space-y-1 pl-5 text-sm">
+            {blocker?.missing.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+          </ul>
+          <p className="text-sm text-muted-foreground">
+            You can still mark it complete, but it will be recorded as an override and Prof Hillman
+            will follow up with you about the missing items.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBlocker(null)}>
+              Go back and finish it
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={complete.isPending}
+              onClick={() =>
+                blocker && complete.mutate({ dutyId: blocker.dutyId, override: true })
+              }
+            >
+              Mark complete anyway
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
+
 }
