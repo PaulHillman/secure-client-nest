@@ -204,6 +204,16 @@ export function PmDutiesAdminPanel() {
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">Due {fmtDue(d.due_at)}</p>
+                    <Textarea
+                      rows={2}
+                      className="text-xs"
+                      placeholder="What it involves (optional) — shown to the team"
+                      defaultValue={d.details ?? ""}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim() || null;
+                        if (v !== (d.details ?? null)) update.mutate({ id: d.id, patch: { details: v } });
+                      }}
+                    />
                   </li>
                 );
               })}
