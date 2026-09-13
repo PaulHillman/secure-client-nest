@@ -226,7 +226,6 @@ export const checkDutyRequirements = createServerFn({ method: "POST" })
         if (!signed.has(m.user_id)) gaps.push("Group Norms approval");
         if (gaps.length) missing.push(`${who} still needs: ${gaps.join(", ")}.`);
       }
-      void nameOf;
     }
 
     return { ok: missing.length === 0, missing, title: duty.title as string };
