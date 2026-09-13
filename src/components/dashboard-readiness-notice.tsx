@@ -43,10 +43,18 @@ export function DashboardReadinessNotice({ teamId }: { teamId?: string } = {}) {
             to="/app/teams/$teamId"
             params={{ teamId: data.teamId }}
             hash="team-readiness"
+            onClick={() => {
+              window.setTimeout(() => {
+                document
+                  .getElementById("team-readiness")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }, 50);
+            }}
           >
             Continue <ArrowRight className="ml-2 size-4" />
           </Link>
         </Button>
+
       </CardContent>
     </Card>
   );
