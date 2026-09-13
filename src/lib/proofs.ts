@@ -132,7 +132,7 @@ export const PROOFS: Proof[] = [
     key: "liaison_voicemail",
     role: "Company Liaison",
     title: "Handle a Voicemail from the Client Contact",
-    alias: "Liaison Proof C",
+    alias: "Liaison Proof B",
     needsMaterials: true,
     maxScore: 8,
     howTo: "What do you need to do after listening to this voicemail?",
