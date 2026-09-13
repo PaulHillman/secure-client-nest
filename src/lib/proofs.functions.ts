@@ -330,6 +330,9 @@ export const submitProof = createServerFn({ method: "POST" })
       feedbackStatus,
       score: score ?? null,
       maxScore: proof.maxScore ?? null,
+      // Listening exercises hide the transcript while the student works; once the
+      // work is in, reading it is genuinely useful.
+      transcript: material?.transcript_text ?? null,
     };
   });
 
