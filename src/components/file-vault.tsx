@@ -186,6 +186,7 @@ export function FileVault({
           <UploadDialog
             teamId={teamId}
             userId={user.id}
+            sections={structure}
             members={members}
             onDone={() => qc.invalidateQueries({ queryKey: ["vault", teamId] })}
           />
@@ -725,36 +726,37 @@ function NewVersionButton({
 }
 
 function UploadDialog({
-  teamId, userId, members, onDone,
+  teamId, userId, members, onDone, sections,
 }: {
   teamId: string;
   userId: string;
   members: MemberRow[];
   onDone: () => void;
+  sections: VaultSection[];
 }) {
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [section, setSection] = useState<string>(VAULT_STRUCTURE[0].name);
-  const [subsection, setSubsection] = useState<string>(VAULT_STRUCTURE[0].subsections[0].name);
+  const [section, setSection] = useState<string>(sections[0].name);
+  const [subsection, setSubsection] = useState<string>(sections[0].subsections[0].name);
   const [assignedTo, setAssignedTo] = useState<string>("");
   const [busy, setBusy] = useState(false);
 
-  const subDef = findSubsection(section, subsection);
+  const subDef = sections.find((s) => s.name === section)?.subsections.find((x) => x.name === subsection);
   const showAssignee = !!subDef?.perMember && members.length > 0;
 
   const onSectionChange = (s: string) => {
     setSection(s);
-    const first = VAULT_STRUCTURE.find((x) => x.name === s)?.subsections[0].name;
+    const first = sections.find((x) => x.name === s)?.subsections[0].name;
     if (first) setSubsection(first);
     setAssignedTo("");
   };
 
   const reset = () => {
     setFile(null); setName(""); setDescription("");
-    setSection(VAULT_STRUCTURE[0].name);
-    setSubsection(VAULT_STRUCTURE[0].subsections[0].name);
+    setSection(sections[0].name);
+    setSubsection(sections[0].subsections[0].name);
     setAssignedTo("");
   };
 
@@ -810,7 +812,7 @@ function UploadDialog({
     }
   };
 
-  const subsForSection = VAULT_STRUCTURE.find((s) => s.name === section)?.subsections ?? [];
+  const subsForSection = sections.find((s) => s.name === section)?.subsections ?? [];
 
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
@@ -844,7 +846,7 @@ function UploadDialog({
               <Select value={section} onValueChange={onSectionChange}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {VAULT_STRUCTURE.map((s) => (
+                  {sections.map((s) => (
                     <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>
                   ))}
                 </SelectContent>
