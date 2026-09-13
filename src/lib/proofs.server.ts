@@ -25,11 +25,6 @@ const PRIVATE_RUBRICS: Record<string, string[]> = {
     "Removes duplicates and weak yes-or-no questions",
     "Uses a sensible interview order",
   ],
-  liaison_loop: [
-    "Confirms the call details through the official client channel",
-    "Informs teammates and preserves the communication in ClientVault",
-    "Records and follows through on resulting team actions",
-  ],
   video_disaster: [
     "Addresses presentation, missing script, B-roll, participation, and consistency problems",
     "Corrects important problems before recording and protects the final product",
