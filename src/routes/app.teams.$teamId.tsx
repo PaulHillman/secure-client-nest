@@ -9,13 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Users, Phone, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
-import { FileVault } from "@/components/file-vault";
-import { ManagerSubmissions } from "@/components/manager-submissions";
 import { CompanyFocusCard, type CompanyFocus } from "@/components/company-focus-card";
 import { ProjectArchCard } from "@/components/project-arch-card";
 import { MeetingTimeCard } from "@/components/meeting-time-card";
 import { TeamAvailabilityCard } from "@/components/team-availability-card";
-import { MeetingLogCard } from "@/components/meeting-log-card";
 import { TeamSkillsMap } from "@/components/team-skills-map";
 import { roleMatches, skillLabel } from "@/lib/student-skills";
 import { Badge } from "@/components/ui/badge";
@@ -225,13 +222,6 @@ function TeamDetail() {
       </div>
 
       <GroupNormsCard teamId={teamId} />
-
-      <MeetingLogCard teamId={teamId} />
-
-
-      <ManagerSubmissions teamId={teamId} />
-
-      <FileVault teamId={teamId} />
     </div>
   );
 }
