@@ -164,6 +164,65 @@ export const bulkImportStudents = createServerFn({ method: "POST" })
     return result;
   });
 
+/** Remove one student who dropped the class: their login, membership, and
+ *  submissions go; files they uploaded stay in the vault under the admin's name. */
+export const deleteStudent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { studentId: string }) => {
+    if (!input?.studentId) throw new Error("studentId required");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin, error: roleError } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (roleError || !isAdmin) throw new Error("Forbidden: admin role required");
+    if (data.studentId === context.userId) throw new Error("You cannot remove your own account.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: targetRole } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", data.studentId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (targetRole) throw new Error("That account is an administrator and cannot be removed here.");
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("id, name, email")
+      .eq("id", data.studentId)
+      .maybeSingle();
+
+    const ids = [data.studentId];
+    const cleanupOperations = [
+      supabaseAdmin.from("notifications").delete().in("user_id", ids),
+      supabaseAdmin.from("notifications").delete().in("actor_id", ids),
+      supabaseAdmin.from("team_meeting_agreements").delete().in("user_id", ids),
+      supabaseAdmin.from("team_meeting_proposals").delete().in("proposed_by", ids),
+      supabaseAdmin.from("group_norms_signatures").delete().in("user_id", ids),
+      supabaseAdmin.from("file_comments").delete().in("author_id", ids),
+      supabaseAdmin.from("manager_submissions").delete().in("submitted_by", ids),
+      supabaseAdmin.from("team_members").delete().in("user_id", ids),
+      supabaseAdmin.from("auth_audit_log").delete().in("user_id", ids),
+      supabaseAdmin.from("files").update({ assigned_to: null }).in("assigned_to", ids),
+      supabaseAdmin.from("files").update({ uploaded_by: context.userId }).in("uploaded_by", ids),
+      supabaseAdmin.from("file_versions").update({ uploaded_by: context.userId }).in("uploaded_by", ids),
+    ];
+    const cleanupResults = await Promise.all(cleanupOperations);
+    const cleanupError = cleanupResults.find((operation) => operation.error)?.error;
+    if (cleanupError) throw new Error(`Could not clean student records: ${cleanupError.message}`);
+
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.studentId);
+    if (error && !/not found/i.test(error.message)) throw new Error(error.message);
+    await supabaseAdmin.from("profiles").delete().eq("id", data.studentId);
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", data.studentId);
+
+    return { ok: true, name: profile?.name ?? "Student" };
+  });
+
+
 export type PurgeResult = { deleted: number; failed: { email: string; error: string }[] };
 
 export const deleteAllStudents = createServerFn({ method: "POST" })

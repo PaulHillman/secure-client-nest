@@ -4,6 +4,8 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
+import { deleteStudent } from "@/lib/students.functions";
+import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -167,6 +169,16 @@ function StudentsPanel() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const deleteFn = useServerFn(deleteStudent);
+  const removeStudent = useMutation({
+    mutationFn: (id: string) => deleteFn({ data: { studentId: id } }),
+    onSuccess: (r) => {
+      toast.success(`${r.name} has been removed. Their vault files were kept.`);
+      qc.invalidateQueries({ queryKey: ["admin", "students"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const [sectionFilter, setSectionFilter] = useState<string>("all");
   const [teamFilter, setTeamFilter] = useState<string>("all");
   const [roleFilter, setRoleFilter] = useState<string>("all");
@@ -278,6 +290,8 @@ function StudentsPanel() {
                   onSave={(name, section) =>
                     updateProfile.mutate({ id: s.id, name, section })
                   }
+                  onDelete={() => removeStudent.mutate(s.id)}
+                  deleting={removeStudent.isPending && removeStudent.variables === s.id}
                 />
               ))}
             </tbody>
@@ -291,6 +305,8 @@ function StudentsPanel() {
 function StudentRow({
   student,
   onSave,
+  onDelete,
+  deleting,
 }: {
   student: {
     id: string;
@@ -302,9 +318,12 @@ function StudentRow({
     job_title: string | null;
   };
   onSave: (name: string, section: string | null) => void;
+  onDelete: () => void;
+  deleting: boolean;
 }) {
   const [name, setName] = useState(student.name);
   const [section, setSection] = useState(student.section ?? "");
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const dirty = name !== student.name || (section || null) !== (student.section || null);
 
   return (
@@ -339,11 +358,50 @@ function StudentRow({
         )}
       </td>
       <td className="py-2 text-right">
-        {dirty && (
-          <Button size="sm" variant="outline" onClick={() => onSave(name, section || null)}>
-            Save
-          </Button>
-        )}
+        <div className="flex items-center justify-end gap-1">
+          {dirty && (
+            <Button size="sm" variant="outline" onClick={() => onSave(name, section || null)}>
+              Save
+            </Button>
+          )}
+          <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <DialogTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive hover:text-destructive"
+                title={`Remove ${student.name}`}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Remove {student.name}?</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-muted-foreground">
+                This permanently deletes their login, team membership, submissions, and
+                notifications. Files they uploaded for the team stay in the vault.
+                This cannot be undone.
+              </p>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="destructive"
+                  disabled={deleting}
+                  onClick={() => {
+                    onDelete();
+                    setConfirmOpen(false);
+                  }}
+                >
+                  {deleting ? "Removing…" : "Remove student"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </td>
     </tr>
   );
