@@ -70,7 +70,7 @@ export function PmDutiesAdminPanel() {
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: { title?: string; due_at?: string | null; active?: boolean } }) => {
+    mutationFn: async ({ id, patch }: { id: string; patch: { title?: string; details?: string | null; due_at?: string | null; active?: boolean } }) => {
       const { error } = await supabase.from("pm_duties").update(patch).eq("id", id);
       if (error) throw error;
     },
@@ -204,6 +204,16 @@ export function PmDutiesAdminPanel() {
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground">Due {fmtDue(d.due_at)}</p>
+                    <Textarea
+                      rows={2}
+                      className="text-xs"
+                      placeholder="What it involves (optional) — shown to the team"
+                      defaultValue={d.details ?? ""}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim() || null;
+                        if (v !== (d.details ?? null)) update.mutate({ id: d.id, patch: { details: v } });
+                      }}
+                    />
                   </li>
                 );
               })}
