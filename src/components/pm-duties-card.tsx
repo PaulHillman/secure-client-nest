@@ -152,13 +152,18 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
                           Completed {fmtDue(d.completion?.completed_at)}
                         </Badge>
                       ) : null}
+                      {d.completion?.notes ? (
+                        <Badge variant="outline" className="border-amber-500/40 text-amber-500">
+                          Marked complete as an override
+                        </Badge>
+                      ) : null}
                     </div>
                   </div>
                   <Button
                     size="sm"
                     variant={done ? "outline" : "default"}
-                    disabled={toggle.isPending}
-                    onClick={() => toggle.mutate({ dutyId: d.id, done })}
+                    disabled={busy}
+                    onClick={() => (done ? undo.mutate(d.id) : attempt.mutate(d.id))}
                   >
                     {done ? "Undo" : "Mark complete"}
                   </Button>
@@ -168,6 +173,44 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
           </ul>
         )}
       </CardContent>
+
+      <Dialog open={!!blocker} onOpenChange={(v) => !v && setBlocker(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              This is not finished yet
+            </DialogTitle>
+            <DialogDescription>
+              ClientVault cannot confirm “{blocker?.title}”. These items are still outstanding:
+            </DialogDescription>
+          </DialogHeader>
+          <ul className="list-disc space-y-1 pl-5 text-sm">
+            {blocker?.missing.map((m) => (
+              <li key={m}>{m}</li>
+            ))}
+          </ul>
+          <p className="text-sm text-muted-foreground">
+            You can still mark it complete, but it will be recorded as an override and Prof Hillman
+            will follow up with you about the missing items.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBlocker(null)}>
+              Go back and finish it
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={complete.isPending}
+              onClick={() =>
+                blocker && complete.mutate({ dutyId: blocker.dutyId, override: true })
+              }
+            >
+              Mark complete anyway
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
+
 }
