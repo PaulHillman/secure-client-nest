@@ -137,7 +137,7 @@ export function PmDutiesAdminPanel() {
         <CardHeader className="flex flex-row items-center justify-between gap-2">
           <CardTitle className="font-display text-xl flex items-center gap-2">
             <ClipboardList className="h-5 w-5 text-gold" />
-            Project Manager responsibilities & deadlines
+            Team milestones & deadlines
           </CardTitle>
           <Button variant="outline" size="sm" disabled={remind.isPending} onClick={() => remind.mutate()}>
             <Bell className="h-4 w-4 mr-1" /> Notify missed deadlines
@@ -146,7 +146,7 @@ export function PmDutiesAdminPanel() {
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-[1fr_220px_auto] items-end">
             <div className="space-y-1">
-              <Label>Responsibility</Label>
+              <Label>Milestone</Label>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Meeting time submitted" />
             </div>
             <div className="space-y-1">
@@ -160,6 +160,28 @@ export function PmDutiesAdminPanel() {
           <div className="space-y-1">
             <Label>What it involves (optional)</Label>
             <Textarea rows={2} value={details} onChange={(e) => setDetails(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>Highlight for (optional — pick one, several, or all)</Label>
+            <div className="flex flex-wrap gap-1.5">
+              <Badge
+                variant={roles.length === MILESTONE_ROLES.length ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={toggleAllRoles}
+              >
+                All roles
+              </Badge>
+              {MILESTONE_ROLES.map((r) => (
+                <Badge
+                  key={r}
+                  variant={roles.includes(r) ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => toggleRole(r)}
+                >
+                  {r}
+                </Badge>
+              ))}
+            </div>
           </div>
 
           {isLoading ? (
