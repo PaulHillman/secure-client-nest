@@ -129,16 +129,6 @@ export const PROOFS: Proof[] = [
     fields: [{ name: "questions", label: "Your interview questions, in order", required: true }],
   },
   {
-    key: "liaison_loop",
-    role: "Company Liaison",
-    title: "Close the Communication Loop",
-    alias: "Liaison Proof B",
-    howTo: "What should you do after this phone call?",
-    scenario:
-      "The manager phones you. She gives important new information about the project, moves the interview from Thursday to the following Monday, and asks the team to send its questions in advance.",
-    fields: [{ name: "response", label: "What should you do next?", required: true }],
-  },
-  {
     key: "liaison_voicemail",
     role: "Company Liaison",
     title: "Handle a Voicemail from the Client Contact",
