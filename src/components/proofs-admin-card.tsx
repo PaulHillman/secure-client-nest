@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -44,6 +44,14 @@ export function ProofsAdminCard() {
   const rows = (data?.rows ?? []).filter((r) => section === ALL || r.section === section);
   const editing = proofByKey(editKey);
   const materialState = data?.materials.find((m) => m.key === editKey);
+
+  // Load the saved transcript / answer key into the boxes whenever the
+  // selected activity changes, so the professor sees what is on record.
+  useEffect(() => {
+    setTranscript(materialState?.transcript ?? "");
+    setAnswerKey(materialState?.answerKey ?? "");
+  }, [editKey, materialState?.transcript, materialState?.answerKey]);
+
 
   const refresh = () => void qc.invalidateQueries({ queryKey: ["proof-overview"] });
 

@@ -350,7 +350,7 @@ export const getProofOverview = createServerFn({ method: "GET" })
         supabase
           .from("proof_submissions")
           .select("user_id, proof_key, submitted_at, feedback_status, review_status"),
-        supabase.from("proof_materials").select("proof_key, ready"),
+        supabase.from("proof_materials").select("proof_key, ready, transcript_text, answer_key"),
       ]);
 
     const ids = (members ?? []).map((m) => m.user_id);
@@ -420,6 +420,8 @@ export const getProofOverview = createServerFn({ method: "GET" })
         role: p.role,
         needsMaterials: !!p.needsMaterials,
         ready: (materials ?? []).find((m) => m.proof_key === p.key)?.ready ?? false,
+        transcript: (materials ?? []).find((m) => m.proof_key === p.key)?.transcript_text ?? "",
+        answerKey: (materials ?? []).find((m) => m.proof_key === p.key)?.answer_key ?? "",
       })),
     };
   });
