@@ -35,10 +35,16 @@ const PRIVATE_RUBRICS: Record<string, string[]> = {
     "Corrects important problems before recording and protects the final product",
   ],
   tech_zip: [
-    "Matches the required folder structure and naming",
-    "Keeps file extensions and required files intact",
-    "Uploads the completed ZIP",
+    "Compare the student's ZIP file list against the answer key, which is the correct final structure",
+    "Question files renamed to the YYYY-MM-DD_Questions_Name_Description.docx convention and moved into Client Interview Questions",
+    "B-roll files keep their original names and sit in B-roll/Keith, B-roll/David and B-roll/Val as the README specifies",
+    "Client Financial Data.xlsx, the PDF and the PPTX keep their original names and move into Client Research",
+    "Agenda renamed to YYYY-MM-DD_Meeting_Agenda_TeamNo5 with its original extension and placed in the matching Meetings date folder",
+    "Minutes renamed to YYYY-MM-DD_Meeting_Minutes_TeamNo5.docx and placed in Meetings/2026-09-15",
+    "READ_ME!.rtf and the Group Norms file stay at the root; no file extensions changed",
+    "Ignore ZIP ordering, empty folders and the name of the uploaded ZIP itself; name differences of a character or two are still worth pointing out plainly",
   ],
+
   tech_presentation: [
     "Checks the physical connection, input, and display settings",
     "Tries sensible recovery steps and gives a practical backup plan",
