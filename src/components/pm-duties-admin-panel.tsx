@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Trash2, Bell, ClipboardList } from "lucide-react";
-import { DEFAULT_PM_DUTIES, dutyState, fmtDue } from "@/lib/pm-duties";
+import { DEFAULT_PM_DUTIES, MILESTONE_ROLES, dutyState, fmtDue } from "@/lib/pm-duties";
 import { notifyOverdueDuties } from "@/lib/pm-duties.functions";
 
 function toLocalInput(iso: string | null) {
@@ -26,6 +26,12 @@ export function PmDutiesAdminPanel() {
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
   const [due, setDue] = useState("");
+  const [roles, setRoles] = useState<string[]>([]);
+
+  const toggleRole = (r: string) =>
+    setRoles((cur) => (cur.includes(r) ? cur.filter((x) => x !== r) : [...cur, r]));
+  const toggleAllRoles = () =>
+    setRoles((cur) => (cur.length === MILESTONE_ROLES.length ? [] : [...MILESTONE_ROLES]));
   const notify = useServerFn(notifyOverdueDuties);
 
   const { data, isLoading } = useQuery({
@@ -35,7 +41,7 @@ export function PmDutiesAdminPanel() {
         await Promise.all([
           supabase
             .from("pm_duties")
-            .select("id, title, details, due_at, order_index, active")
+            .select("id, title, details, due_at, order_index, active, target_roles")
             .order("due_at", { ascending: true, nullsFirst: false })
             .order("order_index", { ascending: true }),
           supabase.from("teams").select("id, name, display_name, section").eq("is_test", false),
@@ -55,6 +61,7 @@ export function PmDutiesAdminPanel() {
         title: title.trim(),
         details: details.trim() || null,
         due_at: due ? new Date(due).toISOString() : null,
+        target_roles: roles,
         order_index: (data?.duties.length ?? 0) + 1,
       });
       if (error) throw error;
@@ -63,14 +70,15 @@ export function PmDutiesAdminPanel() {
       setTitle("");
       setDetails("");
       setDue("");
+      setRoles([]);
       qc.invalidateQueries({ queryKey });
-      toast.success("Responsibility added");
+      toast.success("Milestone added");
     },
     onError: (e: any) => toast.error(e.message ?? "Could not add"),
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, patch }: { id: string; patch: { title?: string; details?: string | null; due_at?: string | null; active?: boolean } }) => {
+    mutationFn: async ({ id, patch }: { id: string; patch: { title?: string; details?: string | null; due_at?: string | null; active?: boolean; target_roles?: string[] } }) => {
       const { error } = await supabase.from("pm_duties").update(patch).eq("id", id);
       if (error) throw error;
     },
@@ -129,7 +137,7 @@ export function PmDutiesAdminPanel() {
         <CardHeader className="flex flex-row items-center justify-between gap-2">
           <CardTitle className="font-display text-xl flex items-center gap-2">
             <ClipboardList className="h-5 w-5 text-gold" />
-            Project Manager responsibilities & deadlines
+            Team milestones & deadlines
           </CardTitle>
           <Button variant="outline" size="sm" disabled={remind.isPending} onClick={() => remind.mutate()}>
             <Bell className="h-4 w-4 mr-1" /> Notify missed deadlines
@@ -138,7 +146,7 @@ export function PmDutiesAdminPanel() {
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-[1fr_220px_auto] items-end">
             <div className="space-y-1">
-              <Label>Responsibility</Label>
+              <Label>Milestone</Label>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Meeting time submitted" />
             </div>
             <div className="space-y-1">
@@ -152,6 +160,28 @@ export function PmDutiesAdminPanel() {
           <div className="space-y-1">
             <Label>What it involves (optional)</Label>
             <Textarea rows={2} value={details} onChange={(e) => setDetails(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>Highlight for (optional — pick one, several, or all)</Label>
+            <div className="flex flex-wrap gap-1.5">
+              <Badge
+                variant={roles.length === MILESTONE_ROLES.length ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={toggleAllRoles}
+              >
+                All roles
+              </Badge>
+              {MILESTONE_ROLES.map((r) => (
+                <Badge
+                  key={r}
+                  variant={roles.includes(r) ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => toggleRole(r)}
+                >
+                  {r}
+                </Badge>
+              ))}
+            </div>
           </div>
 
           {isLoading ? (
@@ -168,53 +198,14 @@ export function PmDutiesAdminPanel() {
               {duties.map((d) => {
                 const doneCount = teams.filter((t) => compKey.has(`${d.id}:${t.id}`)).length;
                 return (
-                  <li key={d.id} className="rounded-md border border-border/60 p-3 space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Input
-                        className="h-8 flex-1 min-w-[200px]"
-                        defaultValue={d.title}
-                        onBlur={(e) =>
-                          e.target.value !== d.title &&
-                          update.mutate({ id: d.id, patch: { title: e.target.value } })
-                        }
-                      />
-                      <Input
-                        type="datetime-local"
-                        className="h-8 w-[210px]"
-                        defaultValue={toLocalInput(d.due_at)}
-                        onChange={(e) =>
-                          update.mutate({
-                            id: d.id,
-                            patch: { due_at: e.target.value ? new Date(e.target.value).toISOString() : null },
-                          })
-                        }
-                      />
-                      <Badge variant={doneCount === teams.length ? "secondary" : "outline"}>
-                        {doneCount}/{teams.length} teams
-                      </Badge>
-                      <Button
-                        size="sm"
-                        variant={d.active ? "outline" : "secondary"}
-                        onClick={() => update.mutate({ id: d.id, patch: { active: !d.active } })}
-                      >
-                        {d.active ? "Active" : "Hidden"}
-                      </Button>
-                      <Button size="icon" variant="ghost" onClick={() => remove.mutate(d.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">Due {fmtDue(d.due_at)}</p>
-                    <Textarea
-                      rows={2}
-                      className="text-xs"
-                      placeholder="What it involves (optional) — shown to the team"
-                      defaultValue={d.details ?? ""}
-                      onBlur={(e) => {
-                        const v = e.target.value.trim() || null;
-                        if (v !== (d.details ?? null)) update.mutate({ id: d.id, patch: { details: v } });
-                      }}
-                    />
-                  </li>
+                  <MilestoneRow
+                    key={d.id}
+                    duty={d}
+                    doneCount={doneCount}
+                    teamCount={teams.length}
+                    update={update}
+                    remove={remove}
+                  />
                 );
               })}
             </ul>
@@ -278,5 +269,130 @@ export function PmDutiesAdminPanel() {
         </Card>
       ) : null}
     </div>
+  );
+}
+
+type DutyRow = {
+  id: string;
+  title: string;
+  details: string | null;
+  due_at: string | null;
+  active: boolean;
+  target_roles: string[] | null;
+};
+
+function MilestoneRow({
+  duty: d,
+  doneCount,
+  teamCount,
+  update,
+  remove,
+}: {
+  duty: DutyRow;
+  doneCount: number;
+  teamCount: number;
+  update: ReturnType<typeof useMutation<unknown, Error, { id: string; patch: Record<string, unknown> }>>;
+  remove: ReturnType<typeof useMutation<unknown, Error, string>>;
+}) {
+  const [details, setDetails] = useState(d.details ?? "");
+  const dirty = (details.trim() || null) !== (d.details ?? null);
+  const roles = d.target_roles ?? [];
+
+  const toggleTarget = (r: string) => {
+    const next = roles.includes(r) ? roles.filter((x) => x !== r) : [...roles, r];
+    update.mutate({ id: d.id, patch: { target_roles: next } });
+  };
+
+  return (
+    <li className="rounded-md border border-border/60 p-3 space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          className="h-8 flex-1 min-w-[200px]"
+          defaultValue={d.title}
+          onBlur={(e) =>
+            e.target.value !== d.title &&
+            update.mutate({ id: d.id, patch: { title: e.target.value } })
+          }
+        />
+        <Input
+          type="datetime-local"
+          className="h-8 w-[210px]"
+          defaultValue={toLocalInput(d.due_at)}
+          onChange={(e) =>
+            update.mutate({
+              id: d.id,
+              patch: { due_at: e.target.value ? new Date(e.target.value).toISOString() : null },
+            })
+          }
+        />
+        <Badge variant={doneCount === teamCount ? "secondary" : "outline"}>
+          {doneCount}/{teamCount} teams
+        </Badge>
+        <Button
+          size="sm"
+          variant={d.active ? "outline" : "secondary"}
+          onClick={() => update.mutate({ id: d.id, patch: { active: !d.active } })}
+        >
+          {d.active ? "Active" : "Hidden"}
+        </Button>
+        <Button size="icon" variant="ghost" onClick={() => remove.mutate(d.id)}>
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">Due {fmtDue(d.due_at)}</p>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-xs text-muted-foreground mr-1">Highlight for:</span>
+        <Badge
+          variant={roles.length === MILESTONE_ROLES.length ? "default" : "outline"}
+          className="cursor-pointer text-[11px]"
+          onClick={() =>
+            update.mutate({
+              id: d.id,
+              patch: { target_roles: roles.length === MILESTONE_ROLES.length ? [] : [...MILESTONE_ROLES] },
+            })
+          }
+        >
+          All roles
+        </Badge>
+        {MILESTONE_ROLES.map((r) => (
+          <Badge
+            key={r}
+            variant={roles.includes(r) ? "default" : "outline"}
+            className="cursor-pointer text-[11px]"
+            onClick={() => toggleTarget(r)}
+          >
+            {r}
+          </Badge>
+        ))}
+        {roles.length === 0 ? (
+          <span className="text-[11px] text-muted-foreground">no highlight — general milestone</span>
+        ) : null}
+      </div>
+      <Textarea
+        rows={2}
+        className="text-xs"
+        placeholder="What it involves (optional) — shown to the team"
+        value={details}
+        onChange={(e) => setDetails(e.target.value)}
+      />
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!dirty || update.isPending}
+          onClick={() =>
+            update.mutate(
+              { id: d.id, patch: { details: details.trim() || null } },
+              { onSuccess: () => toast.success("Changes saved") },
+            )
+          }
+        >
+          Save description
+        </Button>
+        {dirty ? (
+          <span className="text-[11px] text-amber-500">Unsaved changes</span>
+        ) : null}
+      </div>
+    </li>
   );
 }

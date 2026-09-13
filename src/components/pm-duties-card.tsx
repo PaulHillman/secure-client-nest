@@ -13,13 +13,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ClipboardList, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
+import { ClipboardList, CheckCircle2, Clock, AlertTriangle, Star } from "lucide-react";
 import { toast } from "sonner";
 import { dutyState, fmtDue } from "@/lib/pm-duties";
 import { checkDutyRequirements, completeDuty } from "@/lib/pm-duties.functions";
+import { useAuth } from "@/lib/auth-context";
 
 
 export function PmDutiesCard({ teamId }: { teamId: string }) {
+  const { user } = useAuth();
   const qc = useQueryClient();
   const queryKey = ["pm-duties", teamId];
   const [blocker, setBlocker] = useState<{
@@ -30,12 +32,12 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
 
 
   const { data, isLoading } = useQuery({
-    queryKey,
+    queryKey: [...queryKey, user?.id],
     queryFn: async () => {
-      const [{ data: duties, error: dErr }, { data: comps, error: cErr }] = await Promise.all([
+      const [{ data: duties, error: dErr }, { data: comps, error: cErr }, { data: me, error: mErr }] = await Promise.all([
         supabase
           .from("pm_duties")
-          .select("id, title, details, due_at, order_index")
+          .select("id, title, details, due_at, order_index, target_roles")
           .eq("active", true)
           .order("due_at", { ascending: true, nullsFirst: false })
           .order("order_index", { ascending: true }),
@@ -43,11 +45,21 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
           .from("pm_duty_completions")
           .select("id, duty_id, completed_at, completed_by, notes")
           .eq("team_id", teamId),
+        supabase
+          .from("team_members")
+          .select("job_title")
+          .eq("team_id", teamId)
+          .eq("user_id", user?.id ?? "")
+          .maybeSingle(),
       ]);
       if (dErr) throw dErr;
       if (cErr) throw cErr;
+      if (mErr) throw mErr;
       const byDuty = new Map((comps ?? []).map((c) => [c.duty_id, c]));
-      return (duties ?? []).map((d) => ({ ...d, completion: byDuty.get(d.id) ?? null }));
+      return {
+        myRole: (me?.job_title as string | undefined) ?? null,
+        duties: (duties ?? []).map((d) => ({ ...d, completion: byDuty.get(d.id) ?? null })),
+      };
     },
   });
 
@@ -98,7 +110,8 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
   });
 
   const busy = undo.isPending || complete.isPending || attempt.isPending;
-  const duties = data ?? [];
+  const duties = data?.duties ?? [];
+  const myRole = data?.myRole ?? null;
 
 
   return (
@@ -106,14 +119,14 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
       <CardHeader>
         <CardTitle className="font-display text-xl flex items-center gap-2">
           <ClipboardList className="h-5 w-5 text-gold" />
-          Project Manager responsibilities
+          Team milestones & deadlines
         </CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
         ) : duties.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No responsibilities have been published yet.</p>
+          <p className="text-sm text-muted-foreground">No milestones have been published yet.</p>
         ) : (
           <ul className="space-y-3">
             {duties.map((d) => {
@@ -134,7 +147,14 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium">{d.title}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium">{d.title}</p>
+                      {myRole && (d.target_roles ?? []).includes(myRole) ? (
+                        <Badge variant="outline" className="border-gold/50 text-gold">
+                          <Star className="h-3 w-3 mr-1" /> Flagged for your role
+                        </Badge>
+                      ) : null}
+                    </div>
                     {d.details ? (
                       <p className="text-xs text-muted-foreground mt-0.5">{d.details}</p>
                     ) : null}

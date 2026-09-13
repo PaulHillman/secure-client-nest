@@ -1,0 +1,1 @@
+ALTER TABLE public.pm_duties ADD COLUMN target_roles text[] NOT NULL DEFAULT '{}';
