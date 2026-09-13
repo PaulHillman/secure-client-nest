@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppVaultOverviewRouteImport } from './routes/app.vault-overview'
 import { Route as AppVaultRouteImport } from './routes/app.vault'
 import { Route as AppTeamsRouteImport } from './routes/app.teams'
+import { Route as AppMeetingsRouteImport } from './routes/app.meetings'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppBacklogRouteImport } from './routes/app.backlog'
 import { Route as AppAgreementRouteImport } from './routes/app.agreement'
@@ -59,6 +60,11 @@ const AppVaultRoute = AppVaultRouteImport.update({
 const AppTeamsRoute = AppTeamsRouteImport.update({
   id: '/teams',
   path: '/teams',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMeetingsRoute = AppMeetingsRouteImport.update({
+  id: '/meetings',
+  path: '/meetings',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -120,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/app/agreement': typeof AppAgreementRoute
   '/app/backlog': typeof AppBacklogRoute
   '/app/dashboard': typeof AppDashboardRoute
+  '/app/meetings': typeof AppMeetingsRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
@@ -138,6 +145,7 @@ export interface FileRoutesByTo {
   '/app/agreement': typeof AppAgreementRoute
   '/app/backlog': typeof AppBacklogRoute
   '/app/dashboard': typeof AppDashboardRoute
+  '/app/meetings': typeof AppMeetingsRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/app/agreement': typeof AppAgreementRoute
   '/app/backlog': typeof AppBacklogRoute
   '/app/dashboard': typeof AppDashboardRoute
+  '/app/meetings': typeof AppMeetingsRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/app/agreement'
     | '/app/backlog'
     | '/app/dashboard'
+    | '/app/meetings'
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
@@ -195,6 +205,7 @@ export interface FileRouteTypes {
     | '/app/agreement'
     | '/app/backlog'
     | '/app/dashboard'
+    | '/app/meetings'
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
     | '/app/agreement'
     | '/app/backlog'
     | '/app/dashboard'
+    | '/app/meetings'
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
@@ -283,6 +295,13 @@ declare module '@tanstack/react-router' {
       path: '/teams'
       fullPath: '/app/teams'
       preLoaderRoute: typeof AppTeamsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/meetings': {
+      id: '/app/meetings'
+      path: '/meetings'
+      fullPath: '/app/meetings'
+      preLoaderRoute: typeof AppMeetingsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/dashboard': {
@@ -368,6 +387,7 @@ interface AppRouteChildren {
   AppAgreementRoute: typeof AppAgreementRoute
   AppBacklogRoute: typeof AppBacklogRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppMeetingsRoute: typeof AppMeetingsRoute
   AppTeamsRoute: typeof AppTeamsRouteWithChildren
   AppVaultRoute: typeof AppVaultRoute
   AppVaultOverviewRoute: typeof AppVaultOverviewRoute
@@ -378,6 +398,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAgreementRoute: AppAgreementRoute,
   AppBacklogRoute: AppBacklogRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppMeetingsRoute: AppMeetingsRoute,
   AppTeamsRoute: AppTeamsRouteWithChildren,
   AppVaultRoute: AppVaultRoute,
   AppVaultOverviewRoute: AppVaultOverviewRoute,

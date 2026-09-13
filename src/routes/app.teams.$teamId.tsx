@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Users, Phone, Pencil, Check, X } from "lucide-react";
 import { toast } from "sonner";
-import { ManagerSubmissions } from "@/components/manager-submissions";
 import { CompanyFocusCard, type CompanyFocus } from "@/components/company-focus-card";
 import { ProjectArchCard } from "@/components/project-arch-card";
 import { MeetingTimeCard } from "@/components/meeting-time-card";
