@@ -138,7 +138,7 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
   const proofsDone = data.mine.length > 0 && data.mine.every((m) => !!m.submission);
   const meetingDone = meeting?.mine?.status === "agreed";
   const normsDone = !!norms?.complete && !!norms?.myApprovalAt;
-  const steps = [hasRole, proofsDone, meetingDone, normsDone];
+  const steps = [studyDone, proofsDone, meetingDone, normsDone];
   const doneCount = steps.filter(Boolean).length;
 
   return (
