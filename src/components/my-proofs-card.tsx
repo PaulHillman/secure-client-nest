@@ -133,6 +133,8 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
   const refresh = () => void qc.invalidateQueries({ queryKey: ["team-proofs", teamId] });
 
   const hasRole = !!data.myRole && data.myRole !== "Unassigned";
+  const studyDone =
+    hasRole && (study ? study.itemCount === 0 || study.done : false);
   const proofsDone = data.mine.length > 0 && data.mine.every((m) => !!m.submission);
   const meetingDone = meeting?.mine?.status === "agreed";
   const normsDone = !!norms?.complete && !!norms?.myApprovalAt;
