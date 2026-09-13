@@ -21,9 +21,14 @@ import { checkDutyRequirements, completeDuty } from "@/lib/pm-duties.functions";
 
 
 export function PmDutiesCard({ teamId }: { teamId: string }) {
-  const { user } = useAuth();
   const qc = useQueryClient();
   const queryKey = ["pm-duties", teamId];
+  const [blocker, setBlocker] = useState<{
+    dutyId: string;
+    title: string;
+    missing: string[];
+  } | null>(null);
+
 
   const { data, isLoading } = useQuery({
     queryKey,
