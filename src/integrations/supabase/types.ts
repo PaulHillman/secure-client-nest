@@ -1177,6 +1177,7 @@ export type Database = {
           due_at: string | null
           id: string
           order_index: number
+          target_roles: string[]
           title: string
           updated_at: string
         }
@@ -1187,6 +1188,7 @@ export type Database = {
           due_at?: string | null
           id?: string
           order_index?: number
+          target_roles?: string[]
           title: string
           updated_at?: string
         }
@@ -1197,6 +1199,7 @@ export type Database = {
           due_at?: string | null
           id?: string
           order_index?: number
+          target_roles?: string[]
           title?: string
           updated_at?: string
         }
