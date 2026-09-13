@@ -179,7 +179,7 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
                 return (
                   <div
                     key={item.key}
-                    className="flex flex-wrap items-start justify-between gap-3 rounded-md border p-3"
+                    className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3"
                   >
                     <div className="min-w-0 space-y-1">
                       <p className="flex items-center gap-2 font-medium">
