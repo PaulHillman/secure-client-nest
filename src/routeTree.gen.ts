@@ -18,6 +18,7 @@ import { Route as AppVaultRouteImport } from './routes/app.vault'
 import { Route as AppTeamsRouteImport } from './routes/app.teams'
 import { Route as AppMeetingsRouteImport } from './routes/app.meetings'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
+import { Route as AppCompetitionsRouteImport } from './routes/app.competitions'
 import { Route as AppBacklogRouteImport } from './routes/app.backlog'
 import { Route as AppAgreementRouteImport } from './routes/app.agreement'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
@@ -70,6 +71,11 @@ const AppMeetingsRoute = AppMeetingsRouteImport.update({
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCompetitionsRoute = AppCompetitionsRouteImport.update({
+  id: '/competitions',
+  path: '/competitions',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBacklogRoute = AppBacklogRouteImport.update({
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/app/admin': typeof AppAdminRoute
   '/app/agreement': typeof AppAgreementRoute
   '/app/backlog': typeof AppBacklogRoute
+  '/app/competitions': typeof AppCompetitionsRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/meetings': typeof AppMeetingsRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/app/admin': typeof AppAdminRoute
   '/app/agreement': typeof AppAgreementRoute
   '/app/backlog': typeof AppBacklogRoute
+  '/app/competitions': typeof AppCompetitionsRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/meetings': typeof AppMeetingsRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/app/admin': typeof AppAdminRoute
   '/app/agreement': typeof AppAgreementRoute
   '/app/backlog': typeof AppBacklogRoute
+  '/app/competitions': typeof AppCompetitionsRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/meetings': typeof AppMeetingsRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/agreement'
     | '/app/backlog'
+    | '/app/competitions'
     | '/app/dashboard'
     | '/app/meetings'
     | '/app/teams'
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/agreement'
     | '/app/backlog'
+    | '/app/competitions'
     | '/app/dashboard'
     | '/app/meetings'
     | '/app/teams'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/app/admin'
     | '/app/agreement'
     | '/app/backlog'
+    | '/app/competitions'
     | '/app/dashboard'
     | '/app/meetings'
     | '/app/teams'
@@ -311,6 +323,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/competitions': {
+      id: '/app/competitions'
+      path: '/competitions'
+      fullPath: '/app/competitions'
+      preLoaderRoute: typeof AppCompetitionsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/backlog': {
       id: '/app/backlog'
       path: '/backlog'
@@ -386,6 +405,7 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppAgreementRoute: typeof AppAgreementRoute
   AppBacklogRoute: typeof AppBacklogRoute
+  AppCompetitionsRoute: typeof AppCompetitionsRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppMeetingsRoute: typeof AppMeetingsRoute
   AppTeamsRoute: typeof AppTeamsRouteWithChildren
@@ -397,6 +417,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppAgreementRoute: AppAgreementRoute,
   AppBacklogRoute: AppBacklogRoute,
+  AppCompetitionsRoute: AppCompetitionsRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppMeetingsRoute: AppMeetingsRoute,
   AppTeamsRoute: AppTeamsRouteWithChildren,

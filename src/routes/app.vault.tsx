@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { FileVault } from "@/components/file-vault";
+import { NON_COMPETITION_SECTIONS } from "@/lib/vault-structure";
+import { Link } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
@@ -129,7 +131,13 @@ function VaultPage() {
       </div>
 
       {teamId ? (
-        <FileVault teamId={teamId} />
+        <>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Competition submissions have moved to{" "}
+            <Link to="/app/competitions" className="text-gold underline underline-offset-2">Competitions</Link>.
+          </p>
+          <FileVault teamId={teamId} sections={NON_COMPETITION_SECTIONS} />
+        </>
       ) : (
         !isLoading && (
           <Card className="border-dashed">

@@ -4,25 +4,23 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent } from "@/components/ui/card";
-import { CalendarCheck } from "lucide-react";
-import { MeetingLogCard } from "@/components/meeting-log-card";
-import { ManagerSubmissions } from "@/components/manager-submissions";
+import { Trophy } from "lucide-react";
 import { FileVault } from "@/components/file-vault";
-import { NON_COMPETITION_SECTIONS } from "@/lib/vault-structure";
+import { COMPETITION_SECTIONS } from "@/lib/vault-structure";
 
-export const Route = createFileRoute("/app/meetings")({
+export const Route = createFileRoute("/app/competitions")({
   head: () => ({
     meta: [
-      { title: "Weekly Meetings — ClientVault" },
-      { name: "description", content: "Log weekly team meetings, post minutes, and manage team files." },
-      { property: "og:title", content: "Weekly Meetings — ClientVault" },
-      { property: "og:description", content: "Log weekly team meetings, post minutes, and manage team files." },
+      { title: "Competitions — ClientVault" },
+      { name: "description", content: "Submit and review your team's entries for the three class competitions." },
+      { property: "og:title", content: "Competitions — ClientVault" },
+      { property: "og:description", content: "Submit and review your team's entries for the three class competitions." },
     ],
   }),
-  component: WeeklyMeetings,
+  component: CompetitionsPage,
 });
 
-function WeeklyMeetings() {
+function CompetitionsPage() {
   const { user, isAdmin } = useAuth();
   const [pickedTeam, setPickedTeam] = useState<string | null>(null);
 
@@ -63,20 +61,20 @@ function WeeklyMeetings() {
   return (
     <div className="p-8 max-w-5xl mx-auto">
       <div className="flex items-center gap-2">
-        <CalendarCheck className="h-6 w-6 text-gold" />
-        <h1 className="font-display text-4xl">Weekly Meetings</h1>
+        <Trophy className="h-6 w-6 text-gold" />
+        <h1 className="font-display text-4xl">Competitions</h1>
       </div>
       <p className="mt-2 text-sm text-muted-foreground">
-        Log each week's meeting, post the minutes, and keep your team's files in one place.
+        Upload your team's submission and supporting materials for each of the three competitions.
       </p>
 
       {isAdmin && allTeams && allTeams.length > 0 && (
         <div className="mt-4">
-          <label className="text-sm font-medium" htmlFor="meetings-team-picker">
+          <label className="text-sm font-medium" htmlFor="competitions-team-picker">
             Team
           </label>
           <select
-            id="meetings-team-picker"
+            id="competitions-team-picker"
             className="mt-1 block w-full max-w-md rounded-md border border-input bg-background px-3 py-2 text-sm"
             value={teamId ?? ""}
             onChange={(e) => setPickedTeam(e.target.value || null)}
@@ -97,16 +95,12 @@ function WeeklyMeetings() {
         <Card className="mt-8 border-dashed">
           <CardContent className="py-8 text-center text-muted-foreground text-sm">
             {isAdmin
-              ? "Pick a team above to view its weekly meetings."
-              : "You are not assigned to a team yet, so there are no meetings to show."}
+              ? "Pick a team above to view its competition submissions."
+              : "You are not assigned to a team yet, so there is nothing to show."}
           </CardContent>
         </Card>
       ) : (
-        <div className="mt-6">
-          <MeetingLogCard teamId={teamId} />
-          <ManagerSubmissions teamId={teamId} />
-          <FileVault teamId={teamId} sections={NON_COMPETITION_SECTIONS} />
-        </div>
+        <FileVault teamId={teamId} sections={COMPETITION_SECTIONS} title="Competitions" />
       )}
     </div>
   );
