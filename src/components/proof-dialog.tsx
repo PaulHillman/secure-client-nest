@@ -70,6 +70,7 @@ export function ProofDialog({
   const [result, setResult] = useState<{
     score: number | null;
     feedback: string | null;
+    transcript: string | null;
   } | null>(null);
 
   const { data: material } = useQuery({
