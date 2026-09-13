@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isNormsComplete, normalizeNorms } from "@/lib/group-norms";
 import { proofsForRole } from "@/lib/proofs";
+import { roleStudy } from "@/lib/role-study";
 import { teamLabel } from "@/lib/team-label";
 
 type RoleChecker = {
@@ -69,7 +70,7 @@ export const getDashboardReadiness = createServerFn({ method: "GET" })
     const submittedKeys = new Set((submissions ?? []).map((row) => row.proof_key));
     const remainingProofs = assignedProofs.filter((proof) => !submittedKeys.has(proof.key));
 
-    const [{ data: agreement }, { data: approval }] = await Promise.all([
+    const [{ data: agreement }, { data: approval }, { data: studyRow }] = await Promise.all([
       proposal
         ? supabase
             .from("team_meeting_agreements")
@@ -78,6 +79,7 @@ export const getDashboardReadiness = createServerFn({ method: "GET" })
             .eq("user_id", targetUserId)
             .maybeSingle()
         : Promise.resolve({ data: null as { status: string } | null }),
+      Promise.resolve({ data: null as { signed_at: string } | null }),
       norms
         ? supabase
             .from("group_norms_signatures")
