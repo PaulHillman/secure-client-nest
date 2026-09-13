@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { CalendarClock, CheckCircle2, MapPin, Video } from "lucide-react";
+import { ArrowRight, CalendarClock, CheckCircle2, MapPin, Video } from "lucide-react";
 import { toast } from "sonner";
 import {
   AGREEMENT_CLAUSES,
@@ -88,6 +88,7 @@ function AgreementPage() {
   const [fullName, setFullName] = useState("");
   const [initials, setInitials] = useState("");
   const [checked, setChecked] = useState(false);
+  const [showContinue, setShowContinue] = useState(false);
 
   useEffect(() => {
     if (mine) {
@@ -119,6 +120,7 @@ function AgreementPage() {
     },
     onSuccess: () => {
       toast.success("Agreement signed and recorded");
+      setShowContinue(true);
       qc.invalidateQueries({ queryKey: ["my-meeting-agreement", user?.id] });
       qc.invalidateQueries({ queryKey: ["meeting-time", data?.teamId] });
       qc.invalidateQueries({ queryKey: ["admin-consensus"] });
@@ -249,6 +251,13 @@ function AgreementPage() {
                 <Button onClick={() => sign.mutate()} disabled={sign.isPending}>
                   {signed ? "Update my signature" : "Sign agreement"}
                 </Button>
+                {showContinue && (
+                  <Button asChild variant="outline" className="border-gold/50">
+                    <Link to="/app/dashboard">
+                      Continue <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                )}
                 {signed && mine?.responded_at && (
                   <p className="text-xs text-muted-foreground">
                     Signed {new Date(mine.responded_at).toLocaleString()} as {mine.full_name ?? mine.initials}.
