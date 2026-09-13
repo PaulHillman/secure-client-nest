@@ -38,7 +38,7 @@ export function PmDutiesAdminPanel() {
             .select("id, title, details, due_at, order_index, active")
             .order("due_at", { ascending: true, nullsFirst: false })
             .order("order_index", { ascending: true }),
-          supabase.from("teams").select("id, name, display_name, section"),
+          supabase.from("teams").select("id, name, display_name, section").eq("is_test", false),
           supabase.from("pm_duty_completions").select("duty_id, team_id, completed_at"),
         ]);
       if (dErr) throw dErr;
