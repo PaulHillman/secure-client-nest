@@ -131,7 +131,7 @@ export const checkDutyRequirements = createServerFn({ method: "POST" })
         .maybeSingle(),
       supabaseAdmin
         .from("team_members")
-        .select("user_id, job_title, profiles:profiles!inner(name)")
+        .select("user_id, job_title")
         .eq("team_id", data.teamId),
       supabaseAdmin
         .from("team_meeting_proposals")
@@ -140,13 +140,18 @@ export const checkDutyRequirements = createServerFn({ method: "POST" })
         .maybeSingle(),
     ]);
 
-    const roster = (members ?? []) as {
-      user_id: string;
-      job_title: string;
-      profiles: { name: string } | null;
-    }[];
-    const nameOf = (id: string) =>
-      roster.find((m) => m.user_id === id)?.profiles?.name ?? "A team member";
+    const rows = (members ?? []) as { user_id: string; job_title: string }[];
+    const { data: profileRows } = await supabaseAdmin
+      .from("profiles")
+      .select("id, name")
+      .in("id", rows.length ? rows.map((m) => m.user_id) : ["00000000-0000-0000-0000-000000000000"]);
+    const names = new Map((profileRows ?? []).map((p) => [p.id, p.name as string]));
+    const roster = rows.map((m) => ({
+      user_id: m.user_id,
+      job_title: m.job_title,
+      profiles: { name: names.get(m.user_id) ?? "A team member" },
+    }));
+
 
     if (title.includes("team name") || title.includes("meeting time submitted")) {
       const label = (team?.display_name || team?.name || "").trim();
