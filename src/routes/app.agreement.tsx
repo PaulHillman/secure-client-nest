@@ -251,6 +251,13 @@ function AgreementPage() {
                 <Button onClick={() => sign.mutate()} disabled={sign.isPending}>
                   {signed ? "Update my signature" : "Sign agreement"}
                 </Button>
+                {showContinue && (
+                  <Button asChild variant="outline" className="border-gold/50">
+                    <Link to="/app/dashboard">
+                      Continue <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                )}
                 {signed && mine?.responded_at && (
                   <p className="text-xs text-muted-foreground">
                     Signed {new Date(mine.responded_at).toLocaleString()} as {mine.full_name ?? mine.initials}.
