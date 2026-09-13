@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import { getTeamProofs } from "@/lib/proofs.functions";
 import { getTeamNorms } from "@/lib/group-norms.functions";
+import { getRoleStudy, toggleRoleStudyItem } from "@/lib/role-study.functions";
+import { ROLE_STUDIES, roleStudy } from "@/lib/role-study";
 import { supabase } from "@/integrations/supabase/client";
 import { FEEDBACK_STATUS_LABEL, proofByKey, proofMaxScore } from "@/lib/proofs";
 import { ProofDialog } from "@/components/proof-dialog";
@@ -17,6 +20,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { StudentName } from "@/components/student-avatar";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCircle2, ChevronsUpDown, Circle, Clock, Lock, RotateCcw } from "lucide-react";
 
 function scrollTo(id: string) {
