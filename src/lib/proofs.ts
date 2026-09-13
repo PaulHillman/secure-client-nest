@@ -1,5 +1,5 @@
 /**
- * Stage C: the twelve individual role practice activities ("proofs").
+ * Stage C: the eleven individual role practice activities ("proofs").
  *
  * Rules from the course spec:
  *  - Participation only. A recorded submission is Complete, whatever the quality.
