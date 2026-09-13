@@ -1,3 +1,12 @@
+export const MILESTONE_ROLES = [
+  "PM",
+  "Communication Specialist",
+  "Video Specialist",
+  "Company Liaison",
+  "Client Vault & Tech Administrator",
+  "Researcher",
+] as const;
+
 export const DEFAULT_PM_DUTIES: { title: string; details: string }[] = [
   {
     title: "Team name, PM and meeting time submitted",
