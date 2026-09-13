@@ -218,6 +218,7 @@ function Dashboard() {
           </Card>
         ))}
       </div>
+      )}
 
 
       {isAdmin && (
