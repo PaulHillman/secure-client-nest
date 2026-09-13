@@ -110,7 +110,8 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
   });
 
   const busy = undo.isPending || complete.isPending || attempt.isPending;
-  const duties = data ?? [];
+  const duties = data?.duties ?? [];
+  const myRole = data?.myRole ?? null;
 
 
   return (
@@ -118,7 +119,7 @@ export function PmDutiesCard({ teamId }: { teamId: string }) {
       <CardHeader>
         <CardTitle className="font-display text-xl flex items-center gap-2">
           <ClipboardList className="h-5 w-5 text-gold" />
-          Project Manager responsibilities
+          Team milestones & deadlines
         </CardTitle>
       </CardHeader>
       <CardContent>
