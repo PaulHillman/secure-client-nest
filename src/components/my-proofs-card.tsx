@@ -154,8 +154,8 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
         <CardContent className="space-y-4">
           <Step
             n={1}
-            title="Know your role"
-            done={hasRole}
+            title="Study your role"
+            done={studyDone}
             action={
               hasRole ? undefined : (
                 <Button size="sm" variant="outline" onClick={() => scrollTo("your-role")}>
@@ -165,12 +165,78 @@ export function MyProofsCard({ teamId, userId }: { teamId: string; userId: strin
             }
           >
             {hasRole ? (
-              <p>
-                You are the team's <span className="font-medium text-foreground">{data.myRole}</span>
-                . The activities in step 2 are exactly what this role is expected to deliver.
-              </p>
+              <>
+                <p>
+                  You are the team's{" "}
+                  <span className="font-medium text-foreground">{data.myRole}</span>. Tick every
+                  line in your role's checklist to finish this step — the activities in step 2 are
+                  exactly what this role is expected to deliver.
+                </p>
+                {(() => {
+                  const mine = roleStudy(data.myRole);
+                  if (!mine) return null;
+                  const checked = new Set(study?.checked ?? []);
+                  return (
+                    <div className="space-y-2">
+                      <p className="text-sm italic text-muted-foreground">{mine.blurb}</p>
+                      <ul className="space-y-1.5">
+                        {mine.items.map((item, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <Checkbox
+                              id={`study-${i}`}
+                              className="mt-0.5"
+                              checked={checked.has(i)}
+                              disabled={studyMutation.isPending}
+                              onCheckedChange={(v) =>
+                                studyMutation.mutate({ index: i, checked: v === true })
+                              }
+                            />
+                            <label
+                              htmlFor={`study-${i}`}
+                              className={`cursor-pointer text-sm leading-snug ${
+                                checked.has(i)
+                                  ? "text-muted-foreground line-through"
+                                  : "text-foreground"
+                              }`}
+                            >
+                              {item}
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-xs text-muted-foreground">
+                        {checked.size} of {mine.items.length} ticked
+                        {study?.done ? " — step complete." : "."}
+                      </p>
+                    </div>
+                  );
+                })()}
+                <Collapsible>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="px-0">
+                      <ChevronsUpDown className="mr-2 size-4" /> Read the other roles
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2 space-y-4">
+                    {ROLE_STUDIES.filter((r) => r.role !== data.myRole).map((r) => (
+                      <div key={r.role}>
+                        <p className="text-sm font-medium text-foreground">{r.role}</p>
+                        <p className="text-xs italic text-muted-foreground">{r.blurb}</p>
+                        <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-muted-foreground">
+                          {r.items.map((item, i) => (
+                            <li key={i}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              </>
             ) : (
-              <p>Your role has not been set yet. Pick it first — everything else follows from it.</p>
+              <p>
+                Your role has not been set yet. Pick it first, then tick every line in its
+                checklist — everything else follows from it.
+              </p>
             )}
           </Step>
 
