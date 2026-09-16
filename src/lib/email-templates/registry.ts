@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 import { template as profileIncompleteTemplate } from './profile-incomplete'
 import { template as requirementDecisionTemplate } from './requirement-decision'
+import { template as requirementNudgeTemplate } from './requirement-nudge'
 
 export interface TemplateEntry {
   component: ComponentType<any>
