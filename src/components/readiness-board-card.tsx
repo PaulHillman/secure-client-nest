@@ -40,6 +40,7 @@ export function ReadinessBoardCard() {
   const fetchBoard = useServerFn(getReadinessBoard);
   const openFn = useServerFn(setRequirementOpening);
   const decideFn = useServerFn(decideRequirement);
+  const nudgeFn = useServerFn(nudgeMember);
 
   const [section, setSection] = useState<string>(ALL);
   const [review, setReview] = useState<{ teamId: string; teamName: string; key: string } | null>(
@@ -47,6 +48,14 @@ export function ReadinessBoardCard() {
   );
   const [kickoffKey, setKickoffKey] = useState<string>("");
   const [dueAt, setDueAt] = useState<string>("");
+  const [nudge, setNudge] = useState<{
+    teamId: string;
+    teamName: string;
+    key: string;
+    title: string;
+    targetUserId: string;
+  } | null>(null);
+  const [nudgeNote, setNudgeNote] = useState("");
 
   const { data } = useQuery({ queryKey: ["readiness-board"], queryFn: () => fetchBoard() });
 
