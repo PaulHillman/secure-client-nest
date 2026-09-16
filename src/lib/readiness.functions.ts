@@ -334,6 +334,7 @@ export const getReadinessBoard = createServerFn({ method: "GET" })
       rows: (teams ?? []).map((t) => ({
         team: t,
         needsRoleCount: unassigned.get(t.id) ?? 0,
+        members: membersByTeam.get(t.id) ?? [],
         cells: (requirements ?? []).map((r) => {
           const k = `${r.key}|${t.section ?? ""}`;
           const row = byTeam.get(t.id)?.get(r.key);
@@ -345,6 +346,7 @@ export const getReadinessBoard = createServerFn({ method: "GET" })
             open: openSet.has(k),
             dueAt,
             overdue: !!dueAt && new Date(dueAt) < new Date() && status !== "approved",
+            ownerId: row?.owner_id ?? null,
           };
         }),
       })),
