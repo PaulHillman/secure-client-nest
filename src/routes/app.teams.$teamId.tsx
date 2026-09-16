@@ -25,6 +25,8 @@ import { TeamReadinessCard } from "@/components/team-readiness-card";
 import { GroupNormsCard } from "@/components/group-norms-card";
 import { DashboardReadinessNotice } from "@/components/dashboard-readiness-notice";
 import { PmDutiesCard } from "@/components/pm-duties-card";
+import { TeamRolesManagerCard } from "@/components/team-roles-manager-card";
+
 
 
 export const Route = createFileRoute("/app/teams/$teamId")({
@@ -170,6 +172,13 @@ function TeamDetail() {
           <RoleSelectCard />
         </div>
       )}
+
+      {canAssignRoles && members.length > 0 && (
+        <div className="mt-6">
+          <TeamRolesManagerCard teamId={teamId} members={members} />
+        </div>
+      )}
+
 
       {isMember && user && (
         <div className="mt-6">
