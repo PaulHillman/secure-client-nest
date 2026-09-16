@@ -101,6 +101,9 @@ function AuthSync() {
         } catch { /* ignore */ }
       }
 
+      // Logging only; don't thrash router/cache on every mount.
+      if (event === "INITIAL_SESSION") return;
+
       router.invalidate();
       if (event !== "SIGNED_OUT") qc.invalidateQueries();
     });
