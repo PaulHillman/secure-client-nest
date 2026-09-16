@@ -37,6 +37,7 @@ import { AuditLogPanel } from "@/components/audit-log-panel";
 import { SemesterPanel } from "@/components/semester-panel";
 import { BulkImportPanel } from "@/components/bulk-import-panel";
 import { PmDutiesAdminPanel } from "@/components/pm-duties-admin-panel";
+import { ReadinessBoardCard } from "@/components/readiness-board-card";
 
 export const Route = createFileRoute("/app/admin")({
   head: () => ({ meta: [{ title: "Admin — ClientVault" }] }),
@@ -81,6 +82,7 @@ function Admin() {
           <TabsTrigger value="audit">
             <History className="h-3.5 w-3.5 mr-1" /> Audit log
           </TabsTrigger>
+          <TabsTrigger value="readiness">Readiness</TabsTrigger>
           <TabsTrigger value="duties">Milestones</TabsTrigger>
           <TabsTrigger value="semester">
             <Archive className="h-3.5 w-3.5 mr-1" /> Semester
@@ -104,6 +106,9 @@ function Admin() {
         </TabsContent>
         <TabsContent value="audit" className="mt-6">
           <AuditLogPanel />
+        </TabsContent>
+        <TabsContent value="readiness" className="mt-6">
+          <ReadinessBoardCard />
         </TabsContent>
         <TabsContent value="duties" className="mt-6">
           <PmDutiesAdminPanel />
