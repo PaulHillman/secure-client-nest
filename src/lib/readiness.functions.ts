@@ -478,5 +478,38 @@ export const decideRequirement = createServerFn({ method: "POST" })
         })),
       );
     }
+
+    // Email the same people, so the decision reaches them outside the app too.
+    if (recipients.length) {
+      const [{ data: profiles }, { data: team }] = await Promise.all([
+        supabaseAdmin
+          .from("profiles")
+          .select("id, name, email")
+          .in("id", recipients.map((m) => m.user_id)),
+        supabaseAdmin
+          .from("teams")
+          .select("name, display_name")
+          .eq("id", data.teamId)
+          .maybeSingle(),
+      ]);
+      const teamName = team?.display_name || team?.name || "your team";
+      const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+      await Promise.all(
+        (profiles ?? [])
+          .filter((p) => !!p.email)
+          .map((p) =>
+            sendTemplateEmail("requirement-decision", p.email as string, {
+              templateData: {
+                name: p.name,
+                teamName,
+                title,
+                approved: data.status === "approved",
+                note: data.status === "needs_revision" ? data.note ?? "" : "",
+              },
+              idempotencyKey: `req-decision:${data.teamId}:${data.key}:${data.status}:${p.id}:${Date.now()}`,
+            }).catch((e) => console.error("decision email failed", e)),
+          ),
+      );
+    }
     return { ok: true };
   });
