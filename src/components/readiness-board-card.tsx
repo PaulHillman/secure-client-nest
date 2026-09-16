@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   decideRequirement,
   getReadinessBoard,
+  nudgeMember,
   setRequirementOpening,
 } from "@/lib/readiness.functions";
 import { READINESS_LABEL, READINESS_TONE, type ReadinessStatus } from "@/lib/readiness";
@@ -21,7 +22,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SubmissionReviewDialog } from "@/components/submission-review-dialog";
-import { LayoutGrid, PlayCircle, XCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { BellRing, LayoutGrid, PlayCircle, XCircle } from "lucide-react";
 
 const ALL = "__all__";
 
@@ -30,6 +40,7 @@ export function ReadinessBoardCard() {
   const fetchBoard = useServerFn(getReadinessBoard);
   const openFn = useServerFn(setRequirementOpening);
   const decideFn = useServerFn(decideRequirement);
+  const nudgeFn = useServerFn(nudgeMember);
 
   const [section, setSection] = useState<string>(ALL);
   const [review, setReview] = useState<{ teamId: string; teamName: string; key: string } | null>(
@@ -37,6 +48,14 @@ export function ReadinessBoardCard() {
   );
   const [kickoffKey, setKickoffKey] = useState<string>("");
   const [dueAt, setDueAt] = useState<string>("");
+  const [nudge, setNudge] = useState<{
+    teamId: string;
+    teamName: string;
+    key: string;
+    title: string;
+    targetUserId: string;
+  } | null>(null);
+  const [nudgeNote, setNudgeNote] = useState("");
 
   const { data } = useQuery({ queryKey: ["readiness-board"], queryFn: () => fetchBoard() });
 
@@ -69,6 +88,24 @@ export function ReadinessBoardCard() {
       toast.success("Decision recorded. The Project Manager has been told.");
       setReview(null);
       refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const sendNudge = useMutation({
+    mutationFn: () =>
+      nudgeFn({
+        data: {
+          teamId: nudge!.teamId,
+          key: nudge!.key,
+          targetUserId: nudge!.targetUserId,
+          message: nudgeNote.trim() || undefined,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Nudge sent by email and in the app.");
+      setNudge(null);
+      setNudgeNote("");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -231,6 +268,30 @@ export function ReadinessBoardCard() {
                               </Button>
                             </div>
                           )}
+                          {cell.status !== "approved" && row.members.length > 0 && (
+                            <div className="pt-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2 text-[11px]"
+                                title="Remind someone on this team"
+                                onClick={() => {
+                                  setNudgeNote("");
+                                  setNudge({
+                                    teamId: row.team.id,
+                                    teamName: teamPrimaryName(row.team),
+                                    key: cell.key,
+                                    title:
+                                      data.requirements.find((r) => r.key === cell.key)?.title ??
+                                      cell.key,
+                                    targetUserId: cell.ownerId ?? row.members[0].userId,
+                                  });
+                                }}
+                              >
+                                <BellRing className="mr-1 h-3 w-3" /> Nudge
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </td>
@@ -259,6 +320,50 @@ export function ReadinessBoardCard() {
             }
           />
         )}
+
+        <Dialog open={!!nudge} onOpenChange={(v) => !v && setNudge(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Nudge {nudge?.teamName}</DialogTitle>
+              <DialogDescription>
+                {nudge?.title}: they get a reminder in the app and an email. Add a note if you want
+                to say something specific.
+              </DialogDescription>
+            </DialogHeader>
+            <Select
+              value={nudge?.targetUserId ?? ""}
+              onValueChange={(v) => nudge && setNudge({ ...nudge, targetUserId: v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Who should be nudged?" />
+              </SelectTrigger>
+              <SelectContent>
+                {(rows.find((r) => r.team.id === nudge?.teamId)?.members ?? []).map((m) => (
+                  <SelectItem key={m.userId} value={m.userId}>
+                    {m.name} · {m.jobTitle}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Textarea
+              value={nudgeNote}
+              onChange={(e) => setNudgeNote(e.target.value)}
+              placeholder="Optional note, e.g. what you need from them and by when."
+              rows={4}
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setNudge(null)}>
+                Cancel
+              </Button>
+              <Button
+                disabled={sendNudge.isPending || !nudge?.targetUserId}
+                onClick={() => sendNudge.mutate()}
+              >
+                <BellRing className="mr-1 h-3.5 w-3.5" /> Send nudge
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
