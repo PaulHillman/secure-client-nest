@@ -31,6 +31,9 @@ export function ReadinessBoardCard() {
   const decideFn = useServerFn(decideRequirement);
 
   const [section, setSection] = useState<string>(ALL);
+  const [review, setReview] = useState<{ teamId: string; teamName: string; key: string } | null>(
+    null,
+  );
   const [kickoffKey, setKickoffKey] = useState<string>("");
   const [dueAt, setDueAt] = useState<string>("");
 
