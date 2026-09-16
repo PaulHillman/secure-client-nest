@@ -19,6 +19,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { StudentName } from "@/components/student-avatar";
 import { useAuth } from "@/lib/auth-context";
 import { ModuleSubmissionDialog } from "@/components/module-submission-dialog";
@@ -36,6 +45,12 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
   const nudge = useServerFn(nudgeMember);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [formItem, setFormItem] = useState<{ key: string; title: string } | null>(null);
+  const [nudgeTarget, setNudgeTarget] = useState<{
+    key: string;
+    targetUserId: string;
+    name: string;
+  } | null>(null);
+  const [nudgeNote, setNudgeNote] = useState("");
 
   const { data } = useQuery({
     queryKey: ["team-readiness", teamId, viewAs?.id],
@@ -69,9 +84,13 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
   });
 
   const nudgeMutation = useMutation({
-    mutationFn: (v: { key: string; targetUserId: string }) =>
-      nudge({ data: { teamId, key: v.key, targetUserId: v.targetUserId } }),
-    onSuccess: () => toast.success("Nudge sent."),
+    mutationFn: (v: { key: string; targetUserId: string; message?: string }) =>
+      nudge({ data: { teamId, key: v.key, targetUserId: v.targetUserId, message: v.message } }),
+    onSuccess: () => {
+      toast.success("Nudge sent by email and in the app.");
+      setNudgeTarget(null);
+      setNudgeNote("");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -109,10 +128,10 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={nudgeMutation.isPending}
-                      onClick={() =>
-                        nudgeMutation.mutate({ key: "team_setup", targetUserId: m.userId })
-                      }
+                      onClick={() => {
+                        setNudgeNote("");
+                        setNudgeTarget({ key: "team_setup", targetUserId: m.userId, name: m.name });
+                      }}
                     >
                       <BellRing className="mr-1 h-3.5 w-3.5" /> Nudge
                     </Button>
@@ -218,10 +237,14 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={nudgeMutation.isPending}
-                  onClick={() =>
-                    nudgeMutation.mutate({ key: item.key, targetUserId: item.ownerId as string })
-                  }
+                  onClick={() => {
+                    setNudgeNote("");
+                    setNudgeTarget({
+                      key: item.key,
+                      targetUserId: item.ownerId as string,
+                      name: item.ownerName ?? "this person",
+                    });
+                  }}
                 >
                   <BellRing className="mr-1 h-3.5 w-3.5" /> Nudge {item.ownerName}
                 </Button>
@@ -239,6 +262,47 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
             onOpenChange={(v) => !v && setFormItem(null)}
           />
         )}
+
+        <Dialog
+          open={!!nudgeTarget}
+          onOpenChange={(v) => {
+            if (!v) setNudgeTarget(null);
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Nudge {nudgeTarget?.name}</DialogTitle>
+              <DialogDescription>
+                They get a reminder in the app and an email. Add a note if you want to say
+                something specific.
+              </DialogDescription>
+            </DialogHeader>
+            <Textarea
+              value={nudgeNote}
+              onChange={(e) => setNudgeNote(e.target.value)}
+              placeholder="Optional note, e.g. what you need from them and by when."
+              rows={4}
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setNudgeTarget(null)}>
+                Cancel
+              </Button>
+              <Button
+                disabled={nudgeMutation.isPending}
+                onClick={() =>
+                  nudgeTarget &&
+                  nudgeMutation.mutate({
+                    key: nudgeTarget.key,
+                    targetUserId: nudgeTarget.targetUserId,
+                    message: nudgeNote.trim() || undefined,
+                  })
+                }
+              >
+                <BellRing className="mr-1 h-3.5 w-3.5" /> Send nudge
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

@@ -252,6 +252,30 @@ export const nudgeMember = createServerFn({ method: "POST" })
       message: text,
     });
     if (error) throw error;
+
+    // Email the person as well, so the nudge lands outside the app too.
+    try {
+      const [{ data: target }, { data: team }] = await Promise.all([
+        supabaseAdmin.from("profiles").select("name, email").eq("id", data.targetUserId).maybeSingle(),
+        supabaseAdmin.from("teams").select("name, display_name").eq("id", data.teamId).maybeSingle(),
+      ]);
+      if (target?.email) {
+        const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
+        await sendTemplateEmail("requirement-nudge", target.email, {
+          templateData: {
+            name: target.name ?? undefined,
+            teamName: team?.display_name ?? team?.name ?? "your team",
+            title: req?.title ?? data.key,
+            senderName: sender?.name ?? "Your Project Manager",
+            note: data.message?.trim() || undefined,
+          },
+          idempotencyKey: `req-nudge:${data.teamId}:${data.key}:${data.targetUserId}:${Date.now()}`,
+        });
+      }
+    } catch (e) {
+      console.error("nudge email failed", e);
+    }
+
     return { ok: true };
   });
 
