@@ -243,7 +243,18 @@ export function ProofsAdminCard() {
                     onClick={() => setViewing({ id: p.userId, name: p.name })}
                     className="flex cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-1 text-left text-sm hover:bg-muted/60"
                   >
-                    <StudentName name={p.name} avatarUrl={p.avatarUrl} />
+                    <span className="flex min-w-0 items-center gap-2">
+                      <StudentName name={p.name} avatarUrl={p.avatarUrl} />
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${
+                          p.role === "Unassigned"
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {p.role === "Unassigned" ? "No role yet" : p.role}
+                      </span>
+                    </span>
                     <span className="flex items-center gap-1.5 text-muted-foreground">
                       {p.assigned.length === 0 ? (
                         "Needs a role"
