@@ -36,6 +36,12 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
   const nudge = useServerFn(nudgeMember);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [formItem, setFormItem] = useState<{ key: string; title: string } | null>(null);
+  const [nudgeTarget, setNudgeTarget] = useState<{
+    key: string;
+    targetUserId: string;
+    name: string;
+  } | null>(null);
+  const [nudgeNote, setNudgeNote] = useState("");
 
   const { data } = useQuery({
     queryKey: ["team-readiness", teamId, viewAs?.id],
