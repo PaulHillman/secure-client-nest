@@ -66,6 +66,7 @@ export function ReadinessBoardCard() {
       decideFn({ data: v }),
     onSuccess: () => {
       toast.success("Decision recorded. The Project Manager has been told.");
+      setReview(null);
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
