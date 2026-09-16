@@ -98,10 +98,13 @@ export async function sendTemplateEmail(
       },
       { apiKey, sendUrl: process.env['LOVABLE_SEND_URL'] }
     )
+    await logSend('sent')
   } catch (error) {
     if (error instanceof EmailAPIError && error.code === 'recipient_suppressed') {
+      await logSend('suppressed', 'Recipient has unsubscribed or is blocked')
       return { sent: false, reason: 'recipient_suppressed' }
     }
+    await logSend('failed', error instanceof Error ? error.message : String(error))
     throw error
   }
 
