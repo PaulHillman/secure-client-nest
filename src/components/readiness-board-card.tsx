@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SubmissionReviewDialog } from "@/components/submission-review-dialog";
 import { LayoutGrid, PlayCircle, XCircle } from "lucide-react";
 
 const ALL = "__all__";
