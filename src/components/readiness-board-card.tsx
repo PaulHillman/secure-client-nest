@@ -239,6 +239,25 @@ export function ReadinessBoardCard() {
             </tbody>
           </table>
         </div>
+
+        {review && (
+          <SubmissionReviewDialog
+            open
+            onOpenChange={(o) => !o && setReview(null)}
+            teamId={review.teamId}
+            teamName={review.teamName}
+            requirementKey={review.key}
+            busy={decide.isPending}
+            onDecide={(v) =>
+              decide.mutate({
+                teamId: review.teamId,
+                key: review.key,
+                status: v.status,
+                note: v.note,
+              })
+            }
+          />
+        )}
       </CardContent>
     </Card>
   );
