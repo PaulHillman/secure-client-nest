@@ -228,10 +228,14 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={nudgeMutation.isPending}
-                  onClick={() =>
-                    nudgeMutation.mutate({ key: item.key, targetUserId: item.ownerId as string })
-                  }
+                  onClick={() => {
+                    setNudgeNote("");
+                    setNudgeTarget({
+                      key: item.key,
+                      targetUserId: item.ownerId as string,
+                      name: item.ownerName ?? "this person",
+                    });
+                  }}
                 >
                   <BellRing className="mr-1 h-3.5 w-3.5" /> Nudge {item.ownerName}
                 </Button>
