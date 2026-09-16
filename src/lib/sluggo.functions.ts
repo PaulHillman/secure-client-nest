@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { teamLabel } from "@/lib/team-label";
+import { completionStatus } from "@/lib/profile-completion";
 
 export type SluggoFlag = {
   key: string;
@@ -73,7 +74,7 @@ export const getSluggoReport = createServerFn({ method: "GET" })
       commentsRes,
       meetingRes,
     ] = await Promise.all([
-      supabaseAdmin.from("profiles").select("id, name, email, section, avatar_url, skills_have, top_skills, phone_number"),
+      supabaseAdmin.from("profiles").select("id, name, email, section, avatar_url, skills_have, skills_learn"),
       supabaseAdmin.from("user_roles").select("user_id, role"),
       supabaseAdmin.from("team_members").select("user_id, team_id, job_title"),
       supabaseAdmin.from("teams").select("id, name, section, display_name, is_test"),
@@ -137,18 +138,23 @@ export const getSluggoReport = createServerFn({ method: "GET" })
       (rolesRes.data ?? []).filter((r) => r.role === "admin").map((r) => r.user_id),
     );
 
+    const hasAvail = new Set((availRes.data ?? []).map((a) => a.user_id));
+
     const rows: SluggoRow[] = (profilesRes.data ?? [])
       .filter((p) => studentIds.has(p.id) && !adminIds.has(p.id))
+      // Practice fixtures are not real students.
+      .filter((p) => !(p.email ?? "").toLowerCase().endsWith("@example.invalid"))
+      .filter((p) => memberOf.get(p.id)?.isTest !== true)
       .map((p) => {
         const stamps = events.get(p.id) ?? [];
         const lastActive = stamps.length ? stamps.reduce((a, b) => (a > b ? a : b)) : null;
         const inWindow = stamps.filter((s) => s >= sinceIso).length;
         const membership = memberOf.get(p.id);
-        const profileDone =
-          (p.skills_have?.length ?? 0) > 0 &&
-          (p.top_skills?.length ?? 0) > 0 &&
-          !!p.phone_number;
-        const hasAvailability = (availRes.data ?? []).some((a) => a.user_id === p.id);
+        const completion = completionStatus({
+          skillsHave: p.skills_have,
+          skillsLearn: p.skills_learn,
+          hasAvailability: hasAvail.has(p.id),
+        });
 
         const flags: SluggoFlag[] = [];
         if (!lastActive) flags.push({ key: "never", label: "No activity ever", severity: "high" });
@@ -157,9 +163,13 @@ export const getSluggoReport = createServerFn({ method: "GET" })
         if (!membership) flags.push({ key: "no-team", label: "Not on any team", severity: "high" });
         else if (membership.role === "Unassigned")
           flags.push({ key: "no-role", label: "No role chosen", severity: "medium" });
-        if (!profileDone) flags.push({ key: "profile", label: "Profile incomplete", severity: "medium" });
-        if (!hasAvailability) flags.push({ key: "availability", label: "No availability set", severity: "medium" });
-        if ((practice.get(p.id) ?? 0) === 0)
+        if (!completion.complete)
+          flags.push({
+            key: "profile",
+            label: `Profile: ${completion.missing.join(", ")}`,
+            severity: "medium",
+          });
+        if (membership && membership.role !== "Unassigned" && (practice.get(p.id) ?? 0) === 0)
           flags.push({ key: "no-practice", label: "No role practice submitted", severity: "medium" });
 
         return {
@@ -168,7 +178,7 @@ export const getSluggoReport = createServerFn({ method: "GET" })
           email: p.email ?? "",
           avatarUrl: p.avatar_url ?? null,
           section: p.section ?? null,
-          team: membership && !membership.isTest ? membership.label : membership ? `${membership.label} (test)` : null,
+          team: membership?.label ?? null,
           role: membership?.role ?? null,
           lastActive,
           eventsInWindow: inWindow,
