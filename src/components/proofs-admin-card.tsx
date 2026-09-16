@@ -263,6 +263,14 @@ export function ProofsAdminCard() {
             </div>
           ))}
         </div>
+
+        <StudentProofDetailDialog
+          studentId={viewing?.id ?? null}
+          studentName={viewing?.name ?? ""}
+          onOpenChange={(open) => {
+            if (!open) setViewing(null);
+          }}
+        />
       </CardContent>
     </Card>
   );
