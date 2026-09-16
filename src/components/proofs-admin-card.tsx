@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StudentName } from "@/components/student-avatar";
+import { StudentProofDetailDialog } from "@/components/student-proof-detail-dialog";
 import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 
 const ALL = "__all__";
@@ -34,6 +35,7 @@ export function ProofsAdminCard() {
   const [transcript, setTranscript] = useState("");
   const [answerKey, setAnswerKey] = useState("");
   const [busy, setBusy] = useState(false);
+  const [viewing, setViewing] = useState<{ id: string; name: string } | null>(null);
 
   const { data } = useQuery({ queryKey: ["proof-overview"], queryFn: () => fetchOverview() });
 
