@@ -460,3 +460,53 @@ export const saveProofMaterial = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+
+/**
+ * Professor view of one student's role activities: what they wrote, the AI
+ * coaching they received, the key-point score and the review state.
+ */
+export const getStudentProofDetail = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { studentId: string }) => {
+    if (!input?.studentId) throw new Error("Missing student.");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    if (!(await isAdmin(supabase, userId))) throw new Error("Admins only.");
+
+    const [{ data: profile }, { data: subs }] = await Promise.all([
+      supabase.from("profiles").select("id, name").eq("id", data.studentId).maybeSingle(),
+      supabase
+        .from("proof_submissions")
+        .select(
+          "proof_key, submitted_at, response, feedback, feedback_status, score, review_status, review_note, reviewed_at, file_name, resubmit_count",
+        )
+        .eq("user_id", data.studentId)
+        .order("submitted_at", { ascending: true }),
+    ]);
+
+    return {
+      name: profile?.name ?? "Student",
+      submissions: (subs ?? []).map((s) => {
+        const proof = proofByKey(s.proof_key);
+        return {
+          key: s.proof_key,
+          title: proof?.title ?? s.proof_key,
+          alias: proof?.alias ?? "",
+          role: proof?.role ?? "",
+          maxScore: proof?.maxScore ?? null,
+          submittedAt: s.submitted_at,
+          answers: asAnswers(s.response),
+          feedback: s.feedback,
+          feedbackStatus: s.feedback_status,
+          score: s.score ?? null,
+          reviewStatus: s.review_status,
+          reviewNote: s.review_note,
+          reviewedAt: s.reviewed_at,
+          fileName: s.file_name,
+          resubmitCount: s.resubmit_count ?? 0,
+        };
+      }),
+    };
+  });

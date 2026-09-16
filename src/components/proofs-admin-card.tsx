@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StudentName } from "@/components/student-avatar";
+import { StudentProofDetailDialog } from "@/components/student-proof-detail-dialog";
 import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 
 const ALL = "__all__";
@@ -34,6 +35,7 @@ export function ProofsAdminCard() {
   const [transcript, setTranscript] = useState("");
   const [answerKey, setAnswerKey] = useState("");
   const [busy, setBusy] = useState(false);
+  const [viewing, setViewing] = useState<{ id: string; name: string } | null>(null);
 
   const { data } = useQuery({ queryKey: ["proof-overview"], queryFn: () => fetchOverview() });
 
@@ -234,7 +236,13 @@ export function ProofsAdminCard() {
               </p>
               <div className="grid gap-2 sm:grid-cols-2">
                 {r.people.map((p) => (
-                  <div key={p.userId} className="flex items-center justify-between gap-2 text-sm">
+                  <button
+                    key={p.userId}
+                    type="button"
+                    title="See their work and the feedback they received"
+                    onClick={() => setViewing({ id: p.userId, name: p.name })}
+                    className="flex cursor-pointer items-center justify-between gap-2 rounded-md px-2 py-1 text-left text-sm hover:bg-muted/60"
+                  >
                     <StudentName name={p.name} avatarUrl={p.avatarUrl} />
                     <span className="flex items-center gap-1.5 text-muted-foreground">
                       {p.assigned.length === 0 ? (
@@ -249,12 +257,20 @@ export function ProofsAdminCard() {
                         </>
                       )}
                     </span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
           ))}
         </div>
+
+        <StudentProofDetailDialog
+          studentId={viewing?.id ?? null}
+          studentName={viewing?.name ?? ""}
+          onOpenChange={(open) => {
+            if (!open) setViewing(null);
+          }}
+        />
       </CardContent>
     </Card>
   );
