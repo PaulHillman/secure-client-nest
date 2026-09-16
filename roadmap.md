@@ -9,7 +9,7 @@
 - [x] Role name aliases (spec names shown, our names kept)
 
 ## Stage B — six modules as submissions (done)
-- [x] Team Setup, Client Proposal, Research Brief, Interview Plan, Video Plan, Reflection
+- [x] Team Setup, Client Selected, Research Brief, Interview Plan, Video Plan, Reflection
 - [x] Answer sheet per module: save draft, send for review, approved sheets locked
 - [x] Professor review queue: read answers, approve / send back with revision note
 - [x] Revision note shown to the whole team; PM notified of every decision
