@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import { template as profileIncompleteTemplate } from './profile-incomplete'
+import { template as requirementDecisionTemplate } from './requirement-decision'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -20,4 +21,5 @@ export interface TemplateEntry {
  */
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'profile-incomplete': profileIncompleteTemplate,
+  'requirement-decision': requirementDecisionTemplate,
 }
