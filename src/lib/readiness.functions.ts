@@ -349,6 +349,79 @@ export const setRequirementOpening = createServerFn({ method: "POST" })
     return { opened: data.sections.length, closed: 0 };
   });
 
+/** Everything the professor needs to read one team's submitted module. */
+export const getSubmissionReview = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { teamId: string; key: string }) => {
+    if (!input?.teamId || !input?.key) throw new Error("Missing details.");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Forbidden");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const [{ data: sub }, { data: status }, { data: req }] = await Promise.all([
+      supabaseAdmin
+        .from("requirement_submissions")
+        .select("answers, submitted_at, submitted_by, submit_count, updated_at, updated_by")
+        .eq("team_id", data.teamId)
+        .eq("requirement_key", data.key)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("team_requirement_status")
+        .select("status, submitted_at, revision_note")
+        .eq("team_id", data.teamId)
+        .eq("requirement_key", data.key)
+        .maybeSingle(),
+      supabaseAdmin.from("project_requirements").select("key, title").eq("key", data.key).maybeSingle(),
+    ]);
+
+    const answers: Record<string, string> = {};
+    const raw = sub?.answers;
+    if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+      for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+        if (typeof v === "string") answers[k] = v;
+      }
+    }
+
+    const ids = [sub?.submitted_by, sub?.updated_by].filter(Boolean) as string[];
+    const { data: profiles } = ids.length
+      ? await supabaseAdmin.from("profiles").select("id, name").in("id", ids)
+      : { data: [] as { id: string; name: string }[] };
+    const nameById = new Map((profiles ?? []).map((p) => [p.id, p.name]));
+
+    // Team setup is judged on the team's real records, not only the answer sheet.
+    let roster: { name: string; jobTitle: string }[] = [];
+    if (data.key === "team_setup") {
+      const { data: members } = await supabaseAdmin
+        .from("team_members")
+        .select("user_id, job_title")
+        .eq("team_id", data.teamId);
+      const memberIds = (members ?? []).map((m) => m.user_id);
+      const { data: mp } = memberIds.length
+        ? await supabaseAdmin.from("profiles").select("id, name").in("id", memberIds)
+        : { data: [] as { id: string; name: string }[] };
+      const byId = new Map((mp ?? []).map((p) => [p.id, p.name]));
+      roster = (members ?? []).map((m) => ({
+        name: byId.get(m.user_id) ?? "A teammate",
+        jobTitle: (m.job_title as string) ?? "Unassigned",
+      }));
+    }
+
+    return {
+      title: req?.title ?? data.key,
+      answers,
+      roster,
+      status: (status?.status ?? "not_started") as ReadinessStatus,
+      revisionNote: status?.revision_note ?? null,
+      submittedAt: status?.submitted_at ?? sub?.submitted_at ?? null,
+      submittedByName: sub?.submitted_by ? nameById.get(sub.submitted_by) ?? null : null,
+      lastEditedAt: sub?.updated_at ?? null,
+      lastEditedByName: sub?.updated_by ? nameById.get(sub.updated_by) ?? null : null,
+      submitCount: sub?.submit_count ?? 0,
+    };
+  });
+
 /** Professor approves or sends something back with a note. */
 export const decideRequirement = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

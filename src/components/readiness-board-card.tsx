@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SubmissionReviewDialog } from "@/components/submission-review-dialog";
 import { LayoutGrid, PlayCircle, XCircle } from "lucide-react";
 
 const ALL = "__all__";
@@ -31,6 +32,9 @@ export function ReadinessBoardCard() {
   const decideFn = useServerFn(decideRequirement);
 
   const [section, setSection] = useState<string>(ALL);
+  const [review, setReview] = useState<{ teamId: string; teamName: string; key: string } | null>(
+    null,
+  );
   const [kickoffKey, setKickoffKey] = useState<string>("");
   const [dueAt, setDueAt] = useState<string>("");
 
@@ -63,6 +67,7 @@ export function ReadinessBoardCard() {
       decideFn({ data: v }),
     onSuccess: () => {
       toast.success("Decision recorded. The Project Manager has been told.");
+      setReview(null);
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -181,44 +186,48 @@ export function ReadinessBoardCard() {
                         <span className="text-xs text-muted-foreground">Not opened</span>
                       ) : (
                         <div className="space-y-1">
-                          <Badge variant="outline" className={READINESS_TONE[cell.status]}>
-                            {READINESS_LABEL[cell.status]}
-                          </Badge>
+                          {cell.status === "submitted" ? (
+                            <button
+                              type="button"
+                              title="Review their work"
+                              onClick={() =>
+                                setReview({
+                                  teamId: row.team.id,
+                                  teamName: teamPrimaryName(row.team),
+                                  key: cell.key,
+                                })
+                              }
+                            >
+                              <Badge
+                                variant="outline"
+                                className={`${READINESS_TONE[cell.status]} cursor-pointer underline-offset-2 hover:underline`}
+                              >
+                                {READINESS_LABEL[cell.status]}
+                              </Badge>
+                            </button>
+                          ) : (
+                            <Badge variant="outline" className={READINESS_TONE[cell.status]}>
+                              {READINESS_LABEL[cell.status]}
+                            </Badge>
+                          )}
                           {cell.overdue && (
                             <div className="text-[11px] text-rose-400">Overdue</div>
                           )}
                           {cell.status === "submitted" && (
-                            <div className="flex gap-1 pt-1">
+                            <div className="pt-1">
                               <Button
                                 size="sm"
                                 variant="outline"
                                 className="h-6 px-2 text-[11px]"
                                 onClick={() =>
-                                  decide.mutate({
+                                  setReview({
                                     teamId: row.team.id,
+                                    teamName: teamPrimaryName(row.team),
                                     key: cell.key,
-                                    status: "approved",
                                   })
                                 }
                               >
-                                Approve
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-6 px-2 text-[11px]"
-                                onClick={() => {
-                                  const note = window.prompt("What needs fixing?") ?? "";
-                                  if (!note.trim()) return;
-                                  decide.mutate({
-                                    teamId: row.team.id,
-                                    key: cell.key,
-                                    status: "needs_revision",
-                                    note,
-                                  });
-                                }}
-                              >
-                                Send back
+                                Review
                               </Button>
                             </div>
                           )}
@@ -231,6 +240,25 @@ export function ReadinessBoardCard() {
             </tbody>
           </table>
         </div>
+
+        {review && (
+          <SubmissionReviewDialog
+            open
+            onOpenChange={(o) => !o && setReview(null)}
+            teamId={review.teamId}
+            teamName={review.teamName}
+            requirementKey={review.key}
+            busy={decide.isPending}
+            onDecide={(v) =>
+              decide.mutate({
+                teamId: review.teamId,
+                key: review.key,
+                status: v.status,
+                note: v.note,
+              })
+            }
+          />
+        )}
       </CardContent>
     </Card>
   );
