@@ -24,7 +24,7 @@ export type SluggoRow = {
   flags: SluggoFlag[];
 };
 
-type Stamp = { userId: string; at: string | null };
+type Stamp = { userId: string | null; at: string | null };
 
 function push(map: Map<string, string[]>, userId: string | null, at: string | null | undefined) {
   if (!userId || !at) return;
