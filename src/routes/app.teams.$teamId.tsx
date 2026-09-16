@@ -25,6 +25,8 @@ import { TeamReadinessCard } from "@/components/team-readiness-card";
 import { GroupNormsCard } from "@/components/group-norms-card";
 import { DashboardReadinessNotice } from "@/components/dashboard-readiness-notice";
 import { PmDutiesCard } from "@/components/pm-duties-card";
+import { TeamRolesManagerCard } from "@/components/team-roles-manager-card";
+
 
 
 export const Route = createFileRoute("/app/teams/$teamId")({
@@ -106,15 +108,19 @@ function TeamDetail() {
     },
   });
 
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const team = data?.team;
   const cf = data?.companyFocus;
   const isMember = !!user && (data?.members ?? []).some((m) => m.user_id === user.id);
+  const isTeamPM =
+    !!user && (data?.members ?? []).some((m) => m.user_id === user.id && m.job_title === "PM");
+  const canAssignRoles = isAdmin || isTeamPM;
   const members = (data?.members ?? []).slice().sort((a, b) => {
     const ai = ROLE_ORDER.indexOf(a.job_title);
     const bi = ROLE_ORDER.indexOf(b.job_title);
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
   });
+
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
@@ -170,6 +176,13 @@ function TeamDetail() {
           <RoleSelectCard />
         </div>
       )}
+
+      {canAssignRoles && members.length > 0 && (
+        <div className="mt-6">
+          <TeamRolesManagerCard teamId={teamId} members={members} />
+        </div>
+      )}
+
 
       {isMember && user && (
         <div className="mt-6">
