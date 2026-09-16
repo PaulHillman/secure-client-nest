@@ -75,9 +75,13 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
   });
 
   const nudgeMutation = useMutation({
-    mutationFn: (v: { key: string; targetUserId: string }) =>
-      nudge({ data: { teamId, key: v.key, targetUserId: v.targetUserId } }),
-    onSuccess: () => toast.success("Nudge sent."),
+    mutationFn: (v: { key: string; targetUserId: string; message?: string }) =>
+      nudge({ data: { teamId, key: v.key, targetUserId: v.targetUserId, message: v.message } }),
+    onSuccess: () => {
+      toast.success("Nudge sent by email and in the app.");
+      setNudgeTarget(null);
+      setNudgeNote("");
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
