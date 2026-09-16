@@ -150,3 +150,63 @@ export const claimTeamRole = createServerFn({ method: "POST" })
 
     return { role: data.role };
   });
+
+/** Admins and a team's PM may set any member's role on that team. */
+export const assignMemberRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { teamId: string; userId: string; role: string }) => {
+    if (![...BASE_ROLES, SIX_MEMBER_EXTRA, "Unassigned"].includes(input.role))
+      throw new Error("That is not a valid role.");
+    return input;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId: actorId } = context;
+
+    const [{ data: isAdmin }, { data: isPM }] = await Promise.all([
+      supabase.rpc("has_role", { _user_id: actorId, _role: "admin" }),
+      supabase.rpc("is_team_pm", { _team_id: data.teamId, _user_id: actorId }),
+    ]);
+    if (isAdmin !== true && isPM !== true)
+      throw new Error("Only the Project Manager of this team or an admin can change roles.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: mates, error: mErr } = await supabaseAdmin
+      .from("team_members")
+      .select("id, user_id, job_title")
+      .eq("team_id", data.teamId);
+    if (mErr) throw mErr;
+
+    const target = (mates ?? []).find((m) => m.user_id === data.userId);
+    if (!target) throw new Error("That student is not on this team.");
+    if (data.role === SIX_MEMBER_EXTRA && (mates ?? []).length < 6)
+      throw new Error("Researcher is only offered to teams with 6 members.");
+
+    let displaced: string | null = null;
+    if (data.role !== "Unassigned") {
+      const clash = (mates ?? []).find(
+        (m) => m.user_id !== data.userId && m.job_title === data.role,
+      );
+      if (clash) {
+        const { error } = await supabaseAdmin
+          .from("team_members")
+          .update({ job_title: "Unassigned" as never })
+          .eq("id", clash.id);
+        if (error) throw error;
+        const { data: p } = await supabaseAdmin
+          .from("profiles")
+          .select("name")
+          .eq("id", clash.user_id)
+          .maybeSingle();
+        displaced = p?.name ?? "A teammate";
+      }
+    }
+
+    const { error } = await supabaseAdmin
+      .from("team_members")
+      .update({ job_title: data.role as never })
+      .eq("id", target.id);
+    if (error) throw error;
+
+    return { role: data.role, displaced };
+  });
