@@ -1,136 +1,41 @@
 import { StudentAvatar } from "@/components/student-avatar";
-import { teamLabel } from "@/lib/team-label";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getSluggoReport } from "@/lib/sluggo.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, Flag } from "lucide-react";
 
-type Flag = {
-  key: string;
-  label: string;
-  severity: "high" | "medium" | "low";
-};
-
-type Row = {
-  user_id: string;
-  name: string;
-  avatar_url?: string | null;
-  email: string;
-  section: string | null;
-  team: string | null;
-  logins7: number;
-  loginsAll: number;
-  uploadsAll: number;
-  commentsAll: number;
-  lastLogin: string | null;
-  flags: Flag[];
-};
+function relative(iso: string | null) {
+  if (!iso) return "Never";
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (days <= 0) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 30) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
 
 export function SluggoFlagCard() {
-  const [loginWindow, setLoginWindow] = useState<"7" | "14" | "30">("7");
+  const [windowDays, setWindowDays] = useState<"7" | "14" | "30">("7");
   const [severityFilter, setSeverityFilter] = useState<"all" | "high" | "medium">("all");
   const [teamFilter, setTeamFilter] = useState<string>("all");
 
+  const fetchReport = useServerFn(getSluggoReport);
   const { data, isLoading } = useQuery({
-    queryKey: ["sluggo-flags", loginWindow],
-    queryFn: async (): Promise<{ rows: Row[]; teams: { id: string; name: string }[] }> => {
-      const since = new Date();
-      since.setDate(since.getDate() - Number(loginWindow));
-      const sinceIso = since.toISOString();
-
-      const [profilesRes, membersRes, teamsRes, authRes, fileRes, commentsRes, rolesRes] = await Promise.all([
-        supabase.from("profiles").select("id, name, email, section, avatar_url"),
-        supabase.from("team_members").select("user_id, team_id"),
-        supabase.from("teams").select("id, name, section").eq("is_test", false),
-        supabase.from("auth_audit_log").select("user_id, event, created_at").eq("event", "signin"),
-        supabase.from("file_audit_log").select("actor_id, action").eq("action", "insert"),
-        supabase.from("file_comments").select("author_id"),
-        supabase.from("user_roles").select("user_id, role"),
-      ]);
-
-      const teams = teamsRes.data ?? [];
-      const teamById = new Map(teams.map((t) => [t.id, teamLabel(t)]));
-      const teamByUser = new Map<string, string>();
-      (membersRes.data ?? []).forEach((m) => {
-        if (m.user_id && m.team_id) teamByUser.set(m.user_id, teamById.get(m.team_id) ?? "");
-      });
-
-      const studentIds = new Set(
-        (rolesRes.data ?? []).filter((r) => r.role === "student").map((r) => r.user_id),
-      );
-
-      const logins7 = new Map<string, number>();
-      const loginsAll = new Map<string, number>();
-      const lastLogin = new Map<string, string>();
-      (authRes.data ?? []).forEach((r) => {
-        if (!r.user_id) return;
-        loginsAll.set(r.user_id, (loginsAll.get(r.user_id) ?? 0) + 1);
-        if (r.created_at >= sinceIso) {
-          logins7.set(r.user_id, (logins7.get(r.user_id) ?? 0) + 1);
-        }
-        const prev = lastLogin.get(r.user_id);
-        if (!prev || r.created_at > prev) lastLogin.set(r.user_id, r.created_at);
-      });
-
-      const uploadsAll = new Map<string, number>();
-      (fileRes.data ?? []).forEach((r) => {
-        if (!r.actor_id) return;
-        uploadsAll.set(r.actor_id, (uploadsAll.get(r.actor_id) ?? 0) + 1);
-      });
-
-      const commentsAll = new Map<string, number>();
-      (commentsRes.data ?? []).forEach((r) => {
-        if (!r.author_id) return;
-        commentsAll.set(r.author_id, (commentsAll.get(r.author_id) ?? 0) + 1);
-      });
-
-      const rows: Row[] = (profilesRes.data ?? [])
-        .filter((p) => studentIds.has(p.id))
-        .map((p) => {
-          const l7 = logins7.get(p.id) ?? 0;
-          const lAll = loginsAll.get(p.id) ?? 0;
-          const uAll = uploadsAll.get(p.id) ?? 0;
-          const cAll = commentsAll.get(p.id) ?? 0;
-          const flags: Flag[] = [];
-          if (lAll === 0) flags.push({ key: "no-login-ever", label: "Never signed in", severity: "high" });
-          else if (l7 === 0) flags.push({ key: "no-login-window", label: `0 logins in ${loginWindow}d`, severity: "high" });
-          if (uAll === 0) flags.push({ key: "no-uploads", label: "0 uploads all semester", severity: "high" });
-          if (cAll === 0) flags.push({ key: "no-comments", label: "0 comments all semester", severity: "medium" });
-          if (!teamByUser.has(p.id)) flags.push({ key: "no-team", label: "Not on any team", severity: "medium" });
-          return {
-            user_id: p.id,
-            name: p.name ?? "—",
-            avatar_url: p.avatar_url ?? null,
-            email: p.email ?? "",
-            section: p.section ?? null,
-            team: teamByUser.get(p.id) ?? null,
-            logins7: l7,
-            loginsAll: lAll,
-            uploadsAll: uAll,
-            commentsAll: cAll,
-            lastLogin: lastLogin.get(p.id) ?? null,
-            flags,
-          };
-        })
-        .filter((r) => r.flags.length > 0);
-
-      return { rows, teams };
-    },
+    queryKey: ["sluggo-flags", windowDays],
+    queryFn: () => fetchReport({ data: { windowDays: Number(windowDays) } }),
   });
 
   const teams = data?.teams ?? [];
   const rows = useMemo(() => {
     let r = data?.rows ?? [];
     if (teamFilter !== "all") r = r.filter((x) => x.team === teamFilter);
-    if (severityFilter !== "all") {
-      r = r.filter((x) => x.flags.some((f) => f.severity === severityFilter));
-    }
-    const sev = (s: "high" | "medium" | "low") => (s === "high" ? 3 : s === "medium" ? 2 : 1);
+    if (severityFilter !== "all") r = r.filter((x) => x.flags.some((f) => f.severity === severityFilter));
+    const sev = (s: "high" | "medium") => (s === "high" ? 3 : 2);
     return [...r].sort((a, b) => {
-      const aMax = Math.max(...a.flags.map((f) => sev(f.severity)));
-      const bMax = Math.max(...b.flags.map((f) => sev(f.severity)));
+      const aMax = Math.max(0, ...a.flags.map((f) => sev(f.severity)));
+      const bMax = Math.max(0, ...b.flags.map((f) => sev(f.severity)));
       if (bMax !== aMax) return bMax - aMax;
       if (b.flags.length !== a.flags.length) return b.flags.length - a.flags.length;
       return a.name.localeCompare(b.name);
@@ -148,16 +53,18 @@ export function SluggoFlagCard() {
             Sluggo report
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            {isLoading ? "Scanning…" : `${rows.length} student${rows.length === 1 ? "" : "s"} flagged · ${highCount} high severity`}
+            {isLoading
+              ? "Scanning…"
+              : `${rows.length} of ${data?.totalStudents ?? 0} students flagged · ${highCount} high severity`}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Select value={loginWindow} onValueChange={(v) => setLoginWindow(v as typeof loginWindow)}>
-            <SelectTrigger className="h-8 w-[150px]"><SelectValue /></SelectTrigger>
+          <Select value={windowDays} onValueChange={(v) => setWindowDays(v as typeof windowDays)}>
+            <SelectTrigger className="h-8 w-[160px]"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="7">Login window: 7d</SelectItem>
-              <SelectItem value="14">Login window: 14d</SelectItem>
-              <SelectItem value="30">Login window: 30d</SelectItem>
+              <SelectItem value="7">Activity window: 7d</SelectItem>
+              <SelectItem value="14">Activity window: 14d</SelectItem>
+              <SelectItem value="30">Activity window: 30d</SelectItem>
             </SelectContent>
           </Select>
           <Select value={severityFilter} onValueChange={(v) => setSeverityFilter(v as typeof severityFilter)}>
@@ -173,7 +80,7 @@ export function SluggoFlagCard() {
             <SelectContent>
               <SelectItem value="all">All teams</SelectItem>
               {teams.map((t) => (
-                <SelectItem key={t.id} value={teamLabel(t)}>{teamLabel(t)}</SelectItem>
+                <SelectItem key={t.id} value={t.label}>{t.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -195,19 +102,20 @@ export function SluggoFlagCard() {
                   <th className="py-2 pr-4 font-medium">Student</th>
                   <th className="py-2 pr-4 font-medium">Section</th>
                   <th className="py-2 pr-4 font-medium">Team</th>
-                  <th className="py-2 pr-4 font-medium">Last login</th>
-                  <th className="py-2 pr-2 font-medium text-right">Logins ({loginWindow}d)</th>
+                  <th className="py-2 pr-4 font-medium">Role</th>
+                  <th className="py-2 pr-4 font-medium">Last active</th>
+                  <th className="py-2 pr-2 font-medium text-right">Actions ({windowDays}d)</th>
+                  <th className="py-2 pr-2 font-medium text-right">Practice</th>
                   <th className="py-2 pr-2 font-medium text-right">Uploads</th>
-                  <th className="py-2 pr-2 font-medium text-right">Comments</th>
                   <th className="py-2 pr-4 font-medium">Flags</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.user_id} className="border-b border-border/40">
+                  <tr key={r.userId} className="border-b border-border/40">
                     <td className="py-2 pr-4">
                       <div className="flex items-center gap-2">
-                        <StudentAvatar name={r.name} email={r.email} avatarUrl={r.avatar_url} />
+                        <StudentAvatar name={r.name} email={r.email} avatarUrl={r.avatarUrl} />
                         <div>
                           <div className="font-medium text-foreground">{r.name}</div>
                           <div className="text-xs text-muted-foreground">{r.email}</div>
@@ -216,12 +124,15 @@ export function SluggoFlagCard() {
                     </td>
                     <td className="py-2 pr-4 text-muted-foreground">{r.section ?? "—"}</td>
                     <td className="py-2 pr-4 text-muted-foreground">{r.team ?? "—"}</td>
-                    <td className="py-2 pr-4 text-xs text-muted-foreground whitespace-nowrap">
-                      {r.lastLogin ? new Date(r.lastLogin).toLocaleDateString() : "Never"}
+                    <td className="py-2 pr-4 text-muted-foreground">
+                      {!r.role || r.role === "Unassigned" ? "—" : r.role}
                     </td>
-                    <td className="py-2 pr-2 text-right tabular-nums">{r.logins7}</td>
-                    <td className="py-2 pr-2 text-right tabular-nums">{r.uploadsAll}</td>
-                    <td className="py-2 pr-2 text-right tabular-nums">{r.commentsAll}</td>
+                    <td className="py-2 pr-4 text-xs text-muted-foreground whitespace-nowrap">
+                      {relative(r.lastActive)}
+                    </td>
+                    <td className="py-2 pr-2 text-right tabular-nums">{r.eventsInWindow}</td>
+                    <td className="py-2 pr-2 text-right tabular-nums">{r.practiceDone}</td>
+                    <td className="py-2 pr-2 text-right tabular-nums">{r.uploads}</td>
                     <td className="py-2 pr-4">
                       <div className="flex flex-wrap gap-1">
                         {r.flags.map((f) => (
@@ -230,9 +141,7 @@ export function SluggoFlagCard() {
                             className={
                               f.severity === "high"
                                 ? "rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive"
-                                : f.severity === "medium"
-                                  ? "rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"
-                                  : "rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                                : "rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"
                             }
                           >
                             {f.label}

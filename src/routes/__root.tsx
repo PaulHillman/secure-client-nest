@@ -80,9 +80,16 @@ function AuthSync() {
   const qc = useQueryClient();
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+      // INITIAL_SESSION fires when a returning user arrives with a stored
+      // session; without it most real visits were never recorded as sign-ins.
+      if (
+        event !== "SIGNED_IN" &&
+        event !== "INITIAL_SESSION" &&
+        event !== "SIGNED_OUT" &&
+        event !== "USER_UPDATED"
+      ) return;
 
-      if (event === "SIGNED_IN" && session?.user?.id) {
+      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session?.user?.id) {
         const userId = session.user.id;
         const ua = typeof navigator !== "undefined" ? navigator.userAgent : null;
         try {
@@ -93,6 +100,9 @@ function AuthSync() {
           }
         } catch { /* ignore */ }
       }
+
+      // Logging only; don't thrash router/cache on every mount.
+      if (event === "INITIAL_SESSION") return;
 
       router.invalidate();
       if (event !== "SIGNED_OUT") qc.invalidateQueries();
