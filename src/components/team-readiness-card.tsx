@@ -253,6 +253,47 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
             onOpenChange={(v) => !v && setFormItem(null)}
           />
         )}
+
+        <Dialog
+          open={!!nudgeTarget}
+          onOpenChange={(v) => {
+            if (!v) setNudgeTarget(null);
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Nudge {nudgeTarget?.name}</DialogTitle>
+              <DialogDescription>
+                They get a reminder in the app and an email. Add a note if you want to say
+                something specific.
+              </DialogDescription>
+            </DialogHeader>
+            <Textarea
+              value={nudgeNote}
+              onChange={(e) => setNudgeNote(e.target.value)}
+              placeholder="Optional note, e.g. what you need from them and by when."
+              rows={4}
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setNudgeTarget(null)}>
+                Cancel
+              </Button>
+              <Button
+                disabled={nudgeMutation.isPending}
+                onClick={() =>
+                  nudgeTarget &&
+                  nudgeMutation.mutate({
+                    key: nudgeTarget.key,
+                    targetUserId: nudgeTarget.targetUserId,
+                    message: nudgeNote.trim() || undefined,
+                  })
+                }
+              >
+                <BellRing className="mr-1 h-3.5 w-3.5" /> Send nudge
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
