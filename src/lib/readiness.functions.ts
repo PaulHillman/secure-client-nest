@@ -448,20 +448,29 @@ export const decideRequirement = createServerFn({ method: "POST" })
     );
     if (error) throw error;
 
-    // Tell the PM — the trigger on notifications copies them on everything anyway,
-    // but the PM is the person who has to act on a send-back.
-    const [{ data: pms }, { data: req }] = await Promise.all([
-      supabaseAdmin.from("team_members").select("user_id").eq("team_id", data.teamId).eq("job_title", "PM"),
+    // On a send-back the whole team gets the note so everyone knows what to fix;
+    // on approval the PM gets the confirmation (they own the checklist).
+    const [{ data: members }, { data: req }] = await Promise.all([
+      supabaseAdmin
+        .from("team_members")
+        .select("user_id, job_title")
+        .eq("team_id", data.teamId)
+        .neq("job_title", "Unassigned"),
       supabaseAdmin.from("project_requirements").select("title").eq("key", data.key).maybeSingle(),
     ]);
+    const title = req?.title ?? data.key;
+    const recipients =
+      data.status === "approved"
+        ? (members ?? []).filter((m) => m.job_title === "PM")
+        : (members ?? []);
     const message =
       data.status === "approved"
-        ? `"${req?.title ?? data.key}" was approved.`
-        : `"${req?.title ?? data.key}" was sent back${data.note ? `: ${data.note}` : "."}`;
-    if (pms?.length) {
+        ? `"${title}" was approved.`
+        : `"${title}" was sent back${data.note ? `: ${data.note}` : "."}`;
+    if (recipients.length) {
       await supabaseAdmin.from("notifications").insert(
-        pms.map((p) => ({
-          user_id: p.user_id,
+        recipients.map((m) => ({
+          user_id: m.user_id,
           team_id: data.teamId,
           actor_id: context.userId,
           kind: "requirement_decision",
