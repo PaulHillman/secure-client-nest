@@ -268,6 +268,30 @@ export function ReadinessBoardCard() {
                               </Button>
                             </div>
                           )}
+                          {cell.status !== "approved" && row.members.length > 0 && (
+                            <div className="pt-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-6 px-2 text-[11px]"
+                                title="Remind someone on this team"
+                                onClick={() => {
+                                  setNudgeNote("");
+                                  setNudge({
+                                    teamId: row.team.id,
+                                    teamName: teamPrimaryName(row.team),
+                                    key: cell.key,
+                                    title:
+                                      data.requirements.find((r) => r.key === cell.key)?.title ??
+                                      cell.key,
+                                    targetUserId: cell.ownerId ?? row.members[0].userId,
+                                  });
+                                }}
+                              >
+                                <BellRing className="mr-1 h-3 w-3" /> Nudge
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </td>
