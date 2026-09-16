@@ -298,7 +298,7 @@ export const getReadinessBoard = createServerFn({ method: "GET" })
           .order("order_index"),
         supabaseAdmin.from("team_requirement_status").select("*"),
         supabaseAdmin.from("requirement_openings").select("requirement_key, section, due_at"),
-        supabaseAdmin.from("team_members").select("team_id, job_title"),
+        supabaseAdmin.from("team_members").select("team_id, user_id, job_title"),
       ]);
 
     type StatusRow = Database["public"]["Tables"]["team_requirement_status"]["Row"];
@@ -308,10 +308,22 @@ export const getReadinessBoard = createServerFn({ method: "GET" })
       byTeam.get(s.team_id)!.set(s.requirement_key, s);
     }
     const unassigned = new Map<string, number>();
+    const memberIds = [...new Set((members ?? []).map((m) => m.user_id))];
+    const { data: memberProfiles } = memberIds.length
+      ? await supabaseAdmin.from("profiles").select("id, name").in("id", memberIds)
+      : { data: [] as { id: string; name: string }[] };
+    const nameById = new Map((memberProfiles ?? []).map((p) => [p.id, p.name]));
+    const membersByTeam = new Map<string, { userId: string; name: string; jobTitle: string }[]>();
     for (const m of members ?? []) {
       if (!m.job_title || m.job_title === "Unassigned") {
         unassigned.set(m.team_id, (unassigned.get(m.team_id) ?? 0) + 1);
       }
+      if (!membersByTeam.has(m.team_id)) membersByTeam.set(m.team_id, []);
+      membersByTeam.get(m.team_id)!.push({
+        userId: m.user_id,
+        name: nameById.get(m.user_id) ?? "Team member",
+        jobTitle: m.job_title ?? "Unassigned",
+      });
     }
     const openSet = new Set((openings ?? []).map((o) => `${o.requirement_key}|${o.section}`));
     const dueBy = new Map((openings ?? []).map((o) => [`${o.requirement_key}|${o.section}`, o.due_at]));
