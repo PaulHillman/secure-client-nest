@@ -92,6 +92,24 @@ export function ReadinessBoardCard() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const sendNudge = useMutation({
+    mutationFn: () =>
+      nudgeFn({
+        data: {
+          teamId: nudge!.teamId,
+          key: nudge!.key,
+          targetUserId: nudge!.targetUserId,
+          message: nudgeNote.trim() || undefined,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Nudge sent by email and in the app.");
+      setNudge(null);
+      setNudgeNote("");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const rows = useMemo(
     () => (data?.rows ?? []).filter((r) => section === ALL || r.team.section === section),
     [data, section],
