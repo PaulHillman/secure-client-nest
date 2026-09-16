@@ -23,4 +23,5 @@ export interface TemplateEntry {
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'profile-incomplete': profileIncompleteTemplate,
   'requirement-decision': requirementDecisionTemplate,
+  'requirement-nudge': requirementNudgeTemplate,
 }
