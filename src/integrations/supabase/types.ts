@@ -618,6 +618,39 @@ export type Database = {
           },
         ]
       }
+      email_log: {
+        Row: {
+          body_text: string | null
+          created_at: string
+          error: string | null
+          id: string
+          recipient: string
+          status: string
+          subject: string
+          template: string
+        }
+        Insert: {
+          body_text?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          recipient: string
+          status?: string
+          subject: string
+          template: string
+        }
+        Update: {
+          body_text?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          recipient?: string
+          status?: string
+          subject?: string
+          template?: string
+        }
+        Relationships: []
+      }
       file_audit_log: {
         Row: {
           action: string
