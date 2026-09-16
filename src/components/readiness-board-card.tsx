@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   decideRequirement,
   getReadinessBoard,
+  nudgeMember,
   setRequirementOpening,
 } from "@/lib/readiness.functions";
 import { READINESS_LABEL, READINESS_TONE, type ReadinessStatus } from "@/lib/readiness";
@@ -21,7 +22,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SubmissionReviewDialog } from "@/components/submission-review-dialog";
-import { LayoutGrid, PlayCircle, XCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { BellRing, LayoutGrid, PlayCircle, XCircle } from "lucide-react";
 
 const ALL = "__all__";
 
