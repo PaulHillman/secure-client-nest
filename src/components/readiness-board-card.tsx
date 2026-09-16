@@ -320,6 +320,50 @@ export function ReadinessBoardCard() {
             }
           />
         )}
+
+        <Dialog open={!!nudge} onOpenChange={(v) => !v && setNudge(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Nudge {nudge?.teamName}</DialogTitle>
+              <DialogDescription>
+                {nudge?.title}: they get a reminder in the app and an email. Add a note if you want
+                to say something specific.
+              </DialogDescription>
+            </DialogHeader>
+            <Select
+              value={nudge?.targetUserId ?? ""}
+              onValueChange={(v) => nudge && setNudge({ ...nudge, targetUserId: v })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Who should be nudged?" />
+              </SelectTrigger>
+              <SelectContent>
+                {(rows.find((r) => r.team.id === nudge?.teamId)?.members ?? []).map((m) => (
+                  <SelectItem key={m.userId} value={m.userId}>
+                    {m.name} · {m.jobTitle}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Textarea
+              value={nudgeNote}
+              onChange={(e) => setNudgeNote(e.target.value)}
+              placeholder="Optional note, e.g. what you need from them and by when."
+              rows={4}
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setNudge(null)}>
+                Cancel
+              </Button>
+              <Button
+                disabled={sendNudge.isPending || !nudge?.targetUserId}
+                onClick={() => sendNudge.mutate()}
+              >
+                <BellRing className="mr-1 h-3.5 w-3.5" /> Send nudge
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
