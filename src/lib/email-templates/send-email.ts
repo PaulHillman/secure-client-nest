@@ -65,6 +65,23 @@ export async function sendTemplateEmail(
       ? template.subject(templateData)
       : template.subject
 
+  // Keep a copy of every outgoing email in the admin-visible email log.
+  const logSend = async (status: string, errorMessage?: string) => {
+    try {
+      const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
+      await supabaseAdmin.from('email_log').insert({
+        template: templateName,
+        recipient,
+        subject,
+        body_text: text,
+        status,
+        error: errorMessage ?? null,
+      })
+    } catch (logError) {
+      console.error('Failed to write email log:', logError)
+    }
+  }
+
   try {
     await sendLovableEmail(
       {
