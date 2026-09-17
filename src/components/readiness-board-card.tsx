@@ -290,8 +290,12 @@ export function ReadinessBoardCard() {
                               {READINESS_LABEL[cell.status]}
                             </Badge>
                           )}
-                          {cell.overdue && (
-                            <div className="text-[11px] text-rose-400">Overdue</div>
+                          {cell.closed ? (
+                            <div className="text-[11px] text-muted-foreground">Closed</div>
+                          ) : (
+                            cell.overdue && (
+                              <div className="text-[11px] text-rose-400">Overdue</div>
+                            )
                           )}
                           {cell.status === "submitted" && (
                             <div className="pt-1">
