@@ -43,6 +43,7 @@ export function ReadinessBoardCard() {
   const nudgeFn = useServerFn(nudgeMember);
 
   const [section, setSection] = useState<string>(ALL);
+  const [view, setView] = useState<"active" | "needs" | "closed">("active");
   const [review, setReview] = useState<{ teamId: string; teamName: string; key: string } | null>(
     null,
   );
@@ -115,6 +116,18 @@ export function ReadinessBoardCard() {
     [data, section],
   );
 
+  type Cell = (typeof rows)[number]["cells"][number];
+  const inView = (cell: Cell) => {
+    if (view === "needs") return cell.status === "submitted";
+    if (view === "closed") return cell.closed;
+    return cell.open && !cell.closed;
+  };
+
+  // Only show module columns that have something to see in the current view.
+  const columns = (data?.requirements ?? []).filter((r) =>
+    rows.some((row) => row.cells.some((c) => c.key === r.key && inView(c))),
+  );
+
   if (!data) return null;
 
   return (
@@ -129,6 +142,32 @@ export function ReadinessBoardCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
+        <div className="flex flex-wrap items-center gap-2">
+          {(
+            [
+              ["active", "Active"],
+              ["needs", "Needs action"],
+              ["closed", "Closed"],
+            ] as const
+          ).map(([v, label]) => (
+            <Button
+              key={v}
+              size="sm"
+              variant={view === v ? "default" : "outline"}
+              onClick={() => setView(v)}
+            >
+              {label}
+            </Button>
+          ))}
+          <span className="text-xs text-muted-foreground">
+            {view === "active"
+              ? "Modules open now and not past their due date."
+              : view === "needs"
+                ? "Submitted work waiting on your decision, open or closed."
+                : "Past their due date — read-only for teams, still reviewable by you."}
+          </span>
+        </div>
+
         <div className="flex flex-wrap items-end gap-2 rounded-lg border p-3">
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Section</label>
@@ -187,12 +226,22 @@ export function ReadinessBoardCard() {
           </Button>
         </div>
 
+        {columns.length === 0 && (
+          <p className="rounded-lg border p-4 text-sm text-muted-foreground">
+            {view === "needs"
+              ? "Nothing is waiting on your decision right now."
+              : view === "closed"
+                ? "No modules have passed their due date yet."
+                : "No modules are open right now. Pick one above and open it."}
+          </p>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left text-xs text-muted-foreground">
                 <th className="py-2 pr-3 font-medium">Team</th>
-                {data.requirements.map((r) => (
+                {columns.map((r) => (
                   <th key={r.key} className="px-2 py-2 font-medium whitespace-nowrap">
                     {r.title}
                   </th>
@@ -217,10 +266,14 @@ export function ReadinessBoardCard() {
                       </Badge>
                     )}
                   </td>
-                  {row.cells.map((cell) => (
+                  {columns.map((col) => {
+                    const cell = row.cells.find((c) => c.key === col.key)!;
+                    return (
                     <td key={cell.key} className="px-2 py-2">
-                      {!cell.open ? (
-                        <span className="text-xs text-muted-foreground">Not opened</span>
+                      {!cell.open || !inView(cell) ? (
+                        <span className="text-xs text-muted-foreground">
+                          {!cell.open ? "Not opened" : "—"}
+                        </span>
                       ) : (
                         <div className="space-y-1">
                           {cell.status === "submitted" ? (
@@ -247,8 +300,12 @@ export function ReadinessBoardCard() {
                               {READINESS_LABEL[cell.status]}
                             </Badge>
                           )}
-                          {cell.overdue && (
-                            <div className="text-[11px] text-rose-400">Overdue</div>
+                          {cell.closed ? (
+                            <div className="text-[11px] text-muted-foreground">Closed</div>
+                          ) : (
+                            cell.overdue && (
+                              <div className="text-[11px] text-rose-400">Overdue</div>
+                            )
                           )}
                           {cell.status === "submitted" && (
                             <div className="pt-1">
@@ -268,7 +325,7 @@ export function ReadinessBoardCard() {
                               </Button>
                             </div>
                           )}
-                          {cell.status !== "approved" && row.members.length > 0 && (
+                          {cell.status !== "approved" && !cell.closed && row.members.length > 0 && (
                             <div className="pt-1">
                               <Button
                                 size="sm"
@@ -295,7 +352,8 @@ export function ReadinessBoardCard() {
                         </div>
                       )}
                     </td>
-                  ))}
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>

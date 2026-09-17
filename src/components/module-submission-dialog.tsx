@@ -7,6 +7,7 @@ import {
   saveModuleSubmission,
 } from "@/lib/module-submissions.functions";
 import { moduleForm } from "@/lib/modules";
+import { CLOSED_BANNER, READINESS_LABEL, type ReadinessStatus } from "@/lib/readiness";
 import {
   Dialog,
   DialogContent,
@@ -26,12 +27,14 @@ export function ModuleSubmissionDialog({
   title,
   open,
   onOpenChange,
+  readOnly = false,
 }: {
   teamId: string;
   moduleKey: string;
   title: string;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  readOnly?: boolean;
 }) {
   const qc = useQueryClient();
   const fetchOne = useServerFn(getModuleSubmission);
@@ -105,7 +108,11 @@ export function ModuleSubmissionDialog({
   });
 
   if (!form) return null;
-  const locked = moduleKey !== "team_setup" && data?.status === "approved" && !data?.isAdmin;
+  const approvedLock = moduleKey !== "team_setup" && data?.status === "approved" && !data?.isAdmin;
+  // Past the due date nobody on the team can change anything; the professor still can.
+  const closed = (readOnly || data?.closed === true) && !data?.isAdmin;
+  const locked = approvedLock || closed;
+  const hasSubmission = Object.values(answers).some((v) => (v ?? "").trim().length > 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -115,12 +122,30 @@ export function ModuleSubmissionDialog({
           <DialogDescription>{form.intro}</DialogDescription>
         </DialogHeader>
 
-        {data?.revisionNote && (
-          <p className="rounded-md border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-400">
-            Sent back: {data.revisionNote}
+        {closed && (
+          <p className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-400">
+            {CLOSED_BANNER}
           </p>
         )}
-        {locked && (
+        {closed && !hasSubmission && (
+          <p className="rounded-md border p-3 text-sm text-muted-foreground">
+            No submission was recorded for this module.
+          </p>
+        )}
+        {closed && data && (
+          <p className="text-sm text-muted-foreground">
+            Final state: {READINESS_LABEL[(data.status as ReadinessStatus) ?? "not_started"]}
+            {data.submittedAt
+              ? ` · submitted ${new Date(data.submittedAt).toLocaleString()}`
+              : ""}
+          </p>
+        )}
+        {data?.revisionNote && (
+          <p className="rounded-md border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-400">
+            {closed ? "Feedback from your professor" : "Sent back"}: {data.revisionNote}
+          </p>
+        )}
+        {approvedLock && (
           <p className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-400">
             Approved — this is now read only.
           </p>
@@ -131,14 +156,15 @@ export function ModuleSubmissionDialog({
             <div key={f.name} className="space-y-1.5">
               <Label htmlFor={f.name}>
                 {f.label}
-                {f.required && <span className="text-muted-foreground"> *</span>}
+                {f.required && !locked && <span className="text-muted-foreground"> *</span>}
               </Label>
               {f.kind === "textarea" ? (
                 <Textarea
                   id={f.name}
                   rows={3}
                   disabled={locked}
-                  placeholder={f.placeholder}
+                  readOnly={locked}
+                  placeholder={locked ? "" : f.placeholder}
                   value={answers[f.name] ?? ""}
                   onChange={(e) => setField(f.name, e.target.value)}
                 />
@@ -146,21 +172,28 @@ export function ModuleSubmissionDialog({
                 <Input
                   id={f.name}
                   disabled={locked}
-                  placeholder={f.placeholder}
+                  readOnly={locked}
+                  placeholder={locked ? "" : f.placeholder}
                   value={answers[f.name] ?? ""}
                   onChange={(e) => setField(f.name, e.target.value)}
                 />
               )}
-              {f.help && <p className="text-xs text-muted-foreground">{f.help}</p>}
+              {f.help && !locked && <p className="text-xs text-muted-foreground">{f.help}</p>}
             </div>
           ))}
         </div>
 
 
         <DialogFooter className="gap-2">
-          <Button disabled={locked || mutation.isPending} onClick={() => mutation.mutate(false)}>
-            Save
-          </Button>
+          {locked ? (
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Close
+            </Button>
+          ) : (
+            <Button disabled={mutation.isPending} onClick={() => mutation.mutate(false)}>
+              Save
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { READINESS_STATUSES, TEAM_SETTABLE, type ReadinessStatus } from "@/lib/readiness";
+import { isPastDue, READINESS_STATUSES, TEAM_SETTABLE, type ReadinessStatus } from "@/lib/readiness";
 import type { Database } from "@/integrations/supabase/types";
 
 type RoleChecker = {
@@ -106,6 +106,8 @@ export const getTeamReadiness = createServerFn({ method: "GET" })
           !!opening?.due_at &&
           new Date(opening.due_at) < new Date() &&
           (row?.status ?? "not_started") !== "approved",
+        // Past the due date the module is closed: read-only for the team.
+        closed: !!opening && isPastDue(opening.due_at),
         blockers,
       };
     });
@@ -144,6 +146,13 @@ export const setRequirementStatus = createServerFn({ method: "POST" })
       .eq("user_id", userId)
       .maybeSingle();
     if (!membership && !admin) throw new Error("You are not on this team.");
+
+    if (!admin) {
+      const { moduleIsClosed } = await import("@/lib/readiness-close.server");
+      if (await moduleIsClosed(supabase, data.teamId, data.key)) {
+        throw new Error("Submissions are closed for this module. You can still read the feedback.");
+      }
+    }
 
     if (data.status === "submitted" && data.key === "team_setup") {
       const { data: members } = await supabase
@@ -340,12 +349,14 @@ export const getReadinessBoard = createServerFn({ method: "GET" })
           const row = byTeam.get(t.id)?.get(r.key);
           const dueAt = dueBy.get(k) ?? null;
           const status = (row?.status ?? "not_started") as ReadinessStatus;
+          const open = openSet.has(k);
           return {
             key: r.key,
             status,
-            open: openSet.has(k),
+            open,
             dueAt,
             overdue: !!dueAt && new Date(dueAt) < new Date() && status !== "approved",
+            closed: open && isPastDue(dueAt),
             ownerId: row?.owner_id ?? null,
           };
         }),
