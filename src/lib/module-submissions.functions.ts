@@ -101,6 +101,9 @@ export const getModuleSubmission = createServerFn({ method: "GET" })
       }
     }
 
+    const { moduleIsClosed } = await import("@/lib/readiness-close.server");
+    const closed = await moduleIsClosed(supabase, data.teamId, data.key);
+
     return {
       answers: asAnswers(row?.answers),
       defaults,
@@ -109,6 +112,7 @@ export const getModuleSubmission = createServerFn({ method: "GET" })
       submitCount: row?.submit_count ?? 0,
       status: status?.status ?? "not_started",
       revisionNote: status?.revision_note ?? null,
+      closed,
       isPM: membership?.job_title === "PM",
       isAdmin: admin,
     };
@@ -134,6 +138,14 @@ export const saveModuleSubmission = createServerFn({ method: "POST" })
       .eq("user_id", userId)
       .maybeSingle();
     if (!membership && !admin) throw new Error("You are not on this team.");
+
+    // Once the due date has passed the answer sheet is read-only for the team.
+    if (!admin) {
+      const { moduleIsClosed } = await import("@/lib/readiness-close.server");
+      if (await moduleIsClosed(supabase, data.teamId, data.key)) {
+        throw new Error("Submissions are closed for this module. You can still read the feedback.");
+      }
+    }
 
     const { data: current } = await supabase
       .from("team_requirement_status")
