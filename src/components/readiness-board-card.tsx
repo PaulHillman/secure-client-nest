@@ -43,6 +43,7 @@ export function ReadinessBoardCard() {
   const nudgeFn = useServerFn(nudgeMember);
 
   const [section, setSection] = useState<string>(ALL);
+  const [view, setView] = useState<"active" | "needs" | "closed">("active");
   const [review, setReview] = useState<{ teamId: string; teamName: string; key: string } | null>(
     null,
   );
