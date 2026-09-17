@@ -26,12 +26,14 @@ export function ModuleSubmissionDialog({
   title,
   open,
   onOpenChange,
+  readOnly = false,
 }: {
   teamId: string;
   moduleKey: string;
   title: string;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  readOnly?: boolean;
 }) {
   const qc = useQueryClient();
   const fetchOne = useServerFn(getModuleSubmission);
