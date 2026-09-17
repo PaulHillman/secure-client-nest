@@ -231,7 +231,7 @@ export function ReadinessBoardCard() {
             <thead>
               <tr className="border-b text-left text-xs text-muted-foreground">
                 <th className="py-2 pr-3 font-medium">Team</th>
-                {data.requirements.map((r) => (
+                {columns.map((r) => (
                   <th key={r.key} className="px-2 py-2 font-medium whitespace-nowrap">
                     {r.title}
                   </th>
@@ -256,10 +256,14 @@ export function ReadinessBoardCard() {
                       </Badge>
                     )}
                   </td>
-                  {row.cells.map((cell) => (
+                  {columns.map((col) => {
+                    const cell = row.cells.find((c) => c.key === col.key)!;
+                    return (
                     <td key={cell.key} className="px-2 py-2">
-                      {!cell.open ? (
-                        <span className="text-xs text-muted-foreground">Not opened</span>
+                      {!cell.open || !inView(cell) ? (
+                        <span className="text-xs text-muted-foreground">
+                          {!cell.open ? "Not opened" : "—"}
+                        </span>
                       ) : (
                         <div className="space-y-1">
                           {cell.status === "submitted" ? (
