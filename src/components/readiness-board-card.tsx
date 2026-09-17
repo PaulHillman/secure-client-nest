@@ -115,6 +115,18 @@ export function ReadinessBoardCard() {
     [data, section],
   );
 
+  type Cell = (typeof rows)[number]["cells"][number];
+  const inView = (cell: Cell) => {
+    if (view === "needs") return cell.status === "submitted";
+    if (view === "closed") return cell.closed;
+    return cell.open && !cell.closed;
+  };
+
+  // Only show module columns that have something to see in the current view.
+  const columns = (data?.requirements ?? []).filter((r) =>
+    rows.some((row) => row.cells.some((c) => c.key === r.key && inView(c))),
+  );
+
   if (!data) return null;
 
   return (
