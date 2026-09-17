@@ -7,6 +7,7 @@ import {
   saveModuleSubmission,
 } from "@/lib/module-submissions.functions";
 import { moduleForm } from "@/lib/modules";
+import { CLOSED_BANNER, READINESS_LABEL, type ReadinessStatus } from "@/lib/readiness";
 import {
   Dialog,
   DialogContent,
