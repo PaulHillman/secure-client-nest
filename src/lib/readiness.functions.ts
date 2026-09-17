@@ -349,12 +349,14 @@ export const getReadinessBoard = createServerFn({ method: "GET" })
           const row = byTeam.get(t.id)?.get(r.key);
           const dueAt = dueBy.get(k) ?? null;
           const status = (row?.status ?? "not_started") as ReadinessStatus;
+          const open = openSet.has(k);
           return {
             key: r.key,
             status,
-            open: openSet.has(k),
+            open,
             dueAt,
             overdue: !!dueAt && new Date(dueAt) < new Date() && status !== "approved",
+            closed: open && isPastDue(dueAt),
             ownerId: row?.owner_id ?? null,
           };
         }),
