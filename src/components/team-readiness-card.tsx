@@ -8,7 +8,13 @@ import {
   setRequirementOwner,
   setRequirementStatus,
 } from "@/lib/readiness.functions";
-import { READINESS_LABEL, READINESS_TONE, TEAM_SETTABLE, type ReadinessStatus } from "@/lib/readiness";
+import {
+  CLOSED_BANNER,
+  READINESS_LABEL,
+  READINESS_TONE,
+  TEAM_SETTABLE,
+  type ReadinessStatus,
+} from "@/lib/readiness";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,7 +38,7 @@ import { StudentName } from "@/components/student-avatar";
 import { useAuth } from "@/lib/auth-context";
 import { ModuleSubmissionDialog } from "@/components/module-submission-dialog";
 import { moduleForm } from "@/lib/modules";
-import { AlertTriangle, BellRing, ClipboardCheck, Clock, FileText } from "lucide-react";
+import { AlertTriangle, Archive, BellRing, ClipboardCheck, Clock, FileText } from "lucide-react";
 
 const UNOWNED = "__none__";
 
@@ -44,7 +50,11 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
   const saveOwner = useServerFn(setRequirementOwner);
   const nudge = useServerFn(nudgeMember);
   const [busyKey, setBusyKey] = useState<string | null>(null);
-  const [formItem, setFormItem] = useState<{ key: string; title: string } | null>(null);
+  const [formItem, setFormItem] = useState<{
+    key: string;
+    title: string;
+    readOnly?: boolean;
+  } | null>(null);
   const [nudgeTarget, setNudgeTarget] = useState<{
     key: string;
     targetUserId: string;
@@ -305,6 +315,7 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
             title={formItem.title}
             open={!!formItem}
             onOpenChange={(v) => !v && setFormItem(null)}
+            readOnly={formItem.readOnly}
           />
         )}
 
