@@ -106,6 +106,8 @@ export const getTeamReadiness = createServerFn({ method: "GET" })
           !!opening?.due_at &&
           new Date(opening.due_at) < new Date() &&
           (row?.status ?? "not_started") !== "approved",
+        // Past the due date the module is closed: read-only for the team.
+        closed: !!opening && isPastDue(opening.due_at),
         blockers,
       };
     });
