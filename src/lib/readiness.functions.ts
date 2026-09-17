@@ -147,6 +147,13 @@ export const setRequirementStatus = createServerFn({ method: "POST" })
       .maybeSingle();
     if (!membership && !admin) throw new Error("You are not on this team.");
 
+    if (!admin) {
+      const { moduleIsClosed } = await import("@/lib/readiness-close.server");
+      if (await moduleIsClosed(supabase, data.teamId, data.key)) {
+        throw new Error("Submissions are closed for this module. You can still read the feedback.");
+      }
+    }
+
     if (data.status === "submitted" && data.key === "team_setup") {
       const { data: members } = await supabase
         .from("team_members")
