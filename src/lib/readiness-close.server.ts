@@ -1,21 +1,14 @@
 import { isPastDue } from "@/lib/readiness";
 
-type DbLike = {
-  from: (table: string) => {
-    select: (cols: string) => {
-      eq: (col: string, val: string) => {
-        eq: (col: string, val: string) => { maybeSingle: () => PromiseLike<{ data: unknown }> };
-        maybeSingle: () => PromiseLike<{ data: unknown }>;
-      };
-    };
-  };
-};
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type DbLike = { from: (table: string) => any };
 
 /**
  * A module is closed for a team once the due date set for their section has
  * passed. Closed modules stay readable but can no longer be changed.
  */
-export async function moduleIsClosed(db: DbLike, teamId: string, key: string) {
+export async function moduleIsClosed(dbIn: unknown, teamId: string, key: string) {
+  const db = dbIn as DbLike;
   const { data: team } = await db.from("teams").select("section").eq("id", teamId).maybeSingle();
   const section = (team as { section?: string | null } | null)?.section ?? "";
   const { data: opening } = await db
