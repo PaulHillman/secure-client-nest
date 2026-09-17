@@ -61,3 +61,16 @@ export function withAlias(name: string) {
 
 /** A member with no role picked is not "done" — they need chasing. */
 export const NEEDS_ROLE_LABEL = "Needs a role";
+
+/**
+ * A module's due date doubles as its close date: once it passes, the team can
+ * still read their work and the professor's feedback, but can no longer change
+ * anything. A module with no due date never closes.
+ */
+export function isPastDue(dueAt: string | null | undefined, now: Date = new Date()) {
+  if (!dueAt) return false;
+  const t = new Date(dueAt).getTime();
+  return Number.isFinite(t) && t < now.getTime();
+}
+
+export const CLOSED_BANNER = "Submissions are closed. Feedback is available below.";
