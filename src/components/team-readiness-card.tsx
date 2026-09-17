@@ -96,8 +96,149 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
 
   if (!data) return null;
 
-  const open = data.items.filter((i) => i.open);
+  const open = data.items.filter((i) => i.open && !i.closed);
+  const closedItems = data.items.filter((i) => i.open && i.closed);
   const canDrive = data.isPM || data.isAdmin;
+
+  const renderItem = (item: (typeof data.items)[number]) => {
+    const readOnly = item.closed && !data.isAdmin;
+    return (
+      <div key={item.key} className="rounded-lg border p-3 space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-medium">{item.title}</span>
+              {item.alias && item.alias !== item.title && (
+                <span className="text-xs text-muted-foreground">({item.alias})</span>
+              )}
+              <Badge variant="outline" className={READINESS_TONE[item.status]}>
+                {READINESS_LABEL[item.status]}
+              </Badge>
+              {item.closed ? (
+                <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
+                  Closed
+                </Badge>
+              ) : (
+                item.overdue && (
+                  <Badge variant="outline" className="border-rose-500/30 bg-rose-500/15 text-rose-400">
+                    Overdue
+                  </Badge>
+                )
+              )}
+            </div>
+            {item.description && (
+              <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
+            )}
+            {item.dueAt && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                <Clock className="h-3 w-3" />
+                {item.closed ? "Closed" : "Due"} {new Date(item.dueAt).toLocaleString()}
+              </p>
+            )}
+            {readOnly && (
+              <p className="mt-1 text-sm text-amber-400">{CLOSED_BANNER}</p>
+            )}
+            {readOnly && item.status === "not_started" && !item.submittedAt && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                No submission was recorded for this module.
+              </p>
+            )}
+            {item.revisionNote && (
+              <p className="mt-1 text-sm text-rose-400">
+                {readOnly ? "Feedback from your professor" : "Sent back"}: {item.revisionNote}
+              </p>
+            )}
+            {!readOnly && item.blockers.length > 0 && (
+              <p className="mt-1 text-sm text-amber-500">
+                Waiting on a role from: {item.blockers.join(", ")}
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {moduleForm(item.key) && (
+            <Button
+              size="sm"
+              variant={readOnly ? "outline" : "default"}
+              onClick={() => setFormItem({ key: item.key, title: item.title, readOnly })}
+            >
+              <FileText className="mr-1 h-3.5 w-3.5" />
+              {readOnly
+                ? "View work and feedback"
+                : item.status === "not_started"
+                  ? "Start this module"
+                  : "Open form"}
+            </Button>
+          )}
+          {!readOnly && (
+            <Select
+              value={item.status}
+              disabled={item.status === "approved" || busyKey === item.key}
+              onValueChange={(v) => {
+                setBusyKey(item.key);
+                statusMutation.mutate({ key: item.key, status: v as ReadinessStatus });
+              }}
+            >
+              <SelectTrigger className="h-8 w-[170px] text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TEAM_SETTABLE.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {READINESS_LABEL[s]}
+                  </SelectItem>
+                ))}
+                {item.status === "approved" && <SelectItem value="approved">Approved</SelectItem>}
+                {item.status === "needs_revision" && (
+                  <SelectItem value="needs_revision">Needs revision</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          )}
+
+          {!readOnly && (
+            <Select
+              value={item.ownerId ?? UNOWNED}
+              disabled={!canDrive}
+              onValueChange={(v) =>
+                ownerMutation.mutate({ key: item.key, ownerId: v === UNOWNED ? null : v })
+              }
+            >
+              <SelectTrigger className="h-8 w-[210px] text-sm">
+                <SelectValue placeholder="Who owns this?" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={UNOWNED}>No owner yet</SelectItem>
+                {data.members.map((m) => (
+                  <SelectItem key={m.userId} value={m.userId}>
+                    {m.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          {!readOnly && canDrive && item.ownerId && item.status !== "approved" && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setNudgeNote("");
+                setNudgeTarget({
+                  key: item.key,
+                  targetUserId: item.ownerId as string,
+                  name: item.ownerName ?? "this person",
+                });
+              }}
+            >
+              <BellRing className="mr-1 h-3.5 w-3.5" /> Nudge {item.ownerName}
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <Card>
