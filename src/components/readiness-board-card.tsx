@@ -315,7 +315,7 @@ export function ReadinessBoardCard() {
                               </Button>
                             </div>
                           )}
-                          {cell.status !== "approved" && row.members.length > 0 && (
+                          {cell.status !== "approved" && !cell.closed && row.members.length > 0 && (
                             <div className="pt-1">
                               <Button
                                 size="sm"
