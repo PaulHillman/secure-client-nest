@@ -283,116 +283,20 @@ export function TeamReadinessCard({ teamId }: { teamId: string }) {
           </div>
         )}
 
-        {open.map((item) => (
-          <div key={item.key} className="rounded-lg border p-3 space-y-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-medium">{item.title}</span>
-                  {item.alias && item.alias !== item.title && (
-                    <span className="text-xs text-muted-foreground">({item.alias})</span>
-                  )}
-                  <Badge variant="outline" className={READINESS_TONE[item.status]}>
-                    {READINESS_LABEL[item.status]}
-                  </Badge>
-                  {item.overdue && (
-                    <Badge variant="outline" className="border-rose-500/30 bg-rose-500/15 text-rose-400">
-                      Overdue
-                    </Badge>
-                  )}
-                </div>
-                {item.description && (
-                  <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
-                )}
-                {item.dueAt && (
-                  <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" /> Due {new Date(item.dueAt).toLocaleString()}
-                  </p>
-                )}
-                {item.revisionNote && (
-                  <p className="mt-1 text-sm text-rose-400">Sent back: {item.revisionNote}</p>
-                )}
-                {item.blockers.length > 0 && (
-                  <p className="mt-1 text-sm text-amber-500">
-                    Waiting on a role from: {item.blockers.join(", ")}
-                  </p>
-                )}
-              </div>
+        {open.map((item) => renderItem(item))}
+
+        {closedItems.length > 0 && (
+          <div className="space-y-2 pt-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Archive className="h-4 w-4" /> Closed modules
             </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {moduleForm(item.key) && (
-                <Button
-                  size="sm"
-                  onClick={() => setFormItem({ key: item.key, title: item.title })}
-                >
-                  <FileText className="mr-1 h-3.5 w-3.5" />
-                  {item.status === "not_started" ? "Start this module" : "Open form"}
-                </Button>
-              )}
-              <Select
-                value={item.status}
-                disabled={item.status === "approved" || busyKey === item.key}
-                onValueChange={(v) => {
-                  setBusyKey(item.key);
-                  statusMutation.mutate({ key: item.key, status: v as ReadinessStatus });
-                }}
-              >
-                <SelectTrigger className="h-8 w-[170px] text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TEAM_SETTABLE.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {READINESS_LABEL[s]}
-                    </SelectItem>
-                  ))}
-                  {item.status === "approved" && <SelectItem value="approved">Approved</SelectItem>}
-                  {item.status === "needs_revision" && (
-                    <SelectItem value="needs_revision">Needs revision</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={item.ownerId ?? UNOWNED}
-                disabled={!canDrive}
-                onValueChange={(v) =>
-                  ownerMutation.mutate({ key: item.key, ownerId: v === UNOWNED ? null : v })
-                }
-              >
-                <SelectTrigger className="h-8 w-[210px] text-sm">
-                  <SelectValue placeholder="Who owns this?" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={UNOWNED}>No owner yet</SelectItem>
-                  {data.members.map((m) => (
-                    <SelectItem key={m.userId} value={m.userId}>
-                      {m.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {canDrive && item.ownerId && item.status !== "approved" && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setNudgeNote("");
-                    setNudgeTarget({
-                      key: item.key,
-                      targetUserId: item.ownerId as string,
-                      name: item.ownerName ?? "this person",
-                    });
-                  }}
-                >
-                  <BellRing className="mr-1 h-3.5 w-3.5" /> Nudge {item.ownerName}
-                </Button>
-              )}
-            </div>
+            <p className="text-sm text-muted-foreground">
+              These are past their due date. You can still read the work and your professor&apos;s
+              feedback, but nothing can be changed.
+            </p>
+            {closedItems.map((item) => renderItem(item))}
           </div>
-        ))}
+        )}
 
         {formItem && (
           <ModuleSubmissionDialog
