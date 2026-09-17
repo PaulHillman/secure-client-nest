@@ -142,6 +142,32 @@ export function ReadinessBoardCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
+        <div className="flex flex-wrap items-center gap-2">
+          {(
+            [
+              ["active", "Active"],
+              ["needs", "Needs action"],
+              ["closed", "Closed"],
+            ] as const
+          ).map(([v, label]) => (
+            <Button
+              key={v}
+              size="sm"
+              variant={view === v ? "default" : "outline"}
+              onClick={() => setView(v)}
+            >
+              {label}
+            </Button>
+          ))}
+          <span className="text-xs text-muted-foreground">
+            {view === "active"
+              ? "Modules open now and not past their due date."
+              : view === "needs"
+                ? "Submitted work waiting on your decision, open or closed."
+                : "Past their due date — read-only for teams, still reviewable by you."}
+          </span>
+        </div>
+
         <div className="flex flex-wrap items-end gap-2 rounded-lg border p-3">
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Section</label>
