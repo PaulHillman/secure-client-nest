@@ -342,7 +342,8 @@ export function ReadinessBoardCard() {
                         </div>
                       )}
                     </td>
-                  ))}
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
