@@ -226,6 +226,16 @@ export function ReadinessBoardCard() {
           </Button>
         </div>
 
+        {columns.length === 0 && (
+          <p className="rounded-lg border p-4 text-sm text-muted-foreground">
+            {view === "needs"
+              ? "Nothing is waiting on your decision right now."
+              : view === "closed"
+                ? "No modules have passed their due date yet."
+                : "No modules are open right now. Pick one above and open it."}
+          </p>
+        )}
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
