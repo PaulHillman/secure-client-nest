@@ -286,7 +286,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                       <Select value={minute} onValueChange={setMinute}>
                         <SelectTrigger className="w-[75px]"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {["00", "15", "30", "45"].map((m) => (
+                          {Array.from(new Set(["00", "15", "30", "45", minute])).sort().map((m) => (
                             <SelectItem key={m} value={m}>{m}</SelectItem>
                           ))}
                         </SelectContent>
