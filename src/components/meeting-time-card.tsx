@@ -95,20 +95,31 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
 
   // PM form state
   const [day, setDay] = useState<string>("");
-  const [time, setTime] = useState<string>("");
+  const [hour12, setHour12] = useState<string>("6");
+  const [minute, setMinute] = useState<string>("00");
+  const [ampm, setAmpm] = useState<"AM" | "PM">("PM");
   const [location, setLocation] = useState<string>("");
+
+  // "HH:MM" in 24-hour form, always well-defined from the three pickers.
+  const time = `${String(
+    ampm === "AM" ? (hour12 === "12" ? 0 : Number(hour12)) : hour12 === "12" ? 12 : Number(hour12) + 12,
+  ).padStart(2, "0")}:${minute}`;
 
   useEffect(() => {
     if (proposal) {
       setDay(String(proposal.day_of_week));
-      setTime(proposal.meeting_time.slice(0, 5));
+      const [h, m] = proposal.meeting_time.slice(0, 5).split(":").map(Number);
+      setHour12(String(((h + 11) % 12) + 1));
+      setMinute(String(m).padStart(2, "0"));
+      setAmpm(h < 12 ? "AM" : "PM");
       setLocation((proposal as any).location ?? "");
     }
   }, [proposal?.id, proposal?.day_of_week, proposal?.meeting_time]);
 
   const saveProposal = useMutation({
     mutationFn: async () => {
-      if (day === "" || !time) throw new Error("Pick a day and time");
+      if (day === "") throw new Error("Pick a day");
+
       const fields = {
         day_of_week: Number(day),
         meeting_time: time,
