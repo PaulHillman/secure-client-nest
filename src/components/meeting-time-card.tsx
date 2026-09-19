@@ -259,7 +259,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                 <div className="text-xs font-medium uppercase tracking-wide text-gold">
                   PM: {proposal ? "Update" : "Propose"} meeting time
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-2 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-end">
                   <div>
                     <Label className="text-xs">Day</Label>
                     <Select value={day} onValueChange={setDay}>
@@ -273,9 +273,35 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                   </div>
                   <div>
                     <Label className="text-xs">Time</Label>
-                    <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+                    <div className="flex items-center gap-1">
+                      <Select value={hour12} onValueChange={setHour12}>
+                        <SelectTrigger className="w-[70px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((h) => (
+                            <SelectItem key={h} value={h}>{h}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <span className="text-muted-foreground">:</span>
+                      <Select value={minute} onValueChange={setMinute}>
+                        <SelectTrigger className="w-[75px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {["00", "15", "30", "45"].map((m) => (
+                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={ampm} onValueChange={(v) => setAmpm(v as "AM" | "PM")}>
+                        <SelectTrigger className="w-[75px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AM">AM</SelectItem>
+                          <SelectItem value="PM">PM</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
+
                 <div>
                   <Label className="text-xs">Where will you meet?</Label>
                   <Input
