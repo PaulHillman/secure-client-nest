@@ -95,20 +95,31 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
 
   // PM form state
   const [day, setDay] = useState<string>("");
-  const [time, setTime] = useState<string>("");
+  const [hour12, setHour12] = useState<string>("6");
+  const [minute, setMinute] = useState<string>("00");
+  const [ampm, setAmpm] = useState<"AM" | "PM">("PM");
   const [location, setLocation] = useState<string>("");
+
+  // "HH:MM" in 24-hour form, always well-defined from the three pickers.
+  const time = `${String(
+    ampm === "AM" ? (hour12 === "12" ? 0 : Number(hour12)) : hour12 === "12" ? 12 : Number(hour12) + 12,
+  ).padStart(2, "0")}:${minute}`;
 
   useEffect(() => {
     if (proposal) {
       setDay(String(proposal.day_of_week));
-      setTime(proposal.meeting_time.slice(0, 5));
+      const [h, m] = proposal.meeting_time.slice(0, 5).split(":").map(Number);
+      setHour12(String(((h + 11) % 12) + 1));
+      setMinute(String(m).padStart(2, "0"));
+      setAmpm(h < 12 ? "AM" : "PM");
       setLocation((proposal as any).location ?? "");
     }
   }, [proposal?.id, proposal?.day_of_week, proposal?.meeting_time]);
 
   const saveProposal = useMutation({
     mutationFn: async () => {
-      if (day === "" || !time) throw new Error("Pick a day and time");
+      if (day === "") throw new Error("Pick a day");
+
       const fields = {
         day_of_week: Number(day),
         meeting_time: time,
@@ -248,7 +259,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                 <div className="text-xs font-medium uppercase tracking-wide text-gold">
                   PM: {proposal ? "Update" : "Propose"} meeting time
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-2 items-end">
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2 items-end">
                   <div>
                     <Label className="text-xs">Day</Label>
                     <Select value={day} onValueChange={setDay}>
@@ -262,9 +273,35 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
                   </div>
                   <div>
                     <Label className="text-xs">Time</Label>
-                    <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+                    <div className="flex items-center gap-1">
+                      <Select value={hour12} onValueChange={setHour12}>
+                        <SelectTrigger className="w-[70px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((h) => (
+                            <SelectItem key={h} value={h}>{h}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <span className="text-muted-foreground">:</span>
+                      <Select value={minute} onValueChange={setMinute}>
+                        <SelectTrigger className="w-[75px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {Array.from(new Set(["00", "15", "30", "45", minute])).sort().map((m) => (
+                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={ampm} onValueChange={(v) => setAmpm(v as "AM" | "PM")}>
+                        <SelectTrigger className="w-[75px]"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AM">AM</SelectItem>
+                          <SelectItem value="PM">PM</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
+
                 <div>
                   <Label className="text-xs">Where will you meet?</Label>
                   <Input
