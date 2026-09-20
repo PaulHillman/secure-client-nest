@@ -322,19 +322,9 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
               <p className="mt-1 text-xs font-medium">
                 <span className="sr-only">{m.name}: </span>
                 {gradeLabel}
-                {pct == null
-                  ? ""
-                  : pct >= 80
-                    ? " · green"
-                    : pct >= 60
-                      ? " · yellow"
-                      : " · red"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {m.completedProofs}/{m.requiredProofs} activities submitted · {m.statusLabel}
-                {scored.length > 0
-                  ? ` · measured on ${scored.length} ${scored.length === 1 ? "activity" : "activities"}`
-                  : ""}
               </p>
 
               <ul className="mt-2 space-y-2">
