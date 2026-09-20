@@ -163,7 +163,7 @@ function VaultPage() {
             Competition submissions have moved to{" "}
             <Link to="/app/competitions" className="text-gold underline underline-offset-2">Competitions</Link>.
           </p>
-          <FileVault teamId={effectiveTeamId} sections={NON_COMPETITION_SECTIONS} />
+          <FileVault teamId={effectiveTeamId} sections={NON_COMPETITION_SECTIONS} uploadSections={VAULT_STRUCTURE} />
         </>
       ) : (
         !isLoading && (
