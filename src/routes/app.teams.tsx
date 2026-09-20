@@ -257,7 +257,72 @@ function Teams() {
               </CardHeader>
 
               <CardContent className="text-sm text-muted-foreground">
+                {isAdmin && (t.is_test || ra) && (
+                  <div className="mb-3">
+                    {t.is_test ? (
+                      <TestFixtureBadge />
+                    ) : (
+                      <>
+                        <ReadinessStatusBadge color={ra!.color} />
+                        <p className="mt-1 text-xs">{ra!.headline}</p>
+                      </>
+                    )}
+                  </div>
+                )}
                 {cf ? (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-gold" />
+                      <span className="text-foreground">{cf.company_name}</span>
+                      {cf.industry && <span className="text-xs">· {cf.industry}</span>}
+                    </div>
+                    {cf.contact_person && (
+                      <div className="text-xs pl-6">
+                        Manager: {cf.contact_person}
+                        {cf.contact_job_title && <span className="text-muted-foreground">, {cf.contact_job_title}</span>}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <span className="italic">No company selected</span>
+                )}
+                {t.description && <p className="mt-2 line-clamp-2">{t.description}</p>}
+                {!canEnter && (
+                  <p className="mt-3 text-xs text-muted-foreground italic">
+                    You can only enter your own team space.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          );
+
+          const withLink = (
+            <div className="flex h-full flex-col">
+              {canEnter ? (
+                <Link
+                  to="/app/teams/$teamId"
+                  params={{ teamId: t.id }}
+                  aria-label={`View ${primary} members`}
+                  className="flex-1"
+                >
+                  {card}
+                </Link>
+              ) : (
+                <div className="pointer-events-none flex-1 select-none">{card}</div>
+              )}
+              {isAdmin && !t.is_test && (
+                <Link
+                  to="/app/admin/team-readiness/$teamId"
+                  params={{ teamId: t.id }}
+                  className="mt-1 text-xs text-muted-foreground underline hover:text-foreground"
+                >
+                  Team Readiness Assessment
+                </Link>
+              )}
+            </div>
+          );
+
+          return <div key={t.id}>{withLink}</div>;
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <Building2 className="h-4 w-4 text-gold" />
