@@ -40,6 +40,7 @@ import {
   FolderOpen,
   MessageSquare,
   Users,
+  Calendar,
 } from "lucide-react";
 import {
   VAULT_STRUCTURE,
@@ -64,6 +65,7 @@ type FileRow = {
   current_version_id: string | null;
   created_at: string;
   updated_at: string;
+  meeting_date: string | null;
 };
 
 type VersionRow = {
@@ -317,6 +319,13 @@ function SubsectionBlock({
   onRefresh: () => void;
 }) {
   const isGroupNorms = sectionName === "Team Documents" && subName === "Group Norms";
+  const isAgendas = sectionName === "Team Documents" && subName === "Agendas";
+
+  const [agendaSort, setAgendaSort] = useState<AgendaSort>("date-asc");
+  const agendaFiles = useMemo(
+    () => (isAgendas ? sortAgendas(files, agendaSort) : files),
+    [isAgendas, files, agendaSort],
+  );
 
   // Build slot list: per-member slots (one per member) + compiled + free-form extras
   const memberFiles = new Map<string, FileRow[]>();
@@ -341,13 +350,28 @@ function SubsectionBlock({
 
   return (
     <div className="rounded-md border border-border/60 bg-card/30 p-3">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between gap-2 mb-2">
         <div>
           <h4 className="text-sm font-semibold">{subName}</h4>
           {subDescription && (
             <p className="text-xs text-muted-foreground">{subDescription}</p>
           )}
         </div>
+        {isAgendas && files.length > 1 && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[11px] text-muted-foreground">Sort</span>
+            <Select value={agendaSort} onValueChange={(v) => setAgendaSort(v as AgendaSort)}>
+              <SelectTrigger className="h-7 w-[200px] text-xs" aria-label="Sort agendas">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {AGENDA_SORTS.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {perMember && members.length > 0 ? (
@@ -393,12 +417,13 @@ function SubsectionBlock({
       ) : (
         <div className="space-y-2">
           {isGroupNorms && <GroupNormsVaultNote teamId={teamId} />}
-          {files.map((f) => (
+          {(isAgendas ? agendaFiles : files).map((f) => (
             <FileLine
               key={f.id}
               file={f}
               versions={verMap.get(f.id) ?? []}
               canManage={isAdmin || (f.uploaded_by === userId && !f.is_locked)}
+              showMeetingDate={isAgendas}
               {...commonProps}
             />
           ))}
