@@ -39,4 +39,4 @@
 
 ## In-app document viewing (new)
 - [x] Agenda list: meeting date above title + sort by date/name
-- [ ] Let users read minutes, agendas, and other vault documents in a viewer without downloading
+- [x] Let users read minutes, agendas, and other vault documents in a viewer without downloading
