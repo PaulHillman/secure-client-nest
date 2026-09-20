@@ -4,6 +4,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getProofOverview, saveProofMaterial } from "@/lib/proofs.functions";
+import { getReadinessAssessments } from "@/lib/team-readiness-assessment.functions";
+import {
+  TeamReadinessIndicator,
+  TestFixtureBadge,
+} from "@/components/readiness-status-badge";
 import { PROOFS, proofByKey } from "@/lib/proofs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +43,21 @@ export function ProofsAdminCard() {
   const [viewing, setViewing] = useState<{ id: string; name: string } | null>(null);
 
   const { data } = useQuery({ queryKey: ["proof-overview"], queryFn: () => fetchOverview() });
+
+  // Same shared readiness calculation as the Teams cards and the report.
+  const fetchAssessments = useServerFn(getReadinessAssessments);
+  const { data: readiness } = useQuery({
+    queryKey: ["team-readiness-assessments"],
+    queryFn: () => fetchAssessments({}),
+  });
+  const readinessByTeam = useMemo(
+    () => new Map((readiness?.teams ?? []).map((t) => [t.teamId, t] as const)),
+    [readiness],
+  );
+  const excludedTeamIds = useMemo(
+    () => new Set((readiness?.excluded ?? []).map((t) => t.id)),
+    [readiness],
+  );
 
   const sections = useMemo(
     () => Array.from(new Set((data?.rows ?? []).map((r) => r.section).filter(Boolean))).sort(),
@@ -228,11 +248,25 @@ export function ProofsAdminCard() {
 
           {rows.map((r) => (
             <div key={r.teamId} className="rounded-md border p-3">
-              <p className="mb-2 text-sm font-medium">
-                {r.label}{" "}
-                <span className="text-muted-foreground">
+              <p className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
+                <span>{r.label}</span>
+                <span className="text-muted-foreground font-normal">
                   · Section {r.section || "—"} · {r.name}
                 </span>
+                {excludedTeamIds.has(r.teamId) ? (
+                  <TestFixtureBadge />
+                ) : readinessByTeam.get(r.teamId) ? (
+                  (() => {
+                    const ra = readinessByTeam.get(r.teamId)!;
+                    return (
+                      <TeamReadinessIndicator
+                        color={ra.color}
+                        headline={ra.headline}
+                        reasons={[...ra.blockers, ...ra.warnings]}
+                      />
+                    );
+                  })()
+                ) : null}
               </p>
               <div className="grid gap-2 sm:grid-cols-2">
                 {r.people.map((p) => (
