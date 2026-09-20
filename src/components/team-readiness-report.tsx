@@ -36,19 +36,19 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 const CHECK_ICON = {
   found: CheckCircle2,
   missing: XCircle,
-  needs_clarification: HelpCircle,
+  needs_clarification: XCircle,
 } as const;
 
 const CHECK_TONE = {
   found: "text-emerald-400",
   missing: "text-rose-400",
-  needs_clarification: "text-amber-400",
+  needs_clarification: "text-rose-400",
 } as const;
 
 const CHECK_LABEL = {
   found: "Found",
   missing: "Missing",
-  needs_clarification: "Needs clarification",
+  needs_clarification: "Too vague",
 } as const;
 
 /**
