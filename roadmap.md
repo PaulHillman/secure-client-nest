@@ -34,3 +34,5 @@
 - [x] Verify the dashboard prompt and link in the preview
 - [x] Show the same actionable Team Readiness prompt at the top of the student's team page
 - [x] Make every Team Readiness role check use the student's assigned team role, including admin view-as
+
+- [ ] Teams view: compact readiness indicator beside the Section badge, with hover/focus reasons (shared assessment, test fixtures excluded)

@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { teamPrimaryName } from "@/lib/team-label";
 import { getReadinessAssessments } from "@/lib/team-readiness-assessment.functions";
-import { ReadinessStatusBadge, TestFixtureBadge } from "@/components/readiness-status-badge";
+import { TeamReadinessIndicator, TestFixtureBadge } from "@/components/readiness-status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -252,22 +252,23 @@ function Teams() {
                     {t.section && (
                       <span className="text-xs rounded-full bg-secondary px-2 py-0.5">Section {t.section}</span>
                     )}
+                    {isAdmin &&
+                      (t.is_test ? (
+                        <TestFixtureBadge />
+                      ) : ra ? (
+                        <TeamReadinessIndicator
+                          color={ra.color}
+                          headline={ra.headline}
+                          reasons={[...ra.blockers, ...ra.warnings]}
+                        />
+                      ) : null)}
                   </div>
                 </div>
               </CardHeader>
 
               <CardContent className="text-sm text-muted-foreground">
-                {isAdmin && (t.is_test || ra) && (
-                  <div className="mb-3">
-                    {t.is_test ? (
-                      <TestFixtureBadge />
-                    ) : (
-                      <>
-                        <ReadinessStatusBadge color={ra!.color} />
-                        <p className="mt-1 text-xs">{ra!.headline}</p>
-                      </>
-                    )}
-                  </div>
+                {isAdmin && !t.is_test && ra && (
+                  <p className="mb-3 text-xs">{ra.headline}</p>
                 )}
                 {cf ? (
                   <div className="space-y-1">
