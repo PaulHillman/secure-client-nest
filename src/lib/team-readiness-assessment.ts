@@ -341,6 +341,23 @@ export function classifyLocation(address: string | null): {
 
 /* ----------------------------- norms checking ----------------------------- */
 
+/** The posted norms as readable sections, in document order. */
+function normsDocument(content: NormsContent): { label: string; text: string }[] {
+  const out: { label: string; text: string }[] = [];
+  for (const s of NORM_SECTIONS) {
+    if (s.levels) {
+      for (const l of s.levels) {
+        const text = (content[l.key] ?? "").trim();
+        if (text) out.push({ label: `${s.title} — ${l.label}`, text });
+      }
+    } else {
+      const text = (content[s.key] ?? "").trim();
+      if (text) out.push({ label: s.title, text });
+    }
+  }
+  return out;
+}
+
 const SENTENCE_SPLIT = /(?<=[.!?;\n])\s+/;
 
 function sentences(text: string): string[] {
