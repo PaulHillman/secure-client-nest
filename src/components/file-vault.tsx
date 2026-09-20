@@ -611,12 +611,50 @@ function SlotRow({
   );
 }
 
+type AgendaSort = "date-asc" | "date-desc" | "name-asc" | "name-desc";
+
+const AGENDA_SORTS: { value: AgendaSort; label: string }[] = [
+  { value: "date-asc", label: "Meeting date · earliest first" },
+  { value: "date-desc", label: "Meeting date · latest first" },
+  { value: "name-asc", label: "Name · A to Z" },
+  { value: "name-desc", label: "Name · Z to A" },
+];
+
+function formatMeetingDate(d: string) {
+  const [y, m, day] = d.split("-").map(Number);
+  const dt = new Date(y, (m ?? 1) - 1, day ?? 1);
+  return dt.toLocaleDateString(undefined, {
+    weekday: "short", month: "short", day: "numeric", year: "numeric",
+  });
+}
+
+function agendaNameCompare(a: FileRow, b: FileRow) {
+  return a.file_name.localeCompare(b.file_name, undefined, { sensitivity: "base" });
+}
+
+function sortAgendas(files: FileRow[], sort: AgendaSort): FileRow[] {
+  const arr = [...files];
+  arr.sort((a, b) => {
+    if (sort === "name-asc") return agendaNameCompare(a, b);
+    if (sort === "name-desc") return agendaNameCompare(b, a);
+    const aDate = a.meeting_date;
+    const bDate = b.meeting_date;
+    if (aDate && bDate && aDate !== bDate) {
+      return sort === "date-asc" ? aDate.localeCompare(bDate) : bDate.localeCompare(aDate);
+    }
+    if (aDate !== bDate) return aDate ? -1 : 1; // dated agendas always before undated
+    return agendaNameCompare(a, b);
+  });
+  return arr;
+}
+
 function FileLine({
   file,
   versions,
   canManage,
   isAdmin,
   userId,
+  showMeetingDate,
   onDownload,
   onDelete,
   onSetStatus,
@@ -626,6 +664,7 @@ function FileLine({
   file: FileRow;
   versions: VersionRow[];
   canManage: boolean;
+  showMeetingDate?: boolean;
 } & RowCommonProps) {
   const current = versions.find((v) => v.id === file.current_version_id) ?? versions[0];
 
@@ -644,6 +683,17 @@ function FileLine({
       <CardContent className="p-2.5 flex items-start gap-2">
         <FileText className="h-4 w-4 text-gold mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
+          {showMeetingDate && (
+            <div className="font-display text-sm font-semibold leading-tight">
+              {file.meeting_date ? (
+                formatMeetingDate(file.meeting_date)
+              ) : (
+                <span className="text-xs italic font-normal text-muted-foreground">
+                  Meeting date not set
+                </span>
+              )}
+            </div>
+          )}
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-medium text-sm truncate">{file.file_name}</span>
             {current && (
@@ -677,6 +727,9 @@ function FileLine({
                 ))}
               </SelectContent>
             </Select>
+          )}
+          {showMeetingDate && canManage && (
+            <MeetingDateEditor file={file} onDone={onRefresh} />
           )}
           <Button
             variant="ghost" size="icon"
@@ -822,6 +875,7 @@ function UploadDialog({
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [meetingDate, setMeetingDate] = useState("");
   const [section, setSection] = useState<string>(sections[0].name);
   const [subsection, setSubsection] = useState<string>(sections[0].subsections[0].name);
   const [assignedTo, setAssignedTo] = useState<string>("");
@@ -838,7 +892,7 @@ function UploadDialog({
   };
 
   const reset = () => {
-    setFile(null); setName(""); setDescription("");
+    setFile(null); setName(""); setDescription(""); setMeetingDate("");
     setSection(sections[0].name);
     setSubsection(sections[0].subsections[0].name);
     setAssignedTo("");
@@ -857,6 +911,7 @@ function UploadDialog({
           description: description.trim() || null,
           section,
           subsection,
+          meeting_date: subsection === "Agendas" && meetingDate ? meetingDate : null,
           assigned_to: showAssignee && assignedTo ? assignedTo : null,
           uploaded_by: userId,
           is_template: false,
