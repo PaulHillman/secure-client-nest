@@ -251,11 +251,11 @@ export function PmDutiesAdminPanel() {
                             {state === "overdue" ? (
                               <span className="text-destructive">Missed</span>
                             ) : at ? (
-                              <span className={state === "late" ? "text-amber-500" : "text-gold"}>
-                                {fmtDue(at)}
-                                {state === "late" ? " (late)" : ""}
+                              <span className={state === "late" ? "text-destructive" : "text-emerald-600"}>
+                                {fmtShort(at)}
                               </span>
                             ) : (
+
                               <span className="text-muted-foreground">—</span>
                             )}
                           </td>
