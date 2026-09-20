@@ -116,9 +116,7 @@ export function FileViewerDialog({
             "pdfjs-dist/build/pdf.worker.min.mjs?url"
           )) as { default: string };
           pdfjs.GlobalWorkerOptions.workerSrc = workerMod.default;
-          console.debug("pdfv: fetched, loading pdfjs doc");
           const doc = await pdfjs.getDocument({ data: await (await res.blob()).arrayBuffer() }).promise;
-          console.debug("pdfv: doc loaded, pages", doc.numPages);
           if (!alive || !docHostRef.current) return;
           docHostRef.current.innerHTML = "";
           for (let i = 1; i <= doc.numPages; i++) {
@@ -131,11 +129,7 @@ export function FileViewerDialog({
             docHostRef.current.appendChild(canvas);
             const ctx = canvas.getContext("2d");
             if (!ctx) throw new Error("canvas unavailable");
-            console.debug("pdfv: rendering page", i);
-            const task = pg.render({ canvas, canvasContext: ctx, viewport });
-            task.onProgress = (d: unknown) => console.debug("pdfv: progress", JSON.stringify(d));
-            await task.promise;
-            console.debug("pdfv: page done", i);
+            await pg.render({ canvas, canvasContext: ctx, viewport }).promise;
             if (!alive) return;
           }
           cleanupRef.current = () => {
@@ -304,7 +298,7 @@ export function FileViewerDialog({
               {plainText}
             </div>
           )}
-          {!loading && !error && kind === "unsupported" && (
+          {!loading && !error && plainText === null && kind === "unsupported" && (
             <div className="flex flex-col items-center gap-2 py-16 text-sm text-muted-foreground">
               <FileWarning className="h-6 w-6" />
               This file type can't be previewed here. Download it to open it on your computer.
@@ -313,9 +307,13 @@ export function FileViewerDialog({
               </Button>
             </div>
           )}
-          {!loading && !error && !plainText && kind !== "unsupported" && (
-            <div ref={docHostRef} />
-          )}
+          {/* Always mounted so render targets keep their identity across loading states. */}
+          <div
+            ref={docHostRef}
+            className={
+              loading || error || plainText !== null || kind === "unsupported" ? "hidden" : ""
+            }
+          />
         </div>
       </DialogContent>
     </Dialog>
