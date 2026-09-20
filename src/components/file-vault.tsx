@@ -279,6 +279,7 @@ async function loadMembers(teamId: string): Promise<MemberRow[]> {
 }
 
 function SubsectionBlock({
+  teamId,
   sectionName,
   subName,
   subDescription,
@@ -295,6 +296,7 @@ function SubsectionBlock({
   onOpenComments,
   onRefresh,
 }: {
+  teamId: string;
   sectionName: string;
   subName: string;
   subDescription?: string;
