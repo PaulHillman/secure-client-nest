@@ -94,10 +94,13 @@ export function FileVault({
   teamId,
   sections,
   title = "File Vault",
+  uploadSections,
 }: {
   teamId: string;
   sections?: VaultSection[];
   title?: string;
+  /** Sections offered in the upload dialog; defaults to the displayed sections. */
+  uploadSections?: VaultSection[];
 }) {
   const structure = sections ?? VAULT_STRUCTURE;
   const { user, isAdmin } = useAuth();
@@ -192,7 +195,7 @@ export function FileVault({
           <UploadDialog
             teamId={teamId}
             userId={user.id}
-            sections={structure}
+            sections={uploadSections ?? structure}
             members={members}
             onDone={() => qc.invalidateQueries({ queryKey: ["vault", teamId] })}
           />
@@ -957,6 +960,7 @@ function UploadDialog({
 
   const subDef = sections.find((s) => s.name === section)?.subsections.find((x) => x.name === subsection);
   const showAssignee = !!subDef?.perMember && members.length > 0;
+  const isCompetition = section.startsWith("Competition");
 
   const onSectionChange = (s: string) => {
     setSection(s);
@@ -1014,7 +1018,11 @@ function UploadDialog({
       await supabase.from("files")
         .update({ current_version_id: ver.id }).eq("id", created.id);
 
-      toast.success("File uploaded");
+      toast.success(
+        isCompetition
+          ? `File uploaded — it has been placed in the Competitions area under ${section}.`
+          : "File uploaded"
+      );
       reset();
       setOpen(false);
       onDone();
@@ -1064,6 +1072,11 @@ function UploadDialog({
                   ))}
                 </SelectContent>
               </Select>
+              {isCompetition && (
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  Competition files live in the Competitions area — this file will be filed there.
+                </p>
+              )}
             </div>
             <div>
               <Label>Subsection</Label>
