@@ -168,6 +168,7 @@ async function buildAssessments(teamId?: string): Promise<{
         feedback: p.feedback,
         feedback_status: p.feedback_status,
         review_status: p.review_status,
+        score: p.score,
       })),
       generatedAt,
     };
