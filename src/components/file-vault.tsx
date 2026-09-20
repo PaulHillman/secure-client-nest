@@ -1003,6 +1003,15 @@ function UploadDialog({
               </Select>
             </div>
           </div>
+          {subsection === "Agendas" && (
+            <div>
+              <Label htmlFor="vf-meeting-date">Meeting date (the date this agenda is for)</Label>
+              <Input
+                id="vf-meeting-date" type="date" value={meetingDate}
+                onChange={(e) => setMeetingDate(e.target.value)}
+              />
+            </div>
+          )}
           {showAssignee && (
             <div>
               <Label>Assigned to (team member)</Label>
