@@ -408,7 +408,7 @@ function SubsectionBlock({
   );
 }
 
-function GroupNormsVaultNote() {
+function GroupNormsVaultNote({ teamId }: { teamId: string }) {
   const [downloading, setDownloading] = useState(false);
 
   const downloadTemplate = async () => {
