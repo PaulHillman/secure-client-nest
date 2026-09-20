@@ -323,41 +323,6 @@ function Teams() {
           );
 
           return <div key={t.id}>{withLink}</div>;
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-gold" />
-                      <span className="text-foreground">{cf.company_name}</span>
-                      {cf.industry && <span className="text-xs">· {cf.industry}</span>}
-                    </div>
-                    {cf.contact_person && (
-                      <div className="text-xs pl-6">
-                        Manager: {cf.contact_person}
-                        {cf.contact_job_title && <span className="text-muted-foreground">, {cf.contact_job_title}</span>}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <span className="italic">No company selected</span>
-                )}
-                {t.description && <p className="mt-2 line-clamp-2">{t.description}</p>}
-                {!canEnter && (
-                  <p className="mt-3 text-xs text-muted-foreground italic">
-                    You can only enter your own team space.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          );
-
-          return canEnter ? (
-            <Link key={t.id} to="/app/teams/$teamId" params={{ teamId: t.id }} aria-label={`View ${primary} members`}>
-              {card}
-            </Link>
-          ) : (
-            <div key={t.id} className="pointer-events-none select-none">
-              {card}
-            </div>
-          );
         })}
       </div>
     </div>
