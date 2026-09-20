@@ -60,6 +60,27 @@ export function ReadinessBoardCard() {
 
   const { data } = useQuery({ queryKey: ["readiness-board"], queryFn: () => fetchBoard() });
 
+  // Prefill the Due box with the module's existing date so re-opening never wipes it.
+  useEffect(() => {
+    if (!kickoffKey || !data) return;
+    const secs = section === ALL ? data.sections : [section];
+    for (const row of data.rows) {
+      if (!secs.includes(row.team.section ?? "")) continue;
+      const cell = row.cells.find((c) => c.key === kickoffKey);
+      if (cell?.open) {
+        if (cell.dueAt) {
+          const d = new Date(cell.dueAt);
+          const pad = (n: number) => String(n).padStart(2, "0");
+          setDueAt(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`);
+        } else {
+          setDueAt("");
+        }
+        return;
+      }
+    }
+    setDueAt("");
+  }, [kickoffKey, section, data]);
+
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ["readiness-board"] });
     void qc.invalidateQueries({ queryKey: ["team-readiness"] });
