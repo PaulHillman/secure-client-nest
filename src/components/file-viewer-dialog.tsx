@@ -116,7 +116,9 @@ export function FileViewerDialog({
             "pdfjs-dist/build/pdf.worker.min.mjs?url"
           )) as { default: string };
           pdfjs.GlobalWorkerOptions.workerSrc = workerMod.default;
+          console.debug("pdfv: fetched, loading pdfjs doc");
           const doc = await pdfjs.getDocument({ data: await (await res.blob()).arrayBuffer() }).promise;
+          console.debug("pdfv: doc loaded, pages", doc.numPages);
           if (!alive || !docHostRef.current) return;
           docHostRef.current.innerHTML = "";
           for (let i = 1; i <= doc.numPages; i++) {
@@ -129,7 +131,11 @@ export function FileViewerDialog({
             docHostRef.current.appendChild(canvas);
             const ctx = canvas.getContext("2d");
             if (!ctx) throw new Error("canvas unavailable");
-            await pg.render({ canvas, canvasContext: ctx, viewport }).promise;
+            console.debug("pdfv: rendering page", i);
+            const task = pg.render({ canvas, canvasContext: ctx, viewport });
+            task.onProgress = (d: unknown) => console.debug("pdfv: progress", JSON.stringify(d));
+            await task.promise;
+            console.debug("pdfv: page done", i);
             if (!alive) return;
           }
           cleanupRef.current = () => {
