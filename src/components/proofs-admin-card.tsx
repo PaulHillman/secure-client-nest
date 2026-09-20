@@ -248,11 +248,25 @@ export function ProofsAdminCard() {
 
           {rows.map((r) => (
             <div key={r.teamId} className="rounded-md border p-3">
-              <p className="mb-2 text-sm font-medium">
-                {r.label}{" "}
-                <span className="text-muted-foreground">
+              <p className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium">
+                <span>{r.label}</span>
+                <span className="text-muted-foreground font-normal">
                   · Section {r.section || "—"} · {r.name}
                 </span>
+                {excludedTeamIds.has(r.teamId) ? (
+                  <TestFixtureBadge />
+                ) : readinessByTeam.get(r.teamId) ? (
+                  (() => {
+                    const ra = readinessByTeam.get(r.teamId)!;
+                    return (
+                      <TeamReadinessIndicator
+                        color={ra.color}
+                        headline={ra.headline}
+                        reasons={[...ra.blockers, ...ra.warnings]}
+                      />
+                    );
+                  })()
+                ) : null}
               </p>
               <div className="grid gap-2 sm:grid-cols-2">
                 {r.people.map((p) => (
