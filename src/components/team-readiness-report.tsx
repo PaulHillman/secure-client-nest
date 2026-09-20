@@ -284,19 +284,29 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
         <div className="grid gap-3 sm:grid-cols-2 print:grid-cols-2">
           {a.members.map((m) => {
             const scored = m.proofs.filter((p) => p.score != null && p.maxScore);
-            const got = scored.reduce((t, p) => t + (p.score ?? 0), 0);
-            const max = scored.reduce((t, p) => t + (p.maxScore ?? 0), 0);
-            const pct = max > 0 ? Math.round((got / max) * 100) : null;
+            // Per activity: how much of the expected coverage was missed.
+            const points = scored.map((p) => {
+              const missedRatio = ((p.maxScore ?? 0) - (p.score ?? 0)) / (p.maxScore ?? 1);
+              return missedRatio <= 0.4 ? 2 : missedRatio <= 0.6 ? 1 : 0;
+            });
+            const avg = points.length ? points.reduce((t, n) => t + n, 0) / points.length : null;
+            const band = avg == null ? null : avg >= 1.5 ? "green" : avg >= 0.75 ? "yellow" : "red";
             const dot =
-              pct == null
+              band == null
                 ? "bg-muted-foreground/40"
-                : pct >= 80
+                : band === "green"
                   ? "bg-emerald-500"
-                  : pct >= 60
+                  : band === "yellow"
                     ? "bg-amber-400"
                     : "bg-rose-500";
             const gradeLabel =
-              pct == null ? "Overall: not measured" : `Overall: ${pct}% (${got}/${max} key points)`;
+              band == null
+                ? "Overall: not measured"
+                : band === "green"
+                  ? "Overall: green — little or nothing missed"
+                  : band === "yellow"
+                    ? "Overall: yellow — some gaps"
+                    : "Overall: red — a lot missed";
             return (
             <div key={m.userId} className="break-inside-avoid rounded-lg border p-3 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
