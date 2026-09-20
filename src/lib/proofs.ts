@@ -128,6 +128,7 @@ export const PROOFS: Proof[] = [
       "11. Can you walk us through how a project moves from request to delivery?",
       "12. What advice would you give a student entering this field?",
     ].join("\n"),
+    maxScore: 3,
     fields: [{ name: "questions", label: "Your interview questions, in order", required: true }],
   },
   {
@@ -187,6 +188,7 @@ export const PROOFS: Proof[] = [
       "What did you learn about Steelcase and Zach Guy's Senior Project Manager role? Include links to your public sources.",
     scenario:
       "Company: Steelcase. Manager: Zach Guy. Role to research: Senior Project Manager. These are the professor's research inputs — they are not your team's client, and no outreach of any kind is part of this activity.",
+    maxScore: 2,
     fields: [{ name: "research", label: "What did you learn?", required: true }],
   },
 ];
