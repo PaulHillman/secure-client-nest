@@ -344,12 +344,33 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
                       </span>
                     </div>
                     {p.score != null && p.maxScore ? (
-                      <p className="mt-1 text-xs font-medium">
-                        Key points captured: {p.score} of {p.maxScore}
-                      </p>
+                      (() => {
+                        const missedRatio = (p.maxScore - p.score) / p.maxScore;
+                        const b = missedRatio <= 0.4 ? "green" : missedRatio <= 0.6 ? "yellow" : "red";
+                        return (
+                          <p className="mt-1 flex items-center gap-1.5 text-xs font-medium">
+                            <span
+                              className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+                                b === "green"
+                                  ? "bg-emerald-500"
+                                  : b === "yellow"
+                                    ? "bg-amber-400"
+                                    : "bg-rose-500"
+                              }`}
+                              aria-hidden="true"
+                            />
+                            Coverage:{" "}
+                            {b === "green"
+                              ? "green — little or nothing missed"
+                              : b === "yellow"
+                                ? "yellow — some gaps"
+                                : "red — a lot missed"}
+                          </p>
+                        );
+                      })()
                     ) : p.submitted ? (
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Key points captured: not measured (no answer key for this activity)
+                        Coverage: not measured yet
                       </p>
                     ) : null}
                     {p.feedback && p.feedback.trim() ? (
