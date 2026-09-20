@@ -52,17 +52,17 @@ export const VAULT_STRUCTURE: VaultSection[] = [
     ],
   },
   {
-    name: "Competition #1",
+    name: "Competition #1 Manager Selection",
     subsections: [{ name: "Submission" }, { name: "Supporting Materials" }],
     tone: "bg-gold/5 border-gold/30",
   },
   {
-    name: "Competition #2",
+    name: "Competition #2 GPR Site Selection",
     subsections: [{ name: "Submission" }, { name: "Supporting Materials" }],
     tone: "bg-gold/10 border-gold/40",
   },
   {
-    name: "Competition #3",
+    name: "Competition #3 Work in Office",
     subsections: [{ name: "Submission" }, { name: "Supporting Materials" }],
     tone: "bg-gold/20 border-gold/50",
   },
