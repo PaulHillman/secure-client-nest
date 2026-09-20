@@ -290,6 +290,13 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 {m.completedProofs}/{m.requiredProofs} activities submitted · {m.statusLabel}
+                {(() => {
+                  const scored = m.proofs.filter((p) => p.score != null && p.maxScore);
+                  if (scored.length === 0) return null;
+                  const got = scored.reduce((t, p) => t + (p.score ?? 0), 0);
+                  const max = scored.reduce((t, p) => t + (p.maxScore ?? 0), 0);
+                  return ` · ${got}/${max} key points across ${scored.length} measured ${scored.length === 1 ? "activity" : "activities"}`;
+                })()}
               </p>
               <ul className="mt-2 space-y-2">
                 {m.proofs.map((p) => (
@@ -307,6 +314,15 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
                               : "Feedback unavailable"}
                       </span>
                     </div>
+                    {p.score != null && p.maxScore ? (
+                      <p className="mt-1 text-xs font-medium">
+                        Key points captured: {p.score} of {p.maxScore}
+                      </p>
+                    ) : p.submitted ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Key points captured: not measured (no answer key for this activity)
+                      </p>
+                    ) : null}
                     {p.feedback && p.feedback.trim() ? (
                       <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{p.feedback}</p>
                     ) : null}

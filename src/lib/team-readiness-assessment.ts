@@ -12,7 +12,7 @@
  */
 
 import { findVagueLanguage, missingNorms, NORM_SECTIONS, normalizeNorms, type NormsContent } from "@/lib/group-norms";
-import { proofsForRole, proofByKey } from "@/lib/proofs";
+import { proofsForRole, proofByKey, proofMaxScore } from "@/lib/proofs";
 
 /* -------------------------------------------------------------------------- */
 /* Configuration                                                              */
@@ -147,6 +147,9 @@ export type MemberProofView = {
   feedbackState: "pending" | "available" | "unavailable" | "not_applicable";
   feedback: string | null;
   reviewStatus: string | null;
+  /** Objective key-point coverage from the answer key, when one exists. */
+  score: number | null;
+  maxScore: number | null;
 };
 
 export type MemberAssessment = {
@@ -281,6 +284,7 @@ export type AssessmentInput = {
     feedback: string | null;
     feedback_status: string | null;
     review_status: string | null;
+    score?: number | null;
   }[];
   generatedAt: string;
 };
@@ -807,6 +811,8 @@ export function assessTeam(input: AssessmentInput): TeamAssessment {
             : "pending",
         feedback: sub?.feedback ?? null,
         reviewStatus: sub?.review_status ?? null,
+        score: sub?.score ?? null,
+        maxScore: sub?.score != null ? proofMaxScore(proof.key) : null,
       };
     });
 
