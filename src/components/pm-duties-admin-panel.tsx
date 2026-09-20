@@ -20,6 +20,17 @@ function toLocalInput(iso: string | null) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+/** Compact completion stamp, e.g. "9/13 2:47p" */
+function fmtShort(iso: string | null | undefined) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  let h = d.getHours();
+  const suffix = h >= 12 ? "p" : "a";
+  h = h % 12 || 12;
+  return `${d.getMonth() + 1}/${d.getDate()} ${h}:${String(d.getMinutes()).padStart(2, "0")}${suffix}`;
+}
+
+
 export function PmDutiesAdminPanel() {
   const qc = useQueryClient();
   const queryKey = ["pm-duties-admin"];
