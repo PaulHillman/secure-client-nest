@@ -862,6 +862,58 @@ function NewVersionButton({
   );
 }
 
+function MeetingDateEditor({ file, onDone }: { file: FileRow; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState(file.meeting_date ?? "");
+  const [busy, setBusy] = useState(false);
+
+  const save = async (next: string | null) => {
+    setBusy(true);
+    try {
+      const { error } = await supabase
+        .from("files").update({ meeting_date: next } as any).eq("id", file.id);
+      if (error) throw error;
+      toast.success(next ? "Meeting date updated" : "Meeting date removed");
+      setOpen(false);
+      onDone();
+    } catch (err: any) {
+      toast.error(err.message ?? "Could not save the meeting date");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label="Set meeting date" title="Set meeting date">
+          <Calendar className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="font-display">Meeting date</DialogTitle>
+          <DialogDescription>
+            The date of the meeting this agenda is for. It is shown above the file
+            name and used for date sorting.
+          </DialogDescription>
+        </DialogHeader>
+        <div>
+          <Label htmlFor="md-date">Date</Label>
+          <Input id="md-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="outline" disabled={busy || !file.meeting_date} onClick={() => save(null)}>
+            Remove date
+          </Button>
+          <Button disabled={busy || !date} onClick={() => save(date)}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function UploadDialog({
   teamId, userId, members, onDone, sections,
 }: {
