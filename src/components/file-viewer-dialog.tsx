@@ -202,8 +202,7 @@ export function FileViewerDialog({
           setPlainText(await blob.text());
           return;
         }
-      } catch (e) {
-        console.debug("pdfv: error", e);
+      } catch {
         if (alive) {
           setError("This file could not be displayed. Try downloading it instead.");
           setLoading(false);
