@@ -127,9 +127,18 @@ export async function generateProofFeedback(input: FeedbackInput): Promise<Feedb
   // With an answer key (the voicemail proof), also record how many of the
   // expected key points the student found. The SCORE line is stripped from
   // the student-facing feedback and kept as the professor's record.
-  const maxScore = proof.maxScore ?? 5;
-  const scoringRule = input.answerKey
-    ? ` Before the closing line, add a section labelled 'What you missed' that lists, as short bullets, every key point from the answer key the student did not capture, each stated plainly so they know exactly what it was; if they captured them all, write 'Nothing — you caught every key point.' After the closing line, add one final line in exactly this format: 'SCORE: N' where N is how many of the answer key's key points (out of ${maxScore}) the student's submission correctly identifies (0 if none). Judge by meaning, not exact wording. Accept concise answers and combined or reordered points when coverage is clear.`
+  // With an answer key, score against the key. Without one, score against the
+  // private essential ideas for this activity, so every activity produces a
+  // coverage count the professor can scan.
+  const rubricPoints = rubric?.length ?? 0;
+  const basis = input.answerKey
+    ? { max: proof.maxScore ?? 5, source: "the answer key's key points" }
+    : rubricPoints > 0
+      ? { max: rubricPoints, source: "the private essential ideas listed above" }
+      : null;
+  const maxScore = basis?.max ?? proof.maxScore ?? 5;
+  const scoringRule = basis
+    ? ` Before the closing line, add a section labelled 'What you missed' that lists, as short bullets, every one of ${basis.source} the student did not capture, each stated plainly so they know exactly what it was; if they captured them all, write 'Nothing — you caught every key point.' After the closing line, add one final line in exactly this format: 'SCORE: N' where N is how many of ${basis.source} (out of ${basis.max}) the student's submission correctly identifies (0 if none). Judge by meaning, not exact wording. Accept concise answers and combined or reordered points when coverage is clear.`
     : "";
 
   try {

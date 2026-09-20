@@ -284,19 +284,29 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
         <div className="grid gap-3 sm:grid-cols-2 print:grid-cols-2">
           {a.members.map((m) => {
             const scored = m.proofs.filter((p) => p.score != null && p.maxScore);
-            const got = scored.reduce((t, p) => t + (p.score ?? 0), 0);
-            const max = scored.reduce((t, p) => t + (p.maxScore ?? 0), 0);
-            const pct = max > 0 ? Math.round((got / max) * 100) : null;
+            // Per activity: how much of the expected coverage was missed.
+            const points: number[] = scored.map((p) => {
+              const missedRatio = ((p.maxScore ?? 0) - (p.score ?? 0)) / (p.maxScore ?? 1);
+              return missedRatio <= 0.4 ? 2 : missedRatio <= 0.6 ? 1 : 0;
+            });
+            const avg = points.length ? points.reduce((t, n) => t + n, 0) / points.length : null;
+            const band = avg == null ? null : avg >= 1.5 ? "green" : avg >= 0.75 ? "yellow" : "red";
             const dot =
-              pct == null
+              band == null
                 ? "bg-muted-foreground/40"
-                : pct >= 80
+                : band === "green"
                   ? "bg-emerald-500"
-                  : pct >= 60
+                  : band === "yellow"
                     ? "bg-amber-400"
                     : "bg-rose-500";
             const gradeLabel =
-              pct == null ? "Overall: not measured" : `Overall: ${pct}% (${got}/${max} key points)`;
+              band == null
+                ? "Overall: not measured"
+                : band === "green"
+                  ? "Overall: green — little or nothing missed"
+                  : band === "yellow"
+                    ? "Overall: yellow — some gaps"
+                    : "Overall: red — a lot missed";
             return (
             <div key={m.userId} className="break-inside-avoid rounded-lg border p-3 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -312,19 +322,9 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
               <p className="mt-1 text-xs font-medium">
                 <span className="sr-only">{m.name}: </span>
                 {gradeLabel}
-                {pct == null
-                  ? ""
-                  : pct >= 80
-                    ? " · green"
-                    : pct >= 60
-                      ? " · yellow"
-                      : " · red"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {m.completedProofs}/{m.requiredProofs} activities submitted · {m.statusLabel}
-                {scored.length > 0
-                  ? ` · measured on ${scored.length} ${scored.length === 1 ? "activity" : "activities"}`
-                  : ""}
               </p>
 
               <ul className="mt-2 space-y-2">
@@ -344,12 +344,33 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
                       </span>
                     </div>
                     {p.score != null && p.maxScore ? (
-                      <p className="mt-1 text-xs font-medium">
-                        Key points captured: {p.score} of {p.maxScore}
-                      </p>
+                      (() => {
+                        const missedRatio = (p.maxScore - p.score) / p.maxScore;
+                        const b = missedRatio <= 0.4 ? "green" : missedRatio <= 0.6 ? "yellow" : "red";
+                        return (
+                          <p className="mt-1 flex items-center gap-1.5 text-xs font-medium">
+                            <span
+                              className={`inline-block h-2 w-2 shrink-0 rounded-full ${
+                                b === "green"
+                                  ? "bg-emerald-500"
+                                  : b === "yellow"
+                                    ? "bg-amber-400"
+                                    : "bg-rose-500"
+                              }`}
+                              aria-hidden="true"
+                            />
+                            Coverage:{" "}
+                            {b === "green"
+                              ? "green — little or nothing missed"
+                              : b === "yellow"
+                                ? "yellow — some gaps"
+                                : "red — a lot missed"}
+                          </p>
+                        );
+                      })()
                     ) : p.submitted ? (
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Key points captured: not measured (no answer key for this activity)
+                        Coverage: not measured yet
                       </p>
                     ) : null}
                     {p.feedback && p.feedback.trim() ? (
