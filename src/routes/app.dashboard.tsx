@@ -215,6 +215,12 @@ function Dashboard() {
 
 
       {isAdmin && (
+        <div id="proofs" className="mt-6 scroll-mt-6">
+          <ProofsAdminCard />
+        </div>
+      )}
+
+      {isAdmin && (
         <div id="roster" className="mt-6 scroll-mt-6">
           <TeamRosterCard />
         </div>
