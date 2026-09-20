@@ -970,6 +970,7 @@ export function assessTeam(input: AssessmentInput): TeamAssessment {
       newerVersionNeedsAgreement:
         normsPosted && notAgreed.length > 0 && [...olderSigners].some((id) => !signedIds.has(id)),
       categories,
+      document: normsPosted ? normsDocument(normsContent) : [],
     },
     generatedAt: input.generatedAt,
   };
