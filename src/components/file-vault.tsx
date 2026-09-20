@@ -1,5 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getTeamNorms } from "@/lib/group-norms.functions";
+import { NORM_SECTIONS } from "@/lib/group-norms";
 import { supabase } from "@/integrations/supabase/client";
 import { StudentName } from "@/components/student-avatar";
 import { useAuth } from "@/lib/auth-context";
