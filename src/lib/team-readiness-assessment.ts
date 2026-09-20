@@ -230,6 +230,8 @@ export type TeamAssessment = {
     pmVerificationNote: string;
     newerVersionNeedsAgreement: boolean;
     categories: NormsCategory[];
+    /** The posted document itself, in document order, so it can be read in the report. */
+    document: { label: string; text: string }[];
   };
   generatedAt: string;
 };
