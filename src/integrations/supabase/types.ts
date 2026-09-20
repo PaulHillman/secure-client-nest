@@ -828,6 +828,7 @@ export type Database = {
           id: string
           is_locked: boolean
           is_template: boolean
+          meeting_date: string | null
           section: string
           status: Database["public"]["Enums"]["vault_status"]
           subsection: string
@@ -846,6 +847,7 @@ export type Database = {
           id?: string
           is_locked?: boolean
           is_template?: boolean
+          meeting_date?: string | null
           section?: string
           status?: Database["public"]["Enums"]["vault_status"]
           subsection?: string
@@ -864,6 +866,7 @@ export type Database = {
           id?: string
           is_locked?: boolean
           is_template?: boolean
+          meeting_date?: string | null
           section?: string
           status?: Database["public"]["Enums"]["vault_status"]
           subsection?: string
