@@ -1,4 +1,10 @@
 import { AlertTriangle, CheckCircle2, CircleSlash, XCircle } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { ReadinessColor } from "@/lib/team-readiness-assessment";
 
 const TONE: Record<ReadinessColor, string> = {
@@ -35,6 +41,58 @@ export function ReadinessStatusBadge({
       <Icon className="h-3.5 w-3.5" aria-hidden />
       <span>{LABEL[color]}</span>
     </span>
+  );
+}
+
+/**
+ * Compact indicator for the Teams cards: the same badge, plus the exact
+ * reasons behind the status on hover or keyboard focus.
+ */
+export function TeamReadinessIndicator({
+  color,
+  headline,
+  reasons,
+}: {
+  color: ReadinessColor;
+  headline: string;
+  reasons: { key: string; level: string; reason: string; detail?: string | null }[];
+}) {
+  const label = LABEL[color];
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            aria-label={`Readiness: ${label}. ${headline}`}
+            className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <ReadinessStatusBadge color={color} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" align="end" className="max-w-xs">
+          <p className="font-medium">
+            {label} — {headline}
+          </p>
+          {reasons.length > 0 && (
+            <ul className="mt-1 space-y-0.5 text-xs">
+              {reasons.slice(0, 6).map((r) => (
+                <li key={r.key}>
+                  {r.level === "blocker" ? "• " : "– "}
+                  {r.reason}
+                  {r.detail ? `: ${r.detail}` : ""}
+                </li>
+              ))}
+              {reasons.length > 6 && <li>…and {reasons.length - 6} more</li>}
+            </ul>
+          )}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
