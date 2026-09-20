@@ -380,7 +380,8 @@ function SubsectionBlock({
         </div>
       ) : files.length === 0 ? (
         isGroupNorms ? (
-          <GroupNormsVaultNote />
+          <GroupNormsVaultNote teamId={teamId} />
+
         ) : (
           <p className="text-xs text-muted-foreground italic py-2">
             Nothing uploaded yet for {subName}.
