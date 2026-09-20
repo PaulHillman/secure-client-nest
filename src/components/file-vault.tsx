@@ -225,6 +225,7 @@ export function FileVault({
                     return (
                       <SubsectionBlock
                         key={sub.name}
+                        teamId={teamId}
                         sectionName={section.name}
                         subName={sub.name}
                         subDescription={sub.description}
