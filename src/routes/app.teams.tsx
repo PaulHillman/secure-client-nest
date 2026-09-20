@@ -221,6 +221,8 @@ function Teams() {
           const isMine = myTeamIds.has(t.id);
           const canEnter = isAdmin || isMine;
           const primary = teamPrimaryName(t);
+          const ra = readinessByTeam.get(t.id);
+
 
           const card = (
             <Card
