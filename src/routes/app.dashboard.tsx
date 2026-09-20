@@ -154,13 +154,6 @@ function Dashboard() {
 
       <DashboardReadinessNotice />
 
-      {isAdmin && (
-        <div className="mb-6 space-y-6">
-          <div id="proofs" className="scroll-mt-6 space-y-6">
-            <ProofsAdminCard />
-          </div>
-        </div>
-      )}
 
       <div className="mb-6">
         <ProfileCompletionCard />
@@ -220,6 +213,12 @@ function Dashboard() {
       </div>
       )}
 
+
+      {isAdmin && (
+        <div id="proofs" className="mt-6 scroll-mt-6">
+          <ProofsAdminCard />
+        </div>
+      )}
 
       {isAdmin && (
         <div id="roster" className="mt-6 scroll-mt-6">
