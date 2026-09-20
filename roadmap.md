@@ -36,3 +36,7 @@
 - [x] Make every Team Readiness role check use the student's assigned team role, including admin view-as
 
 - [ ] Teams view: compact readiness indicator beside the Section badge, with hover/focus reasons (shared assessment, test fixtures excluded)
+
+## In-app document viewing (new)
+- [x] Agenda list: meeting date above title + sort by date/name
+- [ ] Let users read minutes, agendas, and other vault documents in a viewer without downloading

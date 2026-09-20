@@ -40,6 +40,7 @@ import {
   FolderOpen,
   MessageSquare,
   Users,
+  Calendar,
 } from "lucide-react";
 import {
   VAULT_STRUCTURE,
@@ -64,6 +65,7 @@ type FileRow = {
   current_version_id: string | null;
   created_at: string;
   updated_at: string;
+  meeting_date: string | null;
 };
 
 type VersionRow = {
@@ -317,6 +319,13 @@ function SubsectionBlock({
   onRefresh: () => void;
 }) {
   const isGroupNorms = sectionName === "Team Documents" && subName === "Group Norms";
+  const isAgendas = sectionName === "Team Documents" && subName === "Agendas";
+
+  const [agendaSort, setAgendaSort] = useState<AgendaSort>("date-asc");
+  const agendaFiles = useMemo(
+    () => (isAgendas ? sortAgendas(files, agendaSort) : files),
+    [isAgendas, files, agendaSort],
+  );
 
   // Build slot list: per-member slots (one per member) + compiled + free-form extras
   const memberFiles = new Map<string, FileRow[]>();
@@ -341,13 +350,28 @@ function SubsectionBlock({
 
   return (
     <div className="rounded-md border border-border/60 bg-card/30 p-3">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between gap-2 mb-2">
         <div>
           <h4 className="text-sm font-semibold">{subName}</h4>
           {subDescription && (
             <p className="text-xs text-muted-foreground">{subDescription}</p>
           )}
         </div>
+        {isAgendas && files.length > 1 && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[11px] text-muted-foreground">Sort</span>
+            <Select value={agendaSort} onValueChange={(v) => setAgendaSort(v as AgendaSort)}>
+              <SelectTrigger className="h-7 w-[200px] text-xs" aria-label="Sort agendas">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {AGENDA_SORTS.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {perMember && members.length > 0 ? (
@@ -393,12 +417,13 @@ function SubsectionBlock({
       ) : (
         <div className="space-y-2">
           {isGroupNorms && <GroupNormsVaultNote teamId={teamId} />}
-          {files.map((f) => (
+          {(isAgendas ? agendaFiles : files).map((f) => (
             <FileLine
               key={f.id}
               file={f}
               versions={verMap.get(f.id) ?? []}
               canManage={isAdmin || (f.uploaded_by === userId && !f.is_locked)}
+              showMeetingDate={isAgendas}
               {...commonProps}
             />
           ))}
@@ -586,12 +611,50 @@ function SlotRow({
   );
 }
 
+type AgendaSort = "date-asc" | "date-desc" | "name-asc" | "name-desc";
+
+const AGENDA_SORTS: { value: AgendaSort; label: string }[] = [
+  { value: "date-asc", label: "Meeting date · earliest first" },
+  { value: "date-desc", label: "Meeting date · latest first" },
+  { value: "name-asc", label: "Name · A to Z" },
+  { value: "name-desc", label: "Name · Z to A" },
+];
+
+function formatMeetingDate(d: string) {
+  const [y, m, day] = d.split("-").map(Number);
+  const dt = new Date(y, (m ?? 1) - 1, day ?? 1);
+  return dt.toLocaleDateString(undefined, {
+    weekday: "short", month: "short", day: "numeric", year: "numeric",
+  });
+}
+
+function agendaNameCompare(a: FileRow, b: FileRow) {
+  return a.file_name.localeCompare(b.file_name, undefined, { sensitivity: "base" });
+}
+
+function sortAgendas(files: FileRow[], sort: AgendaSort): FileRow[] {
+  const arr = [...files];
+  arr.sort((a, b) => {
+    if (sort === "name-asc") return agendaNameCompare(a, b);
+    if (sort === "name-desc") return agendaNameCompare(b, a);
+    const aDate = a.meeting_date;
+    const bDate = b.meeting_date;
+    if (aDate && bDate && aDate !== bDate) {
+      return sort === "date-asc" ? aDate.localeCompare(bDate) : bDate.localeCompare(aDate);
+    }
+    if (aDate !== bDate) return aDate ? -1 : 1; // dated agendas always before undated
+    return agendaNameCompare(a, b);
+  });
+  return arr;
+}
+
 function FileLine({
   file,
   versions,
   canManage,
   isAdmin,
   userId,
+  showMeetingDate,
   onDownload,
   onDelete,
   onSetStatus,
@@ -601,6 +664,7 @@ function FileLine({
   file: FileRow;
   versions: VersionRow[];
   canManage: boolean;
+  showMeetingDate?: boolean;
 } & RowCommonProps) {
   const current = versions.find((v) => v.id === file.current_version_id) ?? versions[0];
 
@@ -619,6 +683,17 @@ function FileLine({
       <CardContent className="p-2.5 flex items-start gap-2">
         <FileText className="h-4 w-4 text-gold mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
+          {showMeetingDate && (
+            <div className="font-display text-sm font-semibold leading-tight">
+              {file.meeting_date ? (
+                formatMeetingDate(file.meeting_date)
+              ) : (
+                <span className="text-xs italic font-normal text-muted-foreground">
+                  Meeting date not set
+                </span>
+              )}
+            </div>
+          )}
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-medium text-sm truncate">{file.file_name}</span>
             {current && (
@@ -652,6 +727,9 @@ function FileLine({
                 ))}
               </SelectContent>
             </Select>
+          )}
+          {showMeetingDate && canManage && (
+            <MeetingDateEditor file={file} onDone={onRefresh} />
           )}
           <Button
             variant="ghost" size="icon"
@@ -784,6 +862,58 @@ function NewVersionButton({
   );
 }
 
+function MeetingDateEditor({ file, onDone }: { file: FileRow; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [date, setDate] = useState(file.meeting_date ?? "");
+  const [busy, setBusy] = useState(false);
+
+  const save = async (next: string | null) => {
+    setBusy(true);
+    try {
+      const { error } = await supabase
+        .from("files").update({ meeting_date: next } as any).eq("id", file.id);
+      if (error) throw error;
+      toast.success(next ? "Meeting date updated" : "Meeting date removed");
+      setOpen(false);
+      onDone();
+    } catch (err: any) {
+      toast.error(err.message ?? "Could not save the meeting date");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label="Set meeting date" title="Set meeting date">
+          <Calendar className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="font-display">Meeting date</DialogTitle>
+          <DialogDescription>
+            The date of the meeting this agenda is for. It is shown above the file
+            name and used for date sorting.
+          </DialogDescription>
+        </DialogHeader>
+        <div>
+          <Label htmlFor="md-date">Date</Label>
+          <Input id="md-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="outline" disabled={busy || !file.meeting_date} onClick={() => save(null)}>
+            Remove date
+          </Button>
+          <Button disabled={busy || !date} onClick={() => save(date)}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function UploadDialog({
   teamId, userId, members, onDone, sections,
 }: {
@@ -797,6 +927,7 @@ function UploadDialog({
   const [file, setFile] = useState<File | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [meetingDate, setMeetingDate] = useState("");
   const [section, setSection] = useState<string>(sections[0].name);
   const [subsection, setSubsection] = useState<string>(sections[0].subsections[0].name);
   const [assignedTo, setAssignedTo] = useState<string>("");
@@ -813,7 +944,7 @@ function UploadDialog({
   };
 
   const reset = () => {
-    setFile(null); setName(""); setDescription("");
+    setFile(null); setName(""); setDescription(""); setMeetingDate("");
     setSection(sections[0].name);
     setSubsection(sections[0].subsections[0].name);
     setAssignedTo("");
@@ -832,6 +963,7 @@ function UploadDialog({
           description: description.trim() || null,
           section,
           subsection,
+          meeting_date: subsection === "Agendas" && meetingDate ? meetingDate : null,
           assigned_to: showAssignee && assignedTo ? assignedTo : null,
           uploaded_by: userId,
           is_template: false,
@@ -923,6 +1055,15 @@ function UploadDialog({
               </Select>
             </div>
           </div>
+          {subsection === "Agendas" && (
+            <div>
+              <Label htmlFor="vf-meeting-date">Meeting date (the date this agenda is for)</Label>
+              <Input
+                id="vf-meeting-date" type="date" value={meetingDate}
+                onChange={(e) => setMeetingDate(e.target.value)}
+              />
+            </div>
+          )}
           {showAssignee && (
             <div>
               <Label>Assigned to (team member)</Label>
