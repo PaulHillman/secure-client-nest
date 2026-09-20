@@ -448,28 +448,6 @@ const NORMS_CHECKS: { key: NormsCategory["key"]; title: string; checks: NormsChe
         needsPeriod: true,
         note: "Give exact dates or day counts instead of general wording.",
       },
-      {
-        key: "owners",
-        label: "Owners or responsibility named",
-        sources: ["deadlines", "role_responsibility"],
-        patterns: [/\b(responsible|owner|assigned to|each member|the pm|project manager|whoever)\b/i],
-        note: "Name who owns a deliverable, by role.",
-      },
-      {
-        key: "early_warning",
-        label: "Process for warning the team before a deadline is missed",
-        sources: ["deadlines"],
-        patterns: [/\b(before (the|a) deadline|in advance|ahead of time|warn|let the team know|notify|raise it)\b/i],
-        needsPeriod: true,
-        note: "State how many hours before the deadline a member must raise a problem.",
-      },
-      {
-        key: "renegotiate",
-        label: "Process for renegotiating a deadline",
-        sources: ["deadlines", "support"],
-        patterns: [/\b(reschedul|renegotiat|new deadline|extend|move the deadline|agree a new|redistribut|reassign)\b/i],
-        note: "Describe how a new deadline is agreed and who agrees it.",
-      },
     ],
   },
   {
@@ -748,7 +726,7 @@ export function assessTeam(input: AssessmentInput): TeamAssessment {
         warnings,
         `norms_${cat.key}`,
         `Group Norms need clearer ${cat.title.toLowerCase()} detail`,
-        unclear.map((i) => `${i.label}: ${i.status === "missing" ? "missing" : "needs clarification"}`).join("; "),
+        unclear.map((i) => `${i.label}: ${i.status === "missing" ? "missing" : "too vague"}`).join("; "),
       );
     }
   }

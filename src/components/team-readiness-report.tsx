@@ -2,7 +2,7 @@ import type { TeamAssessment } from "@/lib/team-readiness-assessment";
 import { WEST_MICHIGAN } from "@/lib/team-readiness-assessment";
 import { ReadinessStatusBadge } from "@/components/readiness-status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle2, HelpCircle, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 
 function when(value: string | null) {
   if (!value) return "Not recorded";
@@ -36,19 +36,19 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 const CHECK_ICON = {
   found: CheckCircle2,
   missing: XCircle,
-  needs_clarification: HelpCircle,
+  needs_clarification: XCircle,
 } as const;
 
 const CHECK_TONE = {
   found: "text-emerald-400",
   missing: "text-rose-400",
-  needs_clarification: "text-amber-400",
+  needs_clarification: "text-rose-400",
 } as const;
 
 const CHECK_LABEL = {
   found: "Found",
   missing: "Missing",
-  needs_clarification: "Needs clarification",
+  needs_clarification: "Too vague",
 } as const;
 
 /**
