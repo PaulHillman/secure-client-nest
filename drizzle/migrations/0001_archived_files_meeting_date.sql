@@ -1,0 +1,1 @@
+ALTER TABLE public.archived_files ADD COLUMN IF NOT EXISTS meeting_date DATE;
