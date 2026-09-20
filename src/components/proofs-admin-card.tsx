@@ -44,6 +44,21 @@ export function ProofsAdminCard() {
 
   const { data } = useQuery({ queryKey: ["proof-overview"], queryFn: () => fetchOverview() });
 
+  // Same shared readiness calculation as the Teams cards and the report.
+  const fetchAssessments = useServerFn(getReadinessAssessments);
+  const { data: readiness } = useQuery({
+    queryKey: ["team-readiness-assessments"],
+    queryFn: () => fetchAssessments({}),
+  });
+  const readinessByTeam = useMemo(
+    () => new Map((readiness?.teams ?? []).map((t) => [t.teamId, t] as const)),
+    [readiness],
+  );
+  const excludedTeamIds = useMemo(
+    () => new Set((readiness?.excluded ?? []).map((t) => t.id)),
+    [readiness],
+  );
+
   const sections = useMemo(
     () => Array.from(new Set((data?.rows ?? []).map((r) => r.section).filter(Boolean))).sort(),
     [data],
