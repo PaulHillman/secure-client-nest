@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { FileVault } from "@/components/file-vault";
-import { NON_COMPETITION_SECTIONS } from "@/lib/vault-structure";
+import { NON_COMPETITION_SECTIONS, VAULT_STRUCTURE } from "@/lib/vault-structure";
 import { Link } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import {
