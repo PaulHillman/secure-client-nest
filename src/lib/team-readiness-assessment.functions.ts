@@ -103,9 +103,10 @@ async function buildAssessments(teamId?: string): Promise<{
     : { data: [] as { id: string; name: string | null; email: string | null }[] };
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, { name: p.name, email: p.email }]));
 
-  const by = <T extends { team_id: string }>(rows: T[] | null) => {
+  const by = <T extends { team_id: string | null }>(rows: T[] | null) => {
     const m = new Map<string, T[]>();
     for (const r of rows ?? []) {
+      if (!r.team_id) continue;
       if (!m.has(r.team_id)) m.set(r.team_id, []);
       m.get(r.team_id)!.push(r);
     }
