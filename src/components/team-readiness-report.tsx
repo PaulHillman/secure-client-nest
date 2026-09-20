@@ -285,7 +285,7 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
           {a.members.map((m) => {
             const scored = m.proofs.filter((p) => p.score != null && p.maxScore);
             // Per activity: how much of the expected coverage was missed.
-            const points = scored.map((p) => {
+            const points: number[] = scored.map((p) => {
               const missedRatio = ((p.maxScore ?? 0) - (p.score ?? 0)) / (p.maxScore ?? 1);
               return missedRatio <= 0.4 ? 2 : missedRatio <= 0.6 ? 1 : 0;
             });
