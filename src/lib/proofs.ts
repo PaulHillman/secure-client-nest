@@ -72,6 +72,7 @@ export const PROOFS: Proof[] = [
     howTo: "What would you do if a teammate broke your Group Norms and delayed the team's work?",
     scenario:
       "A teammate arrives late, has not completed an assigned task, and the delay is holding up work other members need to finish.",
+    maxScore: 3,
     fields: [{ name: "response", label: "What would you do?", required: true }],
   },
   {
@@ -103,6 +104,7 @@ export const PROOFS: Proof[] = [
     howTo: "Where should each item in this situation be kept in ClientVault, if at all?",
     scenario:
       "Six items land in your inbox this week: (1) an auto-generated transcript of Tuesday's meeting, (2) the finished minutes you wrote from it, (3) a team-wide email confirming the shoot date, (4) a client email the Company Liaison has already filed in the vault, (5) an update to the team's management/project information — the manager's title changed, (6) a duplicate copy of the finished meeting minutes that has already been filed correctly.\n\nFolders you can use: Meetings (with date subfolders), Client Communications, Client Research, B-Roll, Group Norms — or Do Not File.",
+    maxScore: 5,
     fields: [{ name: "response", label: "Where should the items be kept?", required: true }],
 
   },
@@ -148,6 +150,7 @@ export const PROOFS: Proof[] = [
     howTo: "What should you do before recording starts? No recording is required.",
     scenario:
       "It is shoot day. Jimmy turns up in a T-shirt and flip-flops. Sarah's script section is not written. Marcus has captured no B-roll at all and the team is well short overall. Two members are set to be on screen for four minutes each while another has under thirty seconds. Recording starts in an hour, and one teammate keeps saying you should just record it anyway and fix it later.",
+    maxScore: 2,
     fields: [{ name: "response", label: "What should you do?", required: true }],
   },
   {
@@ -171,6 +174,7 @@ export const PROOFS: Proof[] = [
     howTo: "What would you check, and what is your backup plan if the projector still does not work?",
     scenario:
       "Your team presents in ten minutes. The laptop is connected but nothing appears on the classroom projector. Everyone is looking at you.",
+    maxScore: 2,
     fields: [{ name: "response", label: "What would you do?", required: true }],
   },
   {
