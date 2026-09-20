@@ -1,9 +1,12 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { teamPrimaryName } from "@/lib/team-label";
+import { getReadinessAssessments } from "@/lib/team-readiness-assessment.functions";
+import { ReadinessStatusBadge, TestFixtureBadge } from "@/components/readiness-status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -45,11 +48,23 @@ function Teams() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("teams")
-        .select("id, name, display_name, description, section, company_focus(company_name, industry, contact_person, contact_job_title)");
+        .select("id, name, display_name, description, section, is_test, company_focus(company_name, industry, contact_person, contact_job_title)");
       if (error) throw error;
       return data;
     },
   });
+
+  // The readiness indicator uses the same shared assessment as the report.
+  const fetchAssessments = useServerFn(getReadinessAssessments);
+  const { data: readiness } = useQuery({
+    queryKey: ["team-readiness-assessments"],
+    enabled: isAdmin,
+    queryFn: () => fetchAssessments({}),
+  });
+  const readinessByTeam = useMemo(
+    () => new Map((readiness?.teams ?? []).map((t) => [t.teamId, t])),
+    [readiness],
+  );
 
   const { data: memberships } = useQuery({
     queryKey: ["my-team-memberships", user?.id],
@@ -206,6 +221,8 @@ function Teams() {
           const isMine = myTeamIds.has(t.id);
           const canEnter = isAdmin || isMine;
           const primary = teamPrimaryName(t);
+          const ra = readinessByTeam.get(t.id);
+
 
           const card = (
             <Card
@@ -240,6 +257,18 @@ function Teams() {
               </CardHeader>
 
               <CardContent className="text-sm text-muted-foreground">
+                {isAdmin && (t.is_test || ra) && (
+                  <div className="mb-3">
+                    {t.is_test ? (
+                      <TestFixtureBadge />
+                    ) : (
+                      <>
+                        <ReadinessStatusBadge color={ra!.color} />
+                        <p className="mt-1 text-xs">{ra!.headline}</p>
+                      </>
+                    )}
+                  </div>
+                )}
                 {cf ? (
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -267,15 +296,33 @@ function Teams() {
             </Card>
           );
 
-          return canEnter ? (
-            <Link key={t.id} to="/app/teams/$teamId" params={{ teamId: t.id }} aria-label={`View ${primary} members`}>
-              {card}
-            </Link>
-          ) : (
-            <div key={t.id} className="pointer-events-none select-none">
-              {card}
+          const withLink = (
+            <div className="flex h-full flex-col">
+              {canEnter ? (
+                <Link
+                  to="/app/teams/$teamId"
+                  params={{ teamId: t.id }}
+                  aria-label={`View ${primary} members`}
+                  className="flex-1"
+                >
+                  {card}
+                </Link>
+              ) : (
+                <div className="pointer-events-none flex-1 select-none">{card}</div>
+              )}
+              {isAdmin && !t.is_test && (
+                <Link
+                  to="/app/admin/team-readiness/$teamId"
+                  params={{ teamId: t.id }}
+                  className="mt-1 text-xs text-muted-foreground underline hover:text-foreground"
+                >
+                  Team Readiness Assessment
+                </Link>
+              )}
             </div>
           );
+
+          return <div key={t.id}>{withLink}</div>;
         })}
       </div>
     </div>

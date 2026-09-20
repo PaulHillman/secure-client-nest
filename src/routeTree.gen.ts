@@ -23,7 +23,9 @@ import { Route as AppBacklogRouteImport } from './routes/app.backlog'
 import { Route as AppAgreementRouteImport } from './routes/app.agreement'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppTeamsTeamIdRouteImport } from './routes/app.teams.$teamId'
+import { Route as AppAdminTeamReadinessIndexRouteImport } from './routes/app.admin_.team-readiness.index'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
+import { Route as AppAdminTeamReadinessTeamIdRouteImport } from './routes/app.admin_.team-readiness.$teamId'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
 import { Route as ApiPublicHooksProfileRemindersRouteImport } from './routes/api/public/hooks/profile-reminders'
 import { Route as ApiPublicHooksAutoArchiveRouteImport } from './routes/api/public/hooks/auto-archive'
@@ -98,11 +100,23 @@ const AppTeamsTeamIdRoute = AppTeamsTeamIdRouteImport.update({
   path: '/$teamId',
   getParentRoute: () => AppTeamsRoute,
 } as any)
+const AppAdminTeamReadinessIndexRoute =
+  AppAdminTeamReadinessIndexRouteImport.update({
+    id: '/admin_/team-readiness/',
+    path: '/admin/team-readiness/',
+    getParentRoute: () => AppRoute,
+  } as any)
 const LovableEmailTransactionalPreviewRoute =
   LovableEmailTransactionalPreviewRouteImport.update({
     id: '/lovable/email/transactional/preview',
     path: '/lovable/email/transactional/preview',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const AppAdminTeamReadinessTeamIdRoute =
+  AppAdminTeamReadinessTeamIdRouteImport.update({
+    id: '/admin_/team-readiness/$teamId',
+    path: '/admin/team-readiness/$teamId',
+    getParentRoute: () => AppRoute,
   } as any)
 const ApiPublicHooksWeeklyDigestRoute =
   ApiPublicHooksWeeklyDigestRouteImport.update({
@@ -141,7 +155,9 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
   '/api/public/hooks/profile-reminders': typeof ApiPublicHooksProfileRemindersRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
+  '/app/admin/team-readiness/$teamId': typeof AppAdminTeamReadinessTeamIdRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/app/admin/team-readiness/': typeof AppAdminTeamReadinessIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -161,7 +177,9 @@ export interface FileRoutesByTo {
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
   '/api/public/hooks/profile-reminders': typeof ApiPublicHooksProfileRemindersRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
+  '/app/admin/team-readiness/$teamId': typeof AppAdminTeamReadinessTeamIdRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/app/admin/team-readiness': typeof AppAdminTeamReadinessIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -182,7 +200,9 @@ export interface FileRoutesById {
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
   '/api/public/hooks/profile-reminders': typeof ApiPublicHooksProfileRemindersRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
+  '/app/admin_/team-readiness/$teamId': typeof AppAdminTeamReadinessTeamIdRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/app/admin_/team-readiness/': typeof AppAdminTeamReadinessIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -204,7 +224,9 @@ export interface FileRouteTypes {
     | '/api/public/hooks/auto-archive'
     | '/api/public/hooks/profile-reminders'
     | '/api/public/hooks/weekly-digest'
+    | '/app/admin/team-readiness/$teamId'
     | '/lovable/email/transactional/preview'
+    | '/app/admin/team-readiness/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -224,7 +246,9 @@ export interface FileRouteTypes {
     | '/api/public/hooks/auto-archive'
     | '/api/public/hooks/profile-reminders'
     | '/api/public/hooks/weekly-digest'
+    | '/app/admin/team-readiness/$teamId'
     | '/lovable/email/transactional/preview'
+    | '/app/admin/team-readiness'
   id:
     | '__root__'
     | '/'
@@ -244,7 +268,9 @@ export interface FileRouteTypes {
     | '/api/public/hooks/auto-archive'
     | '/api/public/hooks/profile-reminders'
     | '/api/public/hooks/weekly-digest'
+    | '/app/admin_/team-readiness/$teamId'
     | '/lovable/email/transactional/preview'
+    | '/app/admin_/team-readiness/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -358,12 +384,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTeamsTeamIdRouteImport
       parentRoute: typeof AppTeamsRoute
     }
+    '/app/admin_/team-readiness/': {
+      id: '/app/admin_/team-readiness/'
+      path: '/admin/team-readiness'
+      fullPath: '/app/admin/team-readiness/'
+      preLoaderRoute: typeof AppAdminTeamReadinessIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/lovable/email/transactional/preview': {
       id: '/lovable/email/transactional/preview'
       path: '/lovable/email/transactional/preview'
       fullPath: '/lovable/email/transactional/preview'
       preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/app/admin_/team-readiness/$teamId': {
+      id: '/app/admin_/team-readiness/$teamId'
+      path: '/admin/team-readiness/$teamId'
+      fullPath: '/app/admin/team-readiness/$teamId'
+      preLoaderRoute: typeof AppAdminTeamReadinessTeamIdRouteImport
+      parentRoute: typeof AppRoute
     }
     '/api/public/hooks/weekly-digest': {
       id: '/api/public/hooks/weekly-digest'
@@ -411,6 +451,8 @@ interface AppRouteChildren {
   AppTeamsRoute: typeof AppTeamsRouteWithChildren
   AppVaultRoute: typeof AppVaultRoute
   AppVaultOverviewRoute: typeof AppVaultOverviewRoute
+  AppAdminTeamReadinessTeamIdRoute: typeof AppAdminTeamReadinessTeamIdRoute
+  AppAdminTeamReadinessIndexRoute: typeof AppAdminTeamReadinessIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -423,6 +465,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppTeamsRoute: AppTeamsRouteWithChildren,
   AppVaultRoute: AppVaultRoute,
   AppVaultOverviewRoute: AppVaultOverviewRoute,
+  AppAdminTeamReadinessTeamIdRoute: AppAdminTeamReadinessTeamIdRoute,
+  AppAdminTeamReadinessIndexRoute: AppAdminTeamReadinessIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
