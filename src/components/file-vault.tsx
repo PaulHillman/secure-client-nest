@@ -94,10 +94,13 @@ export function FileVault({
   teamId,
   sections,
   title = "File Vault",
+  uploadSections,
 }: {
   teamId: string;
   sections?: VaultSection[];
   title?: string;
+  /** Sections offered in the upload dialog; defaults to the displayed sections. */
+  uploadSections?: VaultSection[];
 }) {
   const structure = sections ?? VAULT_STRUCTURE;
   const { user, isAdmin } = useAuth();
@@ -192,7 +195,7 @@ export function FileVault({
           <UploadDialog
             teamId={teamId}
             userId={user.id}
-            sections={structure}
+            sections={uploadSections ?? structure}
             members={members}
             onDone={() => qc.invalidateQueries({ queryKey: ["vault", teamId] })}
           />
