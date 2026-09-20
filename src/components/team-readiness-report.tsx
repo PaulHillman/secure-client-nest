@@ -282,22 +282,51 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
       {/* 5. Member cards */}
       <Section title="Member cards">
         <div className="grid gap-3 sm:grid-cols-2 print:grid-cols-2">
-          {a.members.map((m) => (
+          {a.members.map((m) => {
+            const scored = m.proofs.filter((p) => p.score != null && p.maxScore);
+            const got = scored.reduce((t, p) => t + (p.score ?? 0), 0);
+            const max = scored.reduce((t, p) => t + (p.maxScore ?? 0), 0);
+            const pct = max > 0 ? Math.round((got / max) * 100) : null;
+            const dot =
+              pct == null
+                ? "bg-muted-foreground/40"
+                : pct >= 80
+                  ? "bg-emerald-500"
+                  : pct >= 60
+                    ? "bg-amber-400"
+                    : "bg-rose-500";
+            const gradeLabel =
+              pct == null ? "Overall: not measured" : `Overall: ${pct}% (${got}/${max} key points)`;
+            return (
             <div key={m.userId} className="break-inside-avoid rounded-lg border p-3 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-medium">{m.name}</span>
+                <span className="flex items-center gap-2 font-medium">
+                  <span
+                    className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ${dot}`}
+                    aria-hidden="true"
+                  />
+                  {m.name}
+                </span>
                 <span className="text-xs text-muted-foreground">{m.hasRole ? m.role : "No role assigned"}</span>
               </div>
+              <p className="mt-1 text-xs font-medium">
+                <span className="sr-only">{m.name}: </span>
+                {gradeLabel}
+                {pct == null
+                  ? ""
+                  : pct >= 80
+                    ? " · green"
+                    : pct >= 60
+                      ? " · yellow"
+                      : " · red"}
+              </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {m.completedProofs}/{m.requiredProofs} activities submitted · {m.statusLabel}
-                {(() => {
-                  const scored = m.proofs.filter((p) => p.score != null && p.maxScore);
-                  if (scored.length === 0) return null;
-                  const got = scored.reduce((t, p) => t + (p.score ?? 0), 0);
-                  const max = scored.reduce((t, p) => t + (p.maxScore ?? 0), 0);
-                  return ` · ${got}/${max} key points across ${scored.length} measured ${scored.length === 1 ? "activity" : "activities"}`;
-                })()}
+                {scored.length > 0
+                  ? ` · measured on ${scored.length} ${scored.length === 1 ? "activity" : "activities"}`
+                  : ""}
               </p>
+
               <ul className="mt-2 space-y-2">
                 {m.proofs.map((p) => (
                   <li key={p.key} className="rounded border border-border/60 p-2">
@@ -345,7 +374,9 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
                 <span className="font-medium">Next action:</span> {m.nextAction}
               </p>
             </div>
-          ))}
+            );
+          })}
+
         </div>
       </Section>
 
