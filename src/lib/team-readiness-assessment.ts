@@ -726,7 +726,7 @@ export function assessTeam(input: AssessmentInput): TeamAssessment {
         warnings,
         `norms_${cat.key}`,
         `Group Norms need clearer ${cat.title.toLowerCase()} detail`,
-        unclear.map((i) => `${i.label}: ${i.status === "missing" ? "missing" : "needs clarification"}`).join("; "),
+        unclear.map((i) => `${i.label}: ${i.status === "missing" ? "missing" : "too vague"}`).join("; "),
       );
     }
   }
