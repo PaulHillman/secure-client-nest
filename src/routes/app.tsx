@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, Link, Navigate, useRouterState } from "@tansta
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, Users, FolderLock, LogOut, FolderOpen, ClipboardList, ListTodo, CalendarCheck, Trophy } from "lucide-react";
+import { LayoutDashboard, Users, FolderLock, LogOut, FolderOpen, ClipboardList, ListTodo, CalendarCheck, Trophy, GaugeCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/notifications-bell";
 import logoAsset from "@/assets/clientvault-safe.png.asset.json";
@@ -41,6 +41,7 @@ function AppLayout() {
     { to: "/app/competitions", label: "Competitions", icon: Trophy },
     ...(isAdmin
       ? [
+          { to: "/app/admin/team-readiness", label: "Team Readiness Assessment", icon: GaugeCircle },
           { to: "/app/backlog", label: "Work List", icon: ListTodo },
           { to: "/app/vault-overview", label: "Vault Overview", icon: ClipboardList },
           { to: "/app/admin", label: "Admin", icon: FolderLock },
@@ -50,7 +51,7 @@ function AppLayout() {
 
   return (
     <div className="min-h-screen flex bg-background">
-      <aside className="hidden md:flex w-60 flex-col bg-sidebar text-sidebar-foreground p-4">
+      <aside className="hidden md:flex w-60 flex-col bg-sidebar text-sidebar-foreground p-4 print:hidden">
         <Link to="/app/dashboard" className="flex items-center gap-3 px-2 py-3">
           <img src={logoAsset.url} alt="" className="vault-door-swing h-12 w-12 object-contain drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]" />
           <span className="font-display text-xl tracking-tight overflow-hidden">
@@ -88,7 +89,7 @@ function AppLayout() {
       </aside>
       <main className="flex-1 overflow-auto">
         <ViewAsBanner />
-        <div className="flex items-center justify-end gap-2 px-4 py-2 border-b border-border/40 bg-background/60 backdrop-blur sticky top-0 z-10">
+        <div className="flex items-center justify-end gap-2 px-4 py-2 border-b border-border/40 bg-background/60 backdrop-blur sticky top-0 z-10 print:hidden">
           <NotificationsBell />
         </div>
         <Outlet />
