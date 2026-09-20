@@ -430,18 +430,13 @@ const NORMS_CHECKS: { key: NormsCategory["key"]; title: string; checks: NormsChe
         key: "internal_deadlines",
         label: "Internal deadlines set before the course deadline",
         sources: ["deadlines"],
-        patterns: [/\b(internal deadline|before the (due date|deadline)|ahead of|days? (before|prior)|our own deadline|set a deadline)\b/i],
-        note: "Say how much earlier the team's own deadline sits, in days.",
-      },
-      {
-        key: "time_periods",
-        label: "Clear time periods or due dates",
-        sources: ["deadlines"],
-        patterns: [/.+/],
-        needsPeriod: true,
-        note: "Give exact dates or day counts instead of general wording.",
+        patterns: [
+          /\b(internal deadline|our own deadline|set a deadline|complete[d]? .*(before|prior|ahead)|finish(ed)? .*(before|prior|ahead)|submit(ted)? .*(before|prior|ahead)|before the (due date|deadline)|ahead of (the )?(due date|deadline)|\d+\s*(hour|hr|day)s?\s*(before|prior|ahead)|(a|one|1)\s*(day|week)\s*(before|prior|early))/i,
+        ],
+        note: "Say how much earlier the team's own deadline sits, in hours or days.",
       },
     ],
+
   },
   {
     key: "accountability",
