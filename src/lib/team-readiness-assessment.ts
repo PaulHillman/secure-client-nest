@@ -406,13 +406,6 @@ const NORMS_CHECKS: { key: NormsCategory["key"]; title: string; checks: NormsChe
         note: "State one exact time limit for replies, such as \"within 12 hours\".",
       },
       {
-        key: "weekday_weekend",
-        label: "Weekday / weekend expectations",
-        sources: ["communication", "outside_work"],
-        patterns: [/\b(weekend|weekday|saturday|sunday|monday through|business day|during the week)\b/i],
-        note: "Say whether the response period differs at the weekend.",
-      },
-      {
         key: "late_notice",
         label: "Notice period for lateness or absence",
         sources: ["meeting_attendance", "class_attendance", "communication"],
