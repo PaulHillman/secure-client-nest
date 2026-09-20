@@ -1,5 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getTeamNorms } from "@/lib/group-norms.functions";
+import { NORM_SECTIONS } from "@/lib/group-norms";
 import { supabase } from "@/integrations/supabase/client";
 import { StudentName } from "@/components/student-avatar";
 import { useAuth } from "@/lib/auth-context";
@@ -225,6 +228,7 @@ export function FileVault({
                     return (
                       <SubsectionBlock
                         key={sub.name}
+                        teamId={teamId}
                         sectionName={section.name}
                         subName={sub.name}
                         subDescription={sub.description}
@@ -278,6 +282,7 @@ async function loadMembers(teamId: string): Promise<MemberRow[]> {
 }
 
 function SubsectionBlock({
+  teamId,
   sectionName,
   subName,
   subDescription,
@@ -294,6 +299,7 @@ function SubsectionBlock({
   onOpenComments,
   onRefresh,
 }: {
+  teamId: string;
   sectionName: string;
   subName: string;
   subDescription?: string;
@@ -377,7 +383,8 @@ function SubsectionBlock({
         </div>
       ) : files.length === 0 ? (
         isGroupNorms ? (
-          <GroupNormsVaultNote />
+          <GroupNormsVaultNote teamId={teamId} />
+
         ) : (
           <p className="text-xs text-muted-foreground italic py-2">
             Nothing uploaded yet for {subName}.
@@ -385,7 +392,7 @@ function SubsectionBlock({
         )
       ) : (
         <div className="space-y-2">
-          {isGroupNorms && <GroupNormsVaultNote />}
+          {isGroupNorms && <GroupNormsVaultNote teamId={teamId} />}
           {files.map((f) => (
             <FileLine
               key={f.id}
@@ -404,7 +411,7 @@ function SubsectionBlock({
   );
 }
 
-function GroupNormsVaultNote() {
+function GroupNormsVaultNote({ teamId }: { teamId: string }) {
   const [downloading, setDownloading] = useState(false);
 
   const downloadTemplate = async () => {
@@ -446,21 +453,8 @@ function GroupNormsVaultNote() {
   };
 
   return (
-    <div className="rounded border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground space-y-1.5">
-      <p>
-        Group norms are written and approved in the{" "}
-        <a
-          href="#group-norms"
-          className="text-primary underline underline-offset-2"
-          onClick={(e) => {
-            e.preventDefault();
-            document.getElementById("group-norms")?.scrollIntoView({ behavior: "smooth" });
-          }}
-        >
-          Group Norms section
-        </a>{" "}
-        on this page — every member reads and approves there, so nothing needs to be uploaded here.
-      </p>
+    <div className="rounded border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground space-y-2">
+      <GroupNormsReadOnly teamId={teamId} />
       <button
         type="button"
         onClick={downloadTemplate}
@@ -473,6 +467,72 @@ function GroupNormsVaultNote() {
     </div>
   );
 }
+
+function GroupNormsReadOnly({ teamId }: { teamId: string }) {
+  const loadNorms = useServerFn(getTeamNorms);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["vault-group-norms", teamId],
+    queryFn: () => loadNorms({ data: { teamId } }),
+  });
+
+  if (isLoading) return <p className="italic">Loading the team's Group Norms…</p>;
+  if (error) return <p className="italic">The Group Norms could not be loaded right now.</p>;
+  if (!data?.exists) {
+    return <p className="italic">This team has not written its Group Norms yet.</p>;
+  }
+
+  const content = data.content ?? {};
+  const approved = `${data.approvedCount} of ${data.total} members approved`;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] uppercase tracking-wide">
+        <span>Version {data.version}</span>
+        <span>{approved}</span>
+        <span>Read-only</span>
+      </div>
+      <div className="max-h-[11rem] overflow-y-auto rounded border border-border/60 bg-background/60 p-3 space-y-3 text-xs text-foreground">
+        {NORM_SECTIONS.map((s) =>
+          s.levels ? (
+            <div key={s.key} className="space-y-1">
+              <p className="font-semibold">{s.title}</p>
+              {s.levels.map((l) => (
+                <div key={l.key}>
+                  <p className="font-medium text-muted-foreground">{l.label}</p>
+                  <p className="whitespace-pre-wrap">
+                    {content[l.key]?.trim() || <span className="italic text-muted-foreground">Not written yet.</span>}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div key={s.key} className="space-y-0.5">
+              <p className="font-semibold">{s.title}</p>
+              <p className="whitespace-pre-wrap">
+                {content[s.key]?.trim() || <span className="italic text-muted-foreground">Not written yet.</span>}
+              </p>
+            </div>
+          ),
+        )}
+      </div>
+      <p>
+        Group Norms are written and approved in the{" "}
+        <a
+          href="#group-norms"
+          className="text-primary underline underline-offset-2"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById("group-norms")?.scrollIntoView({ behavior: "smooth" });
+          }}
+        >
+          Group Norms section
+        </a>{" "}
+        on this page. Nothing needs to be uploaded here.
+      </p>
+    </div>
+  );
+}
+
 
 type RowCommonProps = {
   verMap: Map<string, VersionRow[]>;
