@@ -357,37 +357,66 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
               />
             </dl>
 
+            {a.norms.document.length > 0 && (
+              <div className="break-inside-avoid">
+                <h3 className="text-sm font-medium">The posted document</h3>
+                <div className="mt-1 max-h-48 overflow-y-auto rounded-md border bg-muted/30 p-3 print:max-h-none print:overflow-visible">
+                  {a.norms.document.map((d) => (
+                    <div key={d.label} className="mb-3 last:mb-0">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {d.label}
+                      </p>
+                      <p className="whitespace-pre-wrap text-sm leading-6">{d.text}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground print:hidden">
+                  Scroll to read the whole document. It prints in full.
+                </p>
+              </div>
+            )}
+
             {a.norms.missingSections.length > 0 && (
               <p className="text-sm text-rose-400">
                 Blank sections: {a.norms.missingSections.join(", ")}
               </p>
             )}
 
-            {a.norms.categories.map((cat) => (
-              <div key={cat.key} className="break-inside-avoid">
-                <h3 className="text-sm font-medium">{cat.title}</h3>
-                <ul className="mt-1 space-y-2">
-                  {cat.items.map((item) => {
-                    const Icon = CHECK_ICON[item.status];
-                    return (
-                      <li key={item.key} className="flex gap-2 text-sm">
-                        <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${CHECK_TONE[item.status]}`} aria-hidden />
-                        <span>
-                          <span className="font-medium">{item.label}</span>{" "}
-                          <span className={CHECK_TONE[item.status]}>({CHECK_LABEL[item.status]})</span>
-                          {item.evidence && (
-                            <span className="block text-xs italic text-muted-foreground">
-                              From {item.source}: “{item.evidence}”
-                            </span>
-                          )}
-                          {item.note && <span className="block text-xs text-muted-foreground">{item.note}</span>}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
+            {a.norms.categories.map((cat) => {
+              const flagged = cat.items.filter((item) => item.status !== "found");
+              if (flagged.length === 0) return null;
+              return (
+                <div key={cat.key} className="break-inside-avoid">
+                  <h3 className="text-sm font-medium">{cat.title}</h3>
+                  <ul className="mt-1 space-y-2">
+                    {flagged.map((item) => {
+                      const Icon = CHECK_ICON[item.status];
+                      return (
+                        <li key={item.key} className="flex gap-2 text-sm">
+                          <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${CHECK_TONE[item.status]}`} aria-hidden />
+                          <span>
+                            <span className="font-medium">{item.label}</span>{" "}
+                            <span className={CHECK_TONE[item.status]}>({CHECK_LABEL[item.status]})</span>
+                            {item.evidence && (
+                              <span className="block text-xs italic text-muted-foreground">
+                                From {item.source}: “{item.evidence}”
+                              </span>
+                            )}
+                            {item.note && <span className="block text-xs text-muted-foreground">{item.note}</span>}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })}
+
+            {a.norms.categories.every((cat) => cat.items.every((i) => i.status === "found")) && (
+              <p className="text-sm text-muted-foreground">
+                No norms issues to report — only problems are listed here.
+              </p>
+            )}
 
             <div className="break-inside-avoid">
               <h3 className="text-sm font-medium">Vague wording flagged</h3>

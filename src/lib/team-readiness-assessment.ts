@@ -11,7 +11,7 @@
  * Mid-Semester Assessment.
  */
 
-import { findVagueLanguage, missingNorms, normalizeNorms, type NormsContent } from "@/lib/group-norms";
+import { findVagueLanguage, missingNorms, NORM_SECTIONS, normalizeNorms, type NormsContent } from "@/lib/group-norms";
 import { proofsForRole, proofByKey } from "@/lib/proofs";
 
 /* -------------------------------------------------------------------------- */
@@ -230,6 +230,8 @@ export type TeamAssessment = {
     pmVerificationNote: string;
     newerVersionNeedsAgreement: boolean;
     categories: NormsCategory[];
+    /** The posted document itself, in document order, so it can be read in the report. */
+    document: { label: string; text: string }[];
   };
   generatedAt: string;
 };
@@ -338,6 +340,23 @@ export function classifyLocation(address: string | null): {
 }
 
 /* ----------------------------- norms checking ----------------------------- */
+
+/** The posted norms as readable sections, in document order. */
+function normsDocument(content: NormsContent): { label: string; text: string }[] {
+  const out: { label: string; text: string }[] = [];
+  for (const s of NORM_SECTIONS) {
+    if (s.levels) {
+      for (const l of s.levels) {
+        const text = (content[l.key] ?? "").trim();
+        if (text) out.push({ label: `${s.title} — ${l.label}`, text });
+      }
+    } else {
+      const text = (content[s.key] ?? "").trim();
+      if (text) out.push({ label: s.title, text });
+    }
+  }
+  return out;
+}
 
 const SENTENCE_SPLIT = /(?<=[.!?;\n])\s+/;
 
@@ -968,6 +987,7 @@ export function assessTeam(input: AssessmentInput): TeamAssessment {
       newerVersionNeedsAgreement:
         normsPosted && notAgreed.length > 0 && [...olderSigners].some((id) => !signedIds.has(id)),
       categories,
+      document: normsPosted ? normsDocument(normsContent) : [],
     },
     generatedAt: input.generatedAt,
   };
