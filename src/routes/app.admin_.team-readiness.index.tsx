@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowUpDown, Printer, RefreshCw, Search } from "lucide-react";
 
-export const Route = createFileRoute("/app/admin_/team-readiness")({
+export const Route = createFileRoute("/app/admin_/team-readiness/")({
   head: () => ({
     meta: [
       { title: "Team Readiness Assessment — ClientVault" },
