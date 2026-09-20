@@ -41,7 +41,9 @@ import {
   MessageSquare,
   Users,
   Calendar,
+  BookOpen,
 } from "lucide-react";
+import { FileViewerDialog } from "@/components/file-viewer-dialog";
 import {
   VAULT_STRUCTURE,
   VAULT_STATUSES,
@@ -667,6 +669,7 @@ function FileLine({
   showMeetingDate?: boolean;
 } & RowCommonProps) {
   const current = versions.find((v) => v.id === file.current_version_id) ?? versions[0];
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   const handleStatusChange = (v: string) => {
     const next = v as VaultStatus;
@@ -733,6 +736,15 @@ function FileLine({
           )}
           <Button
             variant="ghost" size="icon"
+            onClick={() => setViewerOpen(true)}
+            disabled={!current}
+            aria-label="Read"
+            title="Read without downloading"
+          >
+            <BookOpen className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost" size="icon"
             onClick={() => onOpenComments(file)}
             aria-label="Comments"
             title="Comments"
@@ -762,6 +774,16 @@ function FileLine({
           )}
         </div>
       </CardContent>
+      <FileViewerDialog
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+        version={
+          current
+            ? { id: current.id, storage_path: current.storage_path, mime_type: current.mime_type }
+            : null
+        }
+        fileName={file.file_name}
+      />
     </Card>
   );
 }
