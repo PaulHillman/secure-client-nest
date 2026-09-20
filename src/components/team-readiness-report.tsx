@@ -81,7 +81,7 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
         </dl>
 
         <div>
-          <h3 className="text-sm font-medium">Blockers</h3>
+          <h3 className="text-sm font-medium">Action required</h3>
           {a.blockers.length === 0 ? (
             <p className="text-sm text-muted-foreground">None.</p>
           ) : (
@@ -218,7 +218,8 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
             <Field label="Selection rationale" value={a.client.rationale} />
             {a.client.locationVerdict === "outside" && (
               <p className="text-sm text-amber-400">
-                This location reads as outside {WEST_MICHIGAN.label}. Warning only, not a blocker.
+                This location reads as outside {WEST_MICHIGAN.label}. Warning only — it does not by
+                itself require action.
               </p>
             )}
             {a.client.locationVerdict === "review" && (

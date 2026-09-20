@@ -138,7 +138,7 @@ function TeamReadinessList() {
                 ["Teams assessed", data.totals.teams],
                 ["Ready", data.totals.green],
                 ["Attention needed", data.totals.yellow],
-                ["Blocked", data.totals.red],
+                ["Action required", data.totals.red],
               ] as const
             ).map(([label, value]) => (
               <Card key={label}>
@@ -174,7 +174,7 @@ function TeamReadinessList() {
                 <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="green">Ready</SelectItem>
                 <SelectItem value="yellow">Attention needed</SelectItem>
-                <SelectItem value="red">Blocker</SelectItem>
+                <SelectItem value="red">Action required</SelectItem>
               </SelectContent>
             </Select>
             <Select value={section} onValueChange={setSection}>
@@ -227,7 +227,10 @@ function TeamReadinessList() {
                       </div>
                       <p className="mt-1 text-sm text-muted-foreground">{t.headline}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {t.blockers.length} {t.blockers.length === 1 ? "blocker" : "blockers"} ·{" "}
+                        {t.blockers.length === 1
+                          ? "1 action needed"
+                          : `${t.blockers.length} actions needed`}{" "}
+                        ·{" "}
                         {t.warnings.length} {t.warnings.length === 1 ? "warning" : "warnings"} ·{" "}
                         {t.proofsCompleted}/{t.proofsRequired} activities submitted
                       </p>
