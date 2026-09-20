@@ -374,7 +374,9 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
                 <span className="font-medium">Next action:</span> {m.nextAction}
               </p>
             </div>
-          ))}
+            );
+          })}
+
         </div>
       </Section>
 
