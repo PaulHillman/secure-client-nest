@@ -290,6 +290,13 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 {m.completedProofs}/{m.requiredProofs} activities submitted · {m.statusLabel}
+                {(() => {
+                  const scored = m.proofs.filter((p) => p.score != null && p.maxScore);
+                  if (scored.length === 0) return null;
+                  const got = scored.reduce((t, p) => t + (p.score ?? 0), 0);
+                  const max = scored.reduce((t, p) => t + (p.maxScore ?? 0), 0);
+                  return ` · ${got}/${max} key points across ${scored.length} measured ${scored.length === 1 ? "activity" : "activities"}`;
+                })()}
               </p>
               <ul className="mt-2 space-y-2">
                 {m.proofs.map((p) => (
