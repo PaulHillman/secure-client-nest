@@ -4,6 +4,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getProofOverview, saveProofMaterial } from "@/lib/proofs.functions";
+import { getReadinessAssessments } from "@/lib/team-readiness-assessment.functions";
+import {
+  TeamReadinessIndicator,
+  TestFixtureBadge,
+} from "@/components/readiness-status-badge";
 import { PROOFS, proofByKey } from "@/lib/proofs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
