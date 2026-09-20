@@ -11,7 +11,7 @@
  * Mid-Semester Assessment.
  */
 
-import { findVagueLanguage, missingNorms, normalizeNorms, type NormsContent } from "@/lib/group-norms";
+import { findVagueLanguage, missingNorms, NORM_SECTIONS, normalizeNorms, type NormsContent } from "@/lib/group-norms";
 import { proofsForRole, proofByKey } from "@/lib/proofs";
 
 /* -------------------------------------------------------------------------- */
