@@ -129,7 +129,7 @@ export function FileViewerDialog({
             docHostRef.current.appendChild(canvas);
             const ctx = canvas.getContext("2d");
             if (!ctx) throw new Error("canvas unavailable");
-            await pg.render({ canvas, canvasContext: ctx, viewport }).promise;
+            await pg.render({ canvasContext: ctx, viewport }).promise;
             if (!alive) return;
           }
           cleanupRef.current = () => {
