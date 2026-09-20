@@ -22,7 +22,7 @@ const ICON: Record<ReadinessColor, typeof CheckCircle2> = {
 const LABEL: Record<ReadinessColor, string> = {
   green: "Ready",
   yellow: "Attention needed",
-  red: "Blocker",
+  red: "Action required",
 };
 
 /** Colour is never the only signal: the word and an icon always travel with it. */

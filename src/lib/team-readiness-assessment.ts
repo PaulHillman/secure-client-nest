@@ -103,7 +103,7 @@ export type ReadinessColor = "green" | "yellow" | "red";
 export const COLOR_LABEL: Record<ReadinessColor, string> = {
   green: "Ready",
   yellow: "Attention needed",
-  red: "Blocker",
+  red: "Action required",
 };
 
 export type Finding = {
@@ -316,7 +316,7 @@ export function classifyLocation(address: string | null): {
 } {
   const text = clean(address);
   if (!text) {
-    return { verdict: "missing", note: "Company location was not provided. Reported, not a blocker." };
+    return { verdict: "missing", note: "Company location was not provided. Reported for review only." };
   }
   const lower = ` ${text.toLowerCase()} `;
   if (WEST_MICHIGAN.places.some((p) => lower.includes(p))) {
