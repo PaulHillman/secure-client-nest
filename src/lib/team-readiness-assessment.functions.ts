@@ -74,7 +74,7 @@ async function buildAssessments(teamId?: string): Promise<{
       .in("team_id", ids),
     supabaseAdmin
       .from("proof_submissions")
-      .select("team_id, user_id, proof_key, submitted_at, feedback, feedback_status, review_status")
+      .select("team_id, user_id, proof_key, submitted_at, feedback, feedback_status, review_status, score")
       .in("team_id", ids),
     supabaseAdmin
       .from("team_requirement_status")
