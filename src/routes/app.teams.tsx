@@ -1,9 +1,12 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { teamPrimaryName } from "@/lib/team-label";
+import { getReadinessAssessments } from "@/lib/team-readiness-assessment.functions";
+import { ReadinessStatusBadge, TestFixtureBadge } from "@/components/readiness-status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
@@ -45,11 +48,23 @@ function Teams() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("teams")
-        .select("id, name, display_name, description, section, company_focus(company_name, industry, contact_person, contact_job_title)");
+        .select("id, name, display_name, description, section, is_test, company_focus(company_name, industry, contact_person, contact_job_title)");
       if (error) throw error;
       return data;
     },
   });
+
+  // The readiness indicator uses the same shared assessment as the report.
+  const fetchAssessments = useServerFn(getReadinessAssessments);
+  const { data: readiness } = useQuery({
+    queryKey: ["team-readiness-assessments"],
+    enabled: isAdmin,
+    queryFn: () => fetchAssessments({}),
+  });
+  const readinessByTeam = useMemo(
+    () => new Map((readiness?.teams ?? []).map((t) => [t.teamId, t])),
+    [readiness],
+  );
 
   const { data: memberships } = useQuery({
     queryKey: ["my-team-memberships", user?.id],
