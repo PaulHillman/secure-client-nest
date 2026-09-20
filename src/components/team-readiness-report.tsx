@@ -195,44 +195,7 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
         )}
       </Section>
 
-      {/* 3. Client information */}
-      <Section title="Client information">
-        {!a.client.present ? (
-          <p className="text-base font-medium text-rose-400">No client selected.</p>
-        ) : (
-          <>
-            <dl className="grid gap-3 sm:grid-cols-3">
-              <Field label="Company" value={a.client.companyName} />
-              <Field label="Industry" value={a.client.industry} />
-              <Field label="Manager name" value={a.client.managerName} />
-              <Field label="Manager title" value={a.client.managerTitle} />
-              <Field label="Manager email" value={a.client.email} />
-              <Field label="Website" value={a.client.website} />
-              <Field label="Company size" value={a.client.companySize} />
-              <Field label="Company location" value={a.client.location} note={a.client.locationNote} />
-              <Field label="Submitted by" value={a.client.submittedBy} />
-              <Field label="Submission date" value={when(a.client.submittedAt)} />
-              <Field label="Proposal status" value={a.client.proposalStatus} />
-              <Field label="Professor decision" value={a.client.professorDecision} />
-            </dl>
-            <Field label="Selection rationale" value={a.client.rationale} />
-            {a.client.locationVerdict === "outside" && (
-              <p className="text-sm text-amber-400">
-                This location reads as outside {WEST_MICHIGAN.label}. Warning only — it does not by
-                itself require action.
-              </p>
-            )}
-            {a.client.locationVerdict === "review" && (
-              <p className="text-sm text-amber-400">
-                The location is not on the configured {WEST_MICHIGAN.label} list — shown for your review
-                rather than guessed.
-              </p>
-            )}
-          </>
-        )}
-      </Section>
-
-      {/* 4. Member readiness table */}
+      {/* 3. Member readiness table */}
       <Section title="Member readiness">
         <p className="text-xs text-muted-foreground">
           No formal quality judgment recorded; completion status and available feedback are shown.
@@ -277,6 +240,43 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
             )}
           </tbody>
         </table>
+      </Section>
+
+      {/* 4. Client information */}
+      <Section title="Client information">
+        {!a.client.present ? (
+          <p className="text-base font-medium text-rose-400">No client selected.</p>
+        ) : (
+          <>
+            <dl className="grid gap-3 sm:grid-cols-3">
+              <Field label="Company" value={a.client.companyName} />
+              <Field label="Industry" value={a.client.industry} />
+              <Field label="Manager name" value={a.client.managerName} />
+              <Field label="Manager title" value={a.client.managerTitle} />
+              <Field label="Manager email" value={a.client.email} />
+              <Field label="Website" value={a.client.website} />
+              <Field label="Company size" value={a.client.companySize} />
+              <Field label="Company location" value={a.client.location} note={a.client.locationNote} />
+              <Field label="Submitted by" value={a.client.submittedBy} />
+              <Field label="Submission date" value={when(a.client.submittedAt)} />
+              <Field label="Proposal status" value={a.client.proposalStatus} />
+              <Field label="Professor decision" value={a.client.professorDecision} />
+            </dl>
+            <Field label="Selection rationale" value={a.client.rationale} />
+            {a.client.locationVerdict === "outside" && (
+              <p className="text-sm text-amber-400">
+                This location reads as outside {WEST_MICHIGAN.label}. Warning only — it does not by
+                itself require action.
+              </p>
+            )}
+            {a.client.locationVerdict === "review" && (
+              <p className="text-sm text-amber-400">
+                The location is not on the configured {WEST_MICHIGAN.label} list — shown for your review
+                rather than guessed.
+              </p>
+            )}
+          </>
+        )}
       </Section>
 
       {/* 5. Member cards */}
