@@ -218,6 +218,12 @@ function TeamReadinessList() {
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-display text-lg">{t.teamName}</span>
+                        <span
+                          className="rounded-full bg-secondary px-2 py-0.5 text-xs"
+                          title={`Original team record: ${t.teamRecordName}`}
+                        >
+                          {t.teamRecordName}
+                        </span>
                         {t.isTest ? <TestFixtureBadge /> : <ReadinessStatusBadge color={t.color} />}
                         {t.section && (
                           <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">
