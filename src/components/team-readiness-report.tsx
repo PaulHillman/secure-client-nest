@@ -73,6 +73,66 @@ const HIGHLIGHT_RED =
 const HIGHLIGHT_YELLOW =
   "rounded-md border-l-4 border-amber-500 bg-amber-100 px-3 py-2 print:bg-amber-100 print:border-amber-500";
 
+/* Inline marker-pen treatments used inside the posted document itself. */
+const MARK_RED =
+  "rounded-sm bg-rose-200 px-0.5 font-medium text-rose-900 decoration-rose-500 underline decoration-2 print:bg-rose-200";
+const MARK_YELLOW = "rounded-sm bg-amber-200 px-0.5 text-amber-950 print:bg-amber-200";
+
+type Mark = { start: number; end: number; tone: "red" | "yellow"; reason: string };
+
+/** Every place `needle` occurs in `hay`, case-insensitively. */
+function occurrences(hay: string, needle: string): { start: number; end: number }[] {
+  const out: { start: number; end: number }[] = [];
+  if (!needle.trim()) return out;
+  const h = hay.toLowerCase();
+  const n = needle.toLowerCase();
+  let from = 0;
+  for (;;) {
+    const i = h.indexOf(n, from);
+    if (i === -1) break;
+    out.push({ start: i, end: i + n.length });
+    from = i + n.length;
+  }
+  return out;
+}
+
+/**
+ * Highlights the exact wording that produced a flag, in place, without
+ * rewriting a single character of what the team wrote. Red wins over yellow
+ * where they overlap; anything that no longer matches is simply not marked and
+ * stays in the list of findings below.
+ */
+function MarkedText({ text, marks }: { text: string; marks: Mark[] }) {
+  const sorted = [...marks].sort((a, b) => (a.start - b.start) || (b.end - a.end));
+  const kept: Mark[] = [];
+  for (const m of sorted) {
+    const clash = kept.find((k) => m.start < k.end && k.start < m.end);
+    if (!clash) {
+      kept.push(m);
+      continue;
+    }
+    // A red phrase inside a yellow sentence replaces the yellow band.
+    if (m.tone === "red" && clash.tone === "yellow") {
+      kept.splice(kept.indexOf(clash), 1, m);
+    }
+  }
+  kept.sort((a, b) => a.start - b.start);
+
+  const parts: React.ReactNode[] = [];
+  let cursor = 0;
+  kept.forEach((m, i) => {
+    if (m.start > cursor) parts.push(text.slice(cursor, m.start));
+    parts.push(
+      <mark key={i} className={m.tone === "red" ? MARK_RED : MARK_YELLOW} title={m.reason}>
+        {text.slice(m.start, m.end)}
+      </mark>,
+    );
+    cursor = m.end;
+  });
+  if (cursor < text.length) parts.push(text.slice(cursor));
+  return <>{parts}</>;
+}
+
 /**
  * The one report body. The online page and the print/PDF page both render this,
  * so what is on screen is exactly what prints.
