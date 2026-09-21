@@ -171,3 +171,11 @@
   animation: vault-client-ride 2.1s cubic-bezier(0.22, 1, 0.36, 1) both;
   will-change: transform, opacity, filter;
 }
+
+/* Keep status colors (red/yellow/green dots and badges) when printing reports */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
