@@ -518,17 +518,42 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
               <div className="break-inside-avoid">
                 <h3 className="text-sm font-medium">The posted document</h3>
                 <div className="mt-1 max-h-48 overflow-y-auto rounded-md border bg-muted/30 p-3 print:max-h-none print:overflow-visible">
-                  {a.norms.document.map((d) => (
-                    <div key={d.label} className="mb-3 last:mb-0">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        {d.label}
-                      </p>
-                      <p className="whitespace-pre-wrap text-sm leading-6">{d.text}</p>
-                    </div>
-                  ))}
+                  {a.norms.document.map((d) => {
+                    const marks: Mark[] = [];
+                    for (const v of a.norms.vague) {
+                      if (v.label !== d.label) continue;
+                      for (const o of occurrences(d.text, v.phrase)) {
+                        marks.push({ ...o, tone: "red", reason: `Too vague — ${v.reason}` });
+                      }
+                    }
+                    for (const cat of a.norms.categories) {
+                      for (const item of cat.items) {
+                        if (item.status !== "needs_clarification") continue;
+                        if (!item.evidence || item.source !== d.label) continue;
+                        for (const o of occurrences(d.text, item.evidence)) {
+                          marks.push({
+                            ...o,
+                            tone: "yellow",
+                            reason: `${item.label} — ${item.note ?? "Needs clarification"}`,
+                          });
+                        }
+                      }
+                    }
+                    return (
+                      <div key={d.label} className="mb-3 last:mb-0">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {d.label}
+                        </p>
+                        <p className="whitespace-pre-wrap text-sm leading-6">
+                          <MarkedText text={d.text} marks={marks} />
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground print:hidden">
-                  Scroll to read the whole document. It prints in full.
+                  Scroll to read the whole document. Highlighted wording is what was flagged — hover it for
+                  the reason. It prints in full.
                 </p>
               </div>
             )}
