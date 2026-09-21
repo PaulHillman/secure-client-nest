@@ -223,7 +223,6 @@ function TeamReadinessList() {
                           title={`Original team record: ${t.teamRecordName}`}
                         >
                           {t.teamRecordName}
-                          {t.teamNumber ? ` · #${t.teamNumber}` : ""}
                         </span>
                         {t.isTest ? <TestFixtureBadge /> : <ReadinessStatusBadge color={t.color} />}
                         {t.section && (
