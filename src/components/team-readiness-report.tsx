@@ -10,9 +10,25 @@ function when(value: string | null) {
   return Number.isNaN(d.getTime()) ? value : d.toLocaleString();
 }
 
-function Field({ label, value, note }: { label: string; value: string | null; note?: string | null }) {
+function Field({
+  label,
+  value,
+  note,
+  highlight,
+}: {
+  label: string;
+  value: string | null;
+  note?: string | null;
+  highlight?: "red" | "yellow";
+}) {
+  const tone =
+    highlight === "red"
+      ? `text-rose-700 ${HIGHLIGHT_RED}`
+      : highlight === "yellow"
+        ? `text-amber-800 ${HIGHLIGHT_YELLOW}`
+        : undefined;
   return (
-    <div className="break-inside-avoid">
+    <div className={`break-inside-avoid ${tone ?? ""}`}>
       <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
       <dd className={value ? "text-sm" : "text-sm italic text-muted-foreground"}>
         {value ?? "Not provided"}
@@ -50,6 +66,12 @@ const CHECK_LABEL = {
   missing: "Missing",
   needs_clarification: "Too vague",
 } as const;
+
+/* Highlighter treatments so flagged items keep drawing the eye on paper. */
+const HIGHLIGHT_RED =
+  "rounded-md border-l-4 border-rose-600 bg-rose-100 px-3 py-2 print:bg-rose-100 print:border-rose-600";
+const HIGHLIGHT_YELLOW =
+  "rounded-md border-l-4 border-amber-500 bg-amber-100 px-3 py-2 print:bg-amber-100 print:border-amber-500";
 
 /**
  * The one report body. The online page and the print/PDF page both render this,
@@ -410,7 +432,12 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
             <dl className="grid gap-3 sm:grid-cols-3">
               <Field label="Current version" value={a.norms.version !== null ? `v${a.norms.version}` : null} />
               <Field label="Date posted / last saved" value={when(a.norms.postedAt)} />
-              <Field label="PM verification" value={a.norms.pmVerified ? "Complete" : "Missing"} note={a.norms.pmVerificationNote} />
+              <Field
+                label="PM verification"
+                value={a.norms.pmVerified ? "Complete" : "Missing"}
+                note={a.norms.pmVerificationNote}
+                highlight={a.norms.pmVerified ? undefined : "red"}
+              />
               <Field
                 label="Agreed to current version"
                 value={a.norms.agreed.length ? a.norms.agreed.join(", ") : null}
@@ -418,10 +445,12 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
               <Field
                 label="Not yet agreed"
                 value={a.norms.notAgreed.length ? a.norms.notAgreed.join(", ") : "Everyone has agreed"}
+                highlight={a.norms.notAgreed.length > 0 ? "yellow" : undefined}
               />
               <Field
                 label="Renewed agreement needed"
                 value={a.norms.newerVersionNeedsAgreement ? "Yes — the norms changed after some members agreed" : "No"}
+                highlight={a.norms.newerVersionNeedsAgreement ? "yellow" : undefined}
               />
             </dl>
 
@@ -445,7 +474,7 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
             )}
 
             {a.norms.missingSections.length > 0 && (
-              <p className="text-sm text-rose-400">
+              <p className={`text-sm text-rose-700 ${HIGHLIGHT_RED}`}>
                 Blank sections: {a.norms.missingSections.join(", ")}
               </p>
             )}
@@ -460,17 +489,20 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
                     {flagged.map((item) => {
                       const Icon = CHECK_ICON[item.status];
                       return (
-                        <li key={item.key} className="flex gap-2 text-sm">
+                        <li
+                          key={item.key}
+                          className={`flex gap-2 text-sm break-inside-avoid ${HIGHLIGHT_RED}`}
+                        >
                           <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${CHECK_TONE[item.status]}`} aria-hidden />
                           <span>
                             <span className="font-medium">{item.label}</span>{" "}
                             <span className={CHECK_TONE[item.status]}>({CHECK_LABEL[item.status]})</span>
                             {item.evidence && (
-                              <span className="block text-xs italic text-muted-foreground">
+                              <span className="block text-xs italic text-rose-900/80">
                                 From {item.source}: “{item.evidence}”
                               </span>
                             )}
-                            {item.note && <span className="block text-xs text-muted-foreground">{item.note}</span>}
+                            {item.note && <span className="block text-xs text-rose-900/80">{item.note}</span>}
                           </span>
                         </li>
                       );
@@ -493,9 +525,9 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
               ) : (
                 <ul className="mt-1 space-y-1 text-sm">
                   {a.norms.vague.map((v, i) => (
-                    <li key={i}>
+                    <li key={i} className={`break-inside-avoid ${HIGHLIGHT_RED}`}>
                       <span className="font-medium">{v.label}:</span> “{v.phrase}” —{" "}
-                      <span className="text-muted-foreground">{v.reason}</span>
+                      <span className="text-rose-900/80">{v.reason}</span>
                     </li>
                   ))}
                 </ul>
