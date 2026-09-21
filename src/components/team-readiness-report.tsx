@@ -424,10 +424,12 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
               <Field
                 label="Not yet agreed"
                 value={a.norms.notAgreed.length ? a.norms.notAgreed.join(", ") : "Everyone has agreed"}
+                highlight={a.norms.notAgreed.length > 0 ? "yellow" : undefined}
               />
               <Field
                 label="Renewed agreement needed"
                 value={a.norms.newerVersionNeedsAgreement ? "Yes — the norms changed after some members agreed" : "No"}
+                highlight={a.norms.newerVersionNeedsAgreement ? "yellow" : undefined}
               />
             </dl>
 
@@ -502,9 +504,9 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
               ) : (
                 <ul className="mt-1 space-y-1 text-sm">
                   {a.norms.vague.map((v, i) => (
-                    <li key={i}>
+                    <li key={i} className={`break-inside-avoid ${HIGHLIGHT_RED}`}>
                       <span className="font-medium">{v.label}:</span> “{v.phrase}” —{" "}
-                      <span className="text-muted-foreground">{v.reason}</span>
+                      <span className="text-rose-900/80">{v.reason}</span>
                     </li>
                   ))}
                 </ul>
