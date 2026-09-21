@@ -51,6 +51,12 @@ const CHECK_LABEL = {
   needs_clarification: "Too vague",
 } as const;
 
+/* Highlighter treatments so flagged items keep drawing the eye on paper. */
+const HIGHLIGHT_RED =
+  "rounded-md border-l-4 border-rose-600 bg-rose-100 px-3 py-2 print:bg-rose-100 print:border-rose-600";
+const HIGHLIGHT_YELLOW =
+  "rounded-md border-l-4 border-amber-500 bg-amber-100 px-3 py-2 print:bg-amber-100 print:border-amber-500";
+
 /**
  * The one report body. The online page and the print/PDF page both render this,
  * so what is on screen is exactly what prints.
