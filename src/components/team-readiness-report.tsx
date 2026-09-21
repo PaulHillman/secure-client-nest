@@ -10,9 +10,25 @@ function when(value: string | null) {
   return Number.isNaN(d.getTime()) ? value : d.toLocaleString();
 }
 
-function Field({ label, value, note }: { label: string; value: string | null; note?: string | null }) {
+function Field({
+  label,
+  value,
+  note,
+  highlight,
+}: {
+  label: string;
+  value: string | null;
+  note?: string | null;
+  highlight?: "red" | "yellow";
+}) {
+  const tone =
+    highlight === "red"
+      ? `text-rose-700 ${HIGHLIGHT_RED}`
+      : highlight === "yellow"
+        ? `text-amber-800 ${HIGHLIGHT_YELLOW}`
+        : undefined;
   return (
-    <div className="break-inside-avoid">
+    <div className={`break-inside-avoid ${tone ?? ""}`}>
       <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
       <dd className={value ? "text-sm" : "text-sm italic text-muted-foreground"}>
         {value ?? "Not provided"}
@@ -416,7 +432,12 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
             <dl className="grid gap-3 sm:grid-cols-3">
               <Field label="Current version" value={a.norms.version !== null ? `v${a.norms.version}` : null} />
               <Field label="Date posted / last saved" value={when(a.norms.postedAt)} />
-              <Field label="PM verification" value={a.norms.pmVerified ? "Complete" : "Missing"} note={a.norms.pmVerificationNote} />
+              <Field
+                label="PM verification"
+                value={a.norms.pmVerified ? "Complete" : "Missing"}
+                note={a.norms.pmVerificationNote}
+                highlight={a.norms.pmVerified ? undefined : "red"}
+              />
               <Field
                 label="Agreed to current version"
                 value={a.norms.agreed.length ? a.norms.agreed.join(", ") : null}
