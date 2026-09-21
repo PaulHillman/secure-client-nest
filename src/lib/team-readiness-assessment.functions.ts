@@ -22,7 +22,7 @@ const SETUP_KEY = "team_setup";
  * and runs the single shared calculation over each. The Teams indicator, the
  * assessment list, the detail report and the print view all read this.
  */
-async function buildAssessments(teamId?: string): Promise<{
+export async function buildAssessments(teamId?: string): Promise<{
   assessments: TeamAssessment[];
   excluded: { id: string; name: string; section: string | null }[];
   generatedAt: string;
