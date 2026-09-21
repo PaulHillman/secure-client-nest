@@ -451,7 +451,7 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
             )}
 
             {a.norms.missingSections.length > 0 && (
-              <p className="text-sm text-rose-400">
+              <p className={`text-sm text-rose-700 ${HIGHLIGHT_RED}`}>
                 Blank sections: {a.norms.missingSections.join(", ")}
               </p>
             )}
@@ -466,17 +466,20 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
                     {flagged.map((item) => {
                       const Icon = CHECK_ICON[item.status];
                       return (
-                        <li key={item.key} className="flex gap-2 text-sm">
+                        <li
+                          key={item.key}
+                          className={`flex gap-2 text-sm break-inside-avoid ${HIGHLIGHT_RED}`}
+                        >
                           <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${CHECK_TONE[item.status]}`} aria-hidden />
                           <span>
                             <span className="font-medium">{item.label}</span>{" "}
                             <span className={CHECK_TONE[item.status]}>({CHECK_LABEL[item.status]})</span>
                             {item.evidence && (
-                              <span className="block text-xs italic text-muted-foreground">
+                              <span className="block text-xs italic text-rose-900/80">
                                 From {item.source}: “{item.evidence}”
                               </span>
                             )}
-                            {item.note && <span className="block text-xs text-muted-foreground">{item.note}</span>}
+                            {item.note && <span className="block text-xs text-rose-900/80">{item.note}</span>}
                           </span>
                         </li>
                       );
