@@ -529,7 +529,7 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
                     for (const cat of a.norms.categories) {
                       for (const item of cat.items) {
                         if (item.status !== "needs_clarification") continue;
-                        if (!item.evidence || item.source !== d.label) continue;
+                        if (!item.evidence) continue;
                         for (const o of occurrences(d.text, item.evidence)) {
                           marks.push({
                             ...o,
