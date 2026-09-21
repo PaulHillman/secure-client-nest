@@ -651,9 +651,9 @@ export function assessTeam(input: AssessmentInput): TeamAssessment {
           : null,
   };
 
-  if (!clientPresent) {
-    add(blockers, "no_client", "No client selected");
-  } else {
+  // A client is not due until the Client Selected module's own deadline, so not
+  // having one yet is reported as information only — never a penalty.
+  if (clientPresent) {
     if (decision === "needs_revision") {
       add(blockers, "client_sent_back", "Client selection was sent back and has not been resubmitted", input.clientStatus?.revision_note ?? undefined);
     }

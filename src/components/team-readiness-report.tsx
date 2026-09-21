@@ -327,7 +327,7 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
       {/* 4. Client information */}
       <Section title="Client information">
         {!a.client.present ? (
-          <p className="text-base font-medium text-rose-400">No client selected.</p>
+          <p className="text-base font-medium text-muted-foreground">No client selected yet — not due until the Client Selected deadline.</p>
         ) : (
           <>
             <dl className="grid gap-3 sm:grid-cols-3">
