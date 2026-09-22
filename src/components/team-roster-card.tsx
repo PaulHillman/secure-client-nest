@@ -2,7 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Download, Users } from "lucide-react";
 import { StudentName } from "@/components/student-avatar";
 
 const JOB_ORDER = [
@@ -30,7 +31,7 @@ export function TeamRosterCard() {
       ] = await Promise.all([
         supabase.from("teams").select("id, name, section"),
         supabase.from("team_members").select("team_id, user_id, job_title"),
-        supabase.from("profiles").select("id, name, email, avatar_url"),
+        supabase.from("profiles").select("id, name, email, avatar_url, student_id"),
       ]);
       if (tErr) throw tErr;
       if (mErr) throw mErr;
@@ -45,6 +46,7 @@ export function TeamRosterCard() {
             job_title: m.job_title ?? null,
             name: profMap.get(m.user_id)?.name ?? "—",
             email: profMap.get(m.user_id)?.email ?? null,
+            student_id: profMap.get(m.user_id)?.student_id ?? null,
             avatar_url: profMap.get(m.user_id)?.avatar_url ?? null,
           }))
           .sort((a, b) => {
@@ -71,12 +73,53 @@ export function TeamRosterCard() {
   const teams = data ?? [];
   const totalStudents = teams.reduce((acc, t) => acc + t.roster.length, 0);
 
+  const csvCell = (v: unknown) => {
+    const s = String(v ?? "");
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  const exportCsv = () => {
+    const header = ["Section", "Team", "Name", "Email", "Student ID", "Role"];
+    const lines = [header.join(",")];
+    for (const t of teams) {
+      for (const m of t.roster) {
+        lines.push(
+          [
+            t.section ?? "",
+            t.name ?? "",
+            m.name === "—" ? "" : m.name,
+            m.email ?? "",
+            m.student_id ?? "",
+            m.job_title ?? "",
+          ]
+            .map(csvCell)
+            .join(","),
+        );
+      }
+    }
+    const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `student-roster-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <Card className="border-border/60">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="font-display text-xl flex items-center gap-2">
           <Users className="h-5 w-5 text-gold" /> Students by team ({totalStudents})
         </CardTitle>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={exportCsv}
+          disabled={teams.length === 0 || totalStudents === 0}
+        >
+          <Download className="h-3.5 w-3.5 mr-1" /> CSV
+        </Button>
       </CardHeader>
       <CardContent>
         {teams.length === 0 ? (
