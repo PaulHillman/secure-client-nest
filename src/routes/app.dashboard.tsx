@@ -145,54 +145,47 @@ function Dashboard() {
     },
   ];
 
+  const jumpLinks = [
+    ...(isAdmin
+      ? [
+          ["#kpis", "Gaps"],
+          ["#roster", "Roster"],
+          ["#contacts", "Client contacts"],
+        ]
+      : []),
+    ["#arch", "Project arch"],
+    ...(isAdmin
+      ? [
+          ["#meetings", "Meetings"],
+          ["#activity", "Activity"],
+        ]
+      : []),
+    ["#my-profile", "My profile"],
+    ["#availability", "My availability"],
+    ["#my-role", "My role"],
+    ...(isAdmin ? [["#proofs", "Role practice activities"]] : []),
+  ] as [string, string][];
+
   return (
     <div className="p-8 max-w-6xl mx-auto">
-      <header className="mb-10">
+      <header className="mb-6">
         <p className="text-sm text-muted-foreground">Welcome back</p>
         <h1 className="font-display text-4xl mt-1">Your workspace</h1>
       </header>
 
+      <nav className="mb-8 flex flex-wrap gap-2 text-sm">
+        {jumpLinks.map(([href, label]) => (
+          <a
+            key={href}
+            href={href}
+            className="rounded-full border border-border/60 px-3 py-1 text-muted-foreground hover:border-gold hover:text-foreground"
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
+
       <DashboardReadinessNotice />
-
-
-      <div className="mb-6">
-        <ProfileCompletionCard />
-      </div>
-
-      <div className="mb-6">
-        <MyProfileCard />
-      </div>
-
-      <div className="mt-6">
-        <AvailabilityGridCard />
-      </div>
-
-      <div className="my-6">
-        <RoleSelectCard />
-      </div>
-
-
-      {isAdmin && (
-        <nav className="mb-6 flex flex-wrap gap-2 text-sm">
-          {[
-            ["#proofs", "Role activities"],
-            ["#kpis", "Gaps"],
-            ["#roster", "Roster"],
-            ["#contacts", "Client contacts"],
-            ["#arch", "Project arch"],
-            ["#meetings", "Meetings"],
-            ["#activity", "Activity"],
-          ].map(([href, label]) => (
-            <a
-              key={href}
-              href={href}
-              className="rounded-full border border-border/60 px-3 py-1 text-muted-foreground hover:border-gold hover:text-foreground"
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
-      )}
 
       {isAdmin && (
       <div id="kpis" className="grid grid-cols-2 lg:grid-cols-4 gap-4 scroll-mt-6">
@@ -211,13 +204,6 @@ function Dashboard() {
           </Card>
         ))}
       </div>
-      )}
-
-
-      {isAdmin && (
-        <div id="proofs" className="mt-6 scroll-mt-6">
-          <ProofsAdminCard />
-        </div>
       )}
 
       {isAdmin && (
@@ -248,7 +234,6 @@ function Dashboard() {
           <ConsensusStatusCard />
         </div>
       )}
-
 
       {isAdmin && (
         <div id="activity" className="mt-6 scroll-mt-6">
@@ -286,8 +271,6 @@ function Dashboard() {
         </div>
       )}
 
-
-
       <Card className="mt-8 border-border/60">
         <CardHeader>
           <CardTitle className="font-display text-2xl">Getting started</CardTitle>
@@ -299,6 +282,29 @@ function Dashboard() {
           <p className="pt-4 text-xs">Need a team created? Ask your instructor to add you in the Admin panel.</p>
         </CardContent>
       </Card>
+
+      <div className="mt-10">
+        <ProfileCompletionCard />
+      </div>
+
+      <div id="my-profile" className="mt-6 scroll-mt-6">
+        <MyProfileCard />
+      </div>
+
+      <div id="availability" className="mt-6 scroll-mt-6">
+        <AvailabilityGridCard />
+      </div>
+
+      <div id="my-role" className="mt-6 scroll-mt-6">
+        <RoleSelectCard />
+      </div>
+
+      {isAdmin && (
+        <div id="proofs" className="mt-6 scroll-mt-6">
+          <ProofsAdminCard />
+        </div>
+      )}
     </div>
   );
 }
+
