@@ -29,7 +29,7 @@ export function TeamRosterCard() {
         { data: members, error: mErr },
         { data: profiles, error: pErr },
       ] = await Promise.all([
-        supabase.from("teams").select("id, name, section"),
+        supabase.from("teams").select("id, name, display_name, section"),
         supabase.from("team_members").select("team_id, user_id, job_title"),
         supabase
           .from("profiles")
@@ -91,6 +91,7 @@ export function TeamRosterCard() {
         return {
           Section: t.section ?? "",
           Team: t.name ?? "",
+          "Team name": t.display_name ?? "",
           Role: m.job_title ?? "",
           Name: m.name === "—" ? "" : m.name,
           "First name": p?.first_name ?? "",
