@@ -83,38 +83,42 @@ export function TeamRosterCard() {
   const teams = data ?? [];
   const totalStudents = teams.reduce((acc, t) => acc + t.roster.length, 0);
 
-  const csvCell = (v: unknown) => {
-    const s = String(v ?? "");
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  const exportXlsx = async () => {
+    const XLSX = await import("xlsx");
+    const rows = teams.flatMap((t) =>
+      t.roster.map((m) => {
+        const p = m.profile;
+        return {
+          Section: t.section ?? "",
+          Team: t.name ?? "",
+          Role: m.job_title ?? "",
+          Name: m.name === "—" ? "" : m.name,
+          "First name": p?.first_name ?? "",
+          "Last name": p?.last_name ?? "",
+          Initials: p?.initials ?? "",
+          Email: p?.email ?? "",
+          "Student ID": p?.student_id ?? "",
+          Phone: p?.phone_number ?? "",
+          "Phone visible": p ? (p.phone_visible ? "Yes" : "No") : "",
+          "Profile section": p?.section ?? "",
+          "Work style": p?.work_style ?? "",
+          "Top skills": (p?.top_skills ?? []).join("; "),
+          "Skills have": (p?.skills_have ?? []).join("; "),
+          "Skills to learn": (p?.skills_learn ?? []).join("; "),
+          "Profile created": p?.created_at ? new Date(p.created_at).toLocaleString() : "",
+          "Profile updated": p?.updated_at ? new Date(p.updated_at).toLocaleString() : "",
+        };
+      }),
+    );
+    const sheet = XLSX.utils.json_to_sheet(rows);
+    sheet["!cols"] = Object.keys(rows[0] ?? { A: "" }).map((k) => ({
+      wch: Math.min(40, Math.max(12, k.length + 4)),
+    }));
+    const book = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(book, sheet, "Students");
+    XLSX.writeFile(book, `student-roster-${new Date().toISOString().slice(0, 10)}.xlsx`);
   };
 
-  const exportCsv = () => {
-    const header = ["Section", "Team", "Name", "Email", "Student ID", "Role"];
-    const lines = [header.join(",")];
-    for (const t of teams) {
-      for (const m of t.roster) {
-        lines.push(
-          [
-            t.section ?? "",
-            t.name ?? "",
-            m.name === "—" ? "" : m.name,
-            m.email ?? "",
-            m.student_id ?? "",
-            m.job_title ?? "",
-          ]
-            .map(csvCell)
-            .join(","),
-        );
-      }
-    }
-    const blob = new Blob([lines.join("\n")], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `student-roster-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   return (
     <Card className="border-border/60">
