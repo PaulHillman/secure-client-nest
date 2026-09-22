@@ -129,11 +129,12 @@ export function TeamRosterCard() {
         <Button
           size="sm"
           variant="outline"
-          onClick={exportCsv}
+          onClick={exportXlsx}
           disabled={teams.length === 0 || totalStudents === 0}
         >
-          <Download className="h-3.5 w-3.5 mr-1" /> CSV
+          <Download className="h-3.5 w-3.5 mr-1" /> Export XLSX
         </Button>
+
       </CardHeader>
       <CardContent>
         {teams.length === 0 ? (
