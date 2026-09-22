@@ -3,7 +3,6 @@ import { CheckCircle2, ClipboardList, Send } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ClipboardList, Send } from "lucide-react";
 import { toast } from "sonner";
 import { listIncompleteProfiles, sendProfileReminders } from "@/lib/profile-reminders.functions";
 import { StudentName } from "@/components/student-avatar";
