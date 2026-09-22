@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { CheckCircle2, ClipboardList, Send } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,18 @@ export function ProfileCompletionAdminCard() {
 
   const rows = data ?? [];
 
+  if (!isLoading && rows.length === 0) {
+    return (
+      <div className="flex items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+        <CheckCircle2 className="h-4 w-4 text-primary" />
+        <span>
+          Profiles — everyone has finished.{" "}
+          <span className="text-xs">Reminders will reappear here if anyone falls behind.</span>
+        </span>
+      </div>
+    );
+  }
+
   return (
     <Card className="border-border/60">
       <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
@@ -48,8 +61,6 @@ export function ProfileCompletionAdminCard() {
       <CardContent>
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Loading…</p>
-        ) : rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Everyone has finished their profile.</p>
         ) : (
           <ul className="divide-y divide-border/60">
             {rows.map((r) => (
