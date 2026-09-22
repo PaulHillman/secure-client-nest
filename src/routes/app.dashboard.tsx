@@ -36,6 +36,7 @@ export const Route = createFileRoute("/app/dashboard")({
 
 function Dashboard() {
   const { user, isAdmin } = useAuth();
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
   const { data: stats } = useQuery({
     queryKey: ["dashboard-gap-stats"],
