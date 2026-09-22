@@ -46,6 +46,7 @@ export function TeamRosterCard() {
             job_title: m.job_title ?? null,
             name: profMap.get(m.user_id)?.name ?? "—",
             email: profMap.get(m.user_id)?.email ?? null,
+            student_id: profMap.get(m.user_id)?.student_id ?? null,
             avatar_url: profMap.get(m.user_id)?.avatar_url ?? null,
           }))
           .sort((a, b) => {
