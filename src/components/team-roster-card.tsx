@@ -46,14 +46,19 @@ export function TeamRosterCard() {
       const enriched = (teams ?? []).map((t) => {
         const roster = (members ?? [])
           .filter((m) => m.team_id === t.id)
-          .map((m) => ({
-            user_id: m.user_id,
-            job_title: m.job_title ?? null,
-            name: profMap.get(m.user_id)?.name ?? "—",
-            email: profMap.get(m.user_id)?.email ?? null,
-            student_id: profMap.get(m.user_id)?.student_id ?? null,
-            avatar_url: profMap.get(m.user_id)?.avatar_url ?? null,
-          }))
+          .map((m) => {
+            const p = profMap.get(m.user_id);
+            return {
+              user_id: m.user_id,
+              job_title: m.job_title ?? null,
+              name: p?.name ?? "—",
+              email: p?.email ?? null,
+              student_id: p?.student_id ?? null,
+              avatar_url: p?.avatar_url ?? null,
+              profile: p ?? null,
+            };
+          })
+
           .sort((a, b) => {
             const r = jobRank(a.job_title) - jobRank(b.job_title);
             if (r !== 0) return r;
