@@ -31,7 +31,12 @@ export function TeamRosterCard() {
       ] = await Promise.all([
         supabase.from("teams").select("id, name, section"),
         supabase.from("team_members").select("team_id, user_id, job_title"),
-        supabase.from("profiles").select("id, name, email, avatar_url, student_id"),
+        supabase
+          .from("profiles")
+          .select(
+            "id, name, first_name, last_name, initials, email, avatar_url, student_id, section, phone_number, phone_visible, work_style, skills_have, skills_learn, top_skills, created_at, updated_at",
+          ),
+
       ]);
       if (tErr) throw tErr;
       if (mErr) throw mErr;
