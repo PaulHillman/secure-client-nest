@@ -148,23 +148,37 @@ function Dashboard() {
   const jumpLinks = [
     ...(isAdmin
       ? [
-          ["#kpis", "Gaps"],
-          ["#roster", "Roster"],
-          ["#contacts", "Client contacts"],
+          ["kpis", "Gaps"],
+          ["roster", "Students by team"],
+          ["contacts", "Client contacts"],
         ]
       : []),
-    ["#arch", "Project arch"],
+    ["arch", "Project arch"],
     ...(isAdmin
       ? [
-          ["#meetings", "Meetings"],
-          ["#activity", "Activity"],
+          ["meetings", "Meeting gaps"],
+          ["consensus", "Meeting consensus"],
+          ["activity", "Sign-in / Sign-out log"],
+          ["uploads", "File upload activity"],
+          ["team-activity", "Team activity dashboard"],
+          ["cross-team", "Cross-team comparison"],
+          ["flagged", "Flagged students"],
+          ["student-score", "Student activity score"],
         ]
       : []),
-    ["#my-profile", "My profile"],
-    ["#availability", "My availability"],
-    ["#my-role", "My role"],
-    ...(isAdmin ? [["#proofs", "Role practice activities"]] : []),
+    ["my-profile", "My profile"],
+    ["availability", "My availability"],
+    ["my-role", "My role"],
+    ...(isAdmin ? [["proofs", "Role practice activities"]] : []),
   ] as [string, string][];
+
+  const toggle = (id: string) => setOpenSections((p) => ({ ...p, [id]: !p[id] }));
+  const jumpTo = (id: string) => {
+    setOpenSections((p) => ({ ...p, [id]: true }));
+    requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -174,14 +188,15 @@ function Dashboard() {
       </header>
 
       <nav className="mb-8 flex flex-wrap gap-2 text-sm">
-        {jumpLinks.map(([href, label]) => (
-          <a
-            key={href}
-            href={href}
+        {jumpLinks.map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => jumpTo(id)}
             className="rounded-full border border-border/60 px-3 py-1 text-muted-foreground hover:border-gold hover:text-foreground"
           >
             {label}
-          </a>
+          </button>
         ))}
       </nav>
 
@@ -207,16 +222,15 @@ function Dashboard() {
       )}
 
       {isAdmin && (
-        <div id="roster" className="mt-6 scroll-mt-6">
+        <DashboardSection id="roster" open={!!openSections["roster"]} onToggle={() => toggle("roster")}>
           <TeamRosterCard />
-        </div>
+        </DashboardSection>
       )}
 
       {isAdmin && (
-        <div className="mt-6">
-          <span id="contacts" className="block scroll-mt-6" />
+        <DashboardSection id="contacts" open={!!openSections["contacts"]} onToggle={() => toggle("contacts")}>
           <ClientContactsCard />
-        </div>
+        </DashboardSection>
       )}
 
       <div id="arch" className="mt-6 scroll-mt-6">
@@ -224,52 +238,53 @@ function Dashboard() {
       </div>
 
       {isAdmin && (
-        <div id="meetings" className="mt-6 scroll-mt-6">
+        <DashboardSection id="meetings" open={!!openSections["meetings"]} onToggle={() => toggle("meetings")}>
           <MeetingGapsCard />
-        </div>
+        </DashboardSection>
       )}
 
       {isAdmin && (
-        <div className="mt-6">
+        <div id="consensus" className="mt-6 scroll-mt-6">
           <ConsensusStatusCard />
         </div>
       )}
 
       {isAdmin && (
-        <div id="activity" className="mt-6 scroll-mt-6">
+        <DashboardSection id="activity" open={!!openSections["activity"]} onToggle={() => toggle("activity")}>
           <AuthAuditLogCard />
-        </div>
+        </DashboardSection>
       )}
 
       {isAdmin && (
-        <div className="mt-6">
+        <DashboardSection id="uploads" open={!!openSections["uploads"]} onToggle={() => toggle("uploads")}>
           <UploadActivityLogCard />
-        </div>
+        </DashboardSection>
       )}
 
       {isAdmin && (
-        <div className="mt-6">
+        <DashboardSection id="team-activity" open={!!openSections["team-activity"]} onToggle={() => toggle("team-activity")}>
           <TeamActivityDashboardCard />
-        </div>
+        </DashboardSection>
       )}
 
       {isAdmin && (
-        <div className="mt-6">
+        <DashboardSection id="cross-team" open={!!openSections["cross-team"]} onToggle={() => toggle("cross-team")}>
           <CrossTeamComparisonCard />
-        </div>
+        </DashboardSection>
       )}
 
       {isAdmin && (
-        <div className="mt-6">
+        <DashboardSection id="flagged" open={!!openSections["flagged"]} onToggle={() => toggle("flagged")}>
           <SluggoFlagCard />
-        </div>
+        </DashboardSection>
       )}
 
       {isAdmin && (
-        <div className="mt-6">
+        <DashboardSection id="student-score" open={!!openSections["student-score"]} onToggle={() => toggle("student-score")}>
           <StudentActivityScoreCard />
-        </div>
+        </DashboardSection>
       )}
+
 
       <Card className="mt-8 border-border/60">
         <CardHeader>
