@@ -53,6 +53,7 @@ import {
   type VaultStatus,
 } from "@/lib/vault-structure";
 import { safeStorageFileName } from "@/lib/storage-path";
+import { compareTeamRoles } from "@/lib/team-roles";
 
 type FileRow = {
   id: string;
@@ -83,7 +84,13 @@ type VersionRow = {
   uploaded_by: string;
 };
 
-type MemberRow = { user_id: string; name: string | null; email: string | null; avatar_url: string | null };
+type MemberRow = {
+  user_id: string;
+  job_title: string | null;
+  name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+};
 
 function fmtSize(bytes?: number | null) {
   if (!bytes && bytes !== 0) return "";
@@ -282,14 +289,22 @@ export function FileVault({
 
 async function loadMembers(teamId: string): Promise<MemberRow[]> {
   const { data: tm } = await supabase
-    .from("team_members").select("user_id").eq("team_id", teamId);
+    .from("team_members").select("user_id, job_title").eq("team_id", teamId);
   const ids = (tm ?? []).map((r) => r.user_id);
   if (ids.length === 0) return [];
   const { data: profs } = await supabase
     .from("profiles").select("id, name, email, avatar_url").in("id", ids);
-  return (profs ?? []).map((p) => ({
-    user_id: p.id, name: p.name, email: p.email, avatar_url: p.avatar_url,
-  }));
+  const membershipById = new Map((tm ?? []).map((m) => [m.user_id, m.job_title]));
+  return (profs ?? [])
+    .map((p) => ({
+      user_id: p.id,
+      job_title: membershipById.get(p.id) ?? "Unassigned",
+      name: p.name,
+      email: p.email,
+      avatar_url: p.avatar_url,
+    }))
+    .sort((a, b) => compareTeamRoles(a.job_title, b.job_title) ||
+      (a.name ?? "").localeCompare(b.name ?? ""));
 }
 
 function SubsectionBlock({

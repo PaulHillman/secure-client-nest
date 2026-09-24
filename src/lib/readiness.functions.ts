@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isPastDue, READINESS_STATUSES, TEAM_SETTABLE, type ReadinessStatus } from "@/lib/readiness";
 import type { Database } from "@/integrations/supabase/types";
+import { compareTeamRoles } from "@/lib/team-roles";
 
 type RoleChecker = {
   rpc: (
@@ -116,12 +117,14 @@ export const getTeamReadiness = createServerFn({ method: "GET" })
       team,
       isAdmin: admin && targetUserId === userId,
       isPM: viewerMember?.job_title === "PM",
-      members: (members ?? []).map((m) => ({
-        userId: m.user_id,
-        jobTitle: (m.job_title as string) ?? "Unassigned",
-        name: profileById.get(m.user_id)?.name ?? "A teammate",
-        avatarUrl: profileById.get(m.user_id)?.avatar_url ?? null,
-      })),
+      members: (members ?? [])
+        .map((m) => ({
+          userId: m.user_id,
+          jobTitle: (m.job_title as string) ?? "Unassigned",
+          name: profileById.get(m.user_id)?.name ?? "A teammate",
+          avatarUrl: profileById.get(m.user_id)?.avatar_url ?? null,
+        }))
+        .sort((a, b) => compareTeamRoles(a.jobTitle, b.jobTitle) || a.name.localeCompare(b.name)),
       needsRole,
       items,
     };
@@ -451,10 +454,12 @@ export const getSubmissionReview = createServerFn({ method: "GET" })
         ? await supabaseAdmin.from("profiles").select("id, name").in("id", memberIds)
         : { data: [] as { id: string; name: string }[] };
       const byId = new Map((mp ?? []).map((p) => [p.id, p.name]));
-      roster = (members ?? []).map((m) => ({
-        name: byId.get(m.user_id) ?? "A teammate",
-        jobTitle: (m.job_title as string) ?? "Unassigned",
-      }));
+      roster = (members ?? [])
+        .map((m) => ({
+          name: byId.get(m.user_id) ?? "A teammate",
+          jobTitle: (m.job_title as string) ?? "Unassigned",
+        }))
+        .sort((a, b) => compareTeamRoles(a.jobTitle, b.jobTitle) || a.name.localeCompare(b.name));
     }
 
     return {

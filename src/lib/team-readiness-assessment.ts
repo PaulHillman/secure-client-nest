@@ -13,6 +13,7 @@
 
 import { findVagueLanguage, missingNorms, NORM_SECTIONS, normalizeNorms, type NormsContent } from "@/lib/group-norms";
 import { proofsForRole, proofByKey, proofMaxScore } from "@/lib/proofs";
+import { compareTeamRoles } from "@/lib/team-roles";
 
 /* -------------------------------------------------------------------------- */
 /* Configuration                                                              */
@@ -752,7 +753,14 @@ export function assessTeam(input: AssessmentInput): TeamAssessment {
   const inProgress: string[] = [];
   const concerns: string[] = [];
 
-  const members: MemberAssessment[] = input.members.map((m) => {
+  const orderedInputMembers = input.members.slice().sort((a, b) => {
+    const roleOrder = compareTeamRoles(a.job_title, b.job_title);
+    if (roleOrder) return roleOrder;
+    const aName = input.profiles.get(a.user_id)?.name ?? "";
+    const bName = input.profiles.get(b.user_id)?.name ?? "";
+    return aName.localeCompare(bName);
+  });
+  const members: MemberAssessment[] = orderedInputMembers.map((m) => {
     const name = input.profiles.get(m.user_id)?.name ?? "A team member";
     const role = m.job_title ?? "Unassigned";
     const hasRole = !!m.job_title && m.job_title !== "Unassigned";

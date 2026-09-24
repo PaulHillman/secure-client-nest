@@ -27,6 +27,7 @@ import { DashboardReadinessNotice } from "@/components/dashboard-readiness-notic
 import { PmDutiesCard } from "@/components/pm-duties-card";
 import { TeamRolesManagerCard } from "@/components/team-roles-manager-card";
 import { DashboardSection } from "@/components/dashboard-section";
+import { compareTeamRoles } from "@/lib/team-roles";
 
 
 
@@ -49,15 +50,6 @@ export const Route = createFileRoute("/app/teams/$teamId")({
   }),
   component: TeamDetail,
 });
-
-const ROLE_ORDER = [
-  "PM",
-  "Company Liaison",
-  "Client Vault & Tech Administrator",
-  "Communication Specialist",
-  "Video Specialist",
-  "Unassigned",
-];
 
 type TeamRow = Database["public"]["Tables"]["teams"]["Row"];
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
@@ -136,11 +128,10 @@ function TeamDetail() {
   const isTeamPM =
     !!user && (data?.members ?? []).some((m) => m.user_id === user.id && m.job_title === "PM");
   const canAssignRoles = isAdmin || isTeamPM;
-  const members = (data?.members ?? []).slice().sort((a, b) => {
-    const ai = ROLE_ORDER.indexOf(a.job_title);
-    const bi = ROLE_ORDER.indexOf(b.job_title);
-    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-  });
+  const members = (data?.members ?? []).slice().sort((a, b) =>
+    compareTeamRoles(a.job_title, b.job_title) ||
+    (a.profiles?.name ?? "").localeCompare(b.profiles?.name ?? ""),
+  );
 
 
   return (

@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { assignMemberRole } from "@/lib/team-role.functions";
-import { selectableRoles } from "@/lib/team-roles";
+import { compareTeamRoles, selectableRoles } from "@/lib/team-roles";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -50,6 +50,10 @@ export function TeamRolesManagerCard({
   });
 
   const roles = selectableRoles(members.length);
+  const orderedMembers = members.slice().sort((a, b) =>
+    compareTeamRoles(a.job_title, b.job_title) ||
+    (a.profiles?.name ?? "").localeCompare(b.profiles?.name ?? ""),
+  );
 
   return (
     <Card>
@@ -63,7 +67,7 @@ export function TeamRolesManagerCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
-        {members.map((m) => (
+        {orderedMembers.map((m) => (
           <div
             key={m.user_id}
             className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"

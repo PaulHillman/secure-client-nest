@@ -12,6 +12,7 @@ import { StudentAvatar } from "@/components/student-avatar";
 import { CalendarRange, ChevronDown } from "lucide-react";
 import { DAY_LABELS, SLOT_MINUTES, fmtSlot, memberColor, slotKey, slotRangeLabel } from "@/lib/availability";
 import { cn } from "@/lib/utils";
+import { compareTeamRoles } from "@/lib/team-roles";
 
 const PREVIEW_SLOTS = 4; // first 2 hours: 6:00am, 6:30am, 7:00am, 7:30am
 
@@ -39,16 +40,17 @@ export function TeamAvailabilityCard({ teamId }: { teamId: string }) {
       const profMap = new Map((profs ?? []).map((p) => [p.id, p]));
       const availMap = new Map((avail ?? []).map((a) => [a.user_id, a.busy_slots ?? []]));
 
-      const members = ids
-        .map((id, i) => ({
-          id,
-          name: profMap.get(id)?.name ?? "—",
-          email: profMap.get(id)?.email ?? null,
-          avatar_url: profMap.get(id)?.avatar_url ?? null,
+      const members = (tm ?? [])
+        .map((membership, i) => ({
+          id: membership.user_id,
+          role: membership.job_title,
+          name: profMap.get(membership.user_id)?.name ?? "—",
+          email: profMap.get(membership.user_id)?.email ?? null,
+          avatar_url: profMap.get(membership.user_id)?.avatar_url ?? null,
           color: memberColor(i),
-          hasGrid: availMap.has(id) && (availMap.get(id) ?? []).length >= 0 && availMap.has(id),
+          hasGrid: availMap.has(membership.user_id),
         }))
-        .sort((a, b) => a.name.localeCompare(b.name))
+        .sort((a, b) => compareTeamRoles(a.role, b.role) || a.name.localeCompare(b.name))
         .map((m, i) => ({ ...m, color: memberColor(i) }));
 
       const busyBy = new Map<string, string[]>();
