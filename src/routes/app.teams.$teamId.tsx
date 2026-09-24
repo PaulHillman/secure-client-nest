@@ -30,7 +30,22 @@ import { TeamRolesManagerCard } from "@/components/team-roles-manager-card";
 
 
 export const Route = createFileRoute("/app/teams/$teamId")({
-  head: () => ({ meta: [{ title: "Team — ClientVault" }] }),
+  head: () => ({
+    meta: [
+      { title: "Team Workspace — ClientVault" },
+      {
+        name: "description",
+        content: "View team members, readiness, roles, availability, meeting details, and Group Norms.",
+      },
+      { property: "og:title", content: "Team Workspace — ClientVault" },
+      {
+        property: "og:description",
+        content: "View team members, readiness, roles, availability, meeting details, and Group Norms.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: TeamDetail,
 });
 
@@ -145,52 +160,27 @@ function TeamDetail() {
         </div>
       )}
 
-      {isMember && (
-        <div className="mt-6">
-          <DashboardReadinessNotice teamId={teamId} />
+      <nav aria-label="Jump to team section" className="mt-5 border-y border-border/60 py-3">
+        <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Jump to</div>
+        <div className="flex flex-wrap gap-2">
+          <JumpLink target="team-members">Team members</JumpLink>
+          <JumpLink target="client-focus">Client</JumpLink>
+          <JumpLink target="project-arch">Project arch</JumpLink>
+          <JumpLink target="team-readiness">Team readiness</JumpLink>
+          {isMember && <JumpLink target="pm-duties">PM duties</JumpLink>}
+          {isMember && <JumpLink target="your-role">Your role</JumpLink>}
+          {canAssignRoles && members.length > 0 && (
+            <JumpLink target="assign-roles">Assign roles</JumpLink>
+          )}
+          {isMember && user && <JumpLink target="role-practice">Role practice</JumpLink>}
+          <JumpLink target="team-skills">Skills</JumpLink>
+          <JumpLink target="team-availability">Availability</JumpLink>
+          <JumpLink target="meeting-time">Weekly meeting</JumpLink>
+          <JumpLink target="group-norms">Group Norms</JumpLink>
         </div>
-      )}
+      </nav>
 
-      <CompanyFocusCard
-        teamId={teamId}
-        cf={cf as CompanyFocus | null}
-        queryKey={["team", teamId]}
-      />
-
-      <div className="mt-6">
-        <ProjectArchCard variant="wide" />
-      </div>
-
-      <div className="mt-6">
-        <TeamReadinessCard teamId={teamId} />
-      </div>
-
-      {isMember && (
-        <div className="mt-6">
-          <PmDutiesCard teamId={teamId} />
-        </div>
-      )}
-
-      {isMember && (
-        <div id="your-role" className="mt-6 scroll-mt-4">
-          <RoleSelectCard />
-        </div>
-      )}
-
-      {canAssignRoles && members.length > 0 && (
-        <div className="mt-6">
-          <TeamRolesManagerCard teamId={teamId} members={members} />
-        </div>
-      )}
-
-
-      {isMember && user && (
-        <div className="mt-6">
-          <MyProofsCard teamId={teamId} userId={user.id} />
-        </div>
-      )}
-
-      <section className="mt-8">
+      <section id="team-members" className="mt-6 scroll-mt-6">
         <div className="flex items-center gap-2 mb-4">
           <Users className="h-5 w-5 text-gold" />
           <h2 className="font-display text-2xl">Team members</h2>
@@ -201,12 +191,9 @@ function TeamDetail() {
           <Card className="border-destructive/30">
             <CardContent className="py-8 text-center text-muted-foreground text-sm">
               Could not load this team roster.{" "}
-              <button
-                className="text-foreground underline underline-offset-4"
-                onClick={() => refetch()}
-              >
+              <Button variant="link" className="h-auto p-0" onClick={() => refetch()}>
                 Try again
-              </button>
+              </Button>
             </CardContent>
           </Card>
         ) : isLoading ? (
@@ -226,16 +213,77 @@ function TeamDetail() {
         )}
       </section>
 
-      <TeamSkillsMap members={members} />
+      {isMember && (
+        <div className="mt-6">
+          <DashboardReadinessNotice teamId={teamId} />
+        </div>
+      )}
 
-      <TeamAvailabilityCard teamId={teamId} />
+      <div id="client-focus" className="scroll-mt-6">
+        <CompanyFocusCard
+          teamId={teamId}
+          cf={cf as CompanyFocus | null}
+          queryKey={["team", teamId]}
+        />
+      </div>
 
-      <div id="meeting-time" className="scroll-mt-4">
+      <div id="project-arch" className="mt-6 scroll-mt-6">
+        <ProjectArchCard variant="wide" />
+      </div>
+
+      <div id="team-readiness" className="mt-6 scroll-mt-6">
+        <TeamReadinessCard teamId={teamId} />
+      </div>
+
+      {isMember && (
+        <div id="pm-duties" className="mt-6 scroll-mt-6">
+          <PmDutiesCard teamId={teamId} />
+        </div>
+      )}
+
+      {isMember && (
+        <div id="your-role" className="mt-6 scroll-mt-6">
+          <RoleSelectCard />
+        </div>
+      )}
+
+      {canAssignRoles && members.length > 0 && (
+        <div id="assign-roles" className="mt-6 scroll-mt-6">
+          <TeamRolesManagerCard teamId={teamId} members={members} />
+        </div>
+      )}
+
+
+      {isMember && user && (
+        <div id="role-practice" className="mt-6 scroll-mt-6">
+          <MyProofsCard teamId={teamId} userId={user.id} />
+        </div>
+      )}
+
+      <div id="team-skills" className="scroll-mt-6">
+        <TeamSkillsMap members={members} />
+      </div>
+
+      <div id="team-availability" className="scroll-mt-6">
+        <TeamAvailabilityCard teamId={teamId} />
+      </div>
+
+      <div id="meeting-time" className="scroll-mt-6">
         <MeetingTimeCard teamId={teamId} />
       </div>
 
-      <GroupNormsCard teamId={teamId} />
+      <div id="group-norms" className="scroll-mt-6">
+        <GroupNormsCard teamId={teamId} />
+      </div>
     </div>
+  );
+}
+
+function JumpLink({ target, children }: { target: string; children: React.ReactNode }) {
+  return (
+    <Button asChild variant="outline" size="sm">
+      <a href={`#${target}`}>{children}</a>
+    </Button>
   );
 }
 
