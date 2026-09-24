@@ -1090,17 +1090,30 @@ function UploadDialog({
   const [meetingDate, setMeetingDate] = useState("");
   const [section, setSection] = useState<string>(sections[0].name);
   const [subsection, setSubsection] = useState<string>(sections[0].subsections[0].name);
+  const [compPlacement, setCompPlacement] = useState<string>("Submission");
   const [assignedTo, setAssignedTo] = useState<string>("");
   const [busy, setBusy] = useState(false);
 
+  // Present the three Competition sections as one high-level "Competitions"
+  // choice whose subsections are #1 / #2 / #3 (competition names).
+  const competitionSections = sections.filter((s) => s.name.startsWith("Competition"));
+  const sectionChoices: VaultSection[] = [
+    ...sections.filter((s) => !s.name.startsWith("Competition")),
+    ...(competitionSections.length
+      ? [{ name: "Competitions", subsections: competitionSections.map((c) => ({ name: c.name.replace(/^Competition\s*/, "") })) }]
+      : []),
+  ];
+  const isCompetitions = section === "Competitions";
+
   const subDef = sections.find((s) => s.name === section)?.subsections.find((x) => x.name === subsection);
   const showAssignee = !!subDef?.perMember && members.length > 0;
-  const isCompetition = section.startsWith("Competition");
+  const isCompetition = isCompetitions || section.startsWith("Competition");
 
   const onSectionChange = (s: string) => {
     setSection(s);
-    const first = sections.find((x) => x.name === s)?.subsections[0].name;
+    const first = sectionChoices.find((x) => x.name === s)?.subsections[0]?.name;
     if (first) setSubsection(first);
+    setCompPlacement("Submission");
     setAssignedTo("");
   };
 
