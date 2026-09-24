@@ -163,15 +163,34 @@ function TeamDetail() {
           <JumpLink target="team-members">Team members</JumpLink>
           <JumpLink target="client-focus">Client</JumpLink>
           <JumpLink target="project-arch">Project arch</JumpLink>
-          <JumpLink target="team-readiness">Team readiness</JumpLink>
-          {isMember && <JumpLink target="pm-duties">PM duties</JumpLink>}
+          <JumpLink
+            target="team-readiness"
+            onNavigate={!isAdmin ? () => setSectionOpen("team-readiness", true) : undefined}
+          >
+            Team readiness
+          </JumpLink>
+          {isMember && (
+            <JumpLink
+              target="pm-duties"
+              onNavigate={!isAdmin ? () => setSectionOpen("pm-duties", true) : undefined}
+            >
+              PM duties
+            </JumpLink>
+          )}
           {isMember && <JumpLink target="your-role">Your role</JumpLink>}
           {canAssignRoles && members.length > 0 && (
             <JumpLink target="assign-roles" onNavigate={() => setSectionOpen("assign-roles", true)}>
               Assign roles
             </JumpLink>
           )}
-          {isMember && user && <JumpLink target="role-practice">Role practice</JumpLink>}
+          {isMember && user && (
+            <JumpLink
+              target="role-practice"
+              onNavigate={!isAdmin ? () => setSectionOpen("role-practice", true) : undefined}
+            >
+              Role practice
+            </JumpLink>
+          )}
           <JumpLink target="team-skills">Skills</JumpLink>
           <JumpLink target="team-availability">Availability</JumpLink>
           <JumpLink target="meeting-time" onNavigate={() => setSectionOpen("meeting-time", true)}>
@@ -234,14 +253,36 @@ function TeamDetail() {
         <ProjectArchCard variant="wide" />
       </div>
 
-      <div id="team-readiness" className="mt-6 scroll-mt-6">
-        <TeamReadinessCard teamId={teamId} />
-      </div>
+      {!isAdmin ? (
+        <DashboardSection
+          id="team-readiness"
+          open={expandedSections["team-readiness"] ?? false}
+          onToggle={() => setSectionOpen("team-readiness", !(expandedSections["team-readiness"] ?? false))}
+          collapsedHeight={210}
+        >
+          <TeamReadinessCard teamId={teamId} />
+        </DashboardSection>
+      ) : (
+        <div id="team-readiness" className="mt-6 scroll-mt-6">
+          <TeamReadinessCard teamId={teamId} />
+        </div>
+      )}
 
       {isMember && (
-        <div id="pm-duties" className="mt-6 scroll-mt-6">
-          <PmDutiesCard teamId={teamId} />
-        </div>
+        !isAdmin ? (
+          <DashboardSection
+            id="pm-duties"
+            open={expandedSections["pm-duties"] ?? false}
+            onToggle={() => setSectionOpen("pm-duties", !(expandedSections["pm-duties"] ?? false))}
+            collapsedHeight={210}
+          >
+            <PmDutiesCard teamId={teamId} />
+          </DashboardSection>
+        ) : (
+          <div id="pm-duties" className="mt-6 scroll-mt-6">
+            <PmDutiesCard teamId={teamId} />
+          </div>
+        )
       )}
 
       {isMember && (
@@ -263,9 +304,20 @@ function TeamDetail() {
 
 
       {isMember && user && (
-        <div id="role-practice" className="mt-6 scroll-mt-6">
-          <MyProofsCard teamId={teamId} userId={user.id} />
-        </div>
+        !isAdmin ? (
+          <DashboardSection
+            id="role-practice"
+            open={expandedSections["role-practice"] ?? false}
+            onToggle={() => setSectionOpen("role-practice", !(expandedSections["role-practice"] ?? false))}
+            collapsedHeight={210}
+          >
+            <MyProofsCard teamId={teamId} userId={user.id} />
+          </DashboardSection>
+        ) : (
+          <div id="role-practice" className="mt-6 scroll-mt-6">
+            <MyProofsCard teamId={teamId} userId={user.id} />
+          </div>
+        )
       )}
 
       <div id="team-skills" className="scroll-mt-6">
