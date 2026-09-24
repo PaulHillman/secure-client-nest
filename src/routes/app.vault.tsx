@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { teamLineLabel, compareTeamsBySectionThenNumber } from "@/lib/team-label";
 import { FileVault } from "@/components/file-vault";
 import { NON_COMPETITION_SECTIONS, VAULT_STRUCTURE } from "@/lib/vault-structure";
 import { Link } from "@tanstack/react-router";
@@ -25,14 +26,12 @@ export const Route = createFileRoute("/app/vault")({
   component: VaultPage,
 });
 
-type SortKey = "az" | "za";
 type SectionFilter = "all" | "03" | "04";
 
 function VaultPage() {
   const { user, isAdmin } = useAuth();
   const { team: teamFromUrl } = Route.useSearch();
   const [teamId, setTeamId] = useState<string | undefined>(teamFromUrl);
-  const [sort, setSort] = useState<SortKey>("az");
   const [section, setSection] = useState<SectionFilter>("all");
 
   // Students only ever see their own team's vault.
@@ -58,25 +57,21 @@ function VaultPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("teams")
-        .select("id, name, section")
-        .order("name");
+        .select("id, name, display_name, section");
       if (error) throw error;
       return data ?? [];
     },
   });
 
   const options = useMemo(() => {
-    const rows = (teams ?? []).map((t) => {
-      const label = t.name;
-      const sortKey = t.name.toLowerCase();
-      return { id: t.id, label, section: t.section ?? "", sortKey };
-    });
-    const filtered = section === "all" ? rows : rows.filter((r) => r.section === section);
-    filtered.sort((a, b) =>
-      sort === "az" ? a.sortKey.localeCompare(b.sortKey) : b.sortKey.localeCompare(a.sortKey),
-    );
-    return filtered;
-  }, [teams, sort, section]);
+    const rows = section === "all"
+      ? (teams ?? []).slice()
+      : (teams ?? []).filter((t) => t.section === section);
+    // Always: Section first (04, then 05), then team number 01, 02, 03…
+    return rows
+      .sort(compareTeamsBySectionThenNumber)
+      .map((t) => ({ id: t.id, label: teamLineLabel(t), section: t.section ?? "" }));
+  }, [teams, section]);
 
   useEffect(() => {
     if (isAdmin && teamFromUrl) setTeamId(teamFromUrl);
@@ -110,7 +105,7 @@ function VaultPage() {
       </header>
 
       {isAdmin && (
-        <div className="mb-6 grid gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end max-w-3xl">
+        <div className="mb-6 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end max-w-3xl">
           <div>
             <label className="text-sm font-medium mb-2 block">Select team</label>
             <Select value={teamId} onValueChange={setTeamId}>
@@ -121,7 +116,6 @@ function VaultPage() {
                 {options.map((o) => (
                   <SelectItem key={o.id} value={o.id}>
                     {o.label}
-                    {o.section ? ` (§${o.section})` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -131,26 +125,13 @@ function VaultPage() {
           <div>
             <label className="text-sm font-medium mb-2 block">Section</label>
             <Select value={section} onValueChange={(v) => setSection(v as SectionFilter)}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-[160px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All sections</SelectItem>
-                <SelectItem value="03">§03 only</SelectItem>
-                <SelectItem value="04">§04 only</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-2 block">Sort</label>
-            <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="az">A → Z</SelectItem>
-                <SelectItem value="za">Z → A</SelectItem>
+                <SelectItem value="03">Section 03 only</SelectItem>
+                <SelectItem value="04">Section 04 only</SelectItem>
               </SelectContent>
             </Select>
           </div>

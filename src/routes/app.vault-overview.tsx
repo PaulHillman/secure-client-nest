@@ -27,13 +27,17 @@ import {
   subsectionMatches,
   type VaultStatus,
 } from "@/lib/vault-structure";
+import {
+  teamPaddedName,
+  compareTeamsBySectionThenNumber,
+} from "@/lib/team-label";
 
 export const Route = createFileRoute("/app/vault-overview")({
   head: () => ({ meta: [{ title: "Vault Overview — ClientVault" }] }),
   component: VaultOverview,
 });
 
-type Team = { id: string; name: string; section: string | null };
+type Team = { id: string; name: string; display_name: string | null; section: string | null };
 type Member = { user_id: string; name: string | null; email: string | null; team_id: string };
 type FileRow = {
   id: string;
@@ -58,13 +62,14 @@ function VaultOverview() {
     enabled: isAdmin,
     queryKey: ["vault-overview"],
     queryFn: async () => {
-      const [teamsRes, filesRes, membersRes, commentsRes] = await Promise.all([
-        supabase.from("teams").select("id, name, section").order("name"),
+      const [teamsRes, filesRes, membersRes, profilesRes, commentsRes] = await Promise.all([
+        supabase.from("teams").select("id, name, display_name, section"),
         supabase
           .from("files")
           .select("id, team_id, file_name, section, subsection, assigned_to, status, uploaded_by, updated_at")
           .eq("is_template", false),
-        supabase.from("team_members").select("user_id, team_id, profiles(name, email)"),
+        supabase.from("team_members").select("user_id, team_id"),
+        supabase.from("profiles").select("id, name, email"),
         supabase
           .from("file_comments" as any)
           .select("file_id, related_status"),
@@ -72,12 +77,16 @@ function VaultOverview() {
       if (teamsRes.error) throw teamsRes.error;
       if (filesRes.error) throw filesRes.error;
       if (membersRes.error) throw membersRes.error;
+      if (profilesRes.error) throw profilesRes.error;
 
+      const profileById = new Map(
+        ((profilesRes.data ?? []) as any[]).map((p) => [p.id, { name: p.name, email: p.email }]),
+      );
       const members: Member[] = ((membersRes.data ?? []) as any[]).map((r) => ({
         user_id: r.user_id,
         team_id: r.team_id,
-        name: r.profiles?.name ?? null,
-        email: r.profiles?.email ?? null,
+        name: profileById.get(r.user_id)?.name ?? null,
+        email: profileById.get(r.user_id)?.email ?? null,
       }));
 
       // open-comments count per file (comments tied to a "needs revision" status,
@@ -98,7 +107,9 @@ function VaultOverview() {
 
   const visibleTeams = useMemo(() => {
     const all = data?.teams ?? [];
-    return filter === "all" ? all : all.filter((t) => (t.section ?? "") === filter);
+    const scoped = filter === "all" ? all : all.filter((t) => (t.section ?? "") === filter);
+    // Always: Section first (04, then 05), then team number 01, 02, 03…
+    return scoped.slice().sort(compareTeamsBySectionThenNumber);
   }, [data, filter]);
 
   if (loading) return null;
@@ -124,7 +135,7 @@ function VaultOverview() {
               variant={filter === s ? "default" : "outline"}
               onClick={() => setFilter(s)}
             >
-              {s === "all" ? "All sections" : `§${s}`}
+              {s === "all" ? "All sections" : `Section ${s}`}
             </Button>
           ))}
         </div>
@@ -193,9 +204,12 @@ function TeamOverviewCard({
     <AccordionItem value={team.id} className="border rounded-md px-3">
       <AccordionTrigger className="hover:no-underline">
         <div className="flex items-center gap-2 flex-wrap text-left">
-          <span className="font-display text-lg">{team.name}</span>
+          <span className="font-display text-lg">
+            {teamPaddedName(team)}
+            {team.display_name?.trim() ? ` · ${team.display_name.trim()}` : ""}
+          </span>
           {team.section && (
-            <Badge variant="outline" className="text-[10px]">§{team.section}</Badge>
+            <span className="text-xs text-muted-foreground">Section {team.section}</span>
           )}
           <Badge variant="secondary" className="text-[10px]">
             {submitted}/{totalSlots} uploaded
