@@ -1171,7 +1171,7 @@ function UploadDialog({
 
       toast.success(
         isCompetition
-          ? `File uploaded — it has been placed in the Competitions area under ${section}.`
+          ? `File uploaded — it has been placed in the Competitions area under ${storedSection}.`
           : "File uploaded"
       );
       reset();
@@ -1184,7 +1184,7 @@ function UploadDialog({
     }
   };
 
-  const subsForSection = sections.find((s) => s.name === section)?.subsections ?? [];
+  const subsForSection = sectionChoices.find((s) => s.name === section)?.subsections ?? [];
 
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
@@ -1218,7 +1218,7 @@ function UploadDialog({
               <Select value={section} onValueChange={onSectionChange}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {sections.map((s) => (
+                  {sectionChoices.map((s) => (
                     <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>
                   ))}
                 </SelectContent>
