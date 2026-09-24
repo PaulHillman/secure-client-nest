@@ -81,8 +81,14 @@ type FileRow = {
 };
 
 const VAULT_FOLDERS = [
-  { key: "group-norms", label: "Group Norms", icon: FileCheck2, entries: [["Team Documents", "Group Norms"]] },
   { key: "agendas", label: "Agendas", icon: Calendar, entries: [["Team Documents", "Agendas"]] },
+  { key: "group-norms", label: "Group Norms", icon: FileCheck2, entries: [["Team Documents", "Group Norms"]] },
+  {
+    key: "interview-questions",
+    label: "Interview Questions",
+    icon: MessageSquareText,
+    entries: [["Semester Long Project", "Interview Questions"]],
+  },
   { key: "minutes", label: "Minutes", icon: NotebookPen, entries: [["Team Documents", "Minutes"]] },
   {
     key: "resources",
@@ -104,12 +110,6 @@ const VAULT_FOLDERS = [
       ["Semester Long Project", "Client research"],
       ["Semester Long Project", "Organizational Chart"],
     ],
-  },
-  {
-    key: "interview-questions",
-    label: "Interview Questions",
-    icon: MessageSquareText,
-    entries: [["Semester Long Project", "Interview Questions"]],
   },
   {
     key: "video",
