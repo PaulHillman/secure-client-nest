@@ -22,7 +22,7 @@ export const VAULT_STRUCTURE: VaultSection[] = [
       { name: "Group Norms" },
       { name: "Agendas" },
       { name: "Minutes" },
-      { name: "Operational Resources" },
+      { name: "Operational Resources and Templates" },
       { name: "Mid-Semester Peer Reviews" },
     ],
   },
