@@ -1127,6 +1127,9 @@ function UploadDialog({
   const submit = async () => {
     if (!file) return toast.error("Pick a file first");
     const fileName = name.trim() || file.name;
+    // Map the virtual "Competitions" choice back to the stored section/subsection.
+    const storedSection = isCompetitions ? `Competition ${subsection}` : section;
+    const storedSubsection = isCompetitions ? compPlacement : subsection;
     setBusy(true);
     try {
       const { data: created, error: cErr } = await supabase
@@ -1135,8 +1138,8 @@ function UploadDialog({
           team_id: teamId,
           file_name: fileName,
           description: description.trim() || null,
-          section,
-          subsection,
+          section: storedSection,
+          subsection: storedSubsection,
           meeting_date: subsection === "Agendas" && meetingDate ? meetingDate : null,
           assigned_to: showAssignee && assignedTo ? assignedTo : null,
           uploaded_by: userId,
