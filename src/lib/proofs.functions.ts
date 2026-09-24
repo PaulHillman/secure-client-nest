@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { missingProofFields, PROOFS, proofByKey, proofsForRole } from "@/lib/proofs";
+import { compareTeamRoles } from "@/lib/team-roles";
 
 type RoleChecker = {
   rpc: (
@@ -401,7 +402,7 @@ export const getProofOverview = createServerFn({ method: "GET" })
               )
               .map((s) => s.proof_key),
           };
-        });
+        }).sort((a, b) => compareTeamRoles(a.role, b.role) || a.name.localeCompare(b.name));
         return {
           teamId: t.id,
           section: t.section ?? "",
