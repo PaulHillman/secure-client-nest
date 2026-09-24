@@ -26,7 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -42,6 +41,14 @@ import {
   Users,
   Calendar,
   BookOpen,
+  ArrowLeft,
+  ClipboardList,
+  FileCheck2,
+  Library,
+  MessageSquareText,
+  NotebookPen,
+  Star,
+  Video,
 } from "lucide-react";
 import { FileViewerDialog } from "@/components/file-viewer-dialog";
 import {
@@ -72,6 +79,51 @@ type FileRow = {
   updated_at: string;
   meeting_date: string | null;
 };
+
+const VAULT_FOLDERS = [
+  { key: "group-norms", label: "Group Norms", icon: FileCheck2, entries: [["Team Documents", "Group Norms"]] },
+  { key: "agendas", label: "Agendas", icon: Calendar, entries: [["Team Documents", "Agendas"]] },
+  { key: "minutes", label: "Minutes", icon: NotebookPen, entries: [["Team Documents", "Minutes"]] },
+  {
+    key: "resources",
+    label: "Op Resources & Templates",
+    icon: Library,
+    entries: [["Team Documents", "Operational Resources and Templates"]],
+  },
+  {
+    key: "peer-reviews",
+    label: "Peer Reviews",
+    icon: Star,
+    entries: [["Team Documents", "Mid-Semester Peer Reviews"]],
+  },
+  {
+    key: "research",
+    label: "Research",
+    icon: BookOpen,
+    entries: [
+      ["Semester Long Project", "Client research"],
+      ["Semester Long Project", "Organizational Chart"],
+    ],
+  },
+  {
+    key: "interview-questions",
+    label: "Interview Questions",
+    icon: MessageSquareText,
+    entries: [["Semester Long Project", "Interview Questions"]],
+  },
+  {
+    key: "video",
+    label: "Video",
+    icon: Video,
+    entries: [
+      ["Video", "B-Roll"],
+      ["Video", "Transcript"],
+      ["Video", "Files"],
+      ["Video", "Project Drafts"],
+      ["Video", "Final Submission"],
+    ],
+  },
+] as const;
 
 type VersionRow = {
   id: string;
@@ -114,6 +166,7 @@ export function FileVault({
   const structure = sections ?? VAULT_STRUCTURE;
   const { user, isAdmin } = useAuth();
   const qc = useQueryClient();
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["vault", teamId],
@@ -158,6 +211,23 @@ export function FileVault({
   }, [files]);
 
   const totalCount = files.length;
+  const availableFolders = VAULT_FOLDERS.filter((folder) =>
+    folder.entries.some(([sectionName, subName]) =>
+      structure.some((section) =>
+        section.name === sectionName && section.subsections.some((sub) => sub.name === subName),
+      ),
+    ),
+  );
+  const activeFolder = availableFolders.find((folder) => folder.key === selectedFolder) ?? null;
+
+  const folderFileCount = (entries: readonly (readonly [string, string])[]) =>
+    entries.reduce((count, [sectionName, subName]) => {
+      const subMap = grouped.get(sectionName);
+      return count + subsectionNames(subName).reduce(
+        (subCount, name) => subCount + (subMap?.get(name)?.length ?? 0),
+        0,
+      );
+    }, 0);
 
   const download = async (versionId: string | null, fileName: string) => {
     if (!versionId) return toast.error("No version available");
@@ -213,63 +283,84 @@ export function FileVault({
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading vault…</p>
-      ) : (
-        <Accordion
-          type="multiple"
-          defaultValue={structure.map((s) => s.name)}
-          className="space-y-2"
-        >
-          {structure.map((section) => {
-            const subMap = grouped.get(section.name);
-            const sectionCount = subMap
-              ? Array.from(subMap.values()).reduce((a, b) => a + b.length, 0)
-              : 0;
+      ) : activeFolder ? (
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 border-b border-border/60 pb-3">
+            <Button variant="ghost" size="icon" onClick={() => setSelectedFolder(null)} aria-label="Back to all folders">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex h-10 w-10 items-center justify-center rounded-md border border-gold/40 bg-gold/10 text-gold">
+              <activeFolder.icon className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="font-display text-xl">{activeFolder.label}</h3>
+              <p className="text-xs text-muted-foreground">{folderFileCount(activeFolder.entries)} files</p>
+            </div>
+          </div>
+          {activeFolder.entries.map(([sectionName, subName]) => {
+            const section = structure.find((item) => item.name === sectionName);
+            const sub = section?.subsections.find((item) => item.name === subName);
+            if (!sub) return null;
+            const subMap = grouped.get(sectionName);
+            const subFiles = subsectionNames(subName).flatMap((name) => subMap?.get(name) ?? []);
             return (
-              <AccordionItem
-                key={section.name}
-                value={section.name}
-                className={`border rounded-md px-3 ${section.tone ?? ""}`}
-              >
-                <AccordionTrigger className="hover:no-underline">
-                  <div className="flex items-center gap-2">
-                    <span className="font-display text-lg">{section.name}</span>
-                    <Badge variant="outline" className="text-[10px]">
-                      {sectionCount}
-                    </Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="space-y-4 pb-4">
-                  {section.subsections.map((sub) => {
-                    const subFiles = subsectionNames(sub.name).flatMap(
-                      (name) => subMap?.get(name) ?? [],
-                    );
-                    return (
-                      <SubsectionBlock
-                        key={sub.name}
-                        teamId={teamId}
-                        sectionName={section.name}
-                        subName={sub.name}
-                        subDescription={sub.description}
-                        perMember={!!sub.perMember}
-                        expectsCompiled={!!sub.expectsCompiled}
-                        files={subFiles}
-                        members={members}
-                        verMap={verMap}
-                        isAdmin={isAdmin}
-                        userId={user?.id}
-                        onDownload={download}
-                        onDelete={remove}
-                        onSetStatus={setStatus}
-                        onOpenComments={openComments}
-                        onRefresh={() => qc.invalidateQueries({ queryKey: ["vault", teamId] })}
-                      />
-                    );
-                  })}
-                </AccordionContent>
-              </AccordionItem>
+              <SubsectionBlock
+                key={`${sectionName}-${subName}`}
+                teamId={teamId}
+                sectionName={sectionName}
+                subName={subName}
+                subDescription={sub.description}
+                perMember={!!sub.perMember}
+                expectsCompiled={!!sub.expectsCompiled}
+                files={subFiles}
+                members={members}
+                verMap={verMap}
+                isAdmin={isAdmin}
+                userId={user?.id}
+                onDownload={download}
+                onDelete={remove}
+                onSetStatus={setStatus}
+                onOpenComments={openComments}
+                onRefresh={() => qc.invalidateQueries({ queryKey: ["vault", teamId] })}
+              />
             );
           })}
-        </Accordion>
+        </div>
+      ) : availableFolders.length > 0 ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {availableFolders.map((folder) => {
+            const Icon = folder.icon;
+            const count = folderFileCount(folder.entries);
+            return (
+              <Button
+                key={folder.key}
+                type="button"
+                variant="outline"
+                className="h-28 min-w-0 flex-col items-start justify-between rounded-md p-3 text-left"
+                onClick={() => setSelectedFolder(folder.key)}
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-md border border-gold/40 bg-gold/10 text-gold">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <span className="flex w-full min-w-0 items-end justify-between gap-2">
+                  <span className="min-w-0 whitespace-normal text-sm font-semibold leading-tight">{folder.label}</span>
+                  <Badge variant="outline" className="shrink-0 text-[10px]">{count}</Badge>
+                </span>
+              </Button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-3">
+          {structure.map((section) => (
+            <div key={section.name} className={`rounded-md border p-3 ${section.tone ?? ""}`}>
+              <div className="flex items-center gap-2">
+                <ClipboardList className="h-5 w-5 text-gold" />
+                <span className="font-display text-lg">{section.name}</span>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {commentTarget && user && (
