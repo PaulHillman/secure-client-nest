@@ -86,7 +86,7 @@ const VAULT_FOLDERS = [
   { key: "minutes", label: "Minutes", icon: NotebookPen, entries: [["Team Documents", "Minutes"]] },
   {
     key: "resources",
-    label: "Op Resources & Templates",
+    label: "Operational Resources",
     icon: Library,
     entries: [["Team Documents", "Operational Resources and Templates"]],
   },
