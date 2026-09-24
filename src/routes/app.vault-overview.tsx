@@ -62,13 +62,14 @@ function VaultOverview() {
     enabled: isAdmin,
     queryKey: ["vault-overview"],
     queryFn: async () => {
-      const [teamsRes, filesRes, membersRes, commentsRes] = await Promise.all([
+      const [teamsRes, filesRes, membersRes, profilesRes, commentsRes] = await Promise.all([
         supabase.from("teams").select("id, name, display_name, section"),
         supabase
           .from("files")
           .select("id, team_id, file_name, section, subsection, assigned_to, status, uploaded_by, updated_at")
           .eq("is_template", false),
-        supabase.from("team_members").select("user_id, team_id, profiles(name, email)"),
+        supabase.from("team_members").select("user_id, team_id"),
+        supabase.from("profiles").select("id, name, email"),
         supabase
           .from("file_comments" as any)
           .select("file_id, related_status"),
@@ -76,12 +77,16 @@ function VaultOverview() {
       if (teamsRes.error) throw teamsRes.error;
       if (filesRes.error) throw filesRes.error;
       if (membersRes.error) throw membersRes.error;
+      if (profilesRes.error) throw profilesRes.error;
 
+      const profileById = new Map(
+        ((profilesRes.data ?? []) as any[]).map((p) => [p.id, { name: p.name, email: p.email }]),
+      );
       const members: Member[] = ((membersRes.data ?? []) as any[]).map((r) => ({
         user_id: r.user_id,
         team_id: r.team_id,
-        name: r.profiles?.name ?? null,
-        email: r.profiles?.email ?? null,
+        name: profileById.get(r.user_id)?.name ?? null,
+        email: profileById.get(r.user_id)?.email ?? null,
       }));
 
       // open-comments count per file (comments tied to a "needs revision" status,
