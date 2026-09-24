@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { archiveObjectPath } from "@/lib/storage-path";
 
 const BUCKET = "vault";
 
@@ -104,25 +105,26 @@ export const archiveSemester = createServerFn({ method: "POST" })
       file_id: v.file_id,
       version_number: v.version_number,
       storage_path: v.storage_path,
-      archive_storage_path: `archive/${archiveId}/${v.storage_path}`,
+       archive_storage_path: archiveObjectPath(archiveId, "file-versions", v.id, v.storage_path),
       mime_type: v.mime_type,
       file_size: v.file_size,
       uploaded_by: v.uploaded_by,
       uploaded_at: v.uploaded_at,
     }));
-    await Promise.all(
-      versionRowsToInsert.map((v) =>
-        supabaseAdmin.storage
-          .from(BUCKET)
-          .copy(v.storage_path, v.archive_storage_path)
-          .then((r: any) => {
-            if (r.error && !/exists/i.test(r.error.message))
-              console.warn(`[archive] copy fail ${v.storage_path}: ${r.error.message}`);
-          }),
-      ),
-    );
-    if (versionRowsToInsert.length)
-      await supabaseAdmin.from("archived_file_versions").insert(versionRowsToInsert);
+    const copiedVersionRows = (
+      await Promise.all(
+        versionRowsToInsert.map(async (v) => {
+          const { error } = await supabaseAdmin.storage.from(BUCKET).copy(v.storage_path, v.archive_storage_path);
+          if (error && !/exists/i.test(error.message)) {
+            console.warn(`[archive] copy fail ${v.storage_path}: ${error.message}`);
+            return null;
+          }
+          return v;
+        }),
+      )
+    ).filter((v): v is (typeof versionRowsToInsert)[number] => v !== null);
+    if (copiedVersionRows.length)
+      await supabaseAdmin.from("archived_file_versions").insert(copiedVersionRows);
 
     if (tags.length)
       await supabaseAdmin.from("archived_file_tags").insert(tags.map((t) => ({ ...t, archive_id: archiveId })));
@@ -137,28 +139,37 @@ export const archiveSemester = createServerFn({ method: "POST" })
       id: g.id,
       team_id: g.team_id,
       document_path: g.document_path,
-      archive_document_path: g.document_path ? `archive/${archiveId}/${g.document_path}` : null,
+      archive_document_path: g.document_path
+        ? archiveObjectPath(archiveId, "group-norms", g.id, g.document_path)
+        : null,
       content: g.content,
       version: g.version,
       is_locked: g.is_locked,
       locked_at: g.locked_at,
       uploaded_at: g.uploaded_at,
     }));
-    await Promise.all(
-      gnRows
-        .filter((g) => g.document_path && g.archive_document_path)
-        .map((g) =>
-          supabaseAdmin.storage
-            .from(BUCKET)
-            .copy(g.document_path!, g.archive_document_path!)
-            .then((r: any) => {
-              if (r.error && !/exists/i.test(r.error.message))
-                console.warn(`[archive] gn copy fail: ${r.error.message}`);
+    const copiedNormIds = new Set(
+      (
+        await Promise.all(
+          gnRows
+            .filter((g) => g.document_path && g.archive_document_path)
+            .map(async (g) => {
+              const { error } = await supabaseAdmin.storage
+                .from(BUCKET)
+                .copy(g.document_path!, g.archive_document_path!);
+              if (error && !/exists/i.test(error.message)) {
+                console.warn(`[archive] gn copy fail ${g.document_path}: ${error.message}`);
+                return null;
+              }
+              return g.id;
             }),
-        ),
+        )
+      ).filter((id): id is string => id !== null),
     );
-
-    if (gnRows.length) await supabaseAdmin.from("archived_group_norms").insert(gnRows);
+    const safeGnRows = gnRows.map((g) =>
+      g.document_path && !copiedNormIds.has(g.id) ? { ...g, archive_document_path: null } : g,
+    );
+    if (safeGnRows.length) await supabaseAdmin.from("archived_group_norms").insert(safeGnRows);
 
     if (gns.length)
       await supabaseAdmin.from("archived_group_norms_signatures").insert(gns.map((s) => ({ ...s, archive_id: archiveId })));

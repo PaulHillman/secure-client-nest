@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { FileText, Upload, Trash2, Send, Download, Plus, Lock, Undo2 } from "lucide-react";
 import { VAULT_STRUCTURE, findSubsection } from "@/lib/vault-structure";
+import { safeStorageFileName } from "@/lib/storage-path";
 
 type TemplateRow = {
   id: string;
@@ -296,7 +297,7 @@ function UploadTemplateDialog({
         .select("id").single();
       if (cErr) throw cErr;
 
-      const path = `templates/${created.id}/v1-${file.name}`;
+       const path = `templates/${created.id}/v1-${safeStorageFileName(file.name)}`;
       const { error: upErr } = await supabase.storage
         .from("vault").upload(path, file, { contentType: file.type, upsert: false });
       if (upErr) {
@@ -403,7 +404,7 @@ function NewTemplateVersionButton({
         .eq("file_id", template.id)
         .order("version_number", { ascending: false }).limit(1);
       const nextVer = (existing?.[0]?.version_number ?? 0) + 1;
-      const path = `templates/${template.id}/v${nextVer}-${f.name}`;
+      const path = `templates/${template.id}/v${nextVer}-${safeStorageFileName(f.name)}`;
       const { error: upErr } = await supabase.storage
         .from("vault").upload(path, f, { contentType: f.type, upsert: false });
       if (upErr) throw upErr;
