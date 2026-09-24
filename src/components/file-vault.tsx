@@ -48,9 +48,11 @@ import {
   VAULT_STRUCTURE,
   VAULT_STATUSES,
   STATUS_TONE,
+  subsectionNames,
   type VaultSection,
   type VaultStatus,
 } from "@/lib/vault-structure";
+import { safeStorageFileName } from "@/lib/storage-path";
 
 type FileRow = {
   id: string;
@@ -231,7 +233,9 @@ export function FileVault({
                 </AccordionTrigger>
                 <AccordionContent className="space-y-4 pb-4">
                   {section.subsections.map((sub) => {
-                    const subFiles = subMap?.get(sub.name) ?? [];
+                    const subFiles = subsectionNames(sub.name).flatMap(
+                      (name) => subMap?.get(name) ?? [],
+                    );
                     return (
                       <SubsectionBlock
                         key={sub.name}
@@ -849,7 +853,7 @@ function NewVersionButton({
     setBusy(true);
     try {
       const nextVer = (versions[0]?.version_number ?? 0) + 1;
-      const path = `teams/${file.team_id}/${file.id}/v${nextVer}-${f.name}`;
+      const path = `teams/${file.team_id}/${file.id}/v${nextVer}-${safeStorageFileName(f.name)}`;
       const { error: upErr } = await supabase.storage
         .from("vault").upload(path, f, { contentType: f.type, upsert: false });
       if (upErr) throw upErr;
@@ -998,7 +1002,7 @@ function UploadDialog({
         .select("id").single();
       if (cErr) throw cErr;
 
-      const path = `teams/${teamId}/${created.id}/v1-${file.name}`;
+      const path = `teams/${teamId}/${created.id}/v1-${safeStorageFileName(file.name)}`;
       const { error: upErr } = await supabase.storage
         .from("vault").upload(path, file, { contentType: file.type, upsert: false });
       if (upErr) {

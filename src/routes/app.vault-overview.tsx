@@ -24,6 +24,7 @@ import { ExternalLink, MessageSquare, LayoutDashboard } from "lucide-react";
 import {
   VAULT_STRUCTURE,
   STATUS_TONE,
+  subsectionMatches,
   type VaultStatus,
 } from "@/lib/vault-structure";
 
@@ -241,7 +242,7 @@ function TeamOverviewCard({
                 section.subsections.flatMap((sub) => {
                   const slots: { label: string; assignee?: Member; file?: FileRow }[] = [];
                   const subFiles = files.filter(
-                    (f) => f.section === section.name && f.subsection === sub.name,
+                    (f) => f.section === section.name && subsectionMatches(f.subsection, sub.name),
                   );
 
                   if (sub.perMember && members.length > 0) {

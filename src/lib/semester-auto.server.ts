@@ -1,5 +1,6 @@
 // Server-only helpers for the daily auto-archive job (7 daily + 4 weekly retention).
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { archiveObjectPath } from "@/lib/storage-path";
 
 const BUCKET = "vault";
 
@@ -61,20 +62,25 @@ async function createArchiveSnapshot(
     file_id: v.file_id,
     version_number: v.version_number,
     storage_path: v.storage_path,
-    archive_storage_path: `archive/${archiveId}/${v.storage_path}`,
+    archive_storage_path: archiveObjectPath(archiveId, "file-versions", v.id, v.storage_path),
     mime_type: v.mime_type,
     file_size: v.file_size,
     uploaded_by: v.uploaded_by,
     uploaded_at: v.uploaded_at,
   }));
-  await Promise.all(
-    versionRows.map((v) =>
-      supabaseAdmin.storage.from(BUCKET).copy(v.storage_path, v.archive_storage_path).then((r: any) => {
-        if (r.error && !/exists/i.test(r.error.message)) console.warn(`[auto-archive] copy fail: ${r.error.message}`);
+  const copiedVersionRows = (
+    await Promise.all(
+      versionRows.map(async (v) => {
+        const { error } = await supabaseAdmin.storage.from(BUCKET).copy(v.storage_path, v.archive_storage_path);
+        if (error && !/exists/i.test(error.message)) {
+          console.warn(`[auto-archive] copy fail ${v.storage_path}: ${error.message}`);
+          return null;
+        }
+        return v;
       }),
-    ),
-  );
-  if (versionRows.length) await supabaseAdmin.from("archived_file_versions").insert(versionRows);
+    )
+  ).filter((v): v is (typeof versionRows)[number] => v !== null);
+  if (copiedVersionRows.length) await supabaseAdmin.from("archived_file_versions").insert(copiedVersionRows);
 
   if (tags.length) await supabaseAdmin.from("archived_file_tags").insert(tags.map((t: any) => ({ ...t, archive_id: archiveId })));
   if (comments.length) await supabaseAdmin.from("archived_file_comments").insert(comments.map((c: any) => ({ ...c, archive_id: archiveId })));
@@ -85,24 +91,37 @@ async function createArchiveSnapshot(
     id: g.id,
     team_id: g.team_id,
     document_path: g.document_path,
-    archive_document_path: g.document_path ? `archive/${archiveId}/${g.document_path}` : null,
+    archive_document_path: g.document_path
+      ? archiveObjectPath(archiveId, "group-norms", g.id, g.document_path)
+      : null,
     content: g.content,
     version: g.version,
     is_locked: g.is_locked,
     locked_at: g.locked_at,
     uploaded_at: g.uploaded_at,
   }));
-  await Promise.all(
-    gnRows
-      .filter((g) => g.document_path && g.archive_document_path)
-      .map((g) =>
-        supabaseAdmin.storage.from(BUCKET).copy(g.document_path as string, g.archive_document_path as string).then((r: any) => {
-          if (r.error && !/exists/i.test(r.error.message)) console.warn(`[auto-archive] gn copy fail: ${r.error.message}`);
-        }),
-      ),
+  const copiedNormIds = new Set(
+    (
+      await Promise.all(
+        gnRows
+          .filter((g) => g.document_path && g.archive_document_path)
+          .map(async (g) => {
+            const { error } = await supabaseAdmin.storage
+              .from(BUCKET)
+              .copy(g.document_path as string, g.archive_document_path as string);
+            if (error && !/exists/i.test(error.message)) {
+              console.warn(`[auto-archive] gn copy fail ${g.document_path}: ${error.message}`);
+              return null;
+            }
+            return g.id;
+          }),
+      )
+    ).filter((id): id is string => id !== null),
   );
-
-  if (gnRows.length) await supabaseAdmin.from("archived_group_norms").insert(gnRows);
+  const safeGnRows = gnRows.map((g) =>
+    g.document_path && !copiedNormIds.has(g.id) ? { ...g, archive_document_path: null } : g,
+  );
+  if (safeGnRows.length) await supabaseAdmin.from("archived_group_norms").insert(safeGnRows);
 
   if (gns.length) await supabaseAdmin.from("archived_group_norms_signatures").insert(gns.map((s: any) => ({ ...s, archive_id: archiveId })));
   if (ms.length) await supabaseAdmin.from("archived_manager_submissions").insert(ms.map((m: any) => ({ ...m, archive_id: archiveId })));

@@ -74,8 +74,22 @@ export const SECTION_NAMES = VAULT_STRUCTURE.map((s) => s.name);
 export const COMPETITION_SECTIONS = VAULT_STRUCTURE.filter((s) => s.name.startsWith("Competition"));
 export const NON_COMPETITION_SECTIONS = VAULT_STRUCTURE.filter((s) => !s.name.startsWith("Competition"));
 
+const SUBSECTION_ALIASES: Record<string, string[]> = {
+  "Operational Resources and Templates": ["Operational Resources"],
+};
+
+export function subsectionNames(name: string): string[] {
+  return [name, ...(SUBSECTION_ALIASES[name] ?? [])];
+}
+
+export function subsectionMatches(storedName: string, displayedName: string): boolean {
+  return subsectionNames(displayedName).includes(storedName);
+}
+
 export function findSubsection(section: string, sub: string): VaultSubsection | undefined {
-  return VAULT_STRUCTURE.find((s) => s.name === section)?.subsections.find((x) => x.name === sub);
+  return VAULT_STRUCTURE.find((s) => s.name === section)?.subsections.find((x) =>
+    subsectionMatches(sub, x.name),
+  );
 }
 
 export const VAULT_STATUSES = [
