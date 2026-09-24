@@ -1090,17 +1090,30 @@ function UploadDialog({
   const [meetingDate, setMeetingDate] = useState("");
   const [section, setSection] = useState<string>(sections[0].name);
   const [subsection, setSubsection] = useState<string>(sections[0].subsections[0].name);
+  const [compPlacement, setCompPlacement] = useState<string>("Submission");
   const [assignedTo, setAssignedTo] = useState<string>("");
   const [busy, setBusy] = useState(false);
 
+  // Present the three Competition sections as one high-level "Competitions"
+  // choice whose subsections are #1 / #2 / #3 (competition names).
+  const competitionSections = sections.filter((s) => s.name.startsWith("Competition"));
+  const sectionChoices: VaultSection[] = [
+    ...sections.filter((s) => !s.name.startsWith("Competition")),
+    ...(competitionSections.length
+      ? [{ name: "Competitions", subsections: competitionSections.map((c) => ({ name: c.name.replace(/^Competition\s*/, "") })) }]
+      : []),
+  ];
+  const isCompetitions = section === "Competitions";
+
   const subDef = sections.find((s) => s.name === section)?.subsections.find((x) => x.name === subsection);
   const showAssignee = !!subDef?.perMember && members.length > 0;
-  const isCompetition = section.startsWith("Competition");
+  const isCompetition = isCompetitions || section.startsWith("Competition");
 
   const onSectionChange = (s: string) => {
     setSection(s);
-    const first = sections.find((x) => x.name === s)?.subsections[0].name;
+    const first = sectionChoices.find((x) => x.name === s)?.subsections[0]?.name;
     if (first) setSubsection(first);
+    setCompPlacement("Submission");
     setAssignedTo("");
   };
 
@@ -1114,6 +1127,9 @@ function UploadDialog({
   const submit = async () => {
     if (!file) return toast.error("Pick a file first");
     const fileName = name.trim() || file.name;
+    // Map the virtual "Competitions" choice back to the stored section/subsection.
+    const storedSection = isCompetitions ? `Competition ${subsection}` : section;
+    const storedSubsection = isCompetitions ? compPlacement : subsection;
     setBusy(true);
     try {
       const { data: created, error: cErr } = await supabase
@@ -1122,8 +1138,8 @@ function UploadDialog({
           team_id: teamId,
           file_name: fileName,
           description: description.trim() || null,
-          section,
-          subsection,
+          section: storedSection,
+          subsection: storedSubsection,
           meeting_date: subsection === "Agendas" && meetingDate ? meetingDate : null,
           assigned_to: showAssignee && assignedTo ? assignedTo : null,
           uploaded_by: userId,
@@ -1155,7 +1171,7 @@ function UploadDialog({
 
       toast.success(
         isCompetition
-          ? `File uploaded — it has been placed in the Competitions area under ${section}.`
+          ? `File uploaded — it has been placed in the Competitions area under ${storedSection}.`
           : "File uploaded"
       );
       reset();
@@ -1168,7 +1184,7 @@ function UploadDialog({
     }
   };
 
-  const subsForSection = sections.find((s) => s.name === section)?.subsections ?? [];
+  const subsForSection = sectionChoices.find((s) => s.name === section)?.subsections ?? [];
 
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
@@ -1202,7 +1218,7 @@ function UploadDialog({
               <Select value={section} onValueChange={onSectionChange}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {sections.map((s) => (
+                  {sectionChoices.map((s) => (
                     <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -1225,7 +1241,19 @@ function UploadDialog({
               </Select>
             </div>
           </div>
-          {subsection === "Agendas" && (
+          {isCompetitions && (
+            <div>
+              <Label>Placement</Label>
+              <Select value={compPlacement} onValueChange={setCompPlacement}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Submission">Submission</SelectItem>
+                  <SelectItem value="Supporting Materials">Supporting Materials</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {subsection === "Agendas" && !isCompetitions && (
             <div>
               <Label htmlFor="vf-meeting-date">Meeting date (the date this agenda is for)</Label>
               <Input
