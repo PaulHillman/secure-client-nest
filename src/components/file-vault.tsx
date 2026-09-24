@@ -1241,7 +1241,19 @@ function UploadDialog({
               </Select>
             </div>
           </div>
-          {subsection === "Agendas" && (
+          {isCompetitions && (
+            <div>
+              <Label>Placement</Label>
+              <Select value={compPlacement} onValueChange={setCompPlacement}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Submission">Submission</SelectItem>
+                  <SelectItem value="Supporting Materials">Supporting Materials</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {subsection === "Agendas" && !isCompetitions && (
             <div>
               <Label htmlFor="vf-meeting-date">Meeting date (the date this agenda is for)</Label>
               <Input
