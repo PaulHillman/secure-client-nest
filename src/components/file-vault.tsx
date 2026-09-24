@@ -219,6 +219,7 @@ export function FileVault({
     ),
   );
   const activeFolder = availableFolders.find((folder) => folder.key === selectedFolder) ?? null;
+  const ActiveFolderIcon = activeFolder?.icon;
 
   const folderFileCount = (entries: readonly (readonly [string, string])[]) =>
     entries.reduce((count, [sectionName, subName]) => {
@@ -290,7 +291,7 @@ export function FileVault({
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="flex h-10 w-10 items-center justify-center rounded-md border border-gold/40 bg-gold/10 text-gold">
-              <activeFolder.icon className="h-5 w-5" />
+              {ActiveFolderIcon && <ActiveFolderIcon className="h-5 w-5" />}
             </div>
             <div>
               <h3 className="font-display text-xl">{activeFolder.label}</h3>
@@ -351,15 +352,39 @@ export function FileVault({
           })}
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-3">
-          {structure.map((section) => (
-            <div key={section.name} className={`rounded-md border p-3 ${section.tone ?? ""}`}>
-              <div className="flex items-center gap-2">
-                <ClipboardList className="h-5 w-5 text-gold" />
-                <span className="font-display text-lg">{section.name}</span>
+        <div className="space-y-4">
+          {structure.map((section) => {
+            const subMap = grouped.get(section.name);
+            return (
+              <div key={section.name} className={`space-y-3 rounded-md border p-3 ${section.tone ?? ""}`}>
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5 text-gold" />
+                  <span className="font-display text-lg">{section.name}</span>
+                </div>
+                {section.subsections.map((sub) => (
+                  <SubsectionBlock
+                    key={sub.name}
+                    teamId={teamId}
+                    sectionName={section.name}
+                    subName={sub.name}
+                    subDescription={sub.description}
+                    perMember={!!sub.perMember}
+                    expectsCompiled={!!sub.expectsCompiled}
+                    files={subsectionNames(sub.name).flatMap((name) => subMap?.get(name) ?? [])}
+                    members={members}
+                    verMap={verMap}
+                    isAdmin={isAdmin}
+                    userId={user?.id}
+                    onDownload={download}
+                    onDelete={remove}
+                    onSetStatus={setStatus}
+                    onOpenComments={openComments}
+                    onRefresh={() => qc.invalidateQueries({ queryKey: ["vault", teamId] })}
+                  />
+                ))}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
