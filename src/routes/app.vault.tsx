@@ -64,14 +64,13 @@ function VaultPage() {
   });
 
   const options = useMemo(() => {
-    const rows = (teams ?? []).map((t) => ({
-      id: t.id,
-      label: teamLineLabel(t),
-      section: t.section ?? "",
-    }));
-    const filtered = section === "all" ? rows : rows.filter((r) => r.section === section);
+    const rows = section === "all"
+      ? (teams ?? []).slice()
+      : (teams ?? []).filter((t) => t.section === section);
     // Always: Section first (04, then 05), then team number 01, 02, 03…
-    return filtered.sort(compareTeamsBySectionThenNumber);
+    return rows
+      .sort(compareTeamsBySectionThenNumber)
+      .map((t) => ({ id: t.id, label: teamLineLabel(t), section: t.section ?? "" }));
   }, [teams, section]);
 
   useEffect(() => {
