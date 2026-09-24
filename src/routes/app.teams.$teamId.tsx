@@ -26,6 +26,7 @@ import { GroupNormsCard } from "@/components/group-norms-card";
 import { DashboardReadinessNotice } from "@/components/dashboard-readiness-notice";
 import { PmDutiesCard } from "@/components/pm-duties-card";
 import { TeamRolesManagerCard } from "@/components/team-roles-manager-card";
+import { DashboardSection } from "@/components/dashboard-section";
 
 
 
@@ -91,6 +92,11 @@ function initials(name: string) {
 
 function TeamDetail() {
   const { teamId } = Route.useParams();
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+
+  const setSectionOpen = (id: string, open: boolean) => {
+    setExpandedSections((current) => ({ ...current, [id]: open }));
+  };
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["team", teamId],
@@ -170,13 +176,19 @@ function TeamDetail() {
           {isMember && <JumpLink target="pm-duties">PM duties</JumpLink>}
           {isMember && <JumpLink target="your-role">Your role</JumpLink>}
           {canAssignRoles && members.length > 0 && (
-            <JumpLink target="assign-roles">Assign roles</JumpLink>
+            <JumpLink target="assign-roles" onNavigate={() => setSectionOpen("assign-roles", true)}>
+              Assign roles
+            </JumpLink>
           )}
           {isMember && user && <JumpLink target="role-practice">Role practice</JumpLink>}
           <JumpLink target="team-skills">Skills</JumpLink>
           <JumpLink target="team-availability">Availability</JumpLink>
-          <JumpLink target="meeting-time">Weekly meeting</JumpLink>
-          <JumpLink target="group-norms">Group Norms</JumpLink>
+          <JumpLink target="meeting-time" onNavigate={() => setSectionOpen("meeting-time", true)}>
+            Weekly meeting
+          </JumpLink>
+          <JumpLink target="group-norms" onNavigate={() => setSectionOpen("group-norms", true)}>
+            Group Norms
+          </JumpLink>
         </div>
       </nav>
 
@@ -248,9 +260,14 @@ function TeamDetail() {
       )}
 
       {canAssignRoles && members.length > 0 && (
-        <div id="assign-roles" className="mt-6 scroll-mt-6">
+        <DashboardSection
+          id="assign-roles"
+          open={expandedSections["assign-roles"] ?? false}
+          onToggle={() => setSectionOpen("assign-roles", !(expandedSections["assign-roles"] ?? false))}
+          collapsedHeight={210}
+        >
           <TeamRolesManagerCard teamId={teamId} members={members} />
-        </div>
+        </DashboardSection>
       )}
 
 
@@ -268,21 +285,41 @@ function TeamDetail() {
         <TeamAvailabilityCard teamId={teamId} />
       </div>
 
-      <div id="meeting-time" className="scroll-mt-6">
+      <DashboardSection
+        id="meeting-time"
+        open={expandedSections["meeting-time"] ?? false}
+        onToggle={() => setSectionOpen("meeting-time", !(expandedSections["meeting-time"] ?? false))}
+        collapsedHeight={220}
+      >
         <MeetingTimeCard teamId={teamId} />
-      </div>
+      </DashboardSection>
 
-      <div id="group-norms" className="scroll-mt-6">
+      <DashboardSection
+        id="group-norms"
+        open={expandedSections["group-norms"] ?? false}
+        onToggle={() => setSectionOpen("group-norms", !(expandedSections["group-norms"] ?? false))}
+        collapsedHeight={210}
+      >
         <GroupNormsCard teamId={teamId} />
-      </div>
+      </DashboardSection>
     </div>
   );
 }
 
-function JumpLink({ target, children }: { target: string; children: React.ReactNode }) {
+function JumpLink({
+  target,
+  children,
+  onNavigate,
+}: {
+  target: string;
+  children: React.ReactNode;
+  onNavigate?: () => void;
+}) {
   return (
     <Button asChild variant="outline" size="sm">
-      <a href={`#${target}`}>{children}</a>
+      <a href={`#${target}`} onClick={onNavigate}>
+        {children}
+      </a>
     </Button>
   );
 }
