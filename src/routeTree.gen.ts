@@ -23,6 +23,7 @@ import { Route as AppBacklogRouteImport } from './routes/app.backlog'
 import { Route as AppAgreementRouteImport } from './routes/app.agreement'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppTeamsTeamIdRouteImport } from './routes/app.teams.$teamId'
+import { Route as AppAdminUsageRouteImport } from './routes/app.admin_.usage'
 import { Route as AppAdminTeamReadinessIndexRouteImport } from './routes/app.admin_.team-readiness.index'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as AppAdminTeamReadinessTeamIdRouteImport } from './routes/app.admin_.team-readiness.$teamId'
@@ -100,6 +101,11 @@ const AppTeamsTeamIdRoute = AppTeamsTeamIdRouteImport.update({
   path: '/$teamId',
   getParentRoute: () => AppTeamsRoute,
 } as any)
+const AppAdminUsageRoute = AppAdminUsageRouteImport.update({
+  id: '/admin_/usage',
+  path: '/admin/usage',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminTeamReadinessIndexRoute =
   AppAdminTeamReadinessIndexRouteImport.update({
     id: '/admin_/team-readiness/',
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
+  '/app/admin/usage': typeof AppAdminUsageRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
   '/api/public/hooks/profile-reminders': typeof ApiPublicHooksProfileRemindersRoute
@@ -173,6 +180,7 @@ export interface FileRoutesByTo {
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
+  '/app/admin/usage': typeof AppAdminUsageRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
   '/api/public/hooks/profile-reminders': typeof ApiPublicHooksProfileRemindersRoute
@@ -196,6 +204,7 @@ export interface FileRoutesById {
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
+  '/app/admin_/usage': typeof AppAdminUsageRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
   '/api/public/hooks/profile-reminders': typeof ApiPublicHooksProfileRemindersRoute
@@ -220,6 +229,7 @@ export interface FileRouteTypes {
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
+    | '/app/admin/usage'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
     | '/api/public/hooks/profile-reminders'
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
+    | '/app/admin/usage'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
     | '/api/public/hooks/profile-reminders'
@@ -264,6 +275,7 @@ export interface FileRouteTypes {
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
+    | '/app/admin_/usage'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
     | '/api/public/hooks/profile-reminders'
@@ -384,6 +396,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTeamsTeamIdRouteImport
       parentRoute: typeof AppTeamsRoute
     }
+    '/app/admin_/usage': {
+      id: '/app/admin_/usage'
+      path: '/admin/usage'
+      fullPath: '/app/admin/usage'
+      preLoaderRoute: typeof AppAdminUsageRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/admin_/team-readiness/': {
       id: '/app/admin_/team-readiness/'
       path: '/admin/team-readiness'
@@ -451,6 +470,7 @@ interface AppRouteChildren {
   AppTeamsRoute: typeof AppTeamsRouteWithChildren
   AppVaultRoute: typeof AppVaultRoute
   AppVaultOverviewRoute: typeof AppVaultOverviewRoute
+  AppAdminUsageRoute: typeof AppAdminUsageRoute
   AppAdminTeamReadinessTeamIdRoute: typeof AppAdminTeamReadinessTeamIdRoute
   AppAdminTeamReadinessIndexRoute: typeof AppAdminTeamReadinessIndexRoute
 }
@@ -465,6 +485,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTeamsRoute: AppTeamsRouteWithChildren,
   AppVaultRoute: AppVaultRoute,
   AppVaultOverviewRoute: AppVaultOverviewRoute,
+  AppAdminUsageRoute: AppAdminUsageRoute,
   AppAdminTeamReadinessTeamIdRoute: AppAdminTeamReadinessTeamIdRoute,
   AppAdminTeamReadinessIndexRoute: AppAdminTeamReadinessIndexRoute,
 }
