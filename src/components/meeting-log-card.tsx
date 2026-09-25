@@ -85,7 +85,7 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
   const [otherFiles, setOtherFiles] = useState<File[]>([]);
   const [fileKey, setFileKey] = useState(0);
   const members = [...((data?.members ?? []) as any[])].sort((a, b) =>
-    compareTeamRoles(a.job_title, b.job_title, nameById.get(a.user_id) ?? "", nameById.get(b.user_id) ?? ""),
+    compareTeamRoles(a.job_title, b.job_title) || String(nameById.get(a.user_id) ?? "").localeCompare(String(nameById.get(b.user_id) ?? "")),
   );
   const filesByLog = new Map<string, any[]>();
   for (const f of (data?.files ?? []) as any[]) {
