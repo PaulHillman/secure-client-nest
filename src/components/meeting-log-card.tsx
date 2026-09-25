@@ -29,7 +29,7 @@ function fmtDate(d: string) {
 }
 
 export function MeetingLogCard({ teamId }: { teamId: string }) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -68,7 +68,7 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
   const logs = data?.logs ?? [];
   const nameById = new Map((data?.profiles ?? []).map((p: any) => [p.id, p.name]));
   const myJob = (data?.members ?? []).find((m: any) => m.user_id === user?.id)?.job_title;
-  const canLog = !!myJob;
+  const canLog = !!myJob || isAdmin;
   const owner = (data?.members ?? []).find((m: any) => m.job_title === "Communication Specialist");
 
   const [date, setDate] = useState(todayISO());
