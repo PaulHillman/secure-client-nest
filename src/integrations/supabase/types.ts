@@ -832,6 +832,7 @@ export type Database = {
           is_locked: boolean
           is_template: boolean
           meeting_date: string | null
+          meeting_log_id: string | null
           section: string
           status: Database["public"]["Enums"]["vault_status"]
           subsection: string
@@ -851,6 +852,7 @@ export type Database = {
           is_locked?: boolean
           is_template?: boolean
           meeting_date?: string | null
+          meeting_log_id?: string | null
           section?: string
           status?: Database["public"]["Enums"]["vault_status"]
           subsection?: string
@@ -870,6 +872,7 @@ export type Database = {
           is_locked?: boolean
           is_template?: boolean
           meeting_date?: string | null
+          meeting_log_id?: string | null
           section?: string
           status?: Database["public"]["Enums"]["vault_status"]
           subsection?: string
@@ -879,6 +882,13 @@ export type Database = {
           uploaded_by?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "files_meeting_log_id_fkey"
+            columns: ["meeting_log_id"]
+            isOneToOne: false
+            referencedRelation: "meeting_logs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "files_team_id_fkey"
             columns: ["team_id"]
@@ -1087,6 +1097,7 @@ export type Database = {
       meeting_logs: {
         Row: {
           as_agreed: boolean
+          attendance: Json
           created_at: string
           deviation_reason: string | null
           id: string
@@ -1102,6 +1113,7 @@ export type Database = {
         }
         Insert: {
           as_agreed?: boolean
+          attendance?: Json
           created_at?: string
           deviation_reason?: string | null
           id?: string
@@ -1117,6 +1129,7 @@ export type Database = {
         }
         Update: {
           as_agreed?: boolean
+          attendance?: Json
           created_at?: string
           deviation_reason?: string | null
           id?: string
