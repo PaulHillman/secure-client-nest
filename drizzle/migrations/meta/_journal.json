@@ -36,6 +36,13 @@
       "when": 1790378283074,
       "tag": "0004_archived_files_meeting_log_id",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790379809604,
+      "tag": "0005_create_usage_events",
+      "breakpoints": true
     }
   ]
 }

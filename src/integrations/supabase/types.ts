@@ -2040,6 +2040,42 @@ export type Database = {
         }
         Relationships: []
       }
+      usage_events: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          event: string
+          id: number
+          label: string | null
+          path: string | null
+          role: string | null
+          team_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          event: string
+          id?: never
+          label?: string | null
+          path?: string | null
+          role?: string | null
+          team_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          event?: string
+          id?: never
+          label?: string | null
+          path?: string | null
+          role?: string | null
+          team_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
