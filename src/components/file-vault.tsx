@@ -296,6 +296,21 @@ export function FileVault({
             <div>
               <h3 className="font-display text-xl">{activeFolder.label}</h3>
               <p className="text-xs text-muted-foreground">{folderFileCount(activeFolder.entries)} files</p>
+              {activeFolder.key === "minutes" && (() => {
+                const template = files.find(
+                  (f) => f.file_name === "Meeting Minutes Template.docx" && f.is_locked,
+                );
+                if (!template) return null;
+                return (
+                  <button
+                    type="button"
+                    className="mt-0.5 text-[11px] text-gold underline underline-offset-2 hover:text-gold/80"
+                    onClick={() => download(template.current_version_id, template.file_name)}
+                  >
+                    Meeting Minutes Template
+                  </button>
+                );
+              })()}
             </div>
           </div>
           {activeFolder.entries.map(([sectionName, subName]) => {
