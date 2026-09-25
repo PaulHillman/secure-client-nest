@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { safeStorageFileName } from "@/lib/storage-path";
+import { compareTeamRoles } from "@/lib/team-roles";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -8,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { NotebookPen, AlertTriangle, MapPin, Check } from "lucide-react";
+import { NotebookPen, AlertTriangle, MapPin, Check, Paperclip, Users } from "lucide-react";
 import { toast } from "sonner";
 import { FACE_TO_FACE, DAYS, fmtTime } from "@/lib/meeting-agreement";
 import { notifyMeetingMoved } from "@/lib/meeting.functions";
@@ -45,7 +47,20 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
           supabase.from("profiles").select("id, name"),
         ]);
       if (error) throw error;
-      return { proposal, logs: logs ?? [], members: members ?? [], profiles: profiles ?? [] };
+      const ids = (logs ?? []).map((l: any) => l.id);
+      const { data: files } = ids.length
+        ? await supabase
+            .from("files")
+            .select("id, file_name, subsection, category, meeting_log_id, current_version_id")
+            .in("meeting_log_id", ids)
+        : { data: [] as any[] };
+      return {
+        proposal,
+        logs: logs ?? [],
+        members: members ?? [],
+        profiles: profiles ?? [],
+        files: files ?? [],
+      };
     },
   });
 
@@ -63,6 +78,91 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
   const mode = FACE_TO_FACE;
   const [minutes, setMinutes] = useState(false);
   const [reasonFor, setReasonFor] = useState<string | null>(null);
+  type Att = { status: "present" | "late" | "absent"; reason: string };
+  const [attendance, setAttendance] = useState<Record<string, Att>>({});
+  const [agendaFile, setAgendaFile] = useState<File | null>(null);
+  const [minutesFile, setMinutesFile] = useState<File | null>(null);
+  const [otherFiles, setOtherFiles] = useState<File[]>([]);
+  const [fileKey, setFileKey] = useState(0);
+  const members = [...((data?.members ?? []) as any[])].sort((a, b) =>
+    compareTeamRoles(a.job_title, b.job_title) || String(nameById.get(a.user_id) ?? "").localeCompare(String(nameById.get(b.user_id) ?? "")),
+  );
+  const filesByLog = new Map<string, any[]>();
+  for (const f of (data?.files ?? []) as any[]) {
+    filesByLog.set(f.meeting_log_id, [...(filesByLog.get(f.meeting_log_id) ?? []), f]);
+  }
+
+  // Pre-fill time and place from the team's agreed weekly meeting (editable).
+  useEffect(() => {
+    if (!proposal) return;
+    setTime((t) => t || (proposal.meeting_time ?? "").slice(0, 5));
+    setLocation((l) => l || proposal.location || "");
+  }, [proposal?.id]);
+
+  const attFor = (id: string): Att => attendance[id] ?? { status: "present", reason: "" };
+  const setAtt = (id: string, patch: Partial<Att>) =>
+    setAttendance((a) => ({ ...a, [id]: { ...attFor(id), ...patch } }));
+
+  const uploadMeetingFile = async (
+    file: File,
+    logId: string,
+    subsection: "Agendas" | "Minutes",
+    category: string,
+  ) => {
+    const { data: created, error: cErr } = await supabase
+      .from("files")
+      .insert({
+        team_id: teamId,
+        file_name: file.name,
+        section: "Team Documents",
+        subsection,
+        meeting_date: date,
+        meeting_log_id: logId,
+        uploaded_by: user!.id,
+        is_template: false,
+        category,
+      } as any)
+      .select("id")
+      .single();
+    if (cErr) throw cErr;
+    const path = `teams/${teamId}/${created.id}/v1-${safeStorageFileName(file.name)}`;
+    const { error: upErr } = await supabase.storage
+      .from("vault")
+      .upload(path, file, { contentType: file.type, upsert: false });
+    if (upErr) {
+      await supabase.from("files").delete().eq("id", created.id);
+      throw upErr;
+    }
+    const { data: ver, error: vErr } = await supabase
+      .from("file_versions")
+      .insert({
+        file_id: created.id,
+        version_number: 1,
+        storage_path: path,
+        file_size: file.size,
+        mime_type: file.type,
+        uploaded_by: user!.id,
+      })
+      .select("id")
+      .single();
+    if (vErr) throw vErr;
+    await supabase.from("files").update({ current_version_id: ver.id }).eq("id", created.id);
+    return created.id as string;
+  };
+
+  const openFile = async (f: any) => {
+    const { data: v } = await supabase
+      .from("file_versions")
+      .select("storage_path")
+      .eq("id", f.current_version_id)
+      .maybeSingle();
+    if (!v) return toast.error("File not found");
+    const { data: signed, error } = await supabase.storage
+      .from("vault")
+      .createSignedUrl(v.storage_path, 300, { download: f.file_name });
+    if (error || !signed) return toast.error("Could not open file");
+    window.open(signed.signedUrl, "_blank");
+  };
   const [reason, setReason] = useState("");
 
   const agreedLocation = (proposal?.location ?? "").trim().toLowerCase();
@@ -77,6 +177,13 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
   const save = useMutation({
     mutationFn: async () => {
       if (!date || !time || !location.trim()) throw new Error("Enter the date, time and place");
+      const att = members.map((m: any) => {
+        const a = attFor(m.user_id);
+        return { user_id: m.user_id, status: a.status, reason: a.reason.trim() || null };
+      });
+      const missing = att.find((a) => a.status === "absent" && !a.reason);
+      if (missing)
+        throw new Error(`Give a reason why ${nameById.get(missing.user_id) ?? "a member"} missed`);
       const { data: row, error } = await supabase
         .from("meeting_logs")
         .upsert(
@@ -87,14 +194,21 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
             location: location.trim(),
             meeting_mode: mode || null,
             as_agreed: matches,
-            minutes_posted: minutes,
+            minutes_posted: minutes || !!minutesFile,
             logged_by: user!.id,
-          },
+            attendance: att,
+          } as any,
           { onConflict: "team_id,meeting_date" },
         )
         .select()
         .single();
       if (error) throw error;
+      if (agendaFile) await uploadMeetingFile(agendaFile, row.id, "Agendas", "Agenda");
+      if (minutesFile) {
+        const mid = await uploadMeetingFile(minutesFile, row.id, "Minutes", "Minutes");
+        await supabase.from("meeting_logs").update({ minutes_file_id: mid, minutes_posted: true }).eq("id", row.id);
+      }
+      for (const f of otherFiles) await uploadMeetingFile(f, row.id, "Minutes", "Other");
       return row;
     },
     onSuccess: (row: any) => {
@@ -104,9 +218,14 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
           : "Meeting logged — please give a reason it was moved",
       );
       if (!row.as_agreed) setReasonFor(row.id);
-      setTime("");
-      setLocation("");
+      setTime((proposal?.meeting_time ?? "").slice(0, 5));
+      setLocation(proposal?.location ?? "");
       setMinutes(false);
+      setAttendance({});
+      setAgendaFile(null);
+      setMinutesFile(null);
+      setOtherFiles([]);
+      setFileKey((k) => k + 1);
       qc.invalidateQueries({ queryKey: ["meeting-logs", teamId] });
       qc.invalidateQueries({ queryKey: ["meeting-gaps"] });
     },
@@ -200,7 +319,9 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
           <div className="rounded-md border p-3 space-y-3">
             <div className="grid sm:grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs">Date of meeting</Label>
+                <Label className="text-xs">
+                  Date of meeting{date ? ` — ${new Date(date + "T12:00").toLocaleDateString("en-US", { weekday: "long" })}` : ""}
+                </Label>
                 <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
               <div>
@@ -217,6 +338,78 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
+              Time and place are filled in from your team's agreed weekly meeting — change them if
+              the meeting was held somewhere else.
+            </p>
+            <div className="space-y-2">
+              <Label className="text-xs flex items-center gap-1">
+                <Users className="h-3.5 w-3.5" /> Attendance
+              </Label>
+              <div className="flex gap-2">
+                <Button type="button" size="sm" variant="outline" onClick={() => setAttendance({})}>
+                  Everyone was there
+                </Button>
+              </div>
+              <ul className="space-y-2">
+                {members.map((m: any) => {
+                  const a = attFor(m.user_id);
+                  return (
+                    <li key={m.user_id} className="grid sm:grid-cols-[1fr_auto] gap-2 items-center">
+                      <span className="text-sm">
+                        {nameById.get(m.user_id) ?? "Member"}{" "}
+                        <span className="text-xs text-muted-foreground">
+                          · {m.job_title === "Unassigned" ? "No role yet" : m.job_title}
+                        </span>
+                      </span>
+                      <div className="flex gap-1">
+                        {(["present", "late", "absent"] as const).map((st) => (
+                          <Button
+                            key={st}
+                            type="button"
+                            size="sm"
+                            variant={a.status === st ? "default" : "outline"}
+                            onClick={() => setAtt(m.user_id, { status: st })}
+                          >
+                            {st === "present" ? "Present" : st === "late" ? "Late" : "Missed"}
+                          </Button>
+                        ))}
+                      </div>
+                      {a.status !== "present" && (
+                        <Input
+                          className="sm:col-span-2"
+                          value={a.reason}
+                          onChange={(e) => setAtt(m.user_id, { reason: e.target.value })}
+                          placeholder={
+                            a.status === "absent"
+                              ? "Why did they miss? (required)"
+                              : "How late / why? (optional)"
+                          }
+                        />
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-3" key={fileKey}>
+              <div>
+                <Label className="text-xs">Agenda</Label>
+                <Input type="file" onChange={(e) => setAgendaFile(e.target.files?.[0] ?? null)} />
+              </div>
+              <div>
+                <Label className="text-xs">Minutes</Label>
+                <Input type="file" onChange={(e) => setMinutesFile(e.target.files?.[0] ?? null)} />
+              </div>
+              <div>
+                <Label className="text-xs">Other files</Label>
+                <Input
+                  type="file"
+                  multiple
+                  onChange={(e) => setOtherFiles(Array.from(e.target.files ?? []))}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
               Meetings are held in person, face to face — Zoom or virtual meetings do not count for
               this course.
             </p>
@@ -227,7 +420,7 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
                 onChange={(e) => setMinutes(e.target.checked)}
                 className="h-4 w-4"
               />
-              Minutes have been posted in the vault
+              Minutes are already posted in the vault
             </label>
             {proposal && time && location.trim() && !matches && (
               <p className="text-xs text-amber-500">
@@ -235,7 +428,7 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
               </p>
             )}
             <Button onClick={() => save.mutate()} disabled={save.isPending}>
-              Confirm this meeting
+              {save.isPending ? "Saving…" : "Confirm this meeting"}
             </Button>
           </div>
         )}
@@ -261,6 +454,37 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
                     </div>
                     {l.deviation_reason && (
                       <div className="text-xs mt-1">Reason given: {l.deviation_reason}</div>
+                    )}
+                    {Array.isArray(l.attendance) && l.attendance.length > 0 && (() => {
+                      const off = l.attendance.filter((a: any) => a.status !== "present");
+                      return off.length === 0 ? (
+                        <div className="text-xs mt-1">Everyone was there</div>
+                      ) : (
+                        <ul className="text-xs mt-1 space-y-0.5">
+                          {off.map((a: any) => (
+                            <li key={a.user_id}>
+                              {nameById.get(a.user_id) ?? "Member"} —{" "}
+                              {a.status === "late" ? "late" : "missed"}
+                              {a.reason ? `: ${a.reason}` : ""}
+                            </li>
+                          ))}
+                        </ul>
+                      );
+                    })()}
+                    {(filesByLog.get(l.id) ?? []).length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {(filesByLog.get(l.id) ?? []).map((f: any) => (
+                          <button
+                            key={f.id}
+                            type="button"
+                            onClick={() => openFile(f)}
+                            className="text-xs underline inline-flex items-center gap-1"
+                          >
+                            <Paperclip className="h-3 w-3" />
+                            {f.category === "Agenda" ? "Agenda" : f.category === "Minutes" ? "Minutes" : f.file_name}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
                   <div className="flex items-center gap-2">

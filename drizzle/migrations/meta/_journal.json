@@ -22,6 +22,20 @@
       "when": 1790377962894,
       "tag": "0002_grant_auth_audit_log_access",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790378225877,
+      "tag": "0003_meeting_log_attendance_files",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790378283074,
+      "tag": "0004_archived_files_meeting_log_id",
+      "breakpoints": true
     }
   ]
 }
