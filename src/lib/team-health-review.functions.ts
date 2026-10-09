@@ -4,7 +4,9 @@ import { buildAssessments } from "@/lib/team-readiness-assessment.functions";
 import { teamLineLabel, compareTeamsBySectionThenNumber } from "@/lib/team-label";
 import { subsectionMatches } from "@/lib/vault-structure";
 
-export type HealthScope = "team" | "section" | "all" | "pm" | "video";
+export type HealthScope = "team" | "section" | "all" | "role";
+
+export const ROLE_SCOPES = ["PM", "Company Liaison", "Client Vault & Tech Administrator", "Communication Specialist", "Video Specialist", "Researcher"] as const;
 export type HealthCheck = "gaps" | "readiness" | "meetings" | "activity" | "vault";
 
 export type HealthException = {
@@ -34,10 +36,12 @@ const PARFUNKEL = /parfunkel/i;
 /** Read-only: runs the five Team Health checks and returns exceptions only. */
 export const runTeamHealthReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { scope: HealthScope; teamId?: string; section?: string }) => {
-    if (!["team", "section", "all", "pm", "video"].includes(i?.scope)) throw new Error("Bad scope");
+  .inputValidator((i: { scope: HealthScope; teamId?: string; section?: string; role?: string }) => {
+    if (!["team", "section", "all", "role"].includes(i?.scope)) throw new Error("Bad scope");
     if (i.scope === "team" && !i.teamId) throw new Error("Choose a team.");
     if (i.scope === "section" && !i.section) throw new Error("Choose a section.");
+    if (i.scope === "role" && !i.role) throw new Error("Choose a role.");
+    if (i.scope === "role" && !(ROLE_SCOPES as readonly string[]).includes(i.role)) throw new Error("Unknown role.");
     return i;
   })
   .handler(async ({ data, context }) => {
@@ -48,7 +52,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
     const { assessments, generatedAt } = await buildAssessments(data.scope === "team" ? data.teamId : undefined);
     let teams = assessments.filter((a) => data.scope === "team" || !a.isTest);
     if (data.scope === "section") teams = teams.filter((a) => a.section === data.section);
-    const roleFilter = data.scope === "pm" ? "PM" : data.scope === "video" ? "Video Specialist" : null;
+    const roleFilter = data.scope === "role" ? data.role! : null;
     const ids = teams.map((t) => t.teamId);
     const now = Date.now();
 
