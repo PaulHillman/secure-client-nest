@@ -228,8 +228,10 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
           push("vault", pastDue ? "red" : "yellow", `Client research: ${total} file${total === 1 ? "" : "s"} found — at least 2 expected now, 4 expected by 10/18.`);
         else if (pastDue && total < 4)
           push("vault", "red", `Client research: ${total} file${total === 1 ? "" : "s"} found — 4 expected by 10/18.`);
+        else notes.vault.push(`Client research on track: ${total} file${total === 1 ? "" : "s"} found (${pastDue ? "4 expected by 10/18" : "at least 2 expected now, 4 by 10/18"}).`);
         for (const f of misfiled)
           push("vault", "yellow", `"${f.file_name}" looks like client research but is filed under ${f.subsection} — move it to Client research.`, taName, "Client Vault & Tech Administrator", taId);
+        if (!misfiled.length && inResearch.length) notes.vault.push("All research files are filed in the Client research folder.");
       }
     }
 
