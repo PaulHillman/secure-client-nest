@@ -359,16 +359,22 @@ function HealthReviewPage() {
             <CardHeader><CardTitle className="font-display text-2xl">Saved reports ({history.reports.length})</CardTitle></CardHeader>
             <CardContent className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead><tr className="text-left text-muted-foreground"><th className="py-1">Date</th><th>Scope</th><th>Teams</th><th>Good</th><th>Bad</th><th></th></tr></thead>
+                <thead><tr className="text-left text-muted-foreground"><th className="py-1">Date</th><th>Scope</th><th>Teams</th><th>Good</th><th>Fair</th><th>Bad</th><th></th></tr></thead>
                 <tbody>
-                  {history.reports.map((r) => (
+                  {history.reports.map((r) => {
+                    const scores = history.scores.filter((x) => x.report_id === r.id);
+                    const good = scores.reduce((s, x) => s + x.good, 0);
+                    const fair = scores.reduce((s, x) => s + x.yellow, 0);
+                    const bad = scores.reduce((s, x) => s + x.red, 0);
+                    return (
                     <tr key={r.id} className="border-t border-border/40">
                       <td className="py-1">{new Date(r.created_at).toLocaleString()}</td>
                       <td>{r.scope_label}</td><td>{r.teams_checked}</td>
-                      <td className="text-success">{r.good_count}</td><td className="text-destructive">{r.bad_count}</td>
+                      <td className="text-success">{good}</td><td className="text-gold">{fair}</td><td className="text-destructive">{bad}</td>
                       <td><button className="underline" onClick={() => { navigate({ search: { report: r.id } }); window.scrollTo(0, 0); }}>Open report</button></td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </CardContent>
