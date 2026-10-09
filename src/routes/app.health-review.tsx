@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { compareTeamsBySectionThenNumber, teamLineLabel } from "@/lib/team-label";
-import { runTeamHealthReview, type HealthCheck, type HealthScope, type CheckStatus } from "@/lib/team-health-review.functions";
+import { runTeamHealthReview, ROLE_SCOPES, type HealthCheck, type HealthScope, type CheckStatus } from "@/lib/team-health-review.functions";
 
 export const Route = createFileRoute("/app/health-review")({
   head: () => ({
@@ -31,7 +31,7 @@ const CHECKS: Record<HealthCheck, string> = {
   vault: "File Vault requirements",
 };
 const SCOPES: [HealthScope, string][] = [
-  ["team", "One team"], ["section", "One section"], ["all", "All teams"], ["pm", "All PMs"], ["video", "All Video Specialists"],
+  ["team", "One team"], ["section", "One section"], ["all", "All teams"], ["role", "One role"],
 ];
 
 function HealthReviewPage() {
@@ -39,6 +39,7 @@ function HealthReviewPage() {
   const [scope, setScope] = useState<HealthScope>("all");
   const [teamId, setTeamId] = useState("");
   const [section, setSection] = useState("");
+  const [role, setRole] = useState("");
   const [filter, setFilter] = useState<HealthCheck | "all">("all");
   const run = useServerFn(runTeamHealthReview);
 
@@ -53,7 +54,7 @@ function HealthReviewPage() {
   });
   const sections = useMemo(() => [...new Set(teams.map((t) => t.section).filter(Boolean))] as string[], [teams]);
 
-  const m = useMutation({ mutationFn: () => run({ data: { scope, teamId: teamId || undefined, section: section || undefined } }) });
+  const m = useMutation({ mutationFn: () => run({ data: { scope, teamId: teamId || undefined, section: section || undefined, role: role || undefined } }) });
   const ex = (m.data?.exceptions ?? []).filter((e) => filter === "all" || e.check === filter);
   const CHECK_KEYS: HealthCheck[] = ["gaps", "readiness", "meetings", "activity", "vault"];
   const levelFor = (teamId: string, check: HealthCheck) =>
@@ -62,7 +63,7 @@ function HealthReviewPage() {
   if (loading) return null;
   if (!isAdmin) return <Navigate to="/app/dashboard" />;
 
-  const canRun = (scope !== "team" || teamId) && (scope !== "section" || section);
+  const canRun = (scope !== "team" || teamId) && (scope !== "section" || section) && (scope !== "role" || role);
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -90,6 +91,12 @@ function HealthReviewPage() {
             <select className="w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm" value={section} onChange={(e) => setSection(e.target.value)}>
               <option value="">Choose a section…</option>
               {sections.map((s) => <option key={s} value={s}>Section {s}</option>)}
+            </select>
+          )}
+          {scope === "role" && (
+            <select className="w-full max-w-md rounded-md border border-input bg-background px-3 py-2 text-sm" value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="">Choose a role…</option>
+              {ROLE_SCOPES.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
           )}
           <Button disabled={!canRun || m.isPending} onClick={() => m.mutate()}>
