@@ -279,7 +279,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       };
     });
 
-    // Per-person ranking for role scope: most problems first, cleanest last.
+    // Per-person ranking for role scope: cleanest first, most problems last.
     const ranking: PersonRank[] = [];
     if (roleFilter) {
       for (const t of sorted) {
@@ -292,7 +292,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
           ranking.push({ userId: h.user_id, name: nameOf(h.user_id), teamLabel: label, red, yellow, total: mine.length });
         }
       }
-      ranking.sort((a, b) => b.red - a.red || b.yellow - a.yellow || a.name.localeCompare(b.name));
+      ranking.sort((a, b) => a.red - b.red || a.yellow - b.yellow || a.name.localeCompare(b.name));
     }
 
     const result = {
