@@ -262,6 +262,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         section: t.section,
         peopleChecked: (roleFilter ? roster.filter((m) => m.job_title === roleFilter) : roster).length,
         results,
+        passNotes: passNotesByTeam.get(t.teamId) ?? { gaps: [], readiness: [], meetings: [], activity: [], vault: [] },
       };
     });
 
