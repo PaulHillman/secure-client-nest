@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import { template as profileIncompleteTemplate } from './profile-incomplete'
 import { template as requirementDecisionTemplate } from './requirement-decision'
 import { template as requirementNudgeTemplate } from './requirement-nudge'
+import { template as healthReviewTemplate } from './health-review'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -24,4 +25,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'profile-incomplete': profileIncompleteTemplate,
   'requirement-decision': requirementDecisionTemplate,
   'requirement-nudge': requirementNudgeTemplate,
+  'health-review': healthReviewTemplate,
 }
