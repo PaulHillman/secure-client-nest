@@ -43,7 +43,7 @@ export async function buildHealthReportPdf(opts: {
   y -= 10;
 
   const good = opts.checks.filter((c) => c.status === "pass").length;
-  text(`Good: ${good} checks passed    Still to do: ${opts.concerns.length} concerns`, bold, 11);
+  text(`Good: ${good} checks passed  |  Still to do: ${opts.concerns.length} concerns`, bold, 11);
   y -= 8;
   text("What was checked", bold, 13);
   for (const c of opts.checks) {
