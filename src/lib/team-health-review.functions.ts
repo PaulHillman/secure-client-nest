@@ -156,26 +156,39 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         }
       }
 
-      // 3. Weekly Meetings
+      // 3. Weekly Meetings — itemized sub-checks: (a) meetings logged, (b) recency, (c) minutes per meeting, (d) reason per absence
       if ((isTeamLevel || pmScope) && week >= 3) {
         const last = teamLogs.map((l) => l.meeting_date).sort().pop();
         const gap = last ? Math.floor((now - new Date(last + "T12:00:00Z").getTime()) / DAY) : null;
-        if (gap === null) push("meetings", "red", "No weekly meetings logged this semester.");
-        else if (gap > 7) push("meetings", gap > 13 ? "red" : "yellow", `Last meeting logged ${gap} days ago (${last}).`);
-        else notes.meetings.push(`Met within the last 7 days (last meeting ${last}, ${gap} day${gap === 1 ? "" : "s"} ago).`);
+        let passed = 0;
+        let failed = 0;
+        if (gap === null) { failed++; push("meetings", "red", "No weekly meetings logged this semester."); }
+        else {
+          passed++;
+          notes.meetings.push(`Meetings logged: ${teamLogs.length} this semester.`);
+          if (gap > 7) { failed++; push("meetings", gap > 13 ? "red" : "yellow", `Last meeting logged ${gap} days ago (${last}).`); }
+          else { passed++; notes.meetings.push(`Recency: last meeting ${last} (${gap} day${gap === 1 ? "" : "s"} ago) — within the 7-day limit.`); }
+        }
         const noMinutes = teamLogs.filter((l) => !l.minutes_posted).length;
-        if (noMinutes) push("meetings", "yellow", `${noMinutes} logged meeting${noMinutes === 1 ? " has" : "s have"} no minutes posted.`);
-        else if (teamLogs.length) notes.meetings.push(`Minutes posted for all ${teamLogs.length} logged meeting${teamLogs.length === 1 ? "" : "s"}.`);
+        if (noMinutes) { failed += noMinutes; push("meetings", "yellow", `${noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? " has" : "s have"} no minutes posted.`); }
+        if (teamLogs.length - noMinutes > 0) { passed += teamLogs.length - noMinutes; notes.meetings.push(`Minutes posted for ${teamLogs.length - noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? "" : "s"}.`); }
+        let absences = 0;
         let unexplained = 0;
         for (const l of teamLogs) {
           for (const a of (Array.isArray(l.attendance) ? l.attendance : []) as { user_id?: string; status?: string; reason?: string | null }[]) {
-            if (a.status === "absent" && !a.reason?.trim() && a.user_id) {
-              unexplained++;
-              push("meetings", "yellow", `Missed ${l.meeting_date} meeting with no reason recorded.`, nameOf(a.user_id), null, a.user_id);
+            if (a.status === "absent" && a.user_id) {
+              absences++;
+              if (!a.reason?.trim()) {
+                unexplained++;
+                push("meetings", "yellow", `Missed ${l.meeting_date} meeting with no reason recorded.`, nameOf(a.user_id), null, a.user_id);
+              }
             }
           }
         }
-        if (!unexplained && teamLogs.length) notes.meetings.push("Every absence has a reason recorded.");
+        failed += unexplained;
+        if (absences - unexplained > 0) { passed += absences - unexplained; notes.meetings.push(`Attendance: ${absences - unexplained} of ${absences} absence${absences === 1 ? "" : "s"} have a reason recorded.`); }
+        else if (!absences && teamLogs.length) { passed++; notes.meetings.push("Attendance: no unexplained absences."); }
+        notes.meetings.unshift(`Weekly Meetings sub-checks: ${passed} passed, ${failed} flagged (meetings logged, recency vs. 7-day limit, minutes per meeting, reason per absence).`);
       }
 
       // 4. Relative login / upload activity (vs. this team's own median)

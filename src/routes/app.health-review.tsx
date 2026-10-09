@@ -32,6 +32,13 @@ const CHECKS: Record<HealthCheck, string> = {
   activity: "Login / upload activity",
   vault: "File Vault requirements",
 };
+const CHECK_DESCRIPTIONS: Record<HealthCheck, string> = {
+  gaps: "Group Norms signed & locked; weekly meeting time agreed.",
+  readiness: "Every readiness-report check (client, roles, norms, files, activities).",
+  meetings: "Per team: meetings logged, last meeting within 7 days (13 = action required), minutes posted for each logged meeting, a reason recorded for each absence.",
+  activity: "Per student vs. teammates over the last 7 days: active days, uploads, any activity at all.",
+  vault: "Minutes & agendas vs. semester week, client research (2 now, 4 by 10/18), misfiled research, interview questions, video files at semester milestones.",
+};
 const SCOPES: [HealthScope, string][] = [
   ["team", "One team"], ["section", "One section"], ["all", "All teams"], ["role", "One role"],
 ];
@@ -193,13 +200,21 @@ function HealthReviewPage() {
               {CHECK_KEYS.map((k) => {
                 const passed = d!.teamResults.filter((t) => t.results[k] === "pass").length;
                 const flagged = d!.teamResults.filter((t) => t.results[k] === "flagged").length;
+                const itemsPassed = d!.teamResults.reduce((n, t) => n + (t.passNotes?.[k] ?? []).filter((note) => !note.includes("sub-checks:")).length, 0);
+                const itemsFlagged = d!.exceptions.filter((e) => e.check === k).length;
                 return (
-                  <span key={k}>
-                    {CHECKS[k]}: <span className="text-success">{passed} passed</span>
-                    {flagged > 0 && <>, <span className="text-destructive">{flagged} flagged</span></>}
+                  <span key={k} title={CHECK_DESCRIPTIONS[k]}>
+                    {CHECKS[k]}: <span className="text-success">{itemsPassed} items passed</span>
+                    {itemsFlagged > 0 && <>, <span className="text-destructive">{itemsFlagged} flagged</span></>}
+                    <span className="text-muted-foreground"> ({passed}/{passed + flagged} teams clean)</span>
                   </span>
                 );
               })}
+            </div>
+            <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+              {CHECK_KEYS.map((k) => (
+                <p key={k}><span className="font-medium text-foreground">{CHECKS[k]}:</span> {CHECK_DESCRIPTIONS[k]}</p>
+              ))}
             </div>
           </CardHeader>
           <CardContent>
