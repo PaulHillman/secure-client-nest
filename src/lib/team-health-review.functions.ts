@@ -18,6 +18,16 @@ export type HealthException = {
   reason: string;
 };
 
+export type CheckStatus = "pass" | "flagged" | "skipped";
+
+export type TeamCheckResult = {
+  teamId: string;
+  teamLabel: string;
+  section: string | null;
+  peopleChecked: number;
+  results: Record<HealthCheck, CheckStatus>;
+};
+
 const DAY = 86400000;
 const PARFUNKEL = /parfunkel/i;
 
@@ -49,7 +59,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
     const progress = Math.min(1, Math.max(0, (now - start) / total));
     const week = Math.max(0, Math.floor((now - start) / (7 * DAY)) + 1);
 
-    if (!ids.length) return { generatedAt, week, progress, teamsChecked: 0, peopleChecked: 0, exceptions: [] as HealthException[] };
+    if (!ids.length) return { generatedAt, week, progress, teamsChecked: 0, peopleChecked: 0, teamResults: [] as TeamCheckResult[], exceptions: [] as HealthException[] };
 
     const since = new Date(now - 14 * DAY).toISOString();
     const [{ data: members }, { data: logs }, { data: files }, { data: norms }, { data: profiles }] = await Promise.all([
@@ -165,5 +175,43 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         push("vault", "red", "Video Final Submission not uploaded.");
     }
 
-    return { generatedAt, week, progress, teamsChecked: sorted.length, peopleChecked: people, exceptions: out };
+    const CHECK_KEYS: HealthCheck[] = ["gaps", "readiness", "meetings", "activity", "vault"];
+    const worst = new Map<string, "red" | "yellow">();
+    for (const e of out) {
+      const k = `${e.teamId}:${e.check}`;
+      worst.set(k, e.level === "red" ? "red" : (worst.get(k) ?? "yellow"));
+    }
+
+    const teamResults: TeamCheckResult[] = sorted.map((t) => {
+      const label = teamLineLabel({ name: t.teamRecordName, display_name: t.teamName !== t.teamRecordName ? t.teamName : null, section: t.section });
+      const roster = (members ?? []).filter((m) => m.team_id === t.teamId && !PARFUNKEL.test(nameOf(m.user_id)));
+      const noRole = !!roleFilter && !roster.some((m) => m.job_title === roleFilter);
+      const teamLevel = !roleFilter;
+      const pmScope = roleFilter === "PM";
+      const results = {} as Record<HealthCheck, CheckStatus>;
+      for (const c of CHECK_KEYS) {
+        const applicable =
+          !noRole &&
+          (c !== "gaps" || teamLevel || pmScope) &&
+          (c !== "meetings" || ((teamLevel || pmScope) && week >= 3));
+        results[c] = !applicable ? "skipped" : worst.has(`${t.teamId}:${c}`) ? "flagged" : "pass";
+      }
+      return {
+        teamId: t.teamId,
+        teamLabel: label,
+        section: t.section,
+        peopleChecked: (roleFilter ? roster.filter((m) => m.job_title === roleFilter) : roster).length,
+        results,
+      };
+    });
+
+    return {
+      generatedAt,
+      week,
+      progress,
+      teamsChecked: sorted.length,
+      peopleChecked: people,
+      teamResults,
+      exceptions: out,
+    };
   });

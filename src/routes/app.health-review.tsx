@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { compareTeamsBySectionThenNumber, teamLineLabel } from "@/lib/team-label";
-import { runTeamHealthReview, type HealthCheck, type HealthScope } from "@/lib/team-health-review.functions";
+import { runTeamHealthReview, type HealthCheck, type HealthScope, type CheckStatus } from "@/lib/team-health-review.functions";
 
 export const Route = createFileRoute("/app/health-review")({
   head: () => ({
@@ -55,6 +55,9 @@ function HealthReviewPage() {
 
   const m = useMutation({ mutationFn: () => run({ data: { scope, teamId: teamId || undefined, section: section || undefined } }) });
   const ex = (m.data?.exceptions ?? []).filter((e) => filter === "all" || e.check === filter);
+  const CHECK_KEYS: HealthCheck[] = ["gaps", "readiness", "meetings", "activity", "vault"];
+  const levelFor = (teamId: string, check: HealthCheck) =>
+    m.data?.exceptions.some((e) => e.teamId === teamId && e.check === check && e.level === "red") ? "red" : "yellow";
 
   if (loading) return null;
   if (!isAdmin) return <Navigate to="/app/dashboard" />;
@@ -66,7 +69,7 @@ function HealthReviewPage() {
       <header className="mb-6">
         <h1 className="font-display text-4xl">Team Health Review</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Read-only. Runs five checks and lists only the exceptions — nothing is changed, sent, or emailed.
+          Read-only. Shows what was checked and passed, then the concerns at the end — nothing is changed, sent, or emailed.
         </p>
       </header>
 
@@ -99,7 +102,59 @@ function HealthReviewPage() {
       {m.data && (
         <Card className="mt-6 border-border/60">
           <CardHeader>
-            <CardTitle className="font-display text-2xl">Exceptions ({m.data.exceptions.length})</CardTitle>
+            <CardTitle className="font-display text-2xl">What was checked</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              {m.data.teamsChecked} teams · {m.data.peopleChecked} people · semester week {m.data.week} ({Math.round(m.data.progress * 100)}% through) · run {new Date(m.data.generatedAt).toLocaleString()}
+            </p>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1 text-xs">
+              {CHECK_KEYS.map((k) => {
+                const passed = m.data!.teamResults.filter((t) => t.results[k] === "pass").length;
+                const flagged = m.data!.teamResults.filter((t) => t.results[k] === "flagged").length;
+                return (
+                  <span key={k}>
+                    {CHECKS[k]}: <span className="text-success">{passed} passed</span>
+                    {flagged > 0 && <>, <span className="text-destructive">{flagged} flagged</span></>}
+                  </span>
+                );
+              })}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left text-xs text-muted-foreground">
+                  <tr>
+                    <th className="py-2 pr-3">Team</th>
+                    {CHECK_KEYS.map((k) => <th key={k} className="pr-3 whitespace-nowrap">{CHECKS[k]}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {m.data.teamResults.map((t) => (
+                    <tr key={t.teamId} className="border-t border-border/40">
+                      <td className="py-2 pr-3 whitespace-nowrap">{t.teamLabel}</td>
+                      {CHECK_KEYS.map((k) => (
+                        <td key={k} className="pr-3">
+                          {t.results[k] === "skipped" ? (
+                            <span className="text-muted-foreground">—</span>
+                          ) : (
+                            <span className={`inline-block h-2.5 w-2.5 rounded-full ${t.results[k] === "pass" ? "bg-success" : levelFor(t.teamId, k) === "red" ? "bg-destructive" : "bg-gold"}`} aria-label={t.results[k] === "pass" ? "Passed" : "Flagged"} />
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">Green = checked and passed · gold/red = flagged (details in Concerns below) · — = not applicable to this scope.</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {m.data && (
+        <Card className="mt-6 border-border/60">
+          <CardHeader>
+            <CardTitle className="font-display text-2xl">Concerns ({m.data.exceptions.length})</CardTitle>
             <p className="text-xs text-muted-foreground">
               {m.data.teamsChecked} teams · {m.data.peopleChecked} people checked · semester week {m.data.week} ({Math.round(m.data.progress * 100)}% through) · run {new Date(m.data.generatedAt).toLocaleString()}
             </p>
