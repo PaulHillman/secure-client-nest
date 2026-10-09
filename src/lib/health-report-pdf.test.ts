@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test";
+import { describe, test } from "node:test";
+import { strict as assert } from "node:assert";
 import { pdfCheckRating, type PdfConcern } from "./health-report-pdf";
 
 const concern = (level: "red" | "yellow", check = "Weekly Meetings"): PdfConcern => ({
@@ -7,18 +8,18 @@ const concern = (level: "red" | "yellow", check = "Weekly Meetings"): PdfConcern
 
 describe("PDF check ratings match screen severity", () => {
   test("passed checks are Good", () => {
-    expect(pdfCheckRating({ label: "Weekly Meetings", status: "pass" }, [])).toBe("Good");
+    assert.equal(pdfCheckRating({ label: "Weekly Meetings", status: "pass" }, []), "Good");
   });
   test("yellow-only findings are Fair, not Bad", () => {
-    expect(pdfCheckRating({ label: "Weekly Meetings", status: "flagged" }, [concern("yellow")])).toBe("Fair");
+    assert.equal(pdfCheckRating({ label: "Weekly Meetings", status: "flagged" }, [concern("yellow")]), "Fair");
   });
   test("red findings make the check Bad even alongside yellow", () => {
-    expect(pdfCheckRating({ label: "Weekly Meetings", status: "flagged" }, [concern("yellow"), concern("red")])).toBe("Bad");
+    assert.equal(pdfCheckRating({ label: "Weekly Meetings", status: "flagged" }, [concern("yellow"), concern("red")]), "Bad");
   });
   test("another check's red finding does not turn a Fair check Bad", () => {
-    expect(pdfCheckRating({ label: "Weekly Meetings", status: "flagged" }, [concern("yellow"), concern("red", "File Vault requirements")])).toBe("Fair");
+    assert.equal(pdfCheckRating({ label: "Weekly Meetings", status: "flagged" }, [concern("yellow"), concern("red", "File Vault requirements")]), "Fair");
   });
   test("skipped checks are not rated Good", () => {
-    expect(pdfCheckRating({ label: "Weekly Meetings", status: "skipped" }, [])).toBe("Not checked");
+    assert.equal(pdfCheckRating({ label: "Weekly Meetings", status: "skipped" }, []), "Not checked");
   });
 });
