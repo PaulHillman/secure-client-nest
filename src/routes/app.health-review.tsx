@@ -158,6 +158,41 @@ function HealthReviewPage() {
         </Card>
       )}
 
+      {m.data && m.data.ranking.length > 0 && (
+        <Card className="mt-6 border-border/60">
+          <CardHeader>
+            <CardTitle className="font-display text-2xl">Individual ranking</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Everyone holding this role, ranked from most problems identified (top) to fewest (bottom). People with zero problems are marked clean.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-left text-xs text-muted-foreground">
+                  <tr><th className="py-2 pr-3">#</th><th className="pr-3">Person</th><th className="pr-3">Team</th><th className="pr-3">Action required</th><th className="pr-3">Attention</th><th>Total problems</th></tr>
+                </thead>
+                <tbody>
+                  {m.data.ranking.map((p, i) => (
+                    <tr key={p.userId} className="border-t border-border/40">
+                      <td className="py-2 pr-3 text-muted-foreground">{i + 1}</td>
+                      <td className="pr-3 whitespace-nowrap">
+                        <span className={`inline-block h-2.5 w-2.5 rounded-full mr-2 ${p.red > 0 ? "bg-destructive" : p.yellow > 0 ? "bg-gold" : "bg-success"}`} aria-hidden />
+                        {p.name}
+                      </td>
+                      <td className="pr-3 whitespace-nowrap text-muted-foreground">{p.teamLabel}</td>
+                      <td className="pr-3">{p.red > 0 ? <span className="text-destructive">{p.red}</span> : "0"}</td>
+                      <td className="pr-3">{p.yellow > 0 ? <span className="text-gold">{p.yellow}</span> : "0"}</td>
+                      <td>{p.total === 0 ? <span className="text-success">Clean</span> : p.total}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {m.data && (
         <Card className="mt-6 border-border/60">
           <CardHeader>
