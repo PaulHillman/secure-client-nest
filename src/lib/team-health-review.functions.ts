@@ -75,7 +75,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
     const progress = Math.min(1, Math.max(0, (now - start) / total));
     const week = Math.max(0, Math.floor((now - start) / (7 * DAY)) + 1);
 
-    if (!ids.length) return { generatedAt, week, progress, teamsChecked: 0, peopleChecked: 0, teamResults: [] as TeamCheckResult[], exceptions: [] as HealthException[], ranking: [] as PersonRank[] };
+    if (!ids.length) return { generatedAt, week, progress, teamsChecked: 0, peopleChecked: 0, teamResults: [] as TeamCheckResult[], exceptions: [] as HealthException[], ranking: [] as PersonRank[], reportId: null as string | null };
 
     const since = new Date(now - 14 * DAY).toISOString();
     const [{ data: members }, { data: logs }, { data: files }, { data: norms }, { data: profiles }] = await Promise.all([
@@ -240,7 +240,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       ranking.sort((a, b) => b.red - a.red || b.yellow - a.yellow || a.name.localeCompare(b.name));
     }
 
-    return {
+    const result = {
       generatedAt,
       week,
       progress,
@@ -249,5 +249,32 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       teamResults,
       exceptions: out,
       ranking,
+      reportId: null as string | null,
     };
+
+    // Keep a copy of team / section / all-teams runs, plus a per-team good/bad score row.
+    if (!roleFilter) {
+      const scores = teamResults.map((t) => {
+        const mine = out.filter((e) => e.teamId === t.teamId);
+        const red = mine.filter((e) => e.level === "red").length;
+        return {
+          team_id: t.teamId, team_label: t.teamLabel, section: t.section,
+          good: Object.values(t.results).filter((s) => s === "pass").length,
+          bad: mine.length, red, yellow: mine.length - red,
+        };
+      });
+      const scopeLabel = data.scope === "all" ? "All teams" : data.scope === "section" ? `Section ${data.section}` : (teamResults[0]?.teamLabel ?? "One team");
+      const { data: rep, error } = await db.from("health_review_reports").insert({
+        scope: data.scope, scope_label: scopeLabel, run_by: context.userId,
+        teams_checked: sorted.length,
+        good_count: scores.reduce((s, x) => s + x.good, 0),
+        bad_count: scores.reduce((s, x) => s + x.bad, 0),
+        payload: JSON.parse(JSON.stringify(result)),
+      }).select("id").single();
+      if (!error && rep) {
+        result.reportId = rep.id;
+        if (scores.length) await db.from("health_review_scores").insert(scores.map((s) => ({ ...s, report_id: rep.id })));
+      }
+    }
+    return result;
   });

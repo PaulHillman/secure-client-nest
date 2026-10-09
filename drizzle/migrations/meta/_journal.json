@@ -43,6 +43,13 @@
       "when": 1790379809604,
       "tag": "0005_create_usage_events",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791509496642,
+      "tag": "0006_health_review_history",
+      "breakpoints": true
     }
   ]
 }

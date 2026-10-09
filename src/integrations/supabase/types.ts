@@ -1041,6 +1041,89 @@ export type Database = {
           },
         ]
       }
+      health_review_reports: {
+        Row: {
+          bad_count: number
+          created_at: string
+          good_count: number
+          id: string
+          payload: Json
+          run_by: string | null
+          scope: string
+          scope_label: string
+          teams_checked: number
+        }
+        Insert: {
+          bad_count?: number
+          created_at?: string
+          good_count?: number
+          id?: string
+          payload: Json
+          run_by?: string | null
+          scope: string
+          scope_label: string
+          teams_checked?: number
+        }
+        Update: {
+          bad_count?: number
+          created_at?: string
+          good_count?: number
+          id?: string
+          payload?: Json
+          run_by?: string | null
+          scope?: string
+          scope_label?: string
+          teams_checked?: number
+        }
+        Relationships: []
+      }
+      health_review_scores: {
+        Row: {
+          bad: number
+          created_at: string
+          good: number
+          id: string
+          red: number
+          report_id: string
+          section: string | null
+          team_id: string
+          team_label: string
+          yellow: number
+        }
+        Insert: {
+          bad?: number
+          created_at?: string
+          good?: number
+          id?: string
+          red?: number
+          report_id: string
+          section?: string | null
+          team_id: string
+          team_label: string
+          yellow?: number
+        }
+        Update: {
+          bad?: number
+          created_at?: string
+          good?: number
+          id?: string
+          red?: number
+          report_id?: string
+          section?: string | null
+          team_id?: string
+          team_label?: string
+          yellow?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_review_scores_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "health_review_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manager_submissions: {
         Row: {
           admin_notes: string | null
