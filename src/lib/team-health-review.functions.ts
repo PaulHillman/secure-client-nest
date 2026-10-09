@@ -115,6 +115,8 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       const label = teamLineLabel({ name: t.teamRecordName, display_name: t.teamName !== t.teamRecordName ? t.teamName : null, section: t.section });
       const push = (check: HealthCheck, level: "red" | "yellow", reason: string, person: string | null = null, role: string | null = null, userId: string | null = null) =>
         out.push({ check, level, teamId: t.teamId, teamLabel: label, section: t.section, person, role, userId, reason });
+      const notes: Record<HealthCheck, string[]> = { gaps: [], readiness: [], meetings: [], activity: [], vault: [] };
+      passNotesByTeam.set(t.teamId, notes);
       const tm = (members ?? []).filter((m) => m.team_id === t.teamId && !PARFUNKEL.test(nameOf(m.user_id)));
       const roleHolders = roleFilter ? tm.filter((m) => m.job_title === roleFilter) : tm;
       const teamFiles = (files ?? []).filter((f) => f.team_id === t.teamId && !f.is_template);
