@@ -38,6 +38,8 @@ export type TeamCheckResult = {
   section: string | null;
   peopleChecked: number;
   results: Record<HealthCheck, CheckStatus>;
+  /** Human-readable facts showing why each passed check passed. */
+  passNotes: Record<HealthCheck, string[]>;
 };
 
 const DAY = 86400000;
@@ -105,6 +107,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
     for (const v of versions ?? []) uploads.set(v.uploaded_by, (uploads.get(v.uploaded_by) ?? 0) + 1);
 
     const out: HealthException[] = [];
+    const passNotesByTeam = new Map<string, Record<HealthCheck, string[]>>();
     let people = 0;
     const sorted = [...teams].sort((a, b) =>
       compareTeamsBySectionThenNumber({ name: a.teamRecordName, section: a.section }, { name: b.teamRecordName, section: b.section }));
@@ -113,6 +116,8 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       const label = teamLineLabel({ name: t.teamRecordName, display_name: t.teamName !== t.teamRecordName ? t.teamName : null, section: t.section });
       const push = (check: HealthCheck, level: "red" | "yellow", reason: string, person: string | null = null, role: string | null = null, userId: string | null = null) =>
         out.push({ check, level, teamId: t.teamId, teamLabel: label, section: t.section, person, role, userId, reason });
+      const notes: Record<HealthCheck, string[]> = { gaps: [], readiness: [], meetings: [], activity: [], vault: [] };
+      passNotesByTeam.set(t.teamId, notes);
       const tm = (members ?? []).filter((m) => m.team_id === t.teamId && !PARFUNKEL.test(nameOf(m.user_id)));
       const roleHolders = roleFilter ? tm.filter((m) => m.job_title === roleFilter) : tm;
       const teamFiles = (files ?? []).filter((f) => f.team_id === t.teamId && !f.is_template);
@@ -130,18 +135,23 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       // 1. Dashboard Gaps
       if (isTeamLevel || pmScope) {
         if (!(norms ?? []).some((n) => n.team_id === t.teamId && n.is_locked)) push("gaps", "yellow", "Group Norms not signed and locked.");
+        else notes.gaps.push("Group Norms signed and locked.");
         if (t.setup.meetingState !== "complete") push("gaps", "yellow", "No weekly meeting consensus yet.");
+        else notes.gaps.push("Weekly meeting time agreed by the team.");
       }
 
       // 2. Team Readiness
       if (isTeamLevel) {
         for (const b of t.blockers) push("readiness", "red", b.reason);
         for (const w of t.warnings) push("readiness", "yellow", w.reason);
+        if (!t.blockers.length && !t.warnings.length) notes.readiness.push("No readiness concerns — all readiness checks came back clean.");
       } else {
         for (const m of t.members.filter((x) => x.role === roleFilter)) {
           if (m.missingProofs > 0) {
             const uid = (members ?? []).find((tm2) => tm2.team_id === t.teamId && tm2.job_title === roleFilter && nameOf(tm2.user_id) === m.name)?.user_id ?? null;
             push("readiness", "yellow", `${m.missingProofs} role activit${m.missingProofs === 1 ? "y" : "ies"} not submitted.`, m.name, m.role, uid);
+          } else {
+            notes.readiness.push(`${m.name}: all role activities submitted.`);
           }
         }
       }
@@ -152,14 +162,20 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         const gap = last ? Math.floor((now - new Date(last + "T12:00:00Z").getTime()) / DAY) : null;
         if (gap === null) push("meetings", "red", "No weekly meetings logged this semester.");
         else if (gap > 7) push("meetings", gap > 13 ? "red" : "yellow", `Last meeting logged ${gap} days ago (${last}).`);
+        else notes.meetings.push(`Met within the last 7 days (last meeting ${last}, ${gap} day${gap === 1 ? "" : "s"} ago).`);
         const noMinutes = teamLogs.filter((l) => !l.minutes_posted).length;
         if (noMinutes) push("meetings", "yellow", `${noMinutes} logged meeting${noMinutes === 1 ? " has" : "s have"} no minutes posted.`);
+        else if (teamLogs.length) notes.meetings.push(`Minutes posted for all ${teamLogs.length} logged meeting${teamLogs.length === 1 ? "" : "s"}.`);
+        let unexplained = 0;
         for (const l of teamLogs) {
           for (const a of (Array.isArray(l.attendance) ? l.attendance : []) as { user_id?: string; status?: string; reason?: string | null }[]) {
-            if (a.status === "absent" && !a.reason?.trim() && a.user_id)
+            if (a.status === "absent" && !a.reason?.trim() && a.user_id) {
+              unexplained++;
               push("meetings", "yellow", `Missed ${l.meeting_date} meeting with no reason recorded.`, nameOf(a.user_id), null, a.user_id);
+            }
           }
         }
+        if (!unexplained && teamLogs.length) notes.meetings.push("Every absence has a reason recorded.");
       }
 
       // 4. Relative login / upload activity (vs. this team's own median)
@@ -174,6 +190,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         if (s.d === 0 && s.u === 0) push("activity", "red", "No sign-ins, visits, or uploads in the last 7 days.", nm, s.m.job_title, s.m.user_id);
         else if (medDays >= 2 && s.d < medDays / 2) push("activity", "yellow", `Active ${s.d} day(s) in 7 vs. team median ${medDays}.`, nm, s.m.job_title, s.m.user_id);
         else if (medUp >= 2 && s.u === 0) push("activity", "yellow", `No uploads in 7 days while teammates median ${medUp}.`, nm, s.m.job_title, s.m.user_id);
+        else notes.activity.push(`${nm}: active ${s.d} of last 7 days, ${s.u} upload${s.u === 1 ? "" : "s"} — at or above the team's typical level.`);
       }
 
       // 5. Semester-aware File Vault requirements
@@ -181,8 +198,10 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       if ((isTeamLevel || pmScope) && expectedMinutes > 0) {
         const mins = count("Minutes");
         if (mins < expectedMinutes) push("vault", mins < expectedMinutes / 2 ? "red" : "yellow", `Minutes: ${mins} posted, ${expectedMinutes} expected by week ${week}.`);
+        else notes.vault.push(`Minutes on file: ${mins} (${expectedMinutes} expected by week ${week}).`);
         const ag = count("Agendas");
         if (ag < expectedMinutes) push("vault", ag < expectedMinutes / 2 ? "red" : "yellow", `Agendas: ${ag} posted, ${expectedMinutes} expected by week ${week}.`);
+        else notes.vault.push(`Agendas on file: ${ag} (${expectedMinutes} expected by week ${week}).`);
       }
       if (isTeamLevel && progress >= 0.5 && count("Mid-Semester Peer Reviews") === 0)
         push("vault", "yellow", "Mid-Semester Peer Reviews not uploaded (past semester midpoint).");
@@ -209,8 +228,10 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
           push("vault", pastDue ? "red" : "yellow", `Client research: ${total} file${total === 1 ? "" : "s"} found — at least 2 expected now, 4 expected by 10/18.`);
         else if (pastDue && total < 4)
           push("vault", "red", `Client research: ${total} file${total === 1 ? "" : "s"} found — 4 expected by 10/18.`);
+        else notes.vault.push(`Client research on track: ${total} file${total === 1 ? "" : "s"} found (${pastDue ? "4 expected by 10/18" : "at least 2 expected now, 4 by 10/18"}).`);
         for (const f of misfiled)
           push("vault", "yellow", `"${f.file_name}" looks like client research but is filed under ${f.subsection} — move it to Client research.`, taName, "Client Vault & Tech Administrator", taId);
+        if (!misfiled.length && inResearch.length) notes.vault.push("All research files are filed in the Client research folder.");
       }
     }
 
@@ -241,6 +262,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         section: t.section,
         peopleChecked: (roleFilter ? roster.filter((m) => m.job_title === roleFilter) : roster).length,
         results,
+        passNotes: passNotesByTeam.get(t.teamId) ?? { gaps: [], readiness: [], meetings: [], activity: [], vault: [] },
       };
     });
 

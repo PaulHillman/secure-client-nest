@@ -1,5 +1,5 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -212,20 +212,44 @@ function HealthReviewPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {d.teamResults.map((t) => (
-                    <tr key={t.teamId} className="border-t border-border/40">
-                      <td className="py-2 pr-3 whitespace-nowrap">{t.teamLabel}</td>
-                      {CHECK_KEYS.map((k) => (
-                        <td key={k} className="pr-3">
-                          {t.results[k] === "skipped" ? (
-                            <span className="text-muted-foreground">—</span>
-                          ) : (
-                            <span className={`inline-block h-2.5 w-2.5 rounded-full ${t.results[k] === "pass" ? "bg-success" : levelFor(t.teamId, k) === "red" ? "bg-destructive" : "bg-gold"}`} aria-label={t.results[k] === "pass" ? "Passed" : "Flagged"} />
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
+                  {d.teamResults.map((t) => {
+                    const passCount = CHECK_KEYS.filter((k) => t.results[k] === "pass").length;
+                    const noteCount = CHECK_KEYS.reduce((n, k) => n + (t.passNotes?.[k]?.length ?? 0), 0);
+                    return (
+                      <Fragment key={t.teamId}>
+                        <tr className="border-t border-border/40">
+                          <td className="py-2 pr-3 whitespace-nowrap">{t.teamLabel}</td>
+                          {CHECK_KEYS.map((k) => (
+                            <td key={k} className="pr-3">
+                              {t.results[k] === "skipped" ? (
+                                <span className="text-muted-foreground">—</span>
+                              ) : (
+                                <span className={`inline-block h-2.5 w-2.5 rounded-full ${t.results[k] === "pass" ? "bg-success" : levelFor(t.teamId, k) === "red" ? "bg-destructive" : "bg-gold"}`} aria-label={t.results[k] === "pass" ? "Passed" : "Flagged"} />
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                        {noteCount > 0 && (
+                          <tr className="border-t border-border/20">
+                            <td colSpan={CHECK_KEYS.length + 1} className="py-1.5 pr-3">
+                              <details>
+                                <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
+                                  Why it passed — {passCount} check{passCount === 1 ? "" : "s"} passed
+                                </summary>
+                                <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                                  {CHECK_KEYS.map((k) =>
+                                    (t.passNotes?.[k] ?? []).map((note, i) => (
+                                      <li key={`${k}-${i}`}><span className="font-medium text-foreground">{CHECKS[k]}:</span> {note}</li>
+                                    )),
+                                  )}
+                                </ul>
+                              </details>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
