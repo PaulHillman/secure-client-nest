@@ -32,6 +32,13 @@ const CHECKS: Record<HealthCheck, string> = {
   activity: "Login / upload activity",
   vault: "File Vault requirements",
 };
+const CHECK_DESCRIPTIONS: Record<HealthCheck, string> = {
+  gaps: "Group Norms signed & locked; weekly meeting time agreed.",
+  readiness: "Every readiness-report check (client, roles, norms, files, activities).",
+  meetings: "Per team: meetings logged, last meeting within 7 days (13 = action required), minutes posted for each logged meeting, a reason recorded for each absence.",
+  activity: "Per student vs. teammates over the last 7 days: active days, uploads, any activity at all.",
+  vault: "Minutes & agendas vs. semester week, client research (2 now, 4 by 10/18), misfiled research, interview questions, video files at semester milestones.",
+};
 const SCOPES: [HealthScope, string][] = [
   ["team", "One team"], ["section", "One section"], ["all", "All teams"], ["role", "One role"],
 ];
