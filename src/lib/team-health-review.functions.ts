@@ -18,6 +18,16 @@ export type HealthException = {
   reason: string;
 };
 
+export type CheckStatus = "pass" | "flagged" | "skipped";
+
+export type TeamCheckResult = {
+  teamId: string;
+  teamLabel: string;
+  section: string | null;
+  peopleChecked: number;
+  results: Record<HealthCheck, CheckStatus>;
+};
+
 const DAY = 86400000;
 const PARFUNKEL = /parfunkel/i;
 
