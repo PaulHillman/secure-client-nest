@@ -17,7 +17,17 @@ export type HealthException = {
   section: string | null;
   person: string | null;
   role: string | null;
+  userId?: string | null;
   reason: string;
+};
+
+export type PersonRank = {
+  userId: string;
+  name: string;
+  teamLabel: string;
+  red: number;
+  yellow: number;
+  total: number;
 };
 
 export type CheckStatus = "pass" | "flagged" | "skipped";
