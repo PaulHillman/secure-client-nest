@@ -224,6 +224,22 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       };
     });
 
+    // Per-person ranking for role scope: most problems first, cleanest last.
+    const ranking: PersonRank[] = [];
+    if (roleFilter) {
+      for (const t of sorted) {
+        const label = teamLineLabel({ name: t.teamRecordName, display_name: t.teamName !== t.teamRecordName ? t.teamName : null, section: t.section });
+        const holders = (members ?? []).filter((mm) => mm.team_id === t.teamId && mm.job_title === roleFilter && !PARFUNKEL.test(nameOf(mm.user_id)));
+        for (const h of holders) {
+          const mine = out.filter((e) => e.userId === h.user_id);
+          const red = mine.filter((e) => e.level === "red").length;
+          const yellow = mine.length - red;
+          ranking.push({ userId: h.user_id, name: nameOf(h.user_id), teamLabel: label, red, yellow, total: mine.length });
+        }
+      }
+      ranking.sort((a, b) => b.red - a.red || b.yellow - a.yellow || a.name.localeCompare(b.name));
+    }
+
     return {
       generatedAt,
       week,
@@ -232,5 +248,6 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       peopleChecked: people,
       teamResults,
       exceptions: out,
+      ranking,
     };
   });
