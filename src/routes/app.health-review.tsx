@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { compareTeamsBySectionThenNumber, teamLineLabel } from "@/lib/team-label";
+import { saveOrSendHealthReport } from "@/lib/team-health-report.functions";
 import { runTeamHealthReview, ROLE_SCOPES, type HealthCheck, type HealthScope, type CheckStatus } from "@/lib/team-health-review.functions";
 
 export const Route = createFileRoute("/app/health-review")({
@@ -89,6 +90,24 @@ function HealthReviewPage() {
     },
   });
   const d = (saved ?? m.data) as typeof m.data;
+  const saveSend = useServerFn(saveOrSendHealthReport);
+  const [ranScope, setRanScope] = useState<{ scope: HealthScope; label: string } | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+  const act = useMutation({
+    mutationFn: (action: "save" | "send" | "both") =>
+      saveSend({ data: { action, scope: ranScope!.scope, scopeLabel: ranScope!.label, payload: m.data! as never } }),
+    onSuccess: (r, action) => {
+      qc.invalidateQueries({ queryKey: ["health-history"] });
+      const parts: string[] = [];
+      if (action !== "send") parts.push("Report saved.");
+      if (action !== "save") parts.push(`Emailed ${r.emailsSent} people across ${r.teamsSent} team${r.teamsSent === 1 ? "" : "s"}${r.emailsFailed ? ` (${r.emailsFailed} failed)` : ""}.`);
+      setDone(parts.join(" "));
+    },
+  });
+  const doAct = (action: "save" | "send" | "both") => {
+    if (action !== "save" && !window.confirm(`Email this report as a PDF to every member of the ${m.data?.teamsChecked} team(s) in it? Each team only gets its own results.`)) return;
+    act.mutate(action);
+  };
   const ex = (d?.exceptions ?? []).filter((e) => filter === "all" || e.check === filter);
   const CHECK_KEYS: HealthCheck[] = ["gaps", "readiness", "meetings", "activity", "vault"];
   const levelFor = (teamId: string, check: HealthCheck) =>
@@ -133,13 +152,30 @@ function HealthReviewPage() {
               {ROLE_SCOPES.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
           )}
-          <Button disabled={!canRun || m.isPending} onClick={() => m.mutate()}>
+          <Button disabled={!canRun || m.isPending} onClick={() => {
+            setDone(null);
+            const label = scope === "all" ? "All teams" : scope === "section" ? `Section ${section}` : scope === "team" ? teamLineLabel(teams.find((t) => t.id === teamId) ?? { name: "One team", display_name: null, section: null }) : role;
+            setRanScope({ scope, label });
+            m.mutate();
+          }}>
             {m.isPending ? "Running…" : "Run review"}
           </Button>
           {m.error && <p className="text-sm text-destructive">{(m.error as Error).message}</p>}
         </CardContent>
       </Card>
 
+      {!saved && m.data && ranScope && ranScope.scope !== "role" && (
+        <Card className="mt-6 border-border/60">
+          <CardContent className="pt-6 flex flex-wrap items-center gap-2">
+            <span className="text-sm text-muted-foreground mr-2">Reviewed it? Keep or share it:</span>
+            <Button size="sm" variant="outline" disabled={act.isPending} onClick={() => doAct("save")}>Save</Button>
+            <Button size="sm" variant="outline" disabled={act.isPending} onClick={() => doAct("send")}>Send to team(s)</Button>
+            <Button size="sm" disabled={act.isPending} onClick={() => doAct("both")}>{act.isPending ? "Working…" : "Save & send"}</Button>
+            {done && <span className="text-sm text-success">{done}</span>}
+            {act.error && <span className="text-sm text-destructive">{(act.error as Error).message}</span>}
+          </CardContent>
+        </Card>
+      )}
       {saved && savedRow && (
         <p className="mt-6 text-sm text-muted-foreground">
           Viewing saved report: {savedRow.scope_label} · {new Date(savedRow.created_at).toLocaleString()} ·{" "}
