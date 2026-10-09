@@ -55,7 +55,39 @@ function HealthReviewPage() {
   });
   const sections = useMemo(() => [...new Set(teams.map((t) => t.section).filter(Boolean))] as string[], [teams]);
 
-  const m = useMutation({ mutationFn: () => run({ data: { scope, teamId: teamId || undefined, section: section || undefined, role: role || undefined } }) });
+  const { report } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const qc = useQueryClient();
+  const m = useMutation({
+    mutationFn: () => run({ data: { scope, teamId: teamId || undefined, section: section || undefined, role: role || undefined } }),
+    onSuccess: () => {
+      navigate({ search: { report: undefined } });
+      qc.invalidateQueries({ queryKey: ["health-history"] });
+    },
+  });
+  const { data: savedRow } = useQuery({
+    queryKey: ["health-report", report],
+    enabled: isAdmin && !!report,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("health_review_reports").select("payload, scope_label, created_at").eq("id", report!).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const saved = report && savedRow ? (savedRow.payload as unknown as NonNullable<typeof m.data>) : null;
+  const { data: history } = useQuery({
+    queryKey: ["health-history"],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const [r, s] = await Promise.all([
+        supabase.from("health_review_reports").select("id, scope_label, created_at, teams_checked, good_count, bad_count").order("created_at", { ascending: false }).limit(50),
+        supabase.from("health_review_scores").select("id, report_id, team_label, section, good, bad, red, yellow, created_at").order("created_at", { ascending: false }).limit(300),
+      ]);
+      if (r.error) throw r.error;
+      if (s.error) throw s.error;
+      return { reports: r.data ?? [], scores: s.data ?? [] };
+    },
+  });
   const d = (saved ?? m.data) as typeof m.data;
   const ex = (d?.exceptions ?? []).filter((e) => filter === "all" || e.check === filter);
   const CHECK_KEYS: HealthCheck[] = ["gaps", "readiness", "meetings", "activity", "vault"];
