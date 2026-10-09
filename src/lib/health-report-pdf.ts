@@ -3,6 +3,12 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 export type PdfCheck = { label: string; status: "pass" | "flagged" | "skipped" };
 export type PdfConcern = { level: "red" | "yellow"; check: string; person: string | null; role: string | null; reason: string };
 
+export function pdfCheckRating(check: PdfCheck, concerns: PdfConcern[]): "Good" | "Fair" | "Bad" | "Not checked" {
+  if (check.status === "skipped") return "Not checked";
+  if (check.status === "pass") return "Good";
+  return concerns.some((c) => c.check === check.label && c.level === "red") ? "Bad" : "Fair";
+}
+
 const clean = (s: string) =>
   s.replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/[–—]/g, "-").replace(/…/g, "...").replace(/·/g, "-")
     .replace(/[^\x20-\x7E\xA0-\xFF]/g, "");
@@ -43,14 +49,17 @@ export async function buildHealthReportPdf(opts: {
   y -= 10;
 
   const good = opts.checks.filter((c) => c.status === "pass").length;
-  text(`Good: ${good} checks passed  |  Still to do: ${opts.concerns.length} concerns`, bold, 11);
+  const fair = opts.concerns.filter((c) => c.level === "yellow").length;
+  const bad = opts.concerns.filter((c) => c.level === "red").length;
+  text(`Good: ${good}  |  Fair: ${fair}  |  Bad: ${bad}`, bold, 11);
   y -= 8;
   text("What was checked", bold, 13);
   for (const c of opts.checks) {
     ensure(16);
-    const color = c.status === "pass" ? green : c.status === "flagged" ? red : grey;
+    const rating = pdfCheckRating(c, opts.concerns);
+    const color = rating === "Good" ? green : rating === "Fair" ? gold : rating === "Bad" ? red : grey;
     page.drawCircle({ x: M + 4, y: y - 6, size: 4, color });
-    text(`${c.label}: ${c.status === "pass" ? "Passed" : c.status === "flagged" ? "Needs work" : "Not checked"}`, font, 10, navy, M + 14);
+    text(`${c.label}: ${rating}`, font, 10, navy, M + 14);
   }
   y -= 10;
   text(`Concerns (${opts.concerns.length})`, bold, 13);
