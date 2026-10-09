@@ -376,16 +376,15 @@ function HealthReviewPage() {
           <Card className="mt-6 border-border/60">
             <CardHeader><CardTitle className="font-display text-2xl">Team scores history</CardTitle></CardHeader>
             <CardContent className="overflow-x-auto">
-              <p className="text-xs text-muted-foreground mb-2">Good = checks passed. Bad = concerns still to fix (red Bad + yellow Fair items).</p>
-              <table className="w-full text-sm">
-                <thead><tr className="text-left text-muted-foreground"><th className="py-1">Date</th><th>Team</th><th>Good</th><th>Bad</th><th>Bad (red)</th><th>Fair (yellow)</th><th></th></tr></thead>
+              <p className="text-xs text-muted-foreground mb-2">Good = checks passed. Fair = yellow concerns. Bad = red concerns.</p>
+               <table className="w-full text-sm">
+                <thead><tr className="text-left text-muted-foreground"><th className="py-1">Date</th><th>Team</th><th>Good</th><th>Fair</th><th>Bad</th><th></th></tr></thead>
                 <tbody>
                   {history.scores.map((x) => (
                     <tr key={x.id} className="border-t border-border/40">
                       <td className="py-1">{new Date(x.created_at).toLocaleDateString()}</td>
                       <td>{x.team_label}</td>
-                      <td className="text-success">{x.good}</td><td className="text-destructive">{x.bad}</td>
-                      <td>{x.red}</td><td>{x.yellow}</td>
+                      <td className="text-success">{x.good}</td><td className="text-gold">{x.yellow}</td><td className="text-destructive">{x.red}</td>
                       <td><button className="underline" onClick={() => { navigate({ search: { report: x.report_id } }); window.scrollTo(0, 0); }}>View problems</button></td>
                     </tr>
                   ))}
