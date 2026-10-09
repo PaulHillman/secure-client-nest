@@ -17,7 +17,17 @@ export type HealthException = {
   section: string | null;
   person: string | null;
   role: string | null;
+  userId?: string | null;
   reason: string;
+};
+
+export type PersonRank = {
+  userId: string;
+  name: string;
+  teamLabel: string;
+  red: number;
+  yellow: number;
+  total: number;
 };
 
 export type CheckStatus = "pass" | "flagged" | "skipped";
@@ -65,7 +75,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
     const progress = Math.min(1, Math.max(0, (now - start) / total));
     const week = Math.max(0, Math.floor((now - start) / (7 * DAY)) + 1);
 
-    if (!ids.length) return { generatedAt, week, progress, teamsChecked: 0, peopleChecked: 0, teamResults: [] as TeamCheckResult[], exceptions: [] as HealthException[] };
+    if (!ids.length) return { generatedAt, week, progress, teamsChecked: 0, peopleChecked: 0, teamResults: [] as TeamCheckResult[], exceptions: [] as HealthException[], ranking: [] as PersonRank[] };
 
     const since = new Date(now - 14 * DAY).toISOString();
     const [{ data: members }, { data: logs }, { data: files }, { data: norms }, { data: profiles }] = await Promise.all([
@@ -101,8 +111,8 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
 
     for (const t of sorted) {
       const label = teamLineLabel({ name: t.teamRecordName, display_name: t.teamName !== t.teamRecordName ? t.teamName : null, section: t.section });
-      const push = (check: HealthCheck, level: "red" | "yellow", reason: string, person: string | null = null, role: string | null = null) =>
-        out.push({ check, level, teamId: t.teamId, teamLabel: label, section: t.section, person, role, reason });
+      const push = (check: HealthCheck, level: "red" | "yellow", reason: string, person: string | null = null, role: string | null = null, userId: string | null = null) =>
+        out.push({ check, level, teamId: t.teamId, teamLabel: label, section: t.section, person, role, userId, reason });
       const tm = (members ?? []).filter((m) => m.team_id === t.teamId && !PARFUNKEL.test(nameOf(m.user_id)));
       const roleHolders = roleFilter ? tm.filter((m) => m.job_title === roleFilter) : tm;
       const teamFiles = (files ?? []).filter((f) => f.team_id === t.teamId && !f.is_template);
@@ -129,7 +139,10 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         for (const w of t.warnings) push("readiness", "yellow", w.reason);
       } else {
         for (const m of t.members.filter((x) => x.role === roleFilter)) {
-          if (m.missingProofs > 0) push("readiness", "yellow", `${m.missingProofs} role activit${m.missingProofs === 1 ? "y" : "ies"} not submitted.`, m.name, m.role);
+          if (m.missingProofs > 0) {
+            const uid = (members ?? []).find((tm2) => tm2.team_id === t.teamId && tm2.job_title === roleFilter && nameOf(tm2.user_id) === m.name)?.user_id ?? null;
+            push("readiness", "yellow", `${m.missingProofs} role activit${m.missingProofs === 1 ? "y" : "ies"} not submitted.`, m.name, m.role, uid);
+          }
         }
       }
 
@@ -144,7 +157,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         for (const l of teamLogs) {
           for (const a of (Array.isArray(l.attendance) ? l.attendance : []) as { user_id?: string; status?: string; reason?: string | null }[]) {
             if (a.status === "absent" && !a.reason?.trim() && a.user_id)
-              push("meetings", "yellow", `Missed ${l.meeting_date} meeting with no reason recorded.`, nameOf(a.user_id));
+              push("meetings", "yellow", `Missed ${l.meeting_date} meeting with no reason recorded.`, nameOf(a.user_id), null, a.user_id);
           }
         }
       }
@@ -158,9 +171,9 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         if (roleFilter && s.m.job_title !== roleFilter) continue;
         people++;
         const nm = nameOf(s.m.user_id);
-        if (s.d === 0 && s.u === 0) push("activity", "red", "No sign-ins, visits, or uploads in the last 14 days.", nm, s.m.job_title);
-        else if (medDays >= 2 && s.d < medDays / 2) push("activity", "yellow", `Active ${s.d} day(s) in 14 vs. team median ${medDays}.`, nm, s.m.job_title);
-        else if (medUp >= 2 && s.u === 0) push("activity", "yellow", `No uploads in 14 days while teammates median ${medUp}.`, nm, s.m.job_title);
+        if (s.d === 0 && s.u === 0) push("activity", "red", "No sign-ins, visits, or uploads in the last 14 days.", nm, s.m.job_title, s.m.user_id);
+        else if (medDays >= 2 && s.d < medDays / 2) push("activity", "yellow", `Active ${s.d} day(s) in 14 vs. team median ${medDays}.`, nm, s.m.job_title, s.m.user_id);
+        else if (medUp >= 2 && s.u === 0) push("activity", "yellow", `No uploads in 14 days while teammates median ${medUp}.`, nm, s.m.job_title, s.m.user_id);
       }
 
       // 5. Semester-aware File Vault requirements
@@ -211,6 +224,22 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       };
     });
 
+    // Per-person ranking for role scope: most problems first, cleanest last.
+    const ranking: PersonRank[] = [];
+    if (roleFilter) {
+      for (const t of sorted) {
+        const label = teamLineLabel({ name: t.teamRecordName, display_name: t.teamName !== t.teamRecordName ? t.teamName : null, section: t.section });
+        const holders = (members ?? []).filter((mm) => mm.team_id === t.teamId && mm.job_title === roleFilter && !PARFUNKEL.test(nameOf(mm.user_id)));
+        for (const h of holders) {
+          const mine = out.filter((e) => e.userId === h.user_id);
+          const red = mine.filter((e) => e.level === "red").length;
+          const yellow = mine.length - red;
+          ranking.push({ userId: h.user_id, name: nameOf(h.user_id), teamLabel: label, red, yellow, total: mine.length });
+        }
+      }
+      ranking.sort((a, b) => b.red - a.red || b.yellow - a.yellow || a.name.localeCompare(b.name));
+    }
+
     return {
       generatedAt,
       week,
@@ -219,5 +248,6 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       peopleChecked: people,
       teamResults,
       exceptions: out,
+      ranking,
     };
   });
