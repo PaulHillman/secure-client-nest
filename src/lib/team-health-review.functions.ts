@@ -292,7 +292,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
           ranking.push({ userId: h.user_id, name: nameOf(h.user_id), teamLabel: label, red, yellow, total: mine.length });
         }
       }
-      ranking.sort((a, b) => b.red - a.red || b.yellow - a.yellow || a.name.localeCompare(b.name));
+      ranking.sort((a, b) => a.red - b.red || a.yellow - b.yellow || a.name.localeCompare(b.name));
     }
 
     const result = {
