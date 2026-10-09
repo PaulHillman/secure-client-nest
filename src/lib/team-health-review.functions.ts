@@ -111,8 +111,8 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
 
     for (const t of sorted) {
       const label = teamLineLabel({ name: t.teamRecordName, display_name: t.teamName !== t.teamRecordName ? t.teamName : null, section: t.section });
-      const push = (check: HealthCheck, level: "red" | "yellow", reason: string, person: string | null = null, role: string | null = null) =>
-        out.push({ check, level, teamId: t.teamId, teamLabel: label, section: t.section, person, role, reason });
+      const push = (check: HealthCheck, level: "red" | "yellow", reason: string, person: string | null = null, role: string | null = null, userId: string | null = null) =>
+        out.push({ check, level, teamId: t.teamId, teamLabel: label, section: t.section, person, role, userId, reason });
       const tm = (members ?? []).filter((m) => m.team_id === t.teamId && !PARFUNKEL.test(nameOf(m.user_id)));
       const roleHolders = roleFilter ? tm.filter((m) => m.job_title === roleFilter) : tm;
       const teamFiles = (files ?? []).filter((f) => f.team_id === t.teamId && !f.is_template);
@@ -139,7 +139,10 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         for (const w of t.warnings) push("readiness", "yellow", w.reason);
       } else {
         for (const m of t.members.filter((x) => x.role === roleFilter)) {
-          if (m.missingProofs > 0) push("readiness", "yellow", `${m.missingProofs} role activit${m.missingProofs === 1 ? "y" : "ies"} not submitted.`, m.name, m.role);
+          if (m.missingProofs > 0) {
+            const uid = (members ?? []).find((tm2) => tm2.team_id === t.teamId && tm2.job_title === roleFilter && nameOf(tm2.user_id) === m.name)?.user_id ?? null;
+            push("readiness", "yellow", `${m.missingProofs} role activit${m.missingProofs === 1 ? "y" : "ies"} not submitted.`, m.name, m.role, uid);
+          }
         }
       }
 
