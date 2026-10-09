@@ -135,13 +135,16 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       // 1. Dashboard Gaps
       if (isTeamLevel || pmScope) {
         if (!(norms ?? []).some((n) => n.team_id === t.teamId && n.is_locked)) push("gaps", "yellow", "Group Norms not signed and locked.");
+        else notes.gaps.push("Group Norms signed and locked.");
         if (t.setup.meetingState !== "complete") push("gaps", "yellow", "No weekly meeting consensus yet.");
+        else notes.gaps.push("Weekly meeting time agreed by the team.");
       }
 
       // 2. Team Readiness
       if (isTeamLevel) {
         for (const b of t.blockers) push("readiness", "red", b.reason);
         for (const w of t.warnings) push("readiness", "yellow", w.reason);
+        if (!t.blockers.length && !t.warnings.length) notes.readiness.push("No readiness concerns — all readiness checks came back clean.");
       } else {
         for (const m of t.members.filter((x) => x.role === roleFilter)) {
           if (m.missingProofs > 0) {
