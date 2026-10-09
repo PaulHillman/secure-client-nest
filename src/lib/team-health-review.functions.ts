@@ -166,12 +166,16 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         const noMinutes = teamLogs.filter((l) => !l.minutes_posted).length;
         if (noMinutes) push("meetings", "yellow", `${noMinutes} logged meeting${noMinutes === 1 ? " has" : "s have"} no minutes posted.`);
         else if (teamLogs.length) notes.meetings.push(`Minutes posted for all ${teamLogs.length} logged meeting${teamLogs.length === 1 ? "" : "s"}.`);
+        let unexplained = 0;
         for (const l of teamLogs) {
           for (const a of (Array.isArray(l.attendance) ? l.attendance : []) as { user_id?: string; status?: string; reason?: string | null }[]) {
-            if (a.status === "absent" && !a.reason?.trim() && a.user_id)
+            if (a.status === "absent" && !a.reason?.trim() && a.user_id) {
+              unexplained++;
               push("meetings", "yellow", `Missed ${l.meeting_date} meeting with no reason recorded.`, nameOf(a.user_id), null, a.user_id);
+            }
           }
         }
+        if (!unexplained && teamLogs.length) notes.meetings.push("Every absence has a reason recorded.");
       }
 
       // 4. Relative login / upload activity (vs. this team's own median)
@@ -186,6 +190,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         if (s.d === 0 && s.u === 0) push("activity", "red", "No sign-ins, visits, or uploads in the last 7 days.", nm, s.m.job_title, s.m.user_id);
         else if (medDays >= 2 && s.d < medDays / 2) push("activity", "yellow", `Active ${s.d} day(s) in 7 vs. team median ${medDays}.`, nm, s.m.job_title, s.m.user_id);
         else if (medUp >= 2 && s.u === 0) push("activity", "yellow", `No uploads in 7 days while teammates median ${medUp}.`, nm, s.m.job_title, s.m.user_id);
+        else notes.activity.push(`${nm}: active ${s.d} of last 7 days, ${s.u} upload${s.u === 1 ? "" : "s"} — at or above the team's typical level.`);
       }
 
       // 5. Semester-aware File Vault requirements
