@@ -199,7 +199,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         const researchDue = Date.parse("2026-10-18T23:59:59Z");
         const pastDue = now > researchDue;
         const inResearch = teamFiles.filter((f) => f.section === "Team Documents" && subsectionMatches(f.subsection, "Client research"));
-        const looksResearch = (f: { file_name?: string }) => /research|org[ -]?chart|company (profile|analysis|overview)/i.test(f.file_name ?? "");
+        const looksResearch = (f: { file_name?: string }) => /research|org[ -]?chart|company (profile|analysis|overview)|history|culture|location|competitor|industry|job[ -]description/i.test(f.file_name ?? "");
         const misfiled = teamFiles.filter((f) => !subsectionMatches(f.subsection, "Client research") && looksResearch(f));
         const total = inResearch.length + misfiled.length;
         const techAdmin = tm.find((m) => m.job_title === "Client Vault & Tech Administrator");
