@@ -81,7 +81,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
     const [{ data: members }, { data: logs }, { data: files }, { data: norms }, { data: profiles }] = await Promise.all([
       db.from("team_members").select("team_id, user_id, job_title").in("team_id", ids),
       db.from("meeting_logs").select("team_id, meeting_date, attendance, minutes_posted").in("team_id", ids),
-      db.from("files").select("team_id, section, subsection, uploaded_by, is_template, is_locked").in("team_id", ids),
+      db.from("files").select("team_id, section, subsection, file_name, uploaded_by, is_template, is_locked").in("team_id", ids),
       db.from("group_norms").select("team_id, is_locked").in("team_id", ids),
       db.from("profiles").select("id, name, first_name, last_name, email"),
     ]);
