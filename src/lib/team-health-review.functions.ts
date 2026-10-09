@@ -107,6 +107,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
     for (const v of versions ?? []) uploads.set(v.uploaded_by, (uploads.get(v.uploaded_by) ?? 0) + 1);
 
     const out: HealthException[] = [];
+    const passNotesByTeam = new Map<string, Record<HealthCheck, string[]>>();
     let people = 0;
     const sorted = [...teams].sort((a, b) =>
       compareTeamsBySectionThenNumber({ name: a.teamRecordName, section: a.section }, { name: b.teamRecordName, section: b.section }));
