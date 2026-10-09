@@ -198,8 +198,10 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       if ((isTeamLevel || pmScope) && expectedMinutes > 0) {
         const mins = count("Minutes");
         if (mins < expectedMinutes) push("vault", mins < expectedMinutes / 2 ? "red" : "yellow", `Minutes: ${mins} posted, ${expectedMinutes} expected by week ${week}.`);
+        else notes.vault.push(`Minutes on file: ${mins} (${expectedMinutes} expected by week ${week}).`);
         const ag = count("Agendas");
         if (ag < expectedMinutes) push("vault", ag < expectedMinutes / 2 ? "red" : "yellow", `Agendas: ${ag} posted, ${expectedMinutes} expected by week ${week}.`);
+        else notes.vault.push(`Agendas on file: ${ag} (${expectedMinutes} expected by week ${week}).`);
       }
       if (isTeamLevel && progress >= 0.5 && count("Mid-Semester Peer Reviews") === 0)
         push("vault", "yellow", "Mid-Semester Peer Reviews not uploaded (past semester midpoint).");
