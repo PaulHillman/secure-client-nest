@@ -13,6 +13,7 @@ const CHECK_LABELS: Record<HealthCheck, string> = {
   activity: "Login / upload activity", vault: "File Vault requirements",
 };
 const PARFUNKEL = /parfunkel/i;
+const INSTRUCTOR_CC = "HillmanP@gvsu.edu";
 
 /** Admin-only: save a reviewed health report, email each team its PDF, or both. */
 export const saveOrSendHealthReport = createServerFn({ method: "POST" })
@@ -94,6 +95,14 @@ export const saveOrSendHealthReport = createServerFn({ method: "POST" })
             emailsSent++;
           } catch { emailsFailed++; }
         }
+        // Instructor copy (cc) of every team report; logged in the email log like all sends.
+        try {
+          await sendTemplateEmail("health-review", INSTRUCTOR_CC, {
+            templateData: { name: "Paul (instructor copy)", teamName: t.teamLabel, good: score.good, bad: score.bad, pdfUrl: signed.signedUrl },
+            idempotencyKey: `health-${stamp}-${t.teamId}-instructor-cc`,
+          });
+          emailsSent++;
+        } catch { emailsFailed++; }
       }
     }
     return { reportId, emailsSent, emailsFailed, teamsSent };
