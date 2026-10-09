@@ -140,6 +140,12 @@ function HealthReviewPage() {
         </CardContent>
       </Card>
 
+      {saved && savedRow && (
+        <p className="mt-6 text-sm text-muted-foreground">
+          Viewing saved report: {savedRow.scope_label} · {new Date(savedRow.created_at).toLocaleString()} ·{" "}
+          <button className="underline" onClick={() => navigate({ search: { report: undefined } })}>close</button>
+        </p>
+      )}
       {d && (
         <Card className="mt-6 border-border/60">
           <CardHeader>
@@ -272,6 +278,48 @@ function HealthReviewPage() {
             )}
           </CardContent>
         </Card>
+      )}
+      {history && (
+        <>
+          <Card className="mt-6 border-border/60">
+            <CardHeader><CardTitle className="font-display text-2xl">Saved reports ({history.reports.length})</CardTitle></CardHeader>
+            <CardContent className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead><tr className="text-left text-muted-foreground"><th className="py-1">Date</th><th>Scope</th><th>Teams</th><th>Good</th><th>Bad</th><th></th></tr></thead>
+                <tbody>
+                  {history.reports.map((r) => (
+                    <tr key={r.id} className="border-t border-border/40">
+                      <td className="py-1">{new Date(r.created_at).toLocaleString()}</td>
+                      <td>{r.scope_label}</td><td>{r.teams_checked}</td>
+                      <td className="text-success">{r.good_count}</td><td className="text-destructive">{r.bad_count}</td>
+                      <td><button className="underline" onClick={() => { navigate({ search: { report: r.id } }); window.scrollTo(0, 0); }}>Open report</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+          <Card className="mt-6 border-border/60">
+            <CardHeader><CardTitle className="font-display text-2xl">Team scores history</CardTitle></CardHeader>
+            <CardContent className="overflow-x-auto">
+              <p className="text-xs text-muted-foreground mb-2">Good = checks passed. Bad = concerns still to fix (Action required + Attention).</p>
+              <table className="w-full text-sm">
+                <thead><tr className="text-left text-muted-foreground"><th className="py-1">Date</th><th>Team</th><th>Good</th><th>Bad</th><th>Action required</th><th>Attention</th><th></th></tr></thead>
+                <tbody>
+                  {history.scores.map((x) => (
+                    <tr key={x.id} className="border-t border-border/40">
+                      <td className="py-1">{new Date(x.created_at).toLocaleDateString()}</td>
+                      <td>{x.team_label}</td>
+                      <td className="text-success">{x.good}</td><td className="text-destructive">{x.bad}</td>
+                      <td>{x.red}</td><td>{x.yellow}</td>
+                      <td><button className="underline" onClick={() => { navigate({ search: { report: x.report_id } }); window.scrollTo(0, 0); }}>View problems</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+        </>
       )}
     </div>
   );
