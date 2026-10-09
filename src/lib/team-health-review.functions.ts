@@ -75,7 +75,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
     const progress = Math.min(1, Math.max(0, (now - start) / total));
     const week = Math.max(0, Math.floor((now - start) / (7 * DAY)) + 1);
 
-    if (!ids.length) return { generatedAt, week, progress, teamsChecked: 0, peopleChecked: 0, teamResults: [] as TeamCheckResult[], exceptions: [] as HealthException[], ranking: [] as PersonRank[] };
+    if (!ids.length) return { generatedAt, week, progress, teamsChecked: 0, peopleChecked: 0, teamResults: [] as TeamCheckResult[], exceptions: [] as HealthException[], ranking: [] as PersonRank[], reportId: null as string | null };
 
     const since = new Date(now - 14 * DAY).toISOString();
     const [{ data: members }, { data: logs }, { data: files }, { data: norms }, { data: profiles }] = await Promise.all([

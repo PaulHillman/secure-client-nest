@@ -20,6 +20,7 @@ export const Route = createFileRoute("/app/health-review")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>) => ({ report: typeof s.report === "string" ? s.report : undefined }),
   component: HealthReviewPage,
 });
 
@@ -55,10 +56,11 @@ function HealthReviewPage() {
   const sections = useMemo(() => [...new Set(teams.map((t) => t.section).filter(Boolean))] as string[], [teams]);
 
   const m = useMutation({ mutationFn: () => run({ data: { scope, teamId: teamId || undefined, section: section || undefined, role: role || undefined } }) });
-  const ex = (m.data?.exceptions ?? []).filter((e) => filter === "all" || e.check === filter);
+  const d = (saved ?? m.data) as typeof m.data;
+  const ex = (d?.exceptions ?? []).filter((e) => filter === "all" || e.check === filter);
   const CHECK_KEYS: HealthCheck[] = ["gaps", "readiness", "meetings", "activity", "vault"];
   const levelFor = (teamId: string, check: HealthCheck) =>
-    m.data?.exceptions.some((e) => e.teamId === teamId && e.check === check && e.level === "red") ? "red" : "yellow";
+    d?.exceptions.some((e) => e.teamId === teamId && e.check === check && e.level === "red") ? "red" : "yellow";
 
   if (loading) return null;
   if (!isAdmin) return <Navigate to="/app/dashboard" />;
@@ -106,17 +108,17 @@ function HealthReviewPage() {
         </CardContent>
       </Card>
 
-      {m.data && (
+      {d && (
         <Card className="mt-6 border-border/60">
           <CardHeader>
             <CardTitle className="font-display text-2xl">What was checked</CardTitle>
             <p className="text-xs text-muted-foreground">
-              {m.data.teamsChecked} teams · {m.data.peopleChecked} people · semester week {m.data.week} ({Math.round(m.data.progress * 100)}% through) · run {new Date(m.data.generatedAt).toLocaleString()}
+              {d.teamsChecked} teams · {d.peopleChecked} people · semester week {d.week} ({Math.round(d.progress * 100)}% through) · run {new Date(d.generatedAt).toLocaleString()}
             </p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1 text-xs">
               {CHECK_KEYS.map((k) => {
-                const passed = m.data!.teamResults.filter((t) => t.results[k] === "pass").length;
-                const flagged = m.data!.teamResults.filter((t) => t.results[k] === "flagged").length;
+                const passed = d!.teamResults.filter((t) => t.results[k] === "pass").length;
+                const flagged = d!.teamResults.filter((t) => t.results[k] === "flagged").length;
                 return (
                   <span key={k}>
                     {CHECKS[k]}: <span className="text-success">{passed} passed</span>
@@ -136,7 +138,7 @@ function HealthReviewPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {m.data.teamResults.map((t) => (
+                  {d.teamResults.map((t) => (
                     <tr key={t.teamId} className="border-t border-border/40">
                       <td className="py-2 pr-3 whitespace-nowrap">{t.teamLabel}</td>
                       {CHECK_KEYS.map((k) => (
@@ -158,7 +160,7 @@ function HealthReviewPage() {
         </Card>
       )}
 
-      {m.data && m.data.ranking.length > 0 && (
+      {d && d.ranking.length > 0 && (
         <Card className="mt-6 border-border/60">
           <CardHeader>
             <CardTitle className="font-display text-2xl">Individual ranking</CardTitle>
@@ -173,7 +175,7 @@ function HealthReviewPage() {
                   <tr><th className="py-2 pr-3">#</th><th className="pr-3">Person</th><th className="pr-3">Team</th><th className="pr-3">Action required</th><th className="pr-3">Attention</th><th>Total problems</th></tr>
                 </thead>
                 <tbody>
-                  {m.data.ranking.map((p, i) => (
+                  {d.ranking.map((p, i) => (
                     <tr key={p.userId} className="border-t border-border/40">
                       <td className="py-2 pr-3 text-muted-foreground">{i + 1}</td>
                       <td className="pr-3 whitespace-nowrap">
@@ -193,16 +195,16 @@ function HealthReviewPage() {
         </Card>
       )}
 
-      {m.data && (
+      {d && (
         <Card className="mt-6 border-border/60">
           <CardHeader>
-            <CardTitle className="font-display text-2xl">Concerns ({m.data.exceptions.length})</CardTitle>
+            <CardTitle className="font-display text-2xl">Concerns ({d.exceptions.length})</CardTitle>
             <p className="text-xs text-muted-foreground">
-              {m.data.teamsChecked} teams · {m.data.peopleChecked} people checked · semester week {m.data.week} ({Math.round(m.data.progress * 100)}% through) · run {new Date(m.data.generatedAt).toLocaleString()}
+              {d.teamsChecked} teams · {d.peopleChecked} people checked · semester week {d.week} ({Math.round(d.progress * 100)}% through) · run {new Date(d.generatedAt).toLocaleString()}
             </p>
             <div className="flex flex-wrap gap-2 pt-2">
               {(["all", ...Object.keys(CHECKS)] as (HealthCheck | "all")[]).map((k) => {
-                const n = k === "all" ? m.data!.exceptions.length : m.data!.exceptions.filter((e) => e.check === k).length;
+                const n = k === "all" ? d!.exceptions.length : d!.exceptions.filter((e) => e.check === k).length;
                 return (
                   <Button key={k} size="sm" variant={filter === k ? "default" : "outline"} onClick={() => setFilter(k)}>
                     {k === "all" ? "All" : CHECKS[k]} ({n})
