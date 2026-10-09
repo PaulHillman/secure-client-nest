@@ -77,7 +77,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
 
     if (!ids.length) return { generatedAt, week, progress, teamsChecked: 0, peopleChecked: 0, teamResults: [] as TeamCheckResult[], exceptions: [] as HealthException[], ranking: [] as PersonRank[], reportId: null as string | null };
 
-    const since = new Date(now - 14 * DAY).toISOString();
+    const since = new Date(now - 7 * DAY).toISOString();
     const [{ data: members }, { data: logs }, { data: files }, { data: norms }, { data: profiles }] = await Promise.all([
       db.from("team_members").select("team_id, user_id, job_title").in("team_id", ids),
       db.from("meeting_logs").select("team_id, meeting_date, attendance, minutes_posted").in("team_id", ids),
@@ -151,7 +151,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         const last = teamLogs.map((l) => l.meeting_date).sort().pop();
         const gap = last ? Math.floor((now - new Date(last + "T12:00:00Z").getTime()) / DAY) : null;
         if (gap === null) push("meetings", "red", "No weekly meetings logged this semester.");
-        else if (gap > 10) push("meetings", gap > 17 ? "red" : "yellow", `Last meeting logged ${gap} days ago (${last}).`);
+        else if (gap > 7) push("meetings", gap > 13 ? "red" : "yellow", `Last meeting logged ${gap} days ago (${last}).`);
         const noMinutes = teamLogs.filter((l) => !l.minutes_posted).length;
         if (noMinutes) push("meetings", "yellow", `${noMinutes} logged meeting${noMinutes === 1 ? " has" : "s have"} no minutes posted.`);
         for (const l of teamLogs) {
@@ -171,9 +171,9 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         if (roleFilter && s.m.job_title !== roleFilter) continue;
         people++;
         const nm = nameOf(s.m.user_id);
-        if (s.d === 0 && s.u === 0) push("activity", "red", "No sign-ins, visits, or uploads in the last 14 days.", nm, s.m.job_title, s.m.user_id);
-        else if (medDays >= 2 && s.d < medDays / 2) push("activity", "yellow", `Active ${s.d} day(s) in 14 vs. team median ${medDays}.`, nm, s.m.job_title, s.m.user_id);
-        else if (medUp >= 2 && s.u === 0) push("activity", "yellow", `No uploads in 14 days while teammates median ${medUp}.`, nm, s.m.job_title, s.m.user_id);
+        if (s.d === 0 && s.u === 0) push("activity", "red", "No sign-ins, visits, or uploads in the last 7 days.", nm, s.m.job_title, s.m.user_id);
+        else if (medDays >= 2 && s.d < medDays / 2) push("activity", "yellow", `Active ${s.d} day(s) in 7 vs. team median ${medDays}.`, nm, s.m.job_title, s.m.user_id);
+        else if (medUp >= 2 && s.u === 0) push("activity", "yellow", `No uploads in 7 days while teammates median ${medUp}.`, nm, s.m.job_title, s.m.user_id);
       }
 
       // 5. Semester-aware File Vault requirements
