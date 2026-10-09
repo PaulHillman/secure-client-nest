@@ -279,7 +279,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       };
     });
 
-    // Per-person ranking for role scope: most problems first, cleanest last.
+    // Per-person ranking for role scope: cleanest first, most problems last.
     const ranking: PersonRank[] = [];
     if (roleFilter) {
       for (const t of sorted) {

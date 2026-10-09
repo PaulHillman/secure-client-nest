@@ -277,7 +277,7 @@ function HealthReviewPage() {
           <CardHeader>
             <CardTitle className="font-display text-2xl">Individual ranking</CardTitle>
             <p className="text-xs text-muted-foreground">
-              Everyone holding this role, ranked from most problems identified (top) to fewest (bottom). People with zero problems are marked clean.
+              Everyone holding this role, ranked from fewest problems identified (top) to most (bottom). People with zero problems are marked clean.
             </p>
           </CardHeader>
           <CardContent>
