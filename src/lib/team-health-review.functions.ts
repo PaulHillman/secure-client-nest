@@ -193,7 +193,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       if ((isTeamLevel || vidScope) && progress >= 0.9 && !teamFiles.some((f) => f.section === "Video" && f.subsection === "Final Submission"))
         push("vault", "red", "Video Final Submission not uploaded.");
 
-      // 6. Client research: at least 2 research files expected by 10/18; misfiled research flagged to the Tech Admin
+      // 6. Client research: at least 2 files now, 4 expected by 10/18; misfiled research flagged to the Tech Admin
       const techScope = roleFilter === "Client Vault & Tech Administrator";
       if (isTeamLevel || techScope) {
         const researchDue = Date.parse("2026-10-18T23:59:59Z");
@@ -206,7 +206,9 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         const taName = techAdmin ? nameOf(techAdmin.user_id) : null;
         const taId = techAdmin?.user_id ?? null;
         if (total < 2)
-          push("vault", pastDue ? "red" : "yellow", `Client research: ${total} file${total === 1 ? "" : "s"} found, at least 2 expected by 10/18.`, taName, "Client Vault & Tech Administrator", taId);
+          push("vault", pastDue ? "red" : "yellow", `Client research: ${total} file${total === 1 ? "" : "s"} found — at least 2 expected now, 4 expected by 10/18.`, taName, "Client Vault & Tech Administrator", taId);
+        else if (pastDue && total < 4)
+          push("vault", "red", `Client research: ${total} file${total === 1 ? "" : "s"} found — 4 expected by 10/18.`, taName, "Client Vault & Tech Administrator", taId);
         for (const f of misfiled)
           push("vault", "yellow", `"${f.file_name}" looks like client research but is filed under ${f.subsection} — move it to Client research.`, taName, "Client Vault & Tech Administrator", taId);
       }
