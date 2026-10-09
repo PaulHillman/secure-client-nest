@@ -175,5 +175,43 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         push("vault", "red", "Video Final Submission not uploaded.");
     }
 
-    return { generatedAt, week, progress, teamsChecked: sorted.length, peopleChecked: people, exceptions: out };
+    const CHECK_KEYS: HealthCheck[] = ["gaps", "readiness", "meetings", "activity", "vault"];
+    const worst = new Map<string, "red" | "yellow">();
+    for (const e of out) {
+      const k = `${e.teamId}:${e.check}`;
+      worst.set(k, e.level === "red" ? "red" : (worst.get(k) ?? "yellow"));
+    }
+
+    const teamResults: TeamCheckResult[] = sorted.map((t) => {
+      const label = teamLineLabel({ name: t.teamRecordName, display_name: t.teamName !== t.teamRecordName ? t.teamName : null, section: t.section });
+      const roster = (members ?? []).filter((m) => m.team_id === t.teamId && !PARFUNKEL.test(nameOf(m.user_id)));
+      const noRole = !!roleFilter && !roster.some((m) => m.job_title === roleFilter);
+      const teamLevel = !roleFilter;
+      const pmScope = roleFilter === "PM";
+      const results = {} as Record<HealthCheck, CheckStatus>;
+      for (const c of CHECK_KEYS) {
+        const applicable =
+          !noRole &&
+          (c !== "gaps" || teamLevel || pmScope) &&
+          (c !== "meetings" || ((teamLevel || pmScope) && week >= 3));
+        results[c] = !applicable ? "skipped" : worst.has(`${t.teamId}:${c}`) ? "flagged" : "pass";
+      }
+      return {
+        teamId: t.teamId,
+        teamLabel: label,
+        section: t.section,
+        peopleChecked: (roleFilter ? roster.filter((m) => m.job_title === roleFilter) : roster).length,
+        results,
+      };
+    });
+
+    return {
+      generatedAt,
+      week,
+      progress,
+      teamsChecked: sorted.length,
+      peopleChecked: people,
+      teamResults,
+      exceptions: out,
+    };
   });
