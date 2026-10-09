@@ -150,6 +150,8 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
           if (m.missingProofs > 0) {
             const uid = (members ?? []).find((tm2) => tm2.team_id === t.teamId && tm2.job_title === roleFilter && nameOf(tm2.user_id) === m.name)?.user_id ?? null;
             push("readiness", "yellow", `${m.missingProofs} role activit${m.missingProofs === 1 ? "y" : "ies"} not submitted.`, m.name, m.role, uid);
+          } else {
+            notes.readiness.push(`${m.name}: all role activities submitted.`);
           }
         }
       }
@@ -160,8 +162,10 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         const gap = last ? Math.floor((now - new Date(last + "T12:00:00Z").getTime()) / DAY) : null;
         if (gap === null) push("meetings", "red", "No weekly meetings logged this semester.");
         else if (gap > 7) push("meetings", gap > 13 ? "red" : "yellow", `Last meeting logged ${gap} days ago (${last}).`);
+        else notes.meetings.push(`Met within the last 7 days (last meeting ${last}, ${gap} day${gap === 1 ? "" : "s"} ago).`);
         const noMinutes = teamLogs.filter((l) => !l.minutes_posted).length;
         if (noMinutes) push("meetings", "yellow", `${noMinutes} logged meeting${noMinutes === 1 ? " has" : "s have"} no minutes posted.`);
+        else if (teamLogs.length) notes.meetings.push(`Minutes posted for all ${teamLogs.length} logged meeting${teamLogs.length === 1 ? "" : "s"}.`);
         for (const l of teamLogs) {
           for (const a of (Array.isArray(l.attendance) ? l.attendance : []) as { user_id?: string; status?: string; reason?: string | null }[]) {
             if (a.status === "absent" && !a.reason?.trim() && a.user_id)
