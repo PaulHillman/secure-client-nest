@@ -40,8 +40,10 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
     if (!["team", "section", "all", "role"].includes(i?.scope)) throw new Error("Bad scope");
     if (i.scope === "team" && !i.teamId) throw new Error("Choose a team.");
     if (i.scope === "section" && !i.section) throw new Error("Choose a section.");
-    if (i.scope === "role" && !i.role) throw new Error("Choose a role.");
-    if (i.scope === "role" && !(ROLE_SCOPES as readonly string[]).includes(i.role)) throw new Error("Unknown role.");
+    if (i.scope === "role") {
+      if (!i.role) throw new Error("Choose a role.");
+      if (!(ROLE_SCOPES as readonly string[]).includes(i.role)) throw new Error("Unknown role.");
+    }
     return i;
   })
   .handler(async ({ data, context }) => {
