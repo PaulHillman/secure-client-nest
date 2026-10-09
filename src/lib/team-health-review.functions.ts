@@ -38,6 +38,8 @@ export type TeamCheckResult = {
   section: string | null;
   peopleChecked: number;
   results: Record<HealthCheck, CheckStatus>;
+  /** Human-readable facts showing why each passed check passed. */
+  passNotes: Record<HealthCheck, string[]>;
 };
 
 const DAY = 86400000;
