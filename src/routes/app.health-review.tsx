@@ -112,7 +112,6 @@ function HealthReviewPage() {
     },
   });
   const doAct = (action: "save" | "send" | "both") => {
-    if (action !== "save" && !window.confirm(`Email this report as a PDF to every member of the ${m.data?.teamsChecked} team(s) in it? Each team only gets its own results.`)) return;
     act.mutate(action);
   };
   const ex = (d?.exceptions ?? []).filter((e) => filter === "all" || e.check === filter);
