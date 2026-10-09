@@ -238,7 +238,7 @@ function HealthReviewPage() {
                               {t.results[k] === "skipped" ? (
                                 <span className="text-muted-foreground">—</span>
                               ) : (
-                                <span className={`inline-block h-2.5 w-2.5 rounded-full ${t.results[k] === "pass" ? "bg-success" : levelFor(t.teamId, k) === "red" ? "bg-destructive" : "bg-gold"}`} aria-label={t.results[k] === "pass" ? "Passed" : "Flagged"} />
+                                <span className={`inline-block h-2.5 w-2.5 rounded-full ${t.results[k] === "pass" ? "bg-success" : levelFor(t.teamId, k) === "red" ? "bg-destructive" : "bg-gold"}`} aria-label={t.results[k] === "pass" ? "Good" : levelFor(t.teamId, k) === "red" ? "Bad" : "Fair"} />
                               )}
                             </td>
                           ))}
@@ -267,7 +267,7 @@ function HealthReviewPage() {
                 </tbody>
               </table>
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">Green = checked and passed · gold/red = flagged (details in Concerns below) · — = not applicable to this scope.</p>
+            <p className="mt-3 text-xs text-muted-foreground">Green = Good (checked and passed) · Yellow = Fair · Red = Bad (details in Concerns below) · — = not applicable to this scope.</p>
           </CardContent>
         </Card>
       )}
@@ -284,7 +284,7 @@ function HealthReviewPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-left text-xs text-muted-foreground">
-                  <tr><th className="py-2 pr-3">#</th><th className="pr-3">Person</th><th className="pr-3">Team</th><th className="pr-3">Action required</th><th className="pr-3">Attention</th><th>Total problems</th></tr>
+                  <tr><th className="py-2 pr-3">#</th><th className="pr-3">Person</th><th className="pr-3">Team</th><th className="pr-3">Bad</th><th className="pr-3">Fair</th><th>Total problems</th></tr>
                 </thead>
                 <tbody>
                   {d.ranking.map((p, i) => (
@@ -338,7 +338,7 @@ function HealthReviewPage() {
                     {ex.map((e, i) => (
                       <tr key={i} className="border-t border-border/40 align-top">
                         <td className="py-2 pr-3">
-                          <span className={`inline-block h-2.5 w-2.5 rounded-full ${e.level === "red" ? "bg-destructive" : "bg-gold"}`} aria-label={e.level === "red" ? "Action required" : "Attention needed"} />
+                          <span className={`inline-block h-2.5 w-2.5 rounded-full ${e.level === "red" ? "bg-destructive" : "bg-gold"}`} aria-label={e.level === "red" ? "Bad" : "Fair"} />
                         </td>
                         <td className="pr-3 whitespace-nowrap">{e.teamLabel}</td>
                         <td className="pr-3 whitespace-nowrap text-muted-foreground">{CHECKS[e.check]}</td>
@@ -376,9 +376,9 @@ function HealthReviewPage() {
           <Card className="mt-6 border-border/60">
             <CardHeader><CardTitle className="font-display text-2xl">Team scores history</CardTitle></CardHeader>
             <CardContent className="overflow-x-auto">
-              <p className="text-xs text-muted-foreground mb-2">Good = checks passed. Bad = concerns still to fix (Action required + Attention).</p>
+              <p className="text-xs text-muted-foreground mb-2">Good = checks passed. Bad = concerns still to fix (red Bad + yellow Fair items).</p>
               <table className="w-full text-sm">
-                <thead><tr className="text-left text-muted-foreground"><th className="py-1">Date</th><th>Team</th><th>Good</th><th>Bad</th><th>Action required</th><th>Attention</th><th></th></tr></thead>
+                <thead><tr className="text-left text-muted-foreground"><th className="py-1">Date</th><th>Team</th><th>Good</th><th>Bad</th><th>Bad (red)</th><th>Fair (yellow)</th><th></th></tr></thead>
                 <tbody>
                   {history.scores.map((x) => (
                     <tr key={x.id} className="border-t border-border/40">

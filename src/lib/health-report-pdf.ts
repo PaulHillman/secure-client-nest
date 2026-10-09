@@ -59,7 +59,7 @@ export async function buildHealthReportPdf(opts: {
     ensure(30);
     page.drawCircle({ x: M + 4, y: y - 6, size: 4, color: c.level === "red" ? red : gold });
     const who = c.person ? ` - ${c.person}${c.role ? ` (${c.role})` : ""}` : "";
-    text(`${c.level === "red" ? "Action required" : "Attention"} - ${c.check}${who}`, bold, 10, navy, M + 14);
+    text(`${c.level === "red" ? "Bad" : "Fair"} - ${c.check}${who}`, bold, 10, navy, M + 14);
     text(c.reason, font, 10, grey, M + 14, W - 2 * M - 14);
     y -= 4;
   }
