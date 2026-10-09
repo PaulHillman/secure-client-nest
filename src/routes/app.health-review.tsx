@@ -69,7 +69,7 @@ function HealthReviewPage() {
       <header className="mb-6">
         <h1 className="font-display text-4xl">Team Health Review</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Read-only. Runs five checks and lists only the exceptions — nothing is changed, sent, or emailed.
+          Read-only. Shows what was checked and passed, then the concerns at the end — nothing is changed, sent, or emailed.
         </p>
       </header>
 
