@@ -864,7 +864,7 @@ function FileLine({
             )}
             {file.is_locked && (
               <Badge variant="outline" className="text-[10px] bg-gold/15 text-gold border-gold/30">
-                Template · read-only
+                {file.is_template ? "Template · read-only" : "Read-only"}
               </Badge>
             )}
             <Badge variant="outline" className={`text-[10px] ${STATUS_TONE[file.status]}`}>
