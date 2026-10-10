@@ -40,4 +40,4 @@
 ## In-app document viewing (new)
 - [x] Agenda list: meeting date above title + sort by date/name
 - [x] Let users read minutes, agendas, and other vault documents in a viewer without downloading
-- [ ] Place 14 team health report PDFs in each team's File Vault under a "Health Reports" folder (uploads done; DB rows + vault-structure subsection pending)
+- [x] Place 14 team health report PDFs in each team File Vault under "Health Reports" (done)
