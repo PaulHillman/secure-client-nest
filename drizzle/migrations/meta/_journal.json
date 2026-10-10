@@ -50,6 +50,13 @@
       "when": 1791509496642,
       "tag": "0006_health_review_history",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791656445135,
+      "tag": "0007_migration",
+      "breakpoints": true
     }
   ]
 }
