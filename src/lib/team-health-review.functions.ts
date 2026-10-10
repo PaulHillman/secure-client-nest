@@ -88,10 +88,12 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       db.from("profiles").select("id, name, first_name, last_name, email"),
     ]);
     const userIds = [...new Set((members ?? []).map((m) => m.user_id))];
-    const [{ data: auths }, { data: usage }, { data: versions }] = await Promise.all([
+    const [{ data: auths }, { data: usage }, { data: versions }, { data: sessions }] = await Promise.all([
       db.from("auth_audit_log").select("user_id, created_at").in("user_id", userIds).gte("created_at", since),
       db.from("usage_events").select("user_id, created_at").eq("event", "page_view").in("user_id", userIds).gte("created_at", since).limit(20000),
       db.from("file_versions").select("uploaded_by, uploaded_at").in("uploaded_by", userIds).gte("uploaded_at", since),
+      // Authoritative sign-in/session activity straight from the auth system (admin-only function).
+      context.supabase.rpc("auth_activity_since", { _since: since }),
     ]);
 
     const nameOf = (id: string) => {
@@ -99,9 +101,11 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       return (p?.first_name && p?.last_name ? `${p.first_name} ${p.last_name}` : p?.name || p?.email) || "Unknown student";
     };
     const days = new Map<string, Set<string>>();
-    for (const r of [...(auths ?? []), ...(usage ?? [])]) {
+    const sessionRows = (sessions ?? []).map((s) => ({ user_id: s.user_id, created_at: s.active_at }));
+    for (const r of [...(auths ?? []), ...(usage ?? []), ...sessionRows]) {
+      if (!r.user_id || !r.created_at) continue;
       if (!days.has(r.user_id)) days.set(r.user_id, new Set());
-      days.get(r.user_id)!.add(r.created_at.slice(0, 10));
+      days.get(r.user_id)!.add(String(r.created_at).slice(0, 10));
     }
     const uploads = new Map<string, number>();
     for (const v of versions ?? []) uploads.set(v.uploaded_by, (uploads.get(v.uploaded_by) ?? 0) + 1);
