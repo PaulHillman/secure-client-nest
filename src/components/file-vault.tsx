@@ -41,6 +41,7 @@ import {
   Users,
   Calendar,
   BookOpen,
+  HeartPulse,
   ArrowLeft,
   ClipboardList,
   FileCheck2,
@@ -83,6 +84,12 @@ type FileRow = {
 const VAULT_FOLDERS = [
   { key: "agendas", label: "Agendas", icon: Calendar, entries: [["Team Documents", "Agendas"]] },
   { key: "group-norms", label: "Group Norms", icon: FileCheck2, entries: [["Team Documents", "Group Norms"]] },
+  {
+    key: "health-reports",
+    label: "Health Reports",
+    icon: HeartPulse,
+    entries: [["Team Documents", "Health Reports"]],
+  },
   {
     key: "interview-questions",
     label: "Interview Questions",
@@ -857,7 +864,7 @@ function FileLine({
             )}
             {file.is_locked && (
               <Badge variant="outline" className="text-[10px] bg-gold/15 text-gold border-gold/30">
-                Template · read-only
+                {file.is_template ? "Template · read-only" : "Read-only"}
               </Badge>
             )}
             <Badge variant="outline" className={`text-[10px] ${STATUS_TONE[file.status]}`}>

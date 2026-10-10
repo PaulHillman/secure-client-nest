@@ -24,6 +24,10 @@ export const VAULT_STRUCTURE: VaultSection[] = [
       { name: "Minutes" },
       { name: "Operational Resources and Templates" },
       { name: "Mid-Semester Peer Reviews" },
+      {
+        name: "Health Reports",
+        description: "Team Health Review reports from your instructor. Read-only.",
+      },
     ],
   },
   {
