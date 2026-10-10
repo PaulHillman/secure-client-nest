@@ -41,6 +41,7 @@ import {
   Users,
   Calendar,
   BookOpen,
+  HeartPulse,
   ArrowLeft,
   ClipboardList,
   FileCheck2,
@@ -83,6 +84,12 @@ type FileRow = {
 const VAULT_FOLDERS = [
   { key: "agendas", label: "Agendas", icon: Calendar, entries: [["Team Documents", "Agendas"]] },
   { key: "group-norms", label: "Group Norms", icon: FileCheck2, entries: [["Team Documents", "Group Norms"]] },
+  {
+    key: "health-reports",
+    label: "Health Reports",
+    icon: HeartPulse,
+    entries: [["Team Documents", "Health Reports"]],
+  },
   {
     key: "interview-questions",
     label: "Interview Questions",
