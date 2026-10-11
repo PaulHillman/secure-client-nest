@@ -57,6 +57,13 @@
       "when": 1791656445135,
       "tag": "0007_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791680372114,
+      "tag": "0008_health_report_views",
+      "breakpoints": true
     }
   ]
 }
