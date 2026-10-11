@@ -348,4 +348,4 @@ export async function computeHealthReview(
     };
 
     return result;
-  });
+}
