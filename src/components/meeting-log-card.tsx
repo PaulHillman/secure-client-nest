@@ -154,7 +154,7 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
   const openFile = async (f: any) => {
     if (!f.current_version_id) return toast.error("File not found");
     try {
-      await openVaultFileInNewTab(f.current_version_id);
+      await openVaultFileInNewTab(f.current_version_id, f.file_name);
     } catch {
       toast.error("Could not open file");
     }

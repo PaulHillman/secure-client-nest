@@ -239,7 +239,7 @@ export function FileViewerDialog({
   const downloadCopy = async () => {
     if (!version) return;
     try {
-      await openVaultFileInNewTab(version.id);
+      await openVaultFileInNewTab(version.id, fileName);
     } catch {
       toast.error("Could not generate download link");
     }

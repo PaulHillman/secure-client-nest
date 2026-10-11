@@ -98,7 +98,7 @@ export function TemplatesPanel() {
     const cur = vMap.get(t.id);
     if (!cur) return toast.error("No version available");
     try {
-      await openVaultFileInNewTab(cur.id);
+      await openVaultFileInNewTab(cur.id, (t as { file_name?: string }).file_name);
     } catch {
       toast.error("Could not generate download link");
     }
