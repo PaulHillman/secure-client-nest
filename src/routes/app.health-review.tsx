@@ -119,7 +119,7 @@ function HealthReviewPage() {
   const refreshVault = useServerFn(refreshVaultHealthReports);
   const [vaultDone, setVaultDone] = useState<string | null>(null);
   const vaultM = useMutation({
-    mutationFn: () => refreshVault({ data: {} }),
+    mutationFn: () => refreshVault({ data: undefined as never }),
     onSuccess: (r) => setVaultDone(`Updated ${r.refreshed} vault report${r.refreshed === 1 ? "" : "s"}${r.skipped.length ? `; skipped: ${r.skipped.join(", ")}` : ""}. No emails sent.`),
   });
   const ex = (d?.exceptions ?? []).filter((e) => filter === "all" || e.check === filter);
