@@ -61,6 +61,14 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: ok } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
     if (ok !== true) throw new Error("Forbidden");
+    return computeHealthReview(data, context);
+  });
+
+/** Shared review logic; also used when regenerating vault report PDFs. */
+export async function computeHealthReview(
+  data: { scope: HealthScope; teamId?: string; section?: string; role?: string },
+  context: { supabase: any; userId: string },
+) {
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
 
     const { assessments, generatedAt } = await buildAssessments(data.scope === "team" ? data.teamId : undefined);
@@ -102,7 +110,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       return (p?.first_name && p?.last_name ? `${p.first_name} ${p.last_name}` : p?.name || p?.email) || "Unknown student";
     };
     const days = new Map<string, Set<string>>();
-    const sessionRows = (sessions ?? []).map((s) => ({ user_id: s.user_id, created_at: s.active_at }));
+    const sessionRows = (sessions ?? []).map((s: { user_id: string; active_at: string }) => ({ user_id: s.user_id, created_at: s.active_at }));
     for (const r of [...(auths ?? []), ...(usage ?? []), ...sessionRows]) {
       if (!r.user_id || !r.created_at) continue;
       if (!days.has(r.user_id)) days.set(r.user_id, new Set());
@@ -340,4 +348,4 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
     };
 
     return result;
-  });
+}

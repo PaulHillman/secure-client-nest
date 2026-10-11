@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { computeHealthReview } from "@/lib/team-health-review.functions";
 import type { HealthException, TeamCheckResult, HealthCheck } from "@/lib/team-health-review.functions";
 
 type Payload = {
@@ -106,4 +107,54 @@ export const saveOrSendHealthReport = createServerFn({ method: "POST" })
       }
     }
     return { reportId, emailsSent, emailsFailed, teamsSent };
+  });
+
+/** Admin-only: regenerate the Health Reports PDF in each team's vault with current rules. No emails, no saved-report rows. */
+export const refreshVaultHealthReports = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: ok } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (ok !== true) throw new Error("Forbidden");
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+    const { buildHealthReportPdf } = await import("@/lib/health-report-pdf");
+
+    const review = await computeHealthReview({ scope: "all" }, context);
+    const runAt = new Date(review.generatedAt).toLocaleString("en-US", { timeZone: "America/New_York" });
+
+    const { data: vaultFiles, error } = await db
+      .from("files")
+      .select("id, team_id, file_name, teams!inner(is_test), file_versions(id, version_number, storage_path)")
+      .eq("subsection", "Health Reports");
+    if (error) throw new Error(error.message);
+
+    let refreshed = 0;
+    const skipped: string[] = [];
+    const stamp = Date.now();
+    for (const f of vaultFiles ?? []) {
+      if ((f.teams as { is_test: boolean } | null)?.is_test) continue;
+      const t = review.teamResults.find((r) => r.teamId === f.team_id);
+      if (!t) { skipped.push(f.file_name); continue; }
+      const concerns = review.exceptions
+        .filter((e) => e.teamId === t.teamId)
+        .map((e) => ({ level: e.level, check: CHECK_LABELS[e.check], person: e.person, role: e.role, reason: e.reason }));
+      const pdf = await buildHealthReportPdf({
+        teamLabel: t.teamLabel, runAt, week: review.week,
+        checks: (Object.keys(CHECK_LABELS) as HealthCheck[]).map((k) => ({ label: CHECK_LABELS[k], status: t.results[k] })),
+        concerns,
+      });
+      const path = `teams/${f.team_id}/health-reports/${stamp}-${f.file_name}`;
+      const up = await db.storage.from("vault").upload(path, pdf, { contentType: "application/pdf" });
+      if (up.error) { skipped.push(`${f.file_name} (upload failed)`); continue; }
+      const versions = (f.file_versions as { id: string; version_number: number }[]) ?? [];
+      const nextVersion = versions.reduce((m, v) => Math.max(m, v.version_number), 0) + 1;
+      const { data: ver, error: vErr } = await db.from("file_versions").insert({
+        file_id: f.id, version_number: nextVersion, storage_path: path,
+        mime_type: "application/pdf", file_size: pdf.byteLength, uploaded_by: context.userId,
+      }).select("id").single();
+      if (vErr) { skipped.push(`${f.file_name} (version failed)`); continue; }
+      const { error: uErr } = await db.from("files").update({ current_version_id: ver.id, updated_at: new Date().toISOString() }).eq("id", f.id);
+      if (uErr) { skipped.push(`${f.file_name} (update failed)`); continue; }
+      refreshed++;
+    }
+    return { refreshed, skipped, generatedAt: review.generatedAt };
   });
