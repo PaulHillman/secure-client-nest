@@ -9,38 +9,33 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppRouteImport } from './routes/app'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as SetPasswordRouteImport } from './routes/set-password'
-import { Route as AppAdminRouteImport } from './routes/app.admin'
-import { Route as AppAgreementRouteImport } from './routes/app.agreement'
-import { Route as AppBacklogRouteImport } from './routes/app.backlog'
-import { Route as AppCompetitionsRouteImport } from './routes/app.competitions'
-import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
-import { Route as AppHealthReviewRouteImport } from './routes/app.health-review'
-import { Route as AppMeetingsRouteImport } from './routes/app.meetings'
-import { Route as AppTeamsRouteImport } from './routes/app.teams'
-import { Route as AppVaultRouteImport } from './routes/app.vault'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppRouteImport } from './routes/app'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppVaultOverviewRouteImport } from './routes/app.vault-overview'
-import { Route as ApiPublicFileDownloadRouteImport } from './routes/api/public/file-download'
-import { Route as AppAdminUsageRouteImport } from './routes/app.admin_.usage'
+import { Route as AppVaultRouteImport } from './routes/app.vault'
+import { Route as AppTeamsRouteImport } from './routes/app.teams'
+import { Route as AppMeetingsRouteImport } from './routes/app.meetings'
+import { Route as AppHealthReviewRouteImport } from './routes/app.health-review'
+import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
+import { Route as AppCompetitionsRouteImport } from './routes/app.competitions'
+import { Route as AppBacklogRouteImport } from './routes/app.backlog'
+import { Route as AppAgreementRouteImport } from './routes/app.agreement'
+import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppTeamsTeamIdRouteImport } from './routes/app.teams.$teamId'
-import { Route as ApiPublicHooksAutoArchiveRouteImport } from './routes/api/public/hooks/auto-archive'
-import { Route as ApiPublicHooksProfileRemindersRouteImport } from './routes/api/public/hooks/profile-reminders'
-import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
+import { Route as AppAdminUsageRouteImport } from './routes/app.admin_.usage'
+import { Route as ApiPublicFileDownloadRouteImport } from './routes/api/public/file-download'
 import { Route as AppAdminTeamReadinessIndexRouteImport } from './routes/app.admin_.team-readiness.index'
-import { Route as AppAdminTeamReadinessTeamIdRouteImport } from './routes/app.admin_.team-readiness.$teamId'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
+import { Route as AppAdminTeamReadinessTeamIdRouteImport } from './routes/app.admin_.team-readiness.$teamId'
+import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
+import { Route as ApiPublicHooksProfileRemindersRouteImport } from './routes/api/public/hooks/profile-reminders'
+import { Route as ApiPublicHooksAutoArchiveRouteImport } from './routes/api/public/hooks/auto-archive'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppRoute = AppRouteImport.update({
-  id: '/app',
-  path: '/app',
+const SetPasswordRoute = SetPasswordRouteImport.update({
+  id: '/set-password',
+  path: '/set-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -48,49 +43,19 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SetPasswordRoute = SetPasswordRouteImport.update({
-  id: '/set-password',
-  path: '/set-password',
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppAdminRoute = AppAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => AppRoute,
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AppAgreementRoute = AppAgreementRouteImport.update({
-  id: '/agreement',
-  path: '/agreement',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppBacklogRoute = AppBacklogRouteImport.update({
-  id: '/backlog',
-  path: '/backlog',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppCompetitionsRoute = AppCompetitionsRouteImport.update({
-  id: '/competitions',
-  path: '/competitions',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppDashboardRoute = AppDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppHealthReviewRoute = AppHealthReviewRouteImport.update({
-  id: '/health-review',
-  path: '/health-review',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppMeetingsRoute = AppMeetingsRouteImport.update({
-  id: '/meetings',
-  path: '/meetings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppTeamsRoute = AppTeamsRouteImport.update({
-  id: '/teams',
-  path: '/teams',
+const AppVaultOverviewRoute = AppVaultOverviewRouteImport.update({
+  id: '/vault-overview',
+  path: '/vault-overview',
   getParentRoute: () => AppRoute,
 } as any)
 const AppVaultRoute = AppVaultRouteImport.update({
@@ -98,19 +63,44 @@ const AppVaultRoute = AppVaultRouteImport.update({
   path: '/vault',
   getParentRoute: () => AppRoute,
 } as any)
-const AppVaultOverviewRoute = AppVaultOverviewRouteImport.update({
-  id: '/vault-overview',
-  path: '/vault-overview',
+const AppTeamsRoute = AppTeamsRouteImport.update({
+  id: '/teams',
+  path: '/teams',
   getParentRoute: () => AppRoute,
 } as any)
-const ApiPublicFileDownloadRoute = ApiPublicFileDownloadRouteImport.update({
-  id: '/api/public/file-download',
-  path: '/api/public/file-download',
-  getParentRoute: () => rootRouteImport,
+const AppMeetingsRoute = AppMeetingsRouteImport.update({
+  id: '/meetings',
+  path: '/meetings',
+  getParentRoute: () => AppRoute,
 } as any)
-const AppAdminUsageRoute = AppAdminUsageRouteImport.update({
-  id: '/admin_/usage',
-  path: '/admin/usage',
+const AppHealthReviewRoute = AppHealthReviewRouteImport.update({
+  id: '/health-review',
+  path: '/health-review',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCompetitionsRoute = AppCompetitionsRouteImport.update({
+  id: '/competitions',
+  path: '/competitions',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBacklogRoute = AppBacklogRouteImport.update({
+  id: '/backlog',
+  path: '/backlog',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAgreementRoute = AppAgreementRouteImport.update({
+  id: '/agreement',
+  path: '/agreement',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTeamsTeamIdRoute = AppTeamsTeamIdRouteImport.update({
@@ -118,10 +108,38 @@ const AppTeamsTeamIdRoute = AppTeamsTeamIdRouteImport.update({
   path: '/$teamId',
   getParentRoute: () => AppTeamsRoute,
 } as any)
-const ApiPublicHooksAutoArchiveRoute =
-  ApiPublicHooksAutoArchiveRouteImport.update({
-    id: '/api/public/hooks/auto-archive',
-    path: '/api/public/hooks/auto-archive',
+const AppAdminUsageRoute = AppAdminUsageRouteImport.update({
+  id: '/admin_/usage',
+  path: '/admin/usage',
+  getParentRoute: () => AppRoute,
+} as any)
+const ApiPublicFileDownloadRoute = ApiPublicFileDownloadRouteImport.update({
+  id: '/api/public/file-download',
+  path: '/api/public/file-download',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAdminTeamReadinessIndexRoute =
+  AppAdminTeamReadinessIndexRouteImport.update({
+    id: '/admin_/team-readiness/',
+    path: '/admin/team-readiness/',
+    getParentRoute: () => AppRoute,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AppAdminTeamReadinessTeamIdRoute =
+  AppAdminTeamReadinessTeamIdRouteImport.update({
+    id: '/admin_/team-readiness/$teamId',
+    path: '/admin/team-readiness/$teamId',
+    getParentRoute: () => AppRoute,
+  } as any)
+const ApiPublicHooksWeeklyDigestRoute =
+  ApiPublicHooksWeeklyDigestRouteImport.update({
+    id: '/api/public/hooks/weekly-digest',
+    path: '/api/public/hooks/weekly-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksProfileRemindersRoute =
@@ -130,28 +148,10 @@ const ApiPublicHooksProfileRemindersRoute =
     path: '/api/public/hooks/profile-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksWeeklyDigestRoute =
-  ApiPublicHooksWeeklyDigestRouteImport.update({
-    id: '/api/public/hooks/weekly-digest',
-    path: '/api/public/hooks/weekly-digest',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AppAdminTeamReadinessIndexRoute =
-  AppAdminTeamReadinessIndexRouteImport.update({
-    id: '/admin_/team-readiness/',
-    path: '/admin/team-readiness/',
-    getParentRoute: () => AppRoute,
-  } as any)
-const AppAdminTeamReadinessTeamIdRoute =
-  AppAdminTeamReadinessTeamIdRouteImport.update({
-    id: '/admin_/team-readiness/$teamId',
-    path: '/admin/team-readiness/$teamId',
-    getParentRoute: () => AppRoute,
-  } as any)
-const LovableEmailTransactionalPreviewRoute =
-  LovableEmailTransactionalPreviewRouteImport.update({
-    id: '/lovable/email/transactional/preview',
-    path: '/lovable/email/transactional/preview',
+const ApiPublicHooksAutoArchiveRoute =
+  ApiPublicHooksAutoArchiveRouteImport.update({
+    id: '/api/public/hooks/auto-archive',
+    path: '/api/public/hooks/auto-archive',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -323,18 +323,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/app': {
-      id: '/app'
-      path: '/app'
-      fullPath: '/app'
-      preLoaderRoute: typeof AppRouteImport
+    '/set-password': {
+      id: '/set-password'
+      path: '/set-password'
+      fullPath: '/set-password'
+      preLoaderRoute: typeof SetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -344,67 +337,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/set-password': {
-      id: '/set-password'
-      path: '/set-password'
-      fullPath: '/set-password'
-      preLoaderRoute: typeof SetPasswordRouteImport
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/app/admin': {
-      id: '/app/admin'
-      path: '/admin'
-      fullPath: '/app/admin'
-      preLoaderRoute: typeof AppAdminRouteImport
-      parentRoute: typeof AppRoute
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/app/agreement': {
-      id: '/app/agreement'
-      path: '/agreement'
-      fullPath: '/app/agreement'
-      preLoaderRoute: typeof AppAgreementRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/backlog': {
-      id: '/app/backlog'
-      path: '/backlog'
-      fullPath: '/app/backlog'
-      preLoaderRoute: typeof AppBacklogRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/competitions': {
-      id: '/app/competitions'
-      path: '/competitions'
-      fullPath: '/app/competitions'
-      preLoaderRoute: typeof AppCompetitionsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/dashboard': {
-      id: '/app/dashboard'
-      path: '/dashboard'
-      fullPath: '/app/dashboard'
-      preLoaderRoute: typeof AppDashboardRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/health-review': {
-      id: '/app/health-review'
-      path: '/health-review'
-      fullPath: '/app/health-review'
-      preLoaderRoute: typeof AppHealthReviewRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/meetings': {
-      id: '/app/meetings'
-      path: '/meetings'
-      fullPath: '/app/meetings'
-      preLoaderRoute: typeof AppMeetingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/teams': {
-      id: '/app/teams'
-      path: '/teams'
-      fullPath: '/app/teams'
-      preLoaderRoute: typeof AppTeamsRouteImport
+    '/app/vault-overview': {
+      id: '/app/vault-overview'
+      path: '/vault-overview'
+      fullPath: '/app/vault-overview'
+      preLoaderRoute: typeof AppVaultOverviewRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/vault': {
@@ -414,25 +365,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVaultRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/vault-overview': {
-      id: '/app/vault-overview'
-      path: '/vault-overview'
-      fullPath: '/app/vault-overview'
-      preLoaderRoute: typeof AppVaultOverviewRouteImport
+    '/app/teams': {
+      id: '/app/teams'
+      path: '/teams'
+      fullPath: '/app/teams'
+      preLoaderRoute: typeof AppTeamsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/api/public/file-download': {
-      id: '/api/public/file-download'
-      path: '/api/public/file-download'
-      fullPath: '/api/public/file-download'
-      preLoaderRoute: typeof ApiPublicFileDownloadRouteImport
-      parentRoute: typeof rootRouteImport
+    '/app/meetings': {
+      id: '/app/meetings'
+      path: '/meetings'
+      fullPath: '/app/meetings'
+      preLoaderRoute: typeof AppMeetingsRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/app/admin_/usage': {
-      id: '/app/admin_/usage'
-      path: '/admin/usage'
-      fullPath: '/app/admin/usage'
-      preLoaderRoute: typeof AppAdminUsageRouteImport
+    '/app/health-review': {
+      id: '/app/health-review'
+      path: '/health-review'
+      fullPath: '/app/health-review'
+      preLoaderRoute: typeof AppHealthReviewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/dashboard': {
+      id: '/app/dashboard'
+      path: '/dashboard'
+      fullPath: '/app/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/competitions': {
+      id: '/app/competitions'
+      path: '/competitions'
+      fullPath: '/app/competitions'
+      preLoaderRoute: typeof AppCompetitionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/backlog': {
+      id: '/app/backlog'
+      path: '/backlog'
+      fullPath: '/app/backlog'
+      preLoaderRoute: typeof AppBacklogRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/agreement': {
+      id: '/app/agreement'
+      path: '/agreement'
+      fullPath: '/app/agreement'
+      preLoaderRoute: typeof AppAgreementRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/teams/$teamId': {
@@ -442,25 +428,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTeamsTeamIdRouteImport
       parentRoute: typeof AppTeamsRoute
     }
-    '/api/public/hooks/auto-archive': {
-      id: '/api/public/hooks/auto-archive'
-      path: '/api/public/hooks/auto-archive'
-      fullPath: '/api/public/hooks/auto-archive'
-      preLoaderRoute: typeof ApiPublicHooksAutoArchiveRouteImport
-      parentRoute: typeof rootRouteImport
+    '/app/admin_/usage': {
+      id: '/app/admin_/usage'
+      path: '/admin/usage'
+      fullPath: '/app/admin/usage'
+      preLoaderRoute: typeof AppAdminUsageRouteImport
+      parentRoute: typeof AppRoute
     }
-    '/api/public/hooks/profile-reminders': {
-      id: '/api/public/hooks/profile-reminders'
-      path: '/api/public/hooks/profile-reminders'
-      fullPath: '/api/public/hooks/profile-reminders'
-      preLoaderRoute: typeof ApiPublicHooksProfileRemindersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/weekly-digest': {
-      id: '/api/public/hooks/weekly-digest'
-      path: '/api/public/hooks/weekly-digest'
-      fullPath: '/api/public/hooks/weekly-digest'
-      preLoaderRoute: typeof ApiPublicHooksWeeklyDigestRouteImport
+    '/api/public/file-download': {
+      id: '/api/public/file-download'
+      path: '/api/public/file-download'
+      fullPath: '/api/public/file-download'
+      preLoaderRoute: typeof ApiPublicFileDownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/admin_/team-readiness/': {
@@ -470,6 +449,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminTeamReadinessIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/admin_/team-readiness/$teamId': {
       id: '/app/admin_/team-readiness/$teamId'
       path: '/admin/team-readiness/$teamId'
@@ -477,11 +463,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminTeamReadinessTeamIdRouteImport
       parentRoute: typeof AppRoute
     }
-    '/lovable/email/transactional/preview': {
-      id: '/lovable/email/transactional/preview'
-      path: '/lovable/email/transactional/preview'
-      fullPath: '/lovable/email/transactional/preview'
-      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+    '/api/public/hooks/weekly-digest': {
+      id: '/api/public/hooks/weekly-digest'
+      path: '/api/public/hooks/weekly-digest'
+      fullPath: '/api/public/hooks/weekly-digest'
+      preLoaderRoute: typeof ApiPublicHooksWeeklyDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/profile-reminders': {
+      id: '/api/public/hooks/profile-reminders'
+      path: '/api/public/hooks/profile-reminders'
+      fullPath: '/api/public/hooks/profile-reminders'
+      preLoaderRoute: typeof ApiPublicHooksProfileRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/auto-archive': {
+      id: '/api/public/hooks/auto-archive'
+      path: '/api/public/hooks/auto-archive'
+      fullPath: '/api/public/hooks/auto-archive'
+      preLoaderRoute: typeof ApiPublicHooksAutoArchiveRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
