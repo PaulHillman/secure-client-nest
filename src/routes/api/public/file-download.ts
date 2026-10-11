@@ -90,6 +90,7 @@ export const Route = createFileRoute("/api/public/file-download")({
           status: 200,
           headers: {
             "Content-Type": version.mime_type || blob.type || "application/octet-stream",
+            "Content-Length": String(blob.size),
             "Content-Disposition": `inline; filename="${safeName}"`,
             "Cache-Control": "private, max-age=60",
           },
