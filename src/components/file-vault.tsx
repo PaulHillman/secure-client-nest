@@ -1,4 +1,5 @@
 import { recordHealthReportView } from "@/lib/health-report-views";
+import { openVaultFileInNewTab } from "@/lib/file-download";
 import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { recordHealthReportView, sessionIdFromToken } from "@/lib/health-report-views";
+import { openVaultFileInNewTab } from "@/lib/file-download";
 
 type Report = { id: string; file_name: string; team_id: string | null; current_version_id: string | null };
 
