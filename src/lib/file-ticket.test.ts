@@ -1,22 +1,23 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { before, describe, test } from "node:test";
+import { strict as assert } from "node:assert";
 import { signFileTicket, verifyFileTicket } from "./file-ticket.server";
 
-beforeAll(() => {
+before(() => {
   process.env.SUPABASE_SERVICE_ROLE_KEY = "test-secret";
 });
 
 describe("file download tickets", () => {
-  it("accepts a fresh ticket for the same file", async () => {
+  test("accepts a fresh ticket for the same file", async () => {
     const t = await signFileTicket("ver-1");
-    expect(await verifyFileTicket(t)).toBe("ver-1");
+    assert.equal(await verifyFileTicket(t), "ver-1");
   });
-  it("rejects a ticket older than 5 minutes", async () => {
+  test("rejects a ticket older than 5 minutes", async () => {
     const t = await signFileTicket("ver-1", Date.now() - 6 * 60 * 1000);
-    expect(await verifyFileTicket(t)).toBeNull();
+    assert.equal(await verifyFileTicket(t), null);
   });
-  it("rejects a ticket pointed at a different file", async () => {
+  test("rejects a ticket pointed at a different file", async () => {
     const [, sig] = (await signFileTicket("ver-1")).split(".");
     const other = (await signFileTicket("ver-2")).split(".")[0];
-    expect(await verifyFileTicket(`${other}.${sig}`)).toBeNull();
+    assert.equal(await verifyFileTicket(`${other}.${sig}`), null);
   });
 });
