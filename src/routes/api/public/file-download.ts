@@ -39,6 +39,7 @@ export const Route = createFileRoute("/api/public/file-download")({
             status: 200,
             headers: {
               "Content-Type": v.mime_type || b.type || "application/octet-stream",
+              "Content-Length": String(b.size),
               "Content-Disposition": `inline; filename="${name}"`,
               "Cache-Control": "private, max-age=60",
             },
