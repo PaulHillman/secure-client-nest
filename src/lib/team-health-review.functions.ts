@@ -283,12 +283,14 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       const noRole = !!roleFilter && !roster.some((m) => m.job_title === roleFilter);
       const teamLevel = !roleFilter;
       const pmScope = roleFilter === "PM";
+      const hasReport = (files ?? []).some((f) => f.team_id === t.teamId && !f.is_template && subsectionMatches(f.subsection, "Health Reports"));
       const results = {} as Record<HealthCheck, CheckStatus>;
       for (const c of CHECK_KEYS) {
         const applicable =
           !noRole &&
           (c !== "gaps" || teamLevel || pmScope) &&
-          (c !== "meetings" || ((teamLevel || pmScope) && week >= 3));
+          (c !== "meetings" || ((teamLevel || pmScope) && week >= 3)) &&
+          (c !== "reports" || (teamLevel && hasReport));
         results[c] = !applicable ? "skipped" : worst.has(`${t.teamId}:${c}`) ? "flagged" : "pass";
       }
       return {
@@ -297,7 +299,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         section: t.section,
         peopleChecked: (roleFilter ? roster.filter((m) => m.job_title === roleFilter) : roster).length,
         results,
-        passNotes: passNotesByTeam.get(t.teamId) ?? { gaps: [], readiness: [], meetings: [], activity: [], vault: [] },
+        passNotes: passNotesByTeam.get(t.teamId) ?? { gaps: [], readiness: [], meetings: [], activity: [], vault: [], reports: [] },
       };
     });
 
