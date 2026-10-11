@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { createFileTicket } from "@/lib/file-download.functions";
 
 // Fetches a vault file through the app's own domain (/api/public/file-download)
 // instead of the storage domain, so browser ad/privacy blockers don't block it.
@@ -14,7 +15,22 @@ export async function fetchVaultFileUrl(versionId: string): Promise<string> {
   return URL.createObjectURL(blob);
 }
 
+// Opens a real same-origin link (not a blob: URL — Chrome and blockers refuse
+// blob: pages in a new tab). The tab is opened immediately on click so popup
+// blockers allow it, then pointed at the 5-minute signed link.
 export async function openVaultFileInNewTab(versionId: string): Promise<void> {
-  const url = await fetchVaultFileUrl(versionId);
-  window.open(url, "_blank");
+  const win = window.open("", "_blank");
+  try {
+    const { url } = await createFileTicket({ data: { versionId } });
+    const abs = new URL(url, window.location.origin).toString();
+    if (win) {
+      win.opener = null;
+      win.location.href = abs;
+    } else {
+      window.location.assign(abs);
+    }
+  } catch (e) {
+    win?.close();
+    throw e;
+  }
 }

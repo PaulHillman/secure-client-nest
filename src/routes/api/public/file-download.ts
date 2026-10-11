@@ -17,11 +17,38 @@ export const Route = createFileRoute("/api/public/file-download")({
             headers: { "Content-Type": "application/json" },
           });
 
+        const url = new URL(request.url);
+
+        // New-tab opens: a signed 5-minute ticket issued only after an RLS access check.
+        const ticket = url.searchParams.get("ticket");
+        if (ticket) {
+          const { verifyFileTicket } = await import("@/lib/file-ticket.server");
+          const vid = await verifyFileTicket(ticket);
+          if (!vid) return json({ error: "This link has expired. Open the file again from ClientVault." }, 401);
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { data: v } = await supabaseAdmin
+            .from("file_versions")
+            .select("storage_path, mime_type, files(file_name)")
+            .eq("id", vid)
+            .maybeSingle();
+          if (!v) return json({ error: "Not found" }, 404);
+          const { data: b, error: e } = await supabaseAdmin.storage.from("vault").download(v.storage_path);
+          if (e || !b) return json({ error: "Could not read file" }, 502);
+          const name = ((v.files as { file_name: string } | null)?.file_name ?? "file").replace(/["\r\n]/g, "_");
+          return new Response(b, {
+            status: 200,
+            headers: {
+              "Content-Type": v.mime_type || b.type || "application/octet-stream",
+              "Content-Disposition": `inline; filename="${name}"`,
+              "Cache-Control": "private, no-store",
+            },
+          });
+        }
+
         const authHeader = request.headers.get("authorization") ?? "";
         const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
         if (!token) return json({ error: "Unauthorized" }, 401);
 
-        const url = new URL(request.url);
         const versionId = url.searchParams.get("version");
         if (!versionId) return json({ error: "Missing version" }, 400);
 
