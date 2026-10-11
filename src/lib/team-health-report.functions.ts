@@ -9,7 +9,7 @@ type Payload = {
 type Input = { action: "save" | "send" | "both"; scope: string; scopeLabel: string; payload: Payload };
 
 const CHECK_LABELS: Record<HealthCheck, string> = {
-  gaps: "Dashboard Gaps", readiness: "Team Readiness", meetings: "Weekly Meetings",
+  gaps: "Dashboard Gaps", readiness: "Team Readiness", meetings: "Weekly Meetings", reports: "Health Report follow-up",
   activity: "Login / upload activity", vault: "File Vault requirements",
 };
 const PARFUNKEL = /parfunkel/i;

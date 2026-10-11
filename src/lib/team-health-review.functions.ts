@@ -7,7 +7,7 @@ import { subsectionMatches } from "@/lib/vault-structure";
 export type HealthScope = "team" | "section" | "all" | "role";
 
 export const ROLE_SCOPES = ["PM", "Company Liaison", "Client Vault & Tech Administrator", "Communication Specialist", "Video Specialist", "Researcher"] as const;
-export type HealthCheck = "gaps" | "readiness" | "meetings" | "activity" | "vault";
+export type HealthCheck = "gaps" | "readiness" | "meetings" | "activity" | "vault" | "reports";
 
 export type HealthException = {
   check: HealthCheck;
@@ -80,12 +80,13 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
     if (!ids.length) return { generatedAt, week, progress, teamsChecked: 0, peopleChecked: 0, teamResults: [] as TeamCheckResult[], exceptions: [] as HealthException[], ranking: [] as PersonRank[], reportId: null as string | null };
 
     const since = new Date(now - 7 * DAY).toISOString();
-    const [{ data: members }, { data: logs }, { data: files }, { data: norms }, { data: profiles }] = await Promise.all([
+    const [{ data: members }, { data: logs }, { data: files }, { data: norms }, { data: profiles }, { data: reportViews }] = await Promise.all([
       db.from("team_members").select("team_id, user_id, job_title").in("team_id", ids),
       db.from("meeting_logs").select("team_id, meeting_date, attendance, minutes_posted").in("team_id", ids),
       db.from("files").select("team_id, section, subsection, file_name, uploaded_by, is_template, is_locked").in("team_id", ids),
       db.from("group_norms").select("team_id, is_locked").in("team_id", ids),
       db.from("profiles").select("id, name, first_name, last_name, email"),
+      db.from("health_report_views").select("user_id, team_id, view_count, clicked_at, last_viewed_at").in("team_id", ids),
     ]);
     const userIds = [...new Set((members ?? []).map((m) => m.user_id))];
     const [{ data: auths }, { data: usage }, { data: versions }, { data: sessions }] = await Promise.all([
@@ -120,7 +121,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       const label = teamLineLabel({ name: t.teamRecordName, display_name: t.teamName !== t.teamRecordName ? t.teamName : null, section: t.section });
       const push = (check: HealthCheck, level: "red" | "yellow", reason: string, person: string | null = null, role: string | null = null, userId: string | null = null) =>
         out.push({ check, level, teamId: t.teamId, teamLabel: label, section: t.section, person, role, userId, reason });
-      const notes: Record<HealthCheck, string[]> = { gaps: [], readiness: [], meetings: [], activity: [], vault: [] };
+      const notes: Record<HealthCheck, string[]> = { gaps: [], readiness: [], meetings: [], activity: [], vault: [], reports: [] };
       passNotesByTeam.set(t.teamId, notes);
       const tm = (members ?? []).filter((m) => m.team_id === t.teamId && !PARFUNKEL.test(nameOf(m.user_id)));
       const roleHolders = roleFilter ? tm.filter((m) => m.job_title === roleFilter) : tm;
@@ -250,9 +251,26 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
           push("vault", "yellow", `"${f.file_name}" looks like client research but is filed under ${f.subsection} — move it to Client research.`, taName, "Client Vault & Tech Administrator", taId);
         if (!misfiled.length && inResearch.length) notes.vault.push("All research files are filed in the Client research folder.");
       }
+
+      // 7. Health Report follow-up: has each member opened their team's health review report?
+      if (isTeamLevel) {
+        const hasReport = teamFiles.some((f) => subsectionMatches(f.subsection, "Health Reports"));
+        if (hasReport) {
+          const views = (reportViews ?? []).filter((v) => v.team_id === t.teamId);
+          for (const m of tm) {
+            const v = views.find((x) => x.user_id === m.user_id);
+            const nm = nameOf(m.user_id);
+            if (v && (v.view_count > 0 || v.clicked_at)) {
+              notes.reports.push(`${nm}: opened the team health report${v.view_count > 1 ? ` (${v.view_count} times)` : ""}${v.clicked_at ? " via the dashboard banner" : ""}.`);
+            } else {
+              push("reports", "yellow", "Has not opened the team's Health Review report yet.", nm, m.job_title, m.user_id);
+            }
+          }
+        }
+      }
     }
 
-    const CHECK_KEYS: HealthCheck[] = ["gaps", "readiness", "meetings", "activity", "vault"];
+    const CHECK_KEYS: HealthCheck[] = ["gaps", "readiness", "meetings", "activity", "vault", "reports"];
     const worst = new Map<string, "red" | "yellow">();
     for (const e of out) {
       const k = `${e.teamId}:${e.check}`;
@@ -265,12 +283,14 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       const noRole = !!roleFilter && !roster.some((m) => m.job_title === roleFilter);
       const teamLevel = !roleFilter;
       const pmScope = roleFilter === "PM";
+      const hasReport = (files ?? []).some((f) => f.team_id === t.teamId && !f.is_template && subsectionMatches(f.subsection, "Health Reports"));
       const results = {} as Record<HealthCheck, CheckStatus>;
       for (const c of CHECK_KEYS) {
         const applicable =
           !noRole &&
           (c !== "gaps" || teamLevel || pmScope) &&
-          (c !== "meetings" || ((teamLevel || pmScope) && week >= 3));
+          (c !== "meetings" || ((teamLevel || pmScope) && week >= 3)) &&
+          (c !== "reports" || (teamLevel && hasReport));
         results[c] = !applicable ? "skipped" : worst.has(`${t.teamId}:${c}`) ? "flagged" : "pass";
       }
       return {
@@ -279,7 +299,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
         section: t.section,
         peopleChecked: (roleFilter ? roster.filter((m) => m.job_title === roleFilter) : roster).length,
         results,
-        passNotes: passNotesByTeam.get(t.teamId) ?? { gaps: [], readiness: [], meetings: [], activity: [], vault: [] },
+        passNotes: passNotesByTeam.get(t.teamId) ?? { gaps: [], readiness: [], meetings: [], activity: [], vault: [], reports: [] },
       };
     });
 
