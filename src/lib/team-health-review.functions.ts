@@ -84,7 +84,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       db.from("team_members").select("team_id, user_id, job_title").in("team_id", ids),
       db.from("meeting_logs").select("team_id, meeting_date, attendance, minutes_posted").in("team_id", ids),
       db.from("files").select("team_id, section, subsection, file_name, uploaded_by, is_template, is_locked").in("team_id", ids),
-      db.from("group_norms").select("team_id, is_locked").in("team_id", ids),
+      db.from("group_norms").select("team_id, version, group_norms_signatures(user_id, version)").in("team_id", ids),
       db.from("profiles").select("id, name, first_name, last_name, email"),
       db.from("health_report_views").select("user_id, team_id, view_count, clicked_at, last_viewed_at").in("team_id", ids),
     ]);
@@ -139,8 +139,16 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
 
       // 1. Dashboard Gaps
       if (isTeamLevel || pmScope) {
-        if (!(norms ?? []).some((n) => n.team_id === t.teamId && n.is_locked)) push("gaps", "yellow", "Group Norms not signed and locked.");
-        else notes.gaps.push("Group Norms signed and locked.");
+        {
+          // Same rule as the Group Norms card's "Fully approved" badge: every current member signed the current version.
+          const gn = (norms ?? []).find((n) => n.team_id === t.teamId) as { version: number; group_norms_signatures: { user_id: string; version: number }[] } | undefined;
+          const roster = (members ?? []).filter((m) => m.team_id === t.teamId).map((m) => m.user_id);
+          const signed = new Set((gn?.group_norms_signatures ?? []).filter((s) => s.version === gn?.version).map((s) => s.user_id));
+          const missing = roster.filter((u) => !signed.has(u));
+          if (!gn) push("gaps", "yellow", "Group Norms not written yet.");
+          else if (missing.length) push("gaps", "yellow", `Group Norms version ${gn.version} not signed by: ${missing.map(nameOf).join(", ")}.`);
+          else notes.gaps.push(`Group Norms version ${gn.version} signed by all ${roster.length} members.`);
+        }
         if (t.setup.meetingState !== "complete") push("gaps", "yellow", "No weekly meeting consensus yet.");
         else notes.gaps.push("Weekly meeting time agreed by the team.");
       }
