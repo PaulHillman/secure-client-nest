@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { FileText, Upload, Trash2, Send, Download, Plus, Lock, Undo2 } from "lucide-react";
 import { VAULT_STRUCTURE, findSubsection } from "@/lib/vault-structure";
 import { safeStorageFileName } from "@/lib/storage-path";
+import { openVaultFileInNewTab } from "@/lib/file-download";
 
 type TemplateRow = {
   id: string;
@@ -96,10 +97,11 @@ export function TemplatesPanel() {
   const download = async (t: TemplateRow) => {
     const cur = vMap.get(t.id);
     if (!cur) return toast.error("No version available");
-    const { data: signed, error } = await supabase.storage
-      .from("vault").createSignedUrl(cur.storage_path, 60, { download: t.file_name });
-    if (error || !signed) return toast.error("Could not generate download link");
-    window.open(signed.signedUrl, "_blank");
+    try {
+      await openVaultFileInNewTab(cur.id);
+    } catch {
+      toast.error("Could not generate download link");
+    }
   };
 
   // Group templates by section
