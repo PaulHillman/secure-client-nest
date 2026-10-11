@@ -237,7 +237,7 @@ function HealthReviewPage() {
                           <td className="py-2 pr-3 whitespace-nowrap">{t.teamLabel}</td>
                           {CHECK_KEYS.map((k) => (
                             <td key={k} className="pr-3">
-                              {t.results[k] === "skipped" ? (
+                              {!t.results[k] || t.results[k] === "skipped" ? (
                                 <span className="text-muted-foreground">—</span>
                               ) : (
                                 <span className={`inline-block h-2.5 w-2.5 rounded-full ${t.results[k] === "pass" ? "bg-success" : levelFor(t.teamId, k) === "red" ? "bg-destructive" : "bg-gold"}`} aria-label={t.results[k] === "pass" ? "Good" : levelFor(t.teamId, k) === "red" ? "Bad" : "Fair"} />
