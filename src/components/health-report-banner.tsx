@@ -5,17 +5,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { recordHealthReportView, sessionIdFromToken } from "@/lib/health-report-views";
-import { openVaultFileInNewTab } from "@/lib/file-download";
+import { FileViewerDialog } from "@/components/file-viewer-dialog";
 
 type Report = { id: string; file_name: string; team_id: string | null; current_version_id: string | null };
 
 /**
  * Student-only banner: shown on up to 2 logins per report, hidden for good once clicked.
- * A "login" = a distinct auth session id.
+ * A "login" = a distinct auth session id. "View report" opens the PDF in an in-app viewer.
  */
 export function HealthReportBanner() {
   const { user, isAdmin, viewAs } = useAuth();
   const [report, setReport] = useState<Report | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [opened, setOpened] = useState(false);
 
   useEffect(() => {
     if (!user || isAdmin) return;
@@ -67,25 +69,36 @@ export function HealthReportBanner() {
 
   const open = async () => {
     if (!report.current_version_id) return toast.error("Report not available");
-    try {
-      await openVaultFileInNewTab(report.current_version_id);
-    } catch {
-      return toast.error("Could not open report");
+    setViewerOpen(true);
+    if (!viewAs && !opened) {
+      setOpened(true);
+      await recordHealthReportView(report.id, report.team_id, true);
     }
-    if (!viewAs) await recordHealthReportView(report.id, report.team_id, true);
-    setReport(null);
+  };
+
+  const closeViewer = (v: boolean) => {
+    setViewerOpen(v);
+    if (!v && opened) setReport(null);
   };
 
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-gold/60 bg-card p-4 text-sm">
-      <HeartPulse className="h-5 w-5 text-gold" />
-      <div className="flex-1 min-w-[12rem]">
-        <strong>Your team's Health Review is in.</strong> See how your team is doing and what needs attention.
+    <>
+      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-gold/60 bg-card p-4 text-sm">
+        <HeartPulse className="h-5 w-5 text-gold" />
+        <div className="flex-1 min-w-[12rem]">
+          <strong>Your team's Health Review is in.</strong> See how your team is doing and what needs attention.
+        </div>
+        <Button size="sm" onClick={open}>View report</Button>
+        <button type="button" aria-label="Hide for now" onClick={() => setReport(null)} className="text-muted-foreground hover:text-foreground">
+          <X className="h-4 w-4" />
+        </button>
       </div>
-      <Button size="sm" onClick={open}>View report</Button>
-      <button type="button" aria-label="Hide for now" onClick={() => setReport(null)} className="text-muted-foreground hover:text-foreground">
-        <X className="h-4 w-4" />
-      </button>
-    </div>
+      <FileViewerDialog
+        open={viewerOpen}
+        onOpenChange={closeViewer}
+        version={report.current_version_id ? { id: report.current_version_id, storage_path: "", mime_type: "application/pdf" } : null}
+        fileName={report.file_name}
+      />
+    </>
   );
 }

@@ -15,22 +15,18 @@ export async function fetchVaultFileUrl(versionId: string): Promise<string> {
   return URL.createObjectURL(blob);
 }
 
-// Opens a real same-origin link (not a blob: URL — Chrome and blockers refuse
-// blob: pages in a new tab). The tab is opened immediately on click so popup
-// blockers allow it, then pointed at the 5-minute signed link.
-export async function openVaultFileInNewTab(versionId: string): Promise<void> {
-  const win = window.open("", "_blank");
-  try {
-    const { url } = await createFileTicket({ data: { versionId } });
-    const abs = new URL(url, window.location.origin).toString();
-    if (win) {
-      win.opener = null;
-      win.location.href = abs;
-    } else {
-      window.location.assign(abs);
-    }
-  } catch (e) {
-    win?.close();
-    throw e;
-  }
+// Saves the file to the user's computer from the current page (no new tab, so
+// neither the browser's PDF viewer nor blocker extensions are involved).
+// Name kept for existing callers.
+export async function openVaultFileInNewTab(versionId: string, fileName?: string): Promise<void> {
+  const url = await fetchVaultFileUrl(versionId);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = fileName || "download";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
+
+export const downloadVaultFile = openVaultFileInNewTab;

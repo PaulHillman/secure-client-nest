@@ -245,7 +245,7 @@ export function FileVault({
       .from("file_versions").select("file_id").eq("id", versionId).single();
     if (!v) return toast.error("Version not found");
     try {
-      await openVaultFileInNewTab(versionId);
+      await openVaultFileInNewTab(versionId, fileName);
     } catch {
       return toast.error("Could not open this file right now");
     }
