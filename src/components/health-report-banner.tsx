@@ -29,6 +29,12 @@ export function HealthReportBanner() {
         .order("created_at", { ascending: false }).limit(1);
       const f = files?.[0];
       if (!f) return;
+      // Admin "View as" preview: show the banner exactly as the student would see it,
+      // but never write tracking rows — nothing to reset afterwards.
+      if (viewAs) {
+        if (!cancelled) setReport(f);
+        return;
+      }
       const { data: s } = await supabase.auth.getSession();
       const sid = sessionIdFromToken(s.session?.access_token) ?? "unknown";
       const { data: row } = await supabase
@@ -65,7 +71,7 @@ export function HealthReportBanner() {
     const { data: signed } = await supabase.storage.from("vault").createSignedUrl(v.storage_path, 300);
     if (!signed) return toast.error("Could not open report");
     window.open(signed.signedUrl, "_blank");
-    await recordHealthReportView(report.id, report.team_id, true);
+    if (!viewAs) await recordHealthReportView(report.id, report.team_id, true);
     setReport(null);
   };
 
