@@ -7,7 +7,7 @@ import { subsectionMatches } from "@/lib/vault-structure";
 export type HealthScope = "team" | "section" | "all" | "role";
 
 export const ROLE_SCOPES = ["PM", "Company Liaison", "Client Vault & Tech Administrator", "Communication Specialist", "Video Specialist", "Researcher"] as const;
-export type HealthCheck = "gaps" | "readiness" | "meetings" | "activity" | "vault";
+export type HealthCheck = "gaps" | "readiness" | "meetings" | "activity" | "vault" | "reports";
 
 export type HealthException = {
   check: HealthCheck;
@@ -86,6 +86,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       db.from("files").select("team_id, section, subsection, file_name, uploaded_by, is_template, is_locked").in("team_id", ids),
       db.from("group_norms").select("team_id, is_locked").in("team_id", ids),
       db.from("profiles").select("id, name, first_name, last_name, email"),
+      db.from("health_report_views").select("user_id, team_id, view_count, clicked_at, last_viewed_at").in("team_id", ids),
     ]);
     const userIds = [...new Set((members ?? []).map((m) => m.user_id))];
     const [{ data: auths }, { data: usage }, { data: versions }, { data: sessions }] = await Promise.all([
