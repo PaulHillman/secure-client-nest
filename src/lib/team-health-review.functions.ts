@@ -61,6 +61,14 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: ok } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
     if (ok !== true) throw new Error("Forbidden");
+    return computeHealthReview(data, context);
+  });
+
+/** Shared review logic; also used when regenerating vault report PDFs. */
+export async function computeHealthReview(
+  data: { scope: HealthScope; teamId?: string; section?: string; role?: string },
+  context: { supabase: any; userId: string },
+) {
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
 
     const { assessments, generatedAt } = await buildAssessments(data.scope === "team" ? data.teamId : undefined);
