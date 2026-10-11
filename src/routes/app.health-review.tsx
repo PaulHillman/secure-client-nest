@@ -175,6 +175,14 @@ function HealthReviewPage() {
             {m.isPending ? "Running…" : "Run review"}
           </Button>
           {m.error && <p className="text-sm text-destructive">{(m.error as Error).message}</p>}
+          <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-4">
+            <Button size="sm" variant="outline" disabled={vaultM.isPending} onClick={() => { setVaultDone(null); vaultM.mutate(); }}>
+              {vaultM.isPending ? "Refreshing…" : "Refresh vault report PDFs"}
+            </Button>
+            <span className="text-xs text-muted-foreground">Regenerates each team's Health Reports PDF with the current rules. No emails, nothing saved to history.</span>
+            {vaultDone && <span className="text-sm text-success">{vaultDone}</span>}
+            {vaultM.error && <span className="text-sm text-destructive">{(vaultM.error as Error).message}</span>}
+          </div>
         </CardContent>
       </Card>
 
