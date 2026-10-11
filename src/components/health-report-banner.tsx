@@ -13,7 +13,7 @@ type Report = { id: string; file_name: string; team_id: string | null; current_v
  * A "login" = a distinct auth session id.
  */
 export function HealthReportBanner() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, viewAs } = useAuth();
   const [report, setReport] = useState<Report | null>(null);
 
   useEffect(() => {
