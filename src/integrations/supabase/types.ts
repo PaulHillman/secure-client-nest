@@ -1041,6 +1041,51 @@ export type Database = {
           },
         ]
       }
+      health_report_views: {
+        Row: {
+          clicked_at: string | null
+          created_at: string
+          file_id: string
+          first_shown_at: string | null
+          id: string
+          last_session_id: string | null
+          last_shown_at: string | null
+          last_viewed_at: string | null
+          logins_shown: number
+          team_id: string | null
+          user_id: string
+          view_count: number
+        }
+        Insert: {
+          clicked_at?: string | null
+          created_at?: string
+          file_id: string
+          first_shown_at?: string | null
+          id?: string
+          last_session_id?: string | null
+          last_shown_at?: string | null
+          last_viewed_at?: string | null
+          logins_shown?: number
+          team_id?: string | null
+          user_id: string
+          view_count?: number
+        }
+        Update: {
+          clicked_at?: string | null
+          created_at?: string
+          file_id?: string
+          first_shown_at?: string | null
+          id?: string
+          last_session_id?: string | null
+          last_shown_at?: string | null
+          last_viewed_at?: string | null
+          logins_shown?: number
+          team_id?: string | null
+          user_id?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       health_review_reports: {
         Row: {
           bad_count: number
