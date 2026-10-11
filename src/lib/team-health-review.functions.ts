@@ -251,9 +251,26 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
           push("vault", "yellow", `"${f.file_name}" looks like client research but is filed under ${f.subsection} — move it to Client research.`, taName, "Client Vault & Tech Administrator", taId);
         if (!misfiled.length && inResearch.length) notes.vault.push("All research files are filed in the Client research folder.");
       }
+
+      // 7. Health Report follow-up: has each member opened their team's health review report?
+      if (isTeamLevel) {
+        const hasReport = teamFiles.some((f) => subsectionMatches(f.subsection, "Health Reports"));
+        if (hasReport) {
+          const views = (reportViews ?? []).filter((v) => v.team_id === t.teamId);
+          for (const m of tm) {
+            const v = views.find((x) => x.user_id === m.user_id);
+            const nm = nameOf(m.user_id);
+            if (v && (v.view_count > 0 || v.clicked_at)) {
+              notes.reports.push(`${nm}: opened the team health report${v.view_count > 1 ? ` (${v.view_count} times)` : ""}${v.clicked_at ? " via the dashboard banner" : ""}.`);
+            } else {
+              push("reports", "yellow", "Has not opened the team's Health Review report yet.", nm, m.job_title, m.user_id);
+            }
+          }
+        }
+      }
     }
 
-    const CHECK_KEYS: HealthCheck[] = ["gaps", "readiness", "meetings", "activity", "vault"];
+    const CHECK_KEYS: HealthCheck[] = ["gaps", "readiness", "meetings", "activity", "vault", "reports"];
     const worst = new Map<string, "red" | "yellow">();
     for (const e of out) {
       const k = `${e.teamId}:${e.check}`;
