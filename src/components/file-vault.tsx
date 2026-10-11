@@ -1,4 +1,5 @@
 import { recordHealthReportView } from "@/lib/health-report-views";
+import { openVaultFileInNewTab } from "@/lib/file-download";
 import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -241,12 +242,13 @@ export function FileVault({
   const download = async (versionId: string | null, fileName: string) => {
     if (!versionId) return toast.error("No version available");
     const { data: v } = await supabase
-      .from("file_versions").select("storage_path, file_id").eq("id", versionId).single();
+      .from("file_versions").select("file_id").eq("id", versionId).single();
     if (!v) return toast.error("Version not found");
-    const { data: signed, error } = await supabase.storage
-      .from("vault").createSignedUrl(v.storage_path, 60, { download: fileName });
-    if (error || !signed) return toast.error("Could not generate download link");
-    window.open(signed.signedUrl, "_blank");
+    try {
+      await openVaultFileInNewTab(versionId);
+    } catch {
+      return toast.error("Could not open this file right now");
+    }
     const { data: f } = await supabase.from("files").select("subsection, team_id").eq("id", v.file_id).single();
     if (f?.subsection === "Health Reports") void recordHealthReportView(v.file_id, f.team_id, false);
   };
@@ -620,23 +622,12 @@ function GroupNormsVaultNote({ teamId }: { teamId: string }) {
         toast.error("The shared template is not available yet");
         return;
       }
-      const { data: ver } = await supabase
-        .from("file_versions")
-        .select("storage_path")
-        .eq("id", tpl.current_version_id)
-        .maybeSingle();
-      if (!ver) {
-        toast.error("The shared template is not available yet");
-        return;
-      }
-      const { data: signed, error: sErr } = await supabase.storage
-        .from("vault")
-        .createSignedUrl(ver.storage_path, 60, { download: tpl.file_name });
-      if (sErr || !signed) {
+      try {
+        await openVaultFileInNewTab(tpl.current_version_id);
+      } catch {
         toast.error("Could not generate download link");
         return;
       }
-      window.open(signed.signedUrl, "_blank");
     } finally {
       setDownloading(false);
     }

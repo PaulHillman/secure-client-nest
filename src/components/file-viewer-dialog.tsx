@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchVaultFileUrl, openVaultFileInNewTab } from "@/lib/file-download";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -60,29 +61,37 @@ export function FileViewerDialog({
   const docHostRef = useRef<HTMLDivElement>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
 
-  // Resolve a short-lived signed URL whenever the dialog opens for a version.
+  // Resolve a same-origin blob URL (via the app-domain download route) whenever
+  // the dialog opens for a version, so browser blockers never see the storage domain.
   useEffect(() => {
     if (!open || !version) return;
     let alive = true;
+    let blobUrl: string | null = null;
     setError(null);
     setPlainText(null);
     setMode("formatted");
     (async () => {
       setLoading(true);
-      const { data, error } = await supabase.storage
-        .from("vault")
-        .createSignedUrl(version.storage_path, 300);
-      if (!alive) return;
-      if (error || !data) {
+      try {
+        blobUrl = await fetchVaultFileUrl(version.id);
+      } catch {
+        blobUrl = null;
+      }
+      if (!alive) {
+        if (blobUrl) URL.revokeObjectURL(blobUrl);
+        return;
+      }
+      if (!blobUrl) {
         setError("Could not open this file right now.");
         setLoading(false);
         return;
       }
-      setSignedUrl(data.signedUrl);
+      setSignedUrl(blobUrl);
       setLoading(false);
     })();
     return () => {
       alive = false;
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
   }, [open, version?.id, version?.storage_path]);
 
@@ -229,11 +238,11 @@ export function FileViewerDialog({
 
   const downloadCopy = async () => {
     if (!version) return;
-    const { data } = await supabase.storage
-      .from("vault")
-      .createSignedUrl(version.storage_path, 60, { download: fileName });
-    if (data) window.open(data.signedUrl, "_blank");
-    else toast.error("Could not generate download link");
+    try {
+      await openVaultFileInNewTab(version.id);
+    } catch {
+      toast.error("Could not generate download link");
+    }
   };
 
   return (

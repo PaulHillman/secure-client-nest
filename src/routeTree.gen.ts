@@ -25,6 +25,7 @@ import { Route as AppAgreementRouteImport } from './routes/app.agreement'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppTeamsTeamIdRouteImport } from './routes/app.teams.$teamId'
 import { Route as AppAdminUsageRouteImport } from './routes/app.admin_.usage'
+import { Route as ApiPublicFileDownloadRouteImport } from './routes/api/public/file-download'
 import { Route as AppAdminTeamReadinessIndexRouteImport } from './routes/app.admin_.team-readiness.index'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as AppAdminTeamReadinessTeamIdRouteImport } from './routes/app.admin_.team-readiness.$teamId'
@@ -112,6 +113,11 @@ const AppAdminUsageRoute = AppAdminUsageRouteImport.update({
   path: '/admin/usage',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicFileDownloadRoute = ApiPublicFileDownloadRouteImport.update({
+  id: '/api/public/file-download',
+  path: '/api/public/file-download',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppAdminTeamReadinessIndexRoute =
   AppAdminTeamReadinessIndexRouteImport.update({
     id: '/admin_/team-readiness/',
@@ -164,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
+  '/api/public/file-download': typeof ApiPublicFileDownloadRoute
   '/app/admin/usage': typeof AppAdminUsageRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
+  '/api/public/file-download': typeof ApiPublicFileDownloadRoute
   '/app/admin/usage': typeof AppAdminUsageRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
+  '/api/public/file-download': typeof ApiPublicFileDownloadRoute
   '/app/admin_/usage': typeof AppAdminUsageRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
@@ -239,6 +248,7 @@ export interface FileRouteTypes {
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
+    | '/api/public/file-download'
     | '/app/admin/usage'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
@@ -263,6 +273,7 @@ export interface FileRouteTypes {
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
+    | '/api/public/file-download'
     | '/app/admin/usage'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
@@ -287,6 +298,7 @@ export interface FileRouteTypes {
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
+    | '/api/public/file-download'
     | '/app/admin_/usage'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
@@ -302,6 +314,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   SetPasswordRoute: typeof SetPasswordRoute
+  ApiPublicFileDownloadRoute: typeof ApiPublicFileDownloadRoute
   ApiPublicHooksAutoArchiveRoute: typeof ApiPublicHooksAutoArchiveRoute
   ApiPublicHooksProfileRemindersRoute: typeof ApiPublicHooksProfileRemindersRoute
   ApiPublicHooksWeeklyDigestRoute: typeof ApiPublicHooksWeeklyDigestRoute
@@ -422,6 +435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminUsageRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/file-download': {
+      id: '/api/public/file-download'
+      path: '/api/public/file-download'
+      fullPath: '/api/public/file-download'
+      preLoaderRoute: typeof ApiPublicFileDownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/admin_/team-readiness/': {
       id: '/app/admin_/team-readiness/'
       path: '/admin/team-readiness'
@@ -518,6 +538,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   SetPasswordRoute: SetPasswordRoute,
+  ApiPublicFileDownloadRoute: ApiPublicFileDownloadRoute,
   ApiPublicHooksAutoArchiveRoute: ApiPublicHooksAutoArchiveRoute,
   ApiPublicHooksProfileRemindersRoute: ApiPublicHooksProfileRemindersRoute,
   ApiPublicHooksWeeklyDigestRoute: ApiPublicHooksWeeklyDigestRoute,

@@ -14,6 +14,7 @@ import { NotebookPen, AlertTriangle, MapPin, Check, Paperclip, Users } from "luc
 import { toast } from "sonner";
 import { FACE_TO_FACE, DAYS, fmtTime } from "@/lib/meeting-agreement";
 import { notifyMeetingMoved } from "@/lib/meeting.functions";
+import { openVaultFileInNewTab } from "@/lib/file-download";
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -151,17 +152,12 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
   };
 
   const openFile = async (f: any) => {
-    const { data: v } = await supabase
-      .from("file_versions")
-      .select("storage_path")
-      .eq("id", f.current_version_id)
-      .maybeSingle();
-    if (!v) return toast.error("File not found");
-    const { data: signed, error } = await supabase.storage
-      .from("vault")
-      .createSignedUrl(v.storage_path, 300, { download: f.file_name });
-    if (error || !signed) return toast.error("Could not open file");
-    window.open(signed.signedUrl, "_blank");
+    if (!f.current_version_id) return toast.error("File not found");
+    try {
+      await openVaultFileInNewTab(f.current_version_id);
+    } catch {
+      toast.error("Could not open file");
+    }
   };
   const [reason, setReason] = useState("");
 
