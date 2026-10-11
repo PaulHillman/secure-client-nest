@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { computeHealthReview } from "@/lib/team-health-review.functions";
 import type { HealthException, TeamCheckResult, HealthCheck } from "@/lib/team-health-review.functions";
 
 type Payload = {
