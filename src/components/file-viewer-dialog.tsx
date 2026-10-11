@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchVaultFileUrl, openVaultFileInNewTab } from "@/lib/file-download";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
