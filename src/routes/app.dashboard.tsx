@@ -23,6 +23,7 @@ import { AvailabilityGridCard } from "@/components/availability-grid-card";
 import { ProfileCompletionCard } from "@/components/profile-completion-card";
 import { RoleSelectCard } from "@/components/role-select-card";
 import { DashboardReadinessNotice } from "@/components/dashboard-readiness-notice";
+import { HealthReportBanner } from "@/components/health-report-banner";
 
 
 import { ProofsAdminCard } from "@/components/proofs-admin-card";
@@ -203,6 +204,7 @@ function Dashboard() {
         ))}
       </nav>
 
+      <HealthReportBanner />
       <DashboardReadinessNotice />
 
       {isAdmin && Date.now() >= new Date("2026-10-16T12:00:00Z").getTime() && (
