@@ -621,23 +621,12 @@ function GroupNormsVaultNote({ teamId }: { teamId: string }) {
         toast.error("The shared template is not available yet");
         return;
       }
-      const { data: ver } = await supabase
-        .from("file_versions")
-        .select("storage_path")
-        .eq("id", tpl.current_version_id)
-        .maybeSingle();
-      if (!ver) {
-        toast.error("The shared template is not available yet");
-        return;
-      }
-      const { data: signed, error: sErr } = await supabase.storage
-        .from("vault")
-        .createSignedUrl(ver.storage_path, 60, { download: tpl.file_name });
-      if (sErr || !signed) {
+      try {
+        await openVaultFileInNewTab(tpl.current_version_id);
+      } catch {
         toast.error("Could not generate download link");
         return;
       }
-      window.open(signed.signedUrl, "_blank");
     } finally {
       setDownloading(false);
     }

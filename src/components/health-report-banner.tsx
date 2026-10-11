@@ -66,11 +66,11 @@ export function HealthReportBanner() {
 
   const open = async () => {
     if (!report.current_version_id) return toast.error("Report not available");
-    const { data: v } = await supabase.from("file_versions").select("storage_path").eq("id", report.current_version_id).single();
-    if (!v) return toast.error("Report not available");
-    const { data: signed } = await supabase.storage.from("vault").createSignedUrl(v.storage_path, 300);
-    if (!signed) return toast.error("Could not open report");
-    window.open(signed.signedUrl, "_blank");
+    try {
+      await openVaultFileInNewTab(report.current_version_id);
+    } catch {
+      return toast.error("Could not open report");
+    }
     if (!viewAs) await recordHealthReportView(report.id, report.team_id, true);
     setReport(null);
   };
