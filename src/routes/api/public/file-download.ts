@@ -40,7 +40,7 @@ export const Route = createFileRoute("/api/public/file-download")({
             headers: {
               "Content-Type": v.mime_type || b.type || "application/octet-stream",
               "Content-Disposition": `inline; filename="${name}"`,
-              "Cache-Control": "private, no-store",
+              "Cache-Control": "private, max-age=60",
             },
           });
         }
@@ -90,7 +90,7 @@ export const Route = createFileRoute("/api/public/file-download")({
           headers: {
             "Content-Type": version.mime_type || blob.type || "application/octet-stream",
             "Content-Disposition": `inline; filename="${safeName}"`,
-            "Cache-Control": "private, no-store",
+            "Cache-Control": "private, max-age=60",
           },
         });
       },
