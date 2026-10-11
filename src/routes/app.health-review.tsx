@@ -31,6 +31,7 @@ const CHECKS: Record<HealthCheck, string> = {
   meetings: "Weekly Meetings",
   activity: "Login / upload activity",
   vault: "File Vault requirements",
+  reports: "Health Report follow-up",
 };
 const CHECK_DESCRIPTIONS: Record<HealthCheck, string> = {
   gaps: "Group Norms signed & locked; weekly meeting time agreed.",
@@ -38,6 +39,7 @@ const CHECK_DESCRIPTIONS: Record<HealthCheck, string> = {
   meetings: "Per team: meetings logged, last meeting within 7 days (13 = action required), minutes posted for each logged meeting, a reason recorded for each absence.",
   activity: "Per student vs. teammates over the last 7 days: active days, uploads, any activity at all.",
   vault: "Minutes & agendas vs. semester week, client research (2 now, 4 by 10/18), misfiled research, interview questions, video files at semester milestones.",
+  reports: "Per member: has the student opened their team's Health Review report (banner click or vault download)?",
 };
 const SCOPES: [HealthScope, string][] = [
   ["team", "One team"], ["section", "One section"], ["all", "All teams"], ["role", "One role"],
@@ -115,7 +117,7 @@ function HealthReviewPage() {
     act.mutate(action);
   };
   const ex = (d?.exceptions ?? []).filter((e) => filter === "all" || e.check === filter);
-  const CHECK_KEYS: HealthCheck[] = ["gaps", "readiness", "meetings", "activity", "vault"];
+  const CHECK_KEYS: HealthCheck[] = ["gaps", "readiness", "meetings", "activity", "vault", "reports"];
   const levelFor = (teamId: string, check: HealthCheck) =>
     d?.exceptions.some((e) => e.teamId === teamId && e.check === check && e.level === "red") ? "red" : "yellow";
 
