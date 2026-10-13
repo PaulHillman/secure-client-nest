@@ -37,8 +37,18 @@ function SetPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const [expired, setExpired] = useState(false);
+  const [resendEmail, setResendEmail] = useState("");
+  const [resent, setResent] = useState(false);
+
   useEffect(() => {
-    // Supabase hydrates the invite / recovery session from the URL on load.
+    // Expired or already-used links arrive with an error in the URL.
+    const params = new URLSearchParams(window.location.hash.slice(1) + "&" + window.location.search.slice(1));
+    if (params.get("error_code") || params.get("error")) {
+      setExpired(true);
+      setReady(true);
+      return;
+    }
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       if (session) {
         setHasLink(true);
@@ -51,6 +61,17 @@ function SetPasswordPage() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  const onResend = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resendEmail.trim().toLowerCase(), {
+      redirectTo: `${window.location.origin}/set-password`,
+    });
+    setBusy(false);
+    if (error) toast.error("Could not send a new link. Wait a minute and try again.");
+    else setResent(true);
+  };
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
