@@ -107,6 +107,23 @@ function SetPasswordPage() {
 
         {!ready ? (
           <p className="mt-3 text-sm text-muted-foreground">Checking your link…</p>
+        ) : expired ? (
+          resent ? (
+            <p className="mt-3 text-sm text-muted-foreground">
+              A new link is on its way to {resendEmail}. Use the newest email — older links stop working.
+            </p>
+          ) : (
+            <form onSubmit={onResend} className="mt-4 space-y-3">
+              <p role="alert" className="text-sm text-destructive">
+                This link has expired or was already used. Enter your GVSU email and we'll send a new one.
+              </p>
+              <Input type="email" placeholder="you@mail.gvsu.edu" value={resendEmail}
+                onChange={(e) => setResendEmail(e.target.value)} required />
+              <Button type="submit" className="w-full" disabled={busy}>
+                {busy ? "Sending…" : "Send a new link"}
+              </Button>
+            </form>
+          )
         ) : !hasLink ? (
           <p className="mt-3 text-sm text-muted-foreground">
             This page works only when you open it from an invitation or password-reset email. Open
