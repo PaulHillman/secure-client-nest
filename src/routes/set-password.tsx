@@ -37,8 +37,18 @@ function SetPasswordPage() {
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const [expired, setExpired] = useState(false);
+  const [resendEmail, setResendEmail] = useState("");
+  const [resent, setResent] = useState(false);
+
   useEffect(() => {
-    // Supabase hydrates the invite / recovery session from the URL on load.
+    // Expired or already-used links arrive with an error in the URL.
+    const params = new URLSearchParams(window.location.hash.slice(1) + "&" + window.location.search.slice(1));
+    if (params.get("error_code") || params.get("error")) {
+      setExpired(true);
+      setReady(true);
+      return;
+    }
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
       if (session) {
         setHasLink(true);
@@ -51,6 +61,17 @@ function SetPasswordPage() {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  const onResend = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resendEmail.trim().toLowerCase(), {
+      redirectTo: `${window.location.origin}/set-password`,
+    });
+    setBusy(false);
+    if (error) toast.error("Could not send a new link. Wait a minute and try again.");
+    else setResent(true);
+  };
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -86,6 +107,23 @@ function SetPasswordPage() {
 
         {!ready ? (
           <p className="mt-3 text-sm text-muted-foreground">Checking your link…</p>
+        ) : expired ? (
+          resent ? (
+            <p className="mt-3 text-sm text-muted-foreground">
+              A new link is on its way to {resendEmail}. Use the newest email — older links stop working.
+            </p>
+          ) : (
+            <form onSubmit={onResend} className="mt-4 space-y-3">
+              <p role="alert" className="text-sm text-destructive">
+                This link has expired or was already used. Enter your GVSU email and we'll send a new one.
+              </p>
+              <Input type="email" placeholder="you@mail.gvsu.edu" value={resendEmail}
+                onChange={(e) => setResendEmail(e.target.value)} required />
+              <Button type="submit" className="w-full" disabled={busy}>
+                {busy ? "Sending…" : "Send a new link"}
+              </Button>
+            </form>
+          )
         ) : !hasLink ? (
           <p className="mt-3 text-sm text-muted-foreground">
             This page works only when you open it from an invitation or password-reset email. Open
