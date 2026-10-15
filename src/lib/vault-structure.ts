@@ -33,6 +33,11 @@ export const VAULT_STRUCTURE: VaultSection[] = [
   {
     name: "Semester Long Project",
     subsections: [
+      {
+        name: "Client Communications",
+        description:
+          "Every email or text exchanged with your client (screenshots or PDFs). Name files with the date and topic, e.g. \"2026-10-12 Client approved logo concepts\".",
+      },
       { name: "Client research" },
       {
         name: "Interview Questions",

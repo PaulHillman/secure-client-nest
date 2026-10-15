@@ -268,6 +268,14 @@ export async function computeHealthReview(
         if (!misfiled.length && inResearch.length) notes.vault.push("All research files are filed in the Client research folder.");
       }
 
+      // 6b. Client Communications: at least one client email/text filed by now
+      if (isTeamLevel) {
+        const comms = teamFiles.filter((f) => subsectionMatches(f.subsection, "Client Communications"));
+        if (!comms.length)
+          push("vault", "yellow", "Client Communications: no client emails or texts filed yet — at least 1 expected by now.");
+        else notes.vault.push(`Client Communications on track: ${comms.length} file${comms.length === 1 ? "" : "s"} filed.`);
+      }
+
       // 7. Health Report follow-up: has each member opened their team's health review report?
       if (isTeamLevel) {
         const hasReport = teamFiles.some((f) => subsectionMatches(f.subsection, "Health Reports"));
