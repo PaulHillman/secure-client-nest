@@ -268,11 +268,13 @@ export async function computeHealthReview(
         if (!misfiled.length && inResearch.length) notes.vault.push("All research files are filed in the Client research folder.");
       }
 
-      // 6b. Client Communications: at least one client email/text filed by now
+      // 6b. Client Communications: 0 files = red, 1 = yellow, 2+ = green
       if (isTeamLevel) {
         const comms = teamFiles.filter((f) => subsectionMatches(f.subsection, "Client Communications"));
         if (!comms.length)
-          push("vault", "yellow", "Client Communications: no client emails or texts filed yet — at least 1 expected by now.");
+          push("vault", "red", "Client Communications: no client emails or texts filed yet — 2+ expected (red with none, yellow with one).");
+        else if (comms.length === 1)
+          push("vault", "yellow", "Client Communications: only 1 client email or text filed — 2+ expected.");
         else notes.vault.push(`Client Communications on track: ${comms.length} file${comms.length === 1 ? "" : "s"} filed.`);
       }
 
