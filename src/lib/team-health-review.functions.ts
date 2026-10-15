@@ -269,14 +269,32 @@ export async function computeHealthReview(
         if (!misfiled.length && inResearch.length) notes.vault.push("All research files are filed in the Client research folder.");
       }
 
-      // 6b. Client Communications: 0 files = red, 1 = yellow, 2+ = green
+      // 6b. Client Communications — graded relative to the client-confirmed date:
+      //   not confirmed yet        -> not expected (neutral note)
+      //   within 3 weeks of confirm -> any file = green; none yet = not expected (neutral note)
+      //   3+ weeks after confirm    -> 0 files = red, 1 = yellow, 2+ = green
       if (isTeamLevel) {
         const comms = teamFiles.filter((f) => subsectionMatches(f.subsection, "Client Communications"));
-        if (!comms.length)
-          push("vault", "red", "Client Communications: no client emails or texts filed yet — 2+ expected (red with none, yellow with one).");
-        else if (comms.length === 1)
-          push("vault", "yellow", "Client Communications: only 1 client email or text filed — 2+ expected.");
-        else notes.vault.push(`Client Communications on track: ${comms.length} file${comms.length === 1 ? "" : "s"} filed.`);
+        const cfRow = (companyFocus ?? []).find((c) => c.team_id === t.teamId);
+        const confirmedAt = cfRow?.confirmed_at ? Date.parse(cfRow.confirmed_at) : null;
+        if (confirmedAt === null || Number.isNaN(confirmedAt)) {
+          notes.vault.push("Client Communications: client not confirmed yet — correspondence is expected within 3 weeks of confirmation.");
+        } else {
+          const weeksSince = (now - confirmedAt) / (7 * DAY);
+          const dueDate = new Date(confirmedAt + 21 * DAY).toISOString().slice(0, 10);
+          if (weeksSince < 3) {
+            if (comms.length)
+              notes.vault.push(`Client Communications: ${comms.length} file${comms.length === 1 ? "" : "s"} filed within 3 weeks of confirmation — on track.`);
+            else
+              notes.vault.push(`Client Communications: none filed yet — not expected until 3 weeks after confirmation (${dueDate}).`);
+          } else if (!comms.length) {
+            push("vault", "red", `Client Communications: no client emails or texts filed — expected since 3 weeks after confirmation (${dueDate}).`);
+          } else if (comms.length === 1) {
+            push("vault", "yellow", `Client Communications: only 1 client email or text filed — 2+ expected 3+ weeks after confirmation (${dueDate}).`);
+          } else {
+            notes.vault.push(`Client Communications on track: ${comms.length} files filed (2+ expected 3+ weeks after confirmation).`);
+          }
+        }
       }
 
       // 7. Health Report follow-up: has each member opened their team's health review report?
