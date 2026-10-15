@@ -48,6 +48,7 @@ export type Database = {
         Row: {
           archive_id: string
           company_name: string | null
+          confirmed_at: string | null
           contact_job_title: string | null
           contact_person: string | null
           email: string | null
@@ -62,6 +63,7 @@ export type Database = {
         Insert: {
           archive_id: string
           company_name?: string | null
+          confirmed_at?: string | null
           contact_job_title?: string | null
           contact_person?: string | null
           email?: string | null
@@ -76,6 +78,7 @@ export type Database = {
         Update: {
           archive_id?: string
           company_name?: string | null
+          confirmed_at?: string | null
           contact_job_title?: string | null
           contact_person?: string | null
           email?: string | null
@@ -577,6 +580,7 @@ export type Database = {
       company_focus: {
         Row: {
           company_name: string
+          confirmed_at: string | null
           contact_job_title: string
           contact_person: string
           email: string
@@ -590,6 +594,7 @@ export type Database = {
         }
         Insert: {
           company_name: string
+          confirmed_at?: string | null
           contact_job_title?: string
           contact_person?: string
           email?: string
@@ -603,6 +608,7 @@ export type Database = {
         }
         Update: {
           company_name?: string
+          confirmed_at?: string | null
           contact_job_title?: string
           contact_person?: string
           email?: string

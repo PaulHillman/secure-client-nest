@@ -1,0 +1,2 @@
+ALTER TABLE public.company_focus ADD COLUMN IF NOT EXISTS confirmed_at timestamptz;
+COMMENT ON COLUMN public.company_focus.confirmed_at IS 'Date the team''s client engagement was confirmed; client correspondence is expected within 3 weeks after this date.';

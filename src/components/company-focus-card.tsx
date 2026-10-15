@@ -27,6 +27,7 @@ export type CompanyFocus = {
   hq_address: string | null;
   industry: string | null;
   employee_count: string | null;
+  confirmed_at: string | null;
 };
 
 export function CompanyFocusCard({
@@ -142,6 +143,21 @@ export function CompanyFocusCard({
             <div className="text-muted-foreground">{cf.employee_count} employees</div>
           )}
         </div>
+        <div className="border-l-2 border-gold pl-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide">Client confirmed</p>
+          <p className="font-medium text-foreground">
+            {cf.confirmed_at ? (
+              new Date(cf.confirmed_at).toLocaleDateString("en-US", { timeZone: "UTC", year: "numeric", month: "long", day: "numeric" })
+            ) : (
+              <span className="italic text-muted-foreground">Not set</span>
+            )}
+          </p>
+          {cf.confirmed_at && (
+            <p className="text-xs text-muted-foreground">
+              Client emails/texts are expected in the Client Communications folder within 3 weeks of this date.
+            </p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -165,6 +181,7 @@ function CompanyFocusDialog({
   const [email, setEmail] = useState(initial?.email ?? "");
   const [hqAddress, setHqAddress] = useState(initial?.hq_address ?? "");
   const [employeeCount, setEmployeeCount] = useState(initial?.employee_count ?? "");
+  const [confirmedDate, setConfirmedDate] = useState(initial?.confirmed_at ? String(initial.confirmed_at).slice(0, 10) : "");
 
   return (
     <Dialog
@@ -180,6 +197,7 @@ function CompanyFocusDialog({
           setEmail(initial?.email ?? "");
           setHqAddress(initial?.hq_address ?? "");
           setEmployeeCount(initial?.employee_count ?? "");
+          setConfirmedDate(initial?.confirmed_at ? String(initial.confirmed_at).slice(0, 10) : "");
         }
       }}
     >
@@ -225,6 +243,13 @@ function CompanyFocusDialog({
             <Label>HQ address</Label>
             <Input value={hqAddress} onChange={(e) => setHqAddress(e.target.value)} maxLength={500} />
           </div>
+          <div>
+            <Label>Client confirmed date</Label>
+            <Input type="date" value={confirmedDate} onChange={(e) => setConfirmedDate(e.target.value)} />
+            <p className="text-xs text-muted-foreground mt-1">
+              Client correspondence is expected in the vault within 3 weeks of this date.
+            </p>
+          </div>
         </div>
         <DialogFooter>
           <Button
@@ -239,6 +264,7 @@ function CompanyFocusDialog({
                 email: email.trim() || null,
                 hq_address: hqAddress.trim() || null,
                 employee_count: employeeCount.trim() || null,
+                confirmed_at: confirmedDate ? `${confirmedDate}T00:00:00.000Z` : null,
               });
               setOpen(false);
             }}
