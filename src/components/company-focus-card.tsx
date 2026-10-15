@@ -27,6 +27,7 @@ export type CompanyFocus = {
   hq_address: string | null;
   industry: string | null;
   employee_count: string | null;
+  confirmed_at: string | null;
 };
 
 export function CompanyFocusCard({
@@ -140,6 +141,21 @@ export function CompanyFocusCard({
           )}
           {cf.employee_count && (
             <div className="text-muted-foreground">{cf.employee_count} employees</div>
+          )}
+        </div>
+        <div className="border-l-2 border-gold pl-3">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide">Client confirmed</p>
+          <p className="font-medium text-foreground">
+            {cf.confirmed_at ? (
+              new Date(cf.confirmed_at).toLocaleDateString("en-US", { timeZone: "UTC", year: "numeric", month: "long", day: "numeric" })
+            ) : (
+              <span className="italic text-muted-foreground">Not set</span>
+            )}
+          </p>
+          {cf.confirmed_at && (
+            <p className="text-xs text-muted-foreground">
+              Client emails/texts are expected in the Client Communications folder within 3 weeks of this date.
+            </p>
           )}
         </div>
       </CardContent>
