@@ -181,6 +181,7 @@ function CompanyFocusDialog({
   const [email, setEmail] = useState(initial?.email ?? "");
   const [hqAddress, setHqAddress] = useState(initial?.hq_address ?? "");
   const [employeeCount, setEmployeeCount] = useState(initial?.employee_count ?? "");
+  const [confirmedDate, setConfirmedDate] = useState(initial?.confirmed_at ? String(initial.confirmed_at).slice(0, 10) : "");
 
   return (
     <Dialog
@@ -196,6 +197,7 @@ function CompanyFocusDialog({
           setEmail(initial?.email ?? "");
           setHqAddress(initial?.hq_address ?? "");
           setEmployeeCount(initial?.employee_count ?? "");
+          setConfirmedDate(initial?.confirmed_at ? String(initial.confirmed_at).slice(0, 10) : "");
         }
       }}
     >
@@ -241,6 +243,13 @@ function CompanyFocusDialog({
             <Label>HQ address</Label>
             <Input value={hqAddress} onChange={(e) => setHqAddress(e.target.value)} maxLength={500} />
           </div>
+          <div>
+            <Label>Client confirmed date</Label>
+            <Input type="date" value={confirmedDate} onChange={(e) => setConfirmedDate(e.target.value)} />
+            <p className="text-xs text-muted-foreground mt-1">
+              Client correspondence is expected in the vault within 3 weeks of this date.
+            </p>
+          </div>
         </div>
         <DialogFooter>
           <Button
@@ -255,6 +264,7 @@ function CompanyFocusDialog({
                 email: email.trim() || null,
                 hq_address: hqAddress.trim() || null,
                 employee_count: employeeCount.trim() || null,
+                confirmed_at: confirmedDate ? `${confirmedDate}T00:00:00.000Z` : null,
               });
               setOpen(false);
             }}
