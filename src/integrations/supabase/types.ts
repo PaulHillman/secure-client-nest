@@ -48,6 +48,7 @@ export type Database = {
         Row: {
           archive_id: string
           company_name: string | null
+          confirmed_at: string | null
           contact_job_title: string | null
           contact_person: string | null
           email: string | null
@@ -62,6 +63,7 @@ export type Database = {
         Insert: {
           archive_id: string
           company_name?: string | null
+          confirmed_at?: string | null
           contact_job_title?: string | null
           contact_person?: string | null
           email?: string | null
@@ -76,6 +78,7 @@ export type Database = {
         Update: {
           archive_id?: string
           company_name?: string | null
+          confirmed_at?: string | null
           contact_job_title?: string | null
           contact_person?: string | null
           email?: string | null

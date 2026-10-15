@@ -71,6 +71,13 @@
       "when": 1792061234776,
       "tag": "0009_add_company_focus_confirmed_at",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792061282333,
+      "tag": "0010_add_archived_company_focus_confirmed_at",
+      "breakpoints": true
     }
   ]
 }

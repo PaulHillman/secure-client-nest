@@ -1,0 +1,1 @@
+ALTER TABLE public.archived_company_focus ADD COLUMN IF NOT EXISTS confirmed_at timestamptz;
