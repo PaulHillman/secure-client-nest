@@ -577,6 +577,7 @@ export type Database = {
       company_focus: {
         Row: {
           company_name: string
+          confirmed_at: string | null
           contact_job_title: string
           contact_person: string
           email: string
@@ -590,6 +591,7 @@ export type Database = {
         }
         Insert: {
           company_name: string
+          confirmed_at?: string | null
           contact_job_title?: string
           contact_person?: string
           email?: string
@@ -603,6 +605,7 @@ export type Database = {
         }
         Update: {
           company_name?: string
+          confirmed_at?: string | null
           contact_job_title?: string
           contact_person?: string
           email?: string
