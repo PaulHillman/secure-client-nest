@@ -52,6 +52,7 @@ import {
   NotebookPen,
   Star,
   Video,
+  Mail,
 } from "lucide-react";
 import { FileViewerDialog } from "@/components/file-viewer-dialog";
 import {
@@ -85,6 +86,12 @@ type FileRow = {
 
 const VAULT_FOLDERS = [
   { key: "agendas", label: "Agendas", icon: Calendar, entries: [["Team Documents", "Agendas"]] },
+  {
+    key: "client-communications",
+    label: "Client Communications",
+    icon: Mail,
+    entries: [["Semester Long Project", "Client Communications"]],
+  },
   { key: "group-norms", label: "Group Norms", icon: FileCheck2, entries: [["Team Documents", "Group Norms"]] },
   {
     key: "health-reports",
