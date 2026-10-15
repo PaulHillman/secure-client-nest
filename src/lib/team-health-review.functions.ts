@@ -96,6 +96,7 @@ export async function computeHealthReview(
       db.from("profiles").select("id, name, first_name, last_name, email"),
       db.from("health_report_views").select("user_id, team_id, view_count, clicked_at, last_viewed_at").in("team_id", ids),
     ]);
+    const { data: companyFocus } = await db.from("company_focus").select("team_id, company_name, confirmed_at").in("team_id", ids);
     const userIds = [...new Set((members ?? []).map((m) => m.user_id))];
     const [{ data: auths }, { data: usage }, { data: versions }, { data: sessions }] = await Promise.all([
       db.from("auth_audit_log").select("user_id, created_at").in("user_id", userIds).gte("created_at", since),
