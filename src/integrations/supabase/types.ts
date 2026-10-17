@@ -1225,6 +1225,41 @@ export type Database = {
           },
         ]
       }
+      instructor_file_verifications: {
+        Row: {
+          file_name: string
+          id: string
+          note: string | null
+          team_id: string
+          verified_at: string
+          verified_by: string | null
+        }
+        Insert: {
+          file_name: string
+          id?: string
+          note?: string | null
+          team_id: string
+          verified_at?: string
+          verified_by?: string | null
+        }
+        Update: {
+          file_name?: string
+          id?: string
+          note?: string | null
+          team_id?: string
+          verified_at?: string
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instructor_file_verifications_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manager_submissions: {
         Row: {
           admin_notes: string | null

@@ -105,6 +105,12 @@ export async function computeHealthReview(
     ]);
     const minutesTemplate = minutesTemplateRows?.[0] ?? null;
     const { data: companyFocus } = await db.from("company_focus").select("team_id, company_name, confirmed_at").in("team_id", ids);
+    const { data: fileVerifications } = await db.from("instructor_file_verifications").select("team_id, file_name").in("team_id", ids);
+    const verifiedFiles = new Map<string, Set<string>>();
+    for (const v of fileVerifications ?? []) {
+      if (!verifiedFiles.has(v.team_id)) verifiedFiles.set(v.team_id, new Set());
+      verifiedFiles.get(v.team_id)!.add(v.file_name);
+    }
     const { data: shares, error: sharesError } = await db.from("health_review_shares").select("team_id, shared_at, generated_at, payload, source, vault_file_id, vault_version_id, recipient_ids").in("team_id", ids).order("shared_at", { ascending: false });
     if (sharesError) throw new Error("Unable to load prior shared reports; comparison cannot be verified.");
     const latestShare = (teamId: string) => (shares ?? []).find((s: any) => s.team_id === teamId);
@@ -394,7 +400,16 @@ export async function computeHealthReview(
           const { inspectResearch } = await import("./health-research.server");
           const research = await inspectResearch(db, [...inResearch, ...misfiled]);
           researchByTeam.set(t.teamId, research);
-          const missing = research.topics.filter(topic => !topic.evidence.length).map(topic => topic.topic);
+          // Files the instructor has opened and verified by hand count as covering the remaining topics;
+          // the team is only asked to re-upload them in a readable format (separate, non-escalating reminder).
+          const verifiedSet = verifiedFiles.get(t.teamId) ?? new Set<string>();
+          const verifiedUnreadable = research.unreadable.filter((n) => verifiedSet.has(n));
+          research.unreadable = research.unreadable.filter((n) => !verifiedSet.has(n));
+          if (verifiedUnreadable.length) {
+            notes.vault.push(`Instructor has verified the contents of: ${verifiedUnreadable.join(", ")}. Re-upload in a readable format is still requested.`);
+            push("vault", "yellow", `Content verified by the instructor: ${verifiedUnreadable.join(", ")} is confirmed acceptable, but it cannot be read automatically. Please re-upload it as a readable DOCX or PDF so future reports can verify it.`, null, null, null, "vault:research:format");
+          }
+          const missing = verifiedUnreadable.length ? [] : research.topics.filter(topic => !topic.evidence.length).map(topic => topic.topic);
           if (!missing.length) {
             notes.vault.push(`All four research topics have text evidence across ${total} file(s). Combined documents accepted; content quality is not graded automatically.`);
             observe("vault:research", "All four required research topics have supporting text excerpts in the uploaded documents.");
@@ -596,3 +611,27 @@ export async function computeHealthReview(
 
     return result;
 }
+
+/** Admin-only: mark a file's contents as instructor-verified (or clear that mark). */
+export const setFileContentVerified = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { teamId: string; fileName: string; verified: boolean }) => {
+    if (!i?.teamId || !i?.fileName) throw new Error("Team and file name are required.");
+    return i;
+  })
+  .handler(async ({ data, context }) => {
+    const { data: ok } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (ok !== true) throw new Error("Forbidden");
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+    if (data.verified) {
+      const { error } = await db.from("instructor_file_verifications").upsert(
+        { team_id: data.teamId, file_name: data.fileName, verified_by: context.userId },
+        { onConflict: "team_id,file_name" },
+      );
+      if (error) throw error;
+    } else {
+      const { error } = await db.from("instructor_file_verifications").delete().eq("team_id", data.teamId).eq("file_name", data.fileName);
+      if (error) throw error;
+    }
+    return { ok: true };
+  });
