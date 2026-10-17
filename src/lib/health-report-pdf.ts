@@ -60,7 +60,8 @@ export async function buildHealthReportPdf(opts: {
   if (opts.comparison) {
     text("Since your last shared report", bold, 13);
     text(opts.comparison.sharedAt ? `Baseline shared: ${opts.comparison.sharedAt} (${opts.comparison.source})` : "No verified prior shared report; no improvement claims can be made.", font, 10, grey);
-    for (const change of opts.comparison.changes) {
+    // Reporting corrections are instructor-only context; students' PDFs omit them.
+    for (const change of opts.comparison.changes.filter(c => c.status !== "Reporting correction")) {
       y -= 5;
       text(`${change.status}${change.person ? " - " + change.person : ""}`, bold, 10, change.status === "Resolved" ? green : change.status === "Partially improved" ? gold : navy);
       if (change.previous) text(`Previously: ${change.previous}`, font, 10, grey);
