@@ -245,6 +245,27 @@ export async function computeHealthReview(
         observe("meetings:Last meeting logged:team", `Latest logged meeting: ${last}; ${gap} days ago, within the 7-day limit.`, gap === null || gap > 7 ? 1 : 0);
         if (noMinutes) { failed += noMinutes; push("meetings", "yellow", `${noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? " has" : "s have"} no minutes posted.`); }
         if (teamLogs.length - noMinutes > 0) { passed += teamLogs.length - noMinutes; notes.meetings.push(`Minutes posted for ${teamLogs.length - noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? "" : "s"}.`); }
+        // (e) minutes follow the shared Meeting Minutes Template
+        const minutesFiles = teamFiles.filter((f) => f.section === "Team Documents" && subsectionMatches(f.subsection, "Minutes"));
+        if (minutesFiles.length && minutesTemplate) {
+          const { inspectMinutesTemplate } = await import("./health-research.server");
+          const minutesCheck = await inspectMinutesTemplate(db, minutesFiles, minutesTemplate, minutesTextCache);
+          const readableCount = minutesCheck.compliant.length + minutesCheck.violations.length;
+          observe("meetings:minutes_template:team", `Minutes template: ${minutesCheck.compliant.length} of ${readableCount} readable minutes files follow the shared Meeting Minutes Template.`, minutesCheck.violations.length, minutesCheck.unverified.length < minutesFiles.length);
+          if (minutesCheck.violations.length) {
+            failed += minutesCheck.violations.length;
+            passed += minutesCheck.compliant.length;
+            push("meetings", "yellow", `${minutesCheck.violations.length} of ${readableCount} minutes files do not follow the shared Meeting Minutes Template (${minutesCheck.violations.join(", ")}). Start each minutes document from the template in Operational Resources and Templates.`, null, null, null, "meetings:minutes_template");
+            notes.meetings.push(`Minutes template: ${minutesCheck.compliant.length} of ${readableCount} readable minutes files follow the shared Meeting Minutes Template.`);
+          } else if (minutesCheck.unverified.length >= minutesFiles.length) {
+            notes.meetings.push(`Minutes template: unable to verify — ${minutesCheck.unverified.join(", ")} could not be read. Not counted as a violation; instructor review required.`);
+          } else {
+            passed++;
+            notes.meetings.push(`Minutes template: all ${readableCount} readable minutes files follow the shared Meeting Minutes Template${minutesCheck.unverified.length ? `; ${minutesCheck.unverified.join(", ")} could not be read (not counted as violations)` : ""}.`);
+          }
+        } else {
+          notes.meetings.push(minutesFiles.length ? "Minutes template: the shared Meeting Minutes Template could not be loaded, so compliance could not be verified." : "Minutes template: no minutes files posted yet to check.");
+        }
         let absences = 0;
         let unexplained = 0;
         for (const l of teamLogs) {
