@@ -206,6 +206,7 @@ export async function computeHealthReview(
           pm_verification: "Team Setup is submitted and the Project Manager has signed the current norms.",
         };
         for (const [key, fact] of Object.entries(evidence)) {
+          if (rationaleRetired && key === "no_rationale") continue;
           const found = [...t.blockers, ...t.warnings].filter(f => f.key === key);
           const category = t.norms.categories.find(c => `norms_${c.key}` === key);
           const remaining = category ? category.items.filter(i => i.status !== "found").length : key === "norms_not_agreed" ? t.norms.notAgreed.length : key === "norms_incomplete" ? t.norms.missingSections.length : found.length;
