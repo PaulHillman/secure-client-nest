@@ -421,13 +421,6 @@ export async function computeHealthReview(
           .map((s: any) => ((s.payload as { exceptions?: HealthException[] })?.exceptions ?? []).filter((e) => !PARFUNKEL.test(e.person ?? "")));
         const escalated = escalateConcerns(mine, priors);
         const streaks = new Map<string, number>();
-        for (const { concern, streak } of escalated) {
-          const idx = out.indexOf(mine[escalated.indexOf ? escalated.findIndex((x) => x.concern === concern) : 0]);
-          const original = escalated.find((x) => x.concern === concern)!;
-          void original;
-          const pos = out.findIndex((e) => e === mine[escalated.findIndex((x) => x.concern === concern)]);
-          void idx; void pos;
-        }
         // Replace in place, preserving order.
         let i = 0;
         for (let k = 0; k < out.length; k++) {
