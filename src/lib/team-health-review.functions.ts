@@ -400,7 +400,16 @@ export async function computeHealthReview(
           const { inspectResearch } = await import("./health-research.server");
           const research = await inspectResearch(db, [...inResearch, ...misfiled]);
           researchByTeam.set(t.teamId, research);
-          const missing = research.topics.filter(topic => !topic.evidence.length).map(topic => topic.topic);
+          // Files the instructor has opened and verified by hand count as covering the remaining topics;
+          // the team is only asked to re-upload them in a readable format (separate, non-escalating reminder).
+          const verifiedSet = verifiedFiles.get(t.teamId) ?? new Set<string>();
+          const verifiedUnreadable = research.unreadable.filter((n) => verifiedSet.has(n));
+          research.unreadable = research.unreadable.filter((n) => !verifiedSet.has(n));
+          if (verifiedUnreadable.length) {
+            notes.vault.push(`Instructor has verified the contents of: ${verifiedUnreadable.join(", ")}. Re-upload in a readable format is still requested.`);
+            push("vault", "yellow", `Content verified by the instructor: ${verifiedUnreadable.join(", ")} is confirmed acceptable, but it cannot be read automatically. Please re-upload it as a readable DOCX or PDF so future reports can verify it.`, null, null, null, "vault:research:format");
+          }
+          const missing = verifiedUnreadable.length ? [] : research.topics.filter(topic => !topic.evidence.length).map(topic => topic.topic);
           if (!missing.length) {
             notes.vault.push(`All four research topics have text evidence across ${total} file(s). Combined documents accepted; content quality is not graded automatically.`);
             observe("vault:research", "All four required research topics have supporting text excerpts in the uploaded documents.");
