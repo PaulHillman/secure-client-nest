@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { compareTeamsBySectionThenNumber, teamLineLabel } from "@/lib/team-label";
 import { saveOrSendHealthReport, refreshVaultHealthReports } from "@/lib/team-health-report.functions";
-import { runTeamHealthReview, ROLE_SCOPES, type HealthCheck, type HealthScope, type CheckStatus } from "@/lib/team-health-review.functions";
+import { runTeamHealthReview, setFileContentVerified, ROLE_SCOPES, type HealthCheck, type HealthScope, type CheckStatus } from "@/lib/team-health-review.functions";
 
 export const Route = createFileRoute("/app/health-review")({
   head: () => ({
@@ -221,7 +221,7 @@ function HealthReviewPage() {
                   <p className="mt-1">Now: {change.current}</p>
                 </li>)}
               </ul>
-              {t.research && <details className="mt-4"><summary className="cursor-pointer text-sm">Research topic evidence</summary><ul className="text-sm mt-2 space-y-2">{t.research.topics.map(topic => <li key={topic.topic}><strong>{topic.topic}</strong>: {topic.evidence.length ? "Text evidence found" : t.research?.unreadable.length ? "Unverified" : "No text evidence found"}{topic.evidence.map((e, i) => <p key={i} className="text-muted-foreground">{e.fileName}: {e.excerpt}</p>)}</li>)}</ul>{t.research.unreadable.length > 0 && <p className="text-sm text-muted-foreground mt-2">Unable to read: {t.research.unreadable.join(", ")}. Instructor review required.</p>}</details>}
+              {t.research && <details className="mt-4"><summary className="cursor-pointer text-sm">Research topic evidence</summary><ul className="text-sm mt-2 space-y-2">{t.research.topics.map(topic => <li key={topic.topic}><strong>{topic.topic}</strong>: {topic.evidence.length ? "Text evidence found" : t.research?.unreadable.length ? "Unverified" : "No text evidence found"}{topic.evidence.map((e, i) => <p key={i} className="text-muted-foreground">{e.fileName}: {e.excerpt}</p>)}</li>)}</ul>{t.research.unreadable.length > 0 && <div className="text-sm text-muted-foreground mt-2 space-y-1"><p>Unable to read — instructor review required:</p>{t.research.unreadable.map((name) => <VerifyFileButton key={name} teamId={t.teamId} fileName={name} />)}</div>}</details>}
             </div>
           ))}
           <p className="text-xs text-muted-foreground">Parfunkel Hillman is excluded from member follow-up lists.</p>
