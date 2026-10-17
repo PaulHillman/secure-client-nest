@@ -442,6 +442,22 @@ export async function computeHealthReview(
         }
       }
 
+      // 6c. Misfiled minutes, agendas and interview questions — flagged to the role that owns
+      // that content (minutes: Communication Specialist, agendas: PM, questions: Company Liaison).
+      // Files are flagged, never moved automatically.
+      if (isTeamLevel) {
+        const misfileChecks: { match: RegExp; subsection: string; label: string; role: string }[] = [
+          { match: /minutes|meeting[ -]?notes/i, subsection: "Minutes", label: "meeting minutes", role: "Communication Specialist" },
+          { match: /agenda/i, subsection: "Agendas", label: "a meeting agenda", role: "PM" },
+          { match: /intervie?w|interveiw/i, subsection: "Interview Questions", label: "interview questions", role: "Company Liaison" },
+        ];
+        for (const check of misfileChecks) {
+          const owner = tm.find((m) => m.job_title === check.role);
+          for (const f of teamFiles.filter((f) => !subsectionMatches(f.subsection, check.subsection) && check.match.test(f.file_name ?? "")))
+            push("vault", "yellow", `"${f.file_name}" looks like ${check.label} but is filed under ${f.subsection} — move it to ${check.subsection}.`, owner ? nameOf(owner.user_id) : null, check.role, owner?.user_id ?? null);
+        }
+      }
+
       // Latest shared report only: historical openings cannot establish current follow-through.
       if (isTeamLevel) {
         const share = latestShare(t.teamId);
