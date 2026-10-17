@@ -61,7 +61,7 @@ export function compareConcerns(previous: Concern[], current: Concern[], observa
    const improved = fact?.verified && (old.level === "red" && next.level === "yellow" || typeof fact.remaining === "number" && typeof before?.remaining === "number" && fact.remaining < before.remaining);
    changes.push({ status: improved ? "Partially improved" : "Still outstanding", previous: old.reason, current: next.reason + (improved ? " Progress is evident; please finish the remaining work." : ""), person: next.person ?? old.person ?? null });
   } else if (fact?.verified && fact.remaining === 0) {
-   changes.push({ status: "Resolved", previous: old.reason, current: `${fact.evidence} Thank you for addressing this deficiency—good follow-through.`, person: old.person ?? null });
+   changes.push({ status: "Resolved", previous: old.reason, current: `${fact.evidence} ${pickCompliment(key ?? `${old.check}:${old.reason}:${old.person ?? ""}`)}`, person: old.person ?? null });
   } else changes.push({ status: "Unable to verify", previous: old.reason, current: "The previous concern is not reproduced, but a reliable item-level match or supporting evidence is unavailable. Instructor review required; no improvement credited.", person: old.person ?? null });
  }
  for (const c of current) if (!matched.has(c)) changes.push({ status: concernKey(c) ? "New concern" : "Unable to verify", previous: null, current: c.reason, person: c.person ?? null });
