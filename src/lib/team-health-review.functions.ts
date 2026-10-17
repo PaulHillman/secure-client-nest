@@ -315,8 +315,9 @@ export async function computeHealthReview(
       }
       if (isTeamLevel && progress >= 0.5 && count("Mid-Semester Peer Reviews") === 0)
         push("vault", "yellow", "Mid-Semester Peer Reviews not uploaded (past semester midpoint).");
-      if (isTeamLevel && progress >= 0.4 && !teamFiles.some((f) => f.section === "Semester Long Project" && f.subsection === "Interview Questions"))
-        push("vault", "yellow", "No Interview Questions uploaded (expected by 40% of semester).");
+      // Instructor granted a one-week grace period (2026-10-17): flag from 47% of the semester, not 40%.
+      if (isTeamLevel && progress >= 0.47 && !teamFiles.some((f) => f.section === "Semester Long Project" && f.subsection === "Interview Questions"))
+        push("vault", "yellow", "No Interview Questions uploaded (expected by 47% of semester).");
       if ((isTeamLevel || vidScope) && progress >= 0.6 && !teamFiles.some((f) => f.section === "Video"))
         push("vault", vidScope ? "red" : "yellow", "No Video files uploaded (expected by 60% of semester).", null, vidScope ? "Video Specialist" : null);
       if ((isTeamLevel || vidScope) && progress >= 0.9 && !teamFiles.some((f) => f.section === "Video" && f.subsection === "Final Submission"))
