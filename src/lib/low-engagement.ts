@@ -8,10 +8,14 @@ export const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 export type Contribution = { userId: string; at: string };
 
 /** Number of consecutive weeks (most recent first, up to `weeks`) without a meaningful contribution. */
-export function lowEngagementStreak(userId: string, contributions: Contribution[], now: number, weeks = 3): number {
+/** Page-visit tracking only began recording reliably on this date; weeks before it can't be judged. */
+export const LOW_ENGAGEMENT_START = Date.parse("2026-10-17T04:00:00Z");
+
+export function lowEngagementStreak(userId: string, contributions: Contribution[], now: number, weeks = 3, trackingStart = 0): number {
   let streak = 0;
   for (let w = 0; w < weeks; w++) {
     const end = now - w * WEEK_MS, start = end - WEEK_MS;
+    if (start < trackingStart) break;
     const hit = contributions.some(c => c.userId === userId && Date.parse(c.at) > start && Date.parse(c.at) <= end);
     if (hit) break;
     streak++;

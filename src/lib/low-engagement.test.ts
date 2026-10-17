@@ -18,6 +18,9 @@ describe("low engagement three-week cycle", () => {
   test("three consecutive quiet weeks are red", () => {
     assert.equal(lowEngagementLevel(lowEngagementStreak("a", [], now)), "red");
   });
+  test("weeks before tracking began are never counted", () => {
+    assert.equal(lowEngagementStreak("a", [], now, 3, now - WEEK_MS - 1), 1);
+  });
   test("opening only the health report or dashboard does not count", () => {
     assert.equal(isMaterialView("/app/dashboard", null), false);
     assert.equal(isMaterialView("/app/vault", "Health Reports"), false);
