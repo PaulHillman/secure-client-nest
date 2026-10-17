@@ -186,9 +186,13 @@ export async function computeHealthReview(
 
       // 2. Team Readiness
       if (isTeamLevel) {
-        for (const b of t.blockers) push("readiness", "red", b.reason, null, null, null, `readiness:${b.key}`);
-        for (const w of t.warnings) push("readiness", "yellow", w.reason, null, null, null, `readiness:${w.key}`);
-        if (!t.blockers.length && !t.warnings.length) notes.readiness.push("No readiness concerns — all readiness checks came back clean.");
+        // Retired for the current semester at the instructor's request: students were never briefed on where to record the client selection rationale. It returns next semester.
+        const rationaleRetired = now <= end;
+        const activeBlockers = rationaleRetired ? t.blockers.filter((f) => f.key !== "no_rationale") : t.blockers;
+        const activeWarnings = rationaleRetired ? t.warnings.filter((f) => f.key !== "no_rationale") : t.warnings;
+        for (const b of activeBlockers) push("readiness", "red", b.reason, null, null, null, `readiness:${b.key}`);
+        for (const w of activeWarnings) push("readiness", "yellow", w.reason, null, null, null, `readiness:${w.key}`);
+        if (!activeBlockers.length && !activeWarnings.length) notes.readiness.push("No readiness concerns — all readiness checks came back clean.");
         const evidence: Record<string, string> = {
           no_rationale: "A client selection rationale is now recorded.", no_norms: "Group Norms are now posted.",
           no_manager: "A manager contact is now recorded.", no_size: "Company size is now recorded.", no_location: "Company location is now recorded.",
@@ -202,6 +206,7 @@ export async function computeHealthReview(
           pm_verification: "Team Setup is submitted and the Project Manager has signed the current norms.",
         };
         for (const [key, fact] of Object.entries(evidence)) {
+          if (rationaleRetired && key === "no_rationale") continue;
           const found = [...t.blockers, ...t.warnings].filter(f => f.key === key);
           const category = t.norms.categories.find(c => `norms_${c.key}` === key);
           const remaining = category ? category.items.filter(i => i.status !== "found").length : key === "norms_not_agreed" ? t.norms.notAgreed.length : key === "norms_incomplete" ? t.norms.missingSections.length : found.length;

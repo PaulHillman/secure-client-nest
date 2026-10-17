@@ -3,20 +3,25 @@ import { strict as assert } from "node:assert";
 import { compareConcerns, researchCoverage } from "./health-review-comparison";
 
 describe("weekly shared-report concern comparisons", () => {
-  const old = { check: "readiness", level: "yellow" as const, reason: "No selection rationale recorded" };
+  const old = { check: "readiness", level: "yellow" as const, reason: "Group Norms are not posted" };
   test("specific fixed concern earns recognition only with verified zero remaining", () => {
-    const [change] = compareConcerns([old], [], [{ ruleId: "readiness:no_rationale", evidence: "A selection rationale is recorded.", remaining: 0, verified: true }]);
+    const [change] = compareConcerns([old], [], [{ ruleId: "readiness:no_norms", evidence: "Group Norms are now posted.", remaining: 0, verified: true }]);
     assert.equal(change.status, "Resolved");
-    assert.match(change.current, /selection rationale is recorded/);
+    assert.match(change.current, /Group Norms are now posted/);
+  });
+  test("retired selection-rationale check is a reporting correction, never student credit", () => {
+    const rationale = { check: "readiness", level: "yellow" as const, reason: "No selection rationale recorded" };
+    const [change] = compareConcerns([rationale], [], [{ ruleId: "readiness:no_rationale", evidence: "A selection rationale is recorded.", remaining: 0, verified: true }]);
+    assert.equal(change.status, "Reporting correction");
   });
   test("disappearing concern without evidence is unverified", () => {
     assert.equal(compareConcerns([old], [], [])[0].status, "Unable to verify");
   });
   test("nonzero remaining cannot receive resolved credit", () => {
-    assert.equal(compareConcerns([old], [], [{ ruleId: "readiness:no_rationale", evidence: "Still missing", remaining: 1, verified: true }])[0].status, "Unable to verify");
+    assert.equal(compareConcerns([old], [], [{ ruleId: "readiness:no_norms", evidence: "Still missing", remaining: 1, verified: true }])[0].status, "Unable to verify");
   });
   test("red to yellow is partial improvement, not resolution", () => {
-    const concern = { ...old, ruleId: "readiness:no_rationale" };
+    const concern = { ...old, ruleId: "readiness:no_norms" };
     assert.equal(compareConcerns([{ ...concern, level: "red" }], [concern], [{ ruleId: concern.ruleId, evidence: "Progress", remaining: 1, verified: true }])[0].status, "Partially improved");
   });
   test("unchanged concern remains outstanding", () => {
@@ -26,7 +31,7 @@ describe("weekly shared-report concern comparisons", () => {
     assert.equal(compareConcerns([{ ...old, reason: "Group Norms not signed and locked." }], [], [])[0].status, "Reporting correction");
   });
   test("new keyed concern is identified separately", () => {
-    assert.equal(compareConcerns([], [{ ...old, ruleId: "readiness:no_rationale" }], [])[0].status, "New concern");
+    assert.equal(compareConcerns([], [{ ...old, ruleId: "readiness:no_norms" }], [])[0].status, "New concern");
   });
   test("a decrease in measured remaining problems earns partial recognition", () => {
     const issue = { ...old, ruleId: "readiness:norms_accountability" };
