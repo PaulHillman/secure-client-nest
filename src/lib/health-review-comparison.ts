@@ -52,6 +52,9 @@ export function compareConcerns(previous: Concern[], current: Concern[], observa
    changes.push({ status: "Reporting correction", previous: old.reason, current: old.check === "activity" ? "The earlier activity finding predates the authoritative sign-in tracking correction. It cannot establish student-earned progress; current activity is assessed separately." : "The older report relied on a lock flag rather than current-version signatures. This is a reporting correction, not student-earned progress.", person: old.person ?? null }); continue;
   }
   const key = concernKey(old);
+  if (key === "readiness:no_rationale") {
+   changes.push({ status: "Reporting correction", previous: old.reason, current: "The client selection rationale check is retired for this semester at the instructor's request; teams were not briefed on where to record it, so this is not student-earned progress.", person: old.person ?? null }); continue;
+  }
   const candidates = current.filter(c => key ? concernKey(c) === key : c.check === old.check && c.reason === old.reason && c.person === old.person);
   const next = candidates.length === 1 ? candidates[0] : undefined;
   const fact = key ? observations.find(o => o.ruleId === key) : undefined;
