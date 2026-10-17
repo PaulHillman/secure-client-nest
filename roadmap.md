@@ -41,3 +41,6 @@
 - [x] Agenda list: meeting date above title + sort by date/name
 - [x] Let users read minutes, agendas, and other vault documents in a viewer without downloading
 - [x] Place 14 team health report PDFs in each team File Vault under "Health Reports" (done)
+
+## Weekly review comparison — discussion only
+- [x] Recommend comparing individual concerns against the last report actually shared, with evidence and explicit uncertain matches; do not run a review or implement changes yet.
