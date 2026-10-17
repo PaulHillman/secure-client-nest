@@ -1056,6 +1056,7 @@ export type Database = {
           id: string
           last_session_id: string | null
           last_shown_at: string | null
+          last_version_id: string | null
           last_viewed_at: string | null
           logins_shown: number
           team_id: string | null
@@ -1070,6 +1071,7 @@ export type Database = {
           id?: string
           last_session_id?: string | null
           last_shown_at?: string | null
+          last_version_id?: string | null
           last_viewed_at?: string | null
           logins_shown?: number
           team_id?: string | null
@@ -1084,6 +1086,7 @@ export type Database = {
           id?: string
           last_session_id?: string | null
           last_shown_at?: string | null
+          last_version_id?: string | null
           last_viewed_at?: string | null
           logins_shown?: number
           team_id?: string | null

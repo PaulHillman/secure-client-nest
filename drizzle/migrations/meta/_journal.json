@@ -85,6 +85,13 @@
       "when": 1792197988696,
       "tag": "0011_shared_health_review_baselines",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792198183646,
+      "tag": "0012_health_report_opened_version",
+      "breakpoints": true
     }
   ]
 }

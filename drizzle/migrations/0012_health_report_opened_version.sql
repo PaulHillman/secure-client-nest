@@ -1,0 +1,2 @@
+ALTER TABLE public.health_report_views ADD COLUMN last_version_id uuid;
+COMMENT ON COLUMN public.health_report_views.last_version_id IS 'Exact vault version last successfully displayed or downloaded; null historical events cannot prove opening a specific shared version.';
