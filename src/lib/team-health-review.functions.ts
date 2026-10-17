@@ -407,6 +407,40 @@ export async function computeHealthReview(
       }
     }
 
+    // Per-concern escalation across consecutive shared reports (team-level runs only):
+    // each warning is tracked independently; a 2nd consecutive appearance turns red,
+    // a 3rd adds a grade-deduction notice. Addressing one warning resets only that one.
+    const streaksByTeam = new Map<string, Map<string, number>>();
+    if (!roleFilter) {
+      const { escalateConcerns } = await import("./health-review-escalation");
+      for (const t of sorted) {
+        const mine = out.filter((e) => e.teamId === t.teamId);
+        if (!mine.length) continue;
+        const priors = (shares ?? [])
+          .filter((s: any) => s.team_id === t.teamId)
+          .map((s: any) => ((s.payload as { exceptions?: HealthException[] })?.exceptions ?? []).filter((e) => !PARFUNKEL.test(e.person ?? "")));
+        const escalated = escalateConcerns(mine, priors);
+        const streaks = new Map<string, number>();
+        for (const { concern, streak } of escalated) {
+          const idx = out.indexOf(mine[escalated.indexOf ? escalated.findIndex((x) => x.concern === concern) : 0]);
+          const original = escalated.find((x) => x.concern === concern)!;
+          void original;
+          const pos = out.findIndex((e) => e === mine[escalated.findIndex((x) => x.concern === concern)]);
+          void idx; void pos;
+        }
+        // Replace in place, preserving order.
+        let i = 0;
+        for (let k = 0; k < out.length; k++) {
+          if (out[k].teamId !== t.teamId) continue;
+          const { concern, streak } = escalated[i++];
+          out[k] = concern;
+          const key = concern.ruleId ?? concernKey(concern);
+          if (key) streaks.set(key, streak);
+        }
+        streaksByTeam.set(t.teamId, streaks);
+      }
+    }
+
     const CHECK_KEYS: HealthCheck[] = ["gaps", "readiness", "meetings", "activity", "vault", "reports"];
     const worst = new Map<string, "red" | "yellow">();
     for (const e of out) {
