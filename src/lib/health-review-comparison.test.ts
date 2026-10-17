@@ -28,6 +28,13 @@ describe("weekly shared-report concern comparisons", () => {
   test("new keyed concern is identified separately", () => {
     assert.equal(compareConcerns([], [{ ...old, ruleId: "readiness:no_rationale" }], [])[0].status, "New concern");
   });
+  test("a decrease in measured remaining problems earns partial recognition", () => {
+    const issue = { ...old, ruleId: "readiness:norms_accountability" };
+    assert.equal(compareConcerns([issue], [issue], [{ ruleId: issue.ruleId, evidence: "Two details remain", remaining: 2, verified: true }], [{ ruleId: issue.ruleId, evidence: "Four details missing", remaining: 4, verified: true }])[0].status, "Partially improved");
+  });
+  test("pre-correction activity findings do not earn improvement credit", () => {
+    assert.equal(compareConcerns([{ ...old, check: "activity", reason: "No activity" }], [], [])[0].status, "Reporting correction");
+  });
 });
 
 describe("research accepts combined coverage", () => {
