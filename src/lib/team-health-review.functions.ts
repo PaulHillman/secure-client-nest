@@ -410,8 +410,13 @@ export async function computeHealthReview(
           notes.vault.push(`Client research file-count expectation met: ${total} files (${required} expected). Topic coverage has not been inspected because the count is met.`);
           observe("vault:research", "File count met; topic coverage has not been verified.", 0, false);
         }
-        for (const f of misfiled)
-          push("vault", "yellow", `"${f.file_name}" looks like client research but is filed under ${f.subsection} — move it to Client research.`, taName, "Client Vault & Tech Administrator", taId);
+        const seenMisfiled = new Set<string>();
+        for (const f of misfiled) {
+          const dedupeKey = `${f.file_name}|${f.subsection}`;
+          if (seenMisfiled.has(dedupeKey)) continue;
+          seenMisfiled.add(dedupeKey);
+          push("vault", "yellow", `"${f.file_name}" looks like client research but is filed under ${f.subsection} — move it to Client research.`, taName, "Client Vault & Tech Administrator", taId, `vault:misfiled:${f.id}`);
+        }
         if (!misfiled.length && inResearch.length) notes.vault.push("All research files are filed in the Client research folder.");
       }
 
