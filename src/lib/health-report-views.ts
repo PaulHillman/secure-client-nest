@@ -1,10 +1,12 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /** Records that the signed-in student opened a Health Report file (banner click or vault download). */
-export async function recordHealthReportView(fileId: string, teamId: string | null, viaBanner: boolean) {
+export async function recordHealthReportView(fileId: string, teamId: string | null, viaBanner: boolean, versionId?: string) {
   const { data: u } = await supabase.auth.getUser();
   const uid = u.user?.id;
   if (!uid) return;
+  const { data: role } = await supabase.rpc("has_role", { _user_id: uid, _role: "admin" });
+  if (role) return;
   const now = new Date().toISOString();
   const { data: row } = await supabase
     .from("health_report_views").select("id, view_count, clicked_at")
@@ -13,12 +15,13 @@ export async function recordHealthReportView(fileId: string, teamId: string | nu
     await supabase.from("health_report_views").update({
       view_count: (row.view_count ?? 0) + 1,
       last_viewed_at: now,
+      last_version_id: versionId ?? null,
       clicked_at: row.clicked_at ?? (viaBanner ? now : null),
     }).eq("id", row.id);
   } else {
     await supabase.from("health_report_views").insert({
       user_id: uid, file_id: fileId, team_id: teamId,
-      view_count: 1, last_viewed_at: now, clicked_at: viaBanner ? now : null,
+      view_count: 1, last_viewed_at: now, last_version_id: versionId ?? null, clicked_at: viaBanner ? now : null,
     });
   }
 }

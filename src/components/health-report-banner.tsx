@@ -72,7 +72,7 @@ export function HealthReportBanner() {
     setViewerOpen(true);
     if (!viewAs && !opened) {
       setOpened(true);
-      await recordHealthReportView(report.id, report.team_id, true);
+      await recordHealthReportView(report.id, report.team_id, true, report.current_version_id ?? undefined);
     }
   };
 

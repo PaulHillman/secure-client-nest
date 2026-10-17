@@ -99,7 +99,7 @@ export async function computeHealthReview(
       db.from("files").select("id, current_version_id, created_at, team_id, section, subsection, file_name, uploaded_by, is_template, is_locked").in("team_id", ids),
       db.from("group_norms").select("team_id, version, group_norms_signatures(user_id, version)").in("team_id", ids),
       db.from("profiles").select("id, name, first_name, last_name, email"),
-      db.from("health_report_views").select("user_id, file_id, team_id, view_count, clicked_at, last_viewed_at").in("team_id", ids),
+      db.from("health_report_views").select("user_id, file_id, last_version_id, team_id, view_count, clicked_at, last_viewed_at").in("team_id", ids),
     ]);
     const { data: companyFocus } = await db.from("company_focus").select("team_id, company_name, confirmed_at").in("team_id", ids);
     const { data: shares, error: sharesError } = await db.from("health_review_shares").select("team_id, shared_at, generated_at, payload, source, vault_file_id, vault_version_id, recipient_ids").in("team_id", ids).order("shared_at", { ascending: false });
@@ -347,11 +347,11 @@ export async function computeHealthReview(
         const share = latestShare(t.teamId);
         if (share) {
           for (const m of tm) {
-            const v = (reportViews ?? []).find((x: any) => x.user_id === m.user_id && x.file_id === share.vault_file_id && x.last_viewed_at >= share.shared_at);
+            const v = (reportViews ?? []).find((x: any) => x.user_id === m.user_id && (share.vault_file_id ? x.file_id === share.vault_file_id : x.team_id === t.teamId) && x.last_viewed_at >= share.shared_at && (!share.vault_version_id || x.last_version_id === share.vault_version_id));
             const nm = nameOf(m.user_id);
             const opened = !!v && v.view_count > 0;
             const ruleId = `reports:opened:${m.user_id}`;
-            if (opened) notes.reports.push(`${nm}: recorded opening of the report shared ${share.shared_at.slice(0, 10)}; last opened ${v.last_viewed_at}. Opening is not proof of reading or understanding.`);
+            if (opened) notes.reports.push(`${nm}: ${share.source === "legacy_email_matched" ? "historical team-vault opening after the shared date (exact report version unverified)" : "recorded opening of the report shared"} ${share.shared_at.slice(0, 10)}; last opened ${v.last_viewed_at}. Opening is not proof of reading or understanding.`);
             else push("reports", "yellow", `No recorded opening of the report shared ${share.shared_at.slice(0, 10)}. Staying current with feedback is a team accountability concern, especially before peer review. Teammates should follow up. Emailed PDF reading is not independently tracked.`, nm, m.job_title, m.user_id, ruleId);
             observe(ruleId, `${nm} has now opened the latest shared report.`, opened ? 0 : 1);
           }
