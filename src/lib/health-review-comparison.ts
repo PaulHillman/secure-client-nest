@@ -41,6 +41,8 @@ export function concernKey(c: Concern): string | undefined {
   if (/^Last meeting logged \d+ days ago \(\d{4}-\d{2}-\d{2}\)\.$/.test(c.reason)) return "meetings:Last meeting logged:team";
  }
  if (c.check === "vault" && /^(Minutes|Agendas): \d+ posted, \d+ expected by week \d+\.$/.test(c.reason)) return `vault:${c.reason.split(":")[0]}:team`;
+ // Legacy research findings (pre-ruleId reports) used varying wording; map them to the stable research key.
+ if (c.check === "vault" && /^(Client research:|Research coverage unable to verify)/.test(c.reason)) return "vault:research";
  if (c.check === "gaps" && c.reason === "No weekly meeting consensus yet.") return "gaps:meeting";
  if (c.check === "meetings" && c.reason === "No weekly meetings logged this semester.") return "meetings:logged";
  return undefined;
