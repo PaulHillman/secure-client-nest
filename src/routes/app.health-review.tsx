@@ -61,7 +61,8 @@ function VerifyFileButton({ teamId, fileName }: { teamId: string; fileName: stri
       ) : (
         <Button size="sm" variant="outline" disabled={mut.isPending} onClick={() => mut.mutate()}>
           {mut.isPending ? "Saving…" : "I've read it — mark content verified"}
-        </Button )}
+        </Button>
+      )}
     </p>
   );
 }
