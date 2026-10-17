@@ -3,7 +3,7 @@ import { strict as assert } from "node:assert";
 import { lowEngagementStreak, lowEngagementLevel, isMaterialView, WEEK_MS } from "./low-engagement";
 
 const now = Date.parse("2026-10-17T00:00:00Z");
-const ago = (weeks: number) => new Date(now - weeks * WEEK_MS + 1000).toISOString();
+const ago = (weeks: number) => new Date(now - weeks * WEEK_MS - 1000).toISOString();
 
 describe("low engagement three-week cycle", () => {
   test("contribution this week resets the streak", () => {
