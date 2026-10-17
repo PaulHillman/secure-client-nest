@@ -14,7 +14,10 @@ const LEGACY: Record<string, string> = {
 };
 export function concernKey(c: Concern): string | undefined {
  if (c.ruleId) return c.ruleId;
- if (c.check === "readiness") return LEGACY[c.reason];
+ if (c.check === "readiness") {
+  const norms = /^Group Norms need clearer (communication|deadlines|accountability) detail$/.exec(c.reason);
+  return norms ? `readiness:norms_${norms[1]}` : LEGACY[c.reason];
+ }
  if (c.check === "gaps" && c.reason === "No weekly meeting consensus yet.") return "gaps:meeting";
  if (c.check === "meetings" && c.reason === "No weekly meetings logged this semester.") return "meetings:logged";
  return undefined;

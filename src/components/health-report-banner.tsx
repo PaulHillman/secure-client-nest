@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { recordHealthReportView, sessionIdFromToken } from "@/lib/health-report-views";
+import { sessionIdFromToken } from "@/lib/health-report-views";
 import { FileViewerDialog } from "@/components/file-viewer-dialog";
 
 type Report = { id: string; file_name: string; team_id: string | null; current_version_id: string | null };
@@ -63,7 +63,7 @@ export function HealthReportBanner() {
       if (!cancelled) setReport(f);
     })();
     return () => { cancelled = true; };
-  }, [user, isAdmin]);
+  }, [user, isAdmin, viewAs]);
 
   if (!report) return null;
 
@@ -72,7 +72,9 @@ export function HealthReportBanner() {
     setViewerOpen(true);
     if (!viewAs && !opened) {
       setOpened(true);
-      await recordHealthReportView(report.id, report.team_id, true, report.current_version_id ?? undefined);
+      // Banner click hides the prompt; a view is counted only after the PDF actually renders.
+      const { data: row } = await supabase.from("health_report_views").select("id").eq("user_id", user?.id ?? "").eq("file_id", report.id).maybeSingle();
+      if (row) await supabase.from("health_report_views").update({ clicked_at: new Date().toISOString() }).eq("id", row.id);
     }
   };
 

@@ -90,12 +90,10 @@ export const saveOrSendHealthReport = createServerFn({ method: "POST" })
         const vaultPath = `teams/${t.teamId}/health-reports/${stamp}-health-review.pdf`;
         const vaultUpload = await db.storage.from("vault").upload(vaultPath, pdf, { contentType: "application/pdf" });
         if (vaultUpload.error) throw new Error("Could not place the shared report in the team vault; no email was sent.");
-        const { data: oldFile } = await db.from("files").select("id").eq("team_id", t.teamId).eq("subsection", "Health Reports").order("created_at", { ascending: false }).limit(1).maybeSingle();
-        const fileId = oldFile?.id ?? crypto.randomUUID();
-        if (!oldFile) {
-          const { error: fileError } = await db.from("files").insert({ id: fileId, team_id: t.teamId, uploaded_by: context.userId, file_name: "Team Health Review.pdf", section: "Team Documents", subsection: "Health Reports", category: "Health Reports", is_locked: true });
-          if (fileError) throw new Error("Could not create the team report file.");
-        }
+        // A distinct report file preserves old versions and gives the new report its own two-login banner budget.
+        const fileId = crypto.randomUUID();
+        const { error: fileError } = await db.from("files").insert({ id: fileId, team_id: t.teamId, uploaded_by: context.userId, file_name: `Team Health Review ${new Date(p.generatedAt).toISOString().slice(0, 10)}.pdf`, section: "Team Documents", subsection: "Health Reports", category: "Health Reports", is_locked: true });
+        if (fileError) throw new Error("Could not create the team report file.");
         const { data: oldVersion } = await db.from("file_versions").select("version_number").eq("file_id", fileId).order("version_number", { ascending: false }).limit(1).maybeSingle();
         const { data: vaultVersion, error: versionError } = await db.from("file_versions").insert({ file_id: fileId, version_number: (oldVersion?.version_number ?? 0) + 1, storage_path: vaultPath, mime_type: "application/pdf", file_size: pdf.byteLength, uploaded_by: context.userId }).select("id").single();
         if (versionError || !vaultVersion) throw new Error("Could not create the shared report version.");

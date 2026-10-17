@@ -140,7 +140,11 @@ export async function computeHealthReview(
       const label = teamLineLabel({ name: t.teamRecordName, display_name: t.teamName !== t.teamRecordName ? t.teamName : null, section: t.section });
       const push = (check: HealthCheck, level: "red" | "yellow", reason: string, person: string | null = null, role: string | null = null, userId: string | null = null, ruleId?: string) => {
         const inferred = concernKey({ check, level, reason, person, userId });
-        out.push({ check, level, teamId: t.teamId, teamLabel: label, section: t.section, person, role, userId, reason, ruleId: ruleId ?? inferred });
+        const rulePattern = check === "vault" ? /^(Minutes|Agendas|Mid-Semester Peer Reviews|No Interview Questions|No Video files|Video Final Submission|Client Communications)/.exec(reason)?.[1]
+          : check === "meetings" ? /^(Last meeting logged|\d+ of \d+ logged meeting|Missed \d{4}-\d{2}-\d{2} meeting)/.exec(reason)?.[0].replace(/^\d+ of \d+ logged meeting$/, "missing_minutes")
+          : check === "activity" ? "relative_activity" : undefined;
+        const generatedRule = rulePattern ? `${check}:${rulePattern}:${userId ?? "team"}` : undefined;
+        out.push({ check, level, teamId: t.teamId, teamLabel: label, section: t.section, person, role, userId, reason, ruleId: ruleId ?? inferred ?? generatedRule });
       };
       const observations: Observation[] = [];
       observationsByTeam.set(t.teamId, observations);
@@ -169,9 +173,10 @@ export async function computeHealthReview(
           const roster = (members ?? []).filter((m) => m.team_id === t.teamId).map((m) => m.user_id);
           const signed = new Set((gn?.group_norms_signatures ?? []).filter((s) => s.version === gn?.version).map((s) => s.user_id));
           const missing = roster.filter((u) => !signed.has(u));
-          if (!gn) push("gaps", "yellow", "Group Norms not written yet.");
-          else if (missing.length) push("gaps", "yellow", `Group Norms version ${gn.version} not signed by: ${missing.map(nameOf).join(", ")}.`);
+          if (!gn) push("gaps", "yellow", "Group Norms not written yet.", null, null, null, "gaps:norms_signatures");
+          else if (missing.length) push("gaps", "yellow", `Group Norms version ${gn.version} not signed by: ${missing.map(nameOf).join(", ")}.`, null, null, null, "gaps:norms_signatures");
           else notes.gaps.push(`Group Norms version ${gn.version} signed by all ${roster.length} members.`);
+          observe("gaps:norms_signatures", `Group Norms version ${gn?.version} is signed by all current members.`, missing.length, !!gn);
         }
         if (t.setup.meetingState !== "complete") push("gaps", "yellow", "No weekly meeting consensus yet.");
         else notes.gaps.push("Weekly meeting time agreed by the team.");
@@ -189,7 +194,12 @@ export async function computeHealthReview(
           no_manager: "A manager contact is now recorded.", no_size: "Company size is now recorded.", no_location: "Company location is now recorded.",
           no_industry: "Client industry is now recorded.", meeting_time: "Meeting day and time are now recorded.", meeting_location: "Meeting place is now recorded.",
           no_pm: "A Project Manager is now assigned.", team_name: "The team name is now recorded.", duplicate_roles: "No duplicate role assignments remain.",
-          norms_incomplete: "All required Group Norms sections are now complete.", norms_clarity: "The Group Norms clarity checks no longer identify a deficiency.",
+          norms_incomplete: "All required Group Norms sections are now complete.",
+          norms_communication: "All communication wording checks now have concrete, measurable details.",
+          norms_deadlines: "All internal deadline wording checks now have concrete, measurable details.",
+          norms_accountability: "All accountability wording checks now have concrete actions and responsibilities.",
+          norms_not_agreed: "All members have agreed to the current Group Norms version.",
+          pm_verification: "Team Setup is submitted and the Project Manager has signed the current norms.",
         };
         for (const [key, fact] of Object.entries(evidence)) {
           const found = [...t.blockers, ...t.warnings].filter(f => f.key === key);
@@ -353,7 +363,7 @@ export async function computeHealthReview(
             const ruleId = `reports:opened:${m.user_id}`;
             if (opened) notes.reports.push(`${nm}: ${share.source === "legacy_email_matched" ? "historical team-vault opening after the shared date (exact report version unverified)" : "recorded opening of the report shared"} ${share.shared_at.slice(0, 10)}; last opened ${v.last_viewed_at}. Opening is not proof of reading or understanding.`);
             else push("reports", "yellow", `No recorded opening of the report shared ${share.shared_at.slice(0, 10)}. Staying current with feedback is a team accountability concern, especially before peer review. Teammates should follow up. Emailed PDF reading is not independently tracked.`, nm, m.job_title, m.user_id, ruleId);
-            observe(ruleId, `${nm} has now opened the latest shared report.`, opened ? 0 : 1);
+            observe(ruleId, `${nm} has now opened the latest shared report.`, opened ? 0 : 1, share.source !== "legacy_email_matched");
           }
         } else notes.reports.push("No verified prior shared report baseline is available; member follow-through cannot yet be assessed.");
       }
