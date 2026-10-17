@@ -109,6 +109,7 @@ export async function computeHealthReview(
     const latestShare = (teamId: string) => (shares ?? []).find((s: any) => s.team_id === teamId);
     const observationsByTeam = new Map<string, Observation[]>();
     const researchByTeam = new Map<string, Awaited<ReturnType<typeof import("./health-research.server").inspectResearch>>>();
+    const minutesTextCache = new Map<string, string | null>();
     const userIds = [...new Set((members ?? []).map((m) => m.user_id))];
     const [{ data: auths }, { data: usage }, { data: versions }, { data: sessions }] = await Promise.all([
       db.from("auth_audit_log").select("user_id, created_at").in("user_id", userIds).gte("created_at", since),
