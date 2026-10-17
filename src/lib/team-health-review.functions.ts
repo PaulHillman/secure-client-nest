@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildAssessments } from "@/lib/team-readiness-assessment.functions";
 import { teamLineLabel, compareTeamsBySectionThenNumber } from "@/lib/team-label";
+import { compareConcerns, concernKey, RESEARCH_NOTE, type Comparison, type Observation } from "@/lib/health-review-comparison";
 import { subsectionMatches } from "@/lib/vault-structure";
 
 export type HealthScope = "team" | "section" | "all" | "role";
@@ -18,6 +19,7 @@ export type HealthException = {
   person: string | null;
   role: string | null;
   userId?: string | null;
+  ruleId?: string;
   reason: string;
 };
 
@@ -37,6 +39,9 @@ export type TeamCheckResult = {
   teamLabel: string;
   section: string | null;
   peopleChecked: number;
+  comparison?: Comparison;
+  observations?: Observation[];
+  research?: { topics: { topic: string; evidence: { fileName: string; excerpt: string }[] }[]; unreadable: string[]; inspected: string[] };
   results: Record<HealthCheck, CheckStatus>;
   /** Human-readable facts showing why each passed check passed. */
   passNotes: Record<HealthCheck, string[]>;
@@ -74,7 +79,7 @@ export async function computeHealthReview(
     const { assessments, generatedAt } = await buildAssessments(data.scope === "team" ? data.teamId : undefined);
     let teams = assessments.filter((a) => data.scope === "team" || !a.isTest);
     if (data.scope === "section") teams = teams.filter((a) => a.section === data.section);
-    const roleFilter = data.scope === "role" ? data.role! : null;
+    const roleFilter = data.scope === "role" ? data.role ?? null : null;
     const ids = teams.map((t) => t.teamId);
     const now = Date.now();
 
@@ -91,12 +96,17 @@ export async function computeHealthReview(
     const [{ data: members }, { data: logs }, { data: files }, { data: norms }, { data: profiles }, { data: reportViews }] = await Promise.all([
       db.from("team_members").select("team_id, user_id, job_title").in("team_id", ids),
       db.from("meeting_logs").select("team_id, meeting_date, attendance, minutes_posted").in("team_id", ids),
-      db.from("files").select("team_id, section, subsection, file_name, uploaded_by, is_template, is_locked").in("team_id", ids),
+      db.from("files").select("id, current_version_id, created_at, team_id, section, subsection, file_name, uploaded_by, is_template, is_locked").in("team_id", ids),
       db.from("group_norms").select("team_id, version, group_norms_signatures(user_id, version)").in("team_id", ids),
       db.from("profiles").select("id, name, first_name, last_name, email"),
-      db.from("health_report_views").select("user_id, team_id, view_count, clicked_at, last_viewed_at").in("team_id", ids),
+      db.from("health_report_views").select("user_id, file_id, team_id, view_count, clicked_at, last_viewed_at").in("team_id", ids),
     ]);
     const { data: companyFocus } = await db.from("company_focus").select("team_id, company_name, confirmed_at").in("team_id", ids);
+    const { data: shares, error: sharesError } = await db.from("health_review_shares").select("team_id, shared_at, generated_at, payload, source, vault_file_id, vault_version_id, recipient_ids").in("team_id", ids).order("shared_at", { ascending: false });
+    if (sharesError) throw new Error("Unable to load prior shared reports; comparison cannot be verified.");
+    const latestShare = (teamId: string) => (shares ?? []).find((s: any) => s.team_id === teamId);
+    const observationsByTeam = new Map<string, Observation[]>();
+    const researchByTeam = new Map<string, Awaited<ReturnType<typeof import("./health-research.server").inspectResearch>>>();
     const userIds = [...new Set((members ?? []).map((m) => m.user_id))];
     const [{ data: auths }, { data: usage }, { data: versions }, { data: sessions }] = await Promise.all([
       db.from("auth_audit_log").select("user_id, created_at").in("user_id", userIds).gte("created_at", since),
@@ -115,7 +125,7 @@ export async function computeHealthReview(
     for (const r of [...(auths ?? []), ...(usage ?? []), ...sessionRows]) {
       if (!r.user_id || !r.created_at) continue;
       if (!days.has(r.user_id)) days.set(r.user_id, new Set());
-      days.get(r.user_id)!.add(String(r.created_at).slice(0, 10));
+      days.get(r.user_id)?.add(String(r.created_at).slice(0, 10));
     }
     const uploads = new Map<string, number>();
     for (const v of versions ?? []) uploads.set(v.uploaded_by, (uploads.get(v.uploaded_by) ?? 0) + 1);
@@ -128,8 +138,13 @@ export async function computeHealthReview(
 
     for (const t of sorted) {
       const label = teamLineLabel({ name: t.teamRecordName, display_name: t.teamName !== t.teamRecordName ? t.teamName : null, section: t.section });
-      const push = (check: HealthCheck, level: "red" | "yellow", reason: string, person: string | null = null, role: string | null = null, userId: string | null = null) =>
-        out.push({ check, level, teamId: t.teamId, teamLabel: label, section: t.section, person, role, userId, reason });
+      const push = (check: HealthCheck, level: "red" | "yellow", reason: string, person: string | null = null, role: string | null = null, userId: string | null = null, ruleId?: string) => {
+        const inferred = concernKey({ check, level, reason, person, userId });
+        out.push({ check, level, teamId: t.teamId, teamLabel: label, section: t.section, person, role, userId, reason, ruleId: ruleId ?? inferred });
+      };
+      const observations: Observation[] = [];
+      observationsByTeam.set(t.teamId, observations);
+      const observe = (ruleId: string, evidence: string, remaining = 0, verified = true) => observations.push({ ruleId, evidence, remaining, verified });
       const notes: Record<HealthCheck, string[]> = { gaps: [], readiness: [], meetings: [], activity: [], vault: [], reports: [] };
       passNotesByTeam.set(t.teamId, notes);
       const tm = (members ?? []).filter((m) => m.team_id === t.teamId && !PARFUNKEL.test(nameOf(m.user_id)));
@@ -162,11 +177,24 @@ export async function computeHealthReview(
         else notes.gaps.push("Weekly meeting time agreed by the team.");
       }
 
+      observe("gaps:meeting", "Weekly meeting time agreed by the team.", t.setup.meetingState === "complete" ? 0 : 1);
+
       // 2. Team Readiness
       if (isTeamLevel) {
-        for (const b of t.blockers) push("readiness", "red", b.reason);
-        for (const w of t.warnings) push("readiness", "yellow", w.reason);
+        for (const b of t.blockers) push("readiness", "red", b.reason, null, null, null, `readiness:${b.key}`);
+        for (const w of t.warnings) push("readiness", "yellow", w.reason, null, null, null, `readiness:${w.key}`);
         if (!t.blockers.length && !t.warnings.length) notes.readiness.push("No readiness concerns — all readiness checks came back clean.");
+        const evidence: Record<string, string> = {
+          no_rationale: "A client selection rationale is now recorded.", no_norms: "Group Norms are now posted.",
+          no_manager: "A manager contact is now recorded.", no_size: "Company size is now recorded.", no_location: "Company location is now recorded.",
+          no_industry: "Client industry is now recorded.", meeting_time: "Meeting day and time are now recorded.", meeting_location: "Meeting place is now recorded.",
+          no_pm: "A Project Manager is now assigned.", team_name: "The team name is now recorded.", duplicate_roles: "No duplicate role assignments remain.",
+          norms_incomplete: "All required Group Norms sections are now complete.", norms_clarity: "The Group Norms clarity checks no longer identify a deficiency.",
+        };
+        for (const [key, fact] of Object.entries(evidence)) {
+          const found = [...t.blockers, ...t.warnings].filter(f => f.key === key);
+          observe(`readiness:${key}`, fact, found.length);
+        }
       } else {
         for (const m of t.members.filter((x) => x.role === roleFilter)) {
           if (m.missingProofs > 0) {
@@ -191,6 +219,7 @@ export async function computeHealthReview(
           if (gap > 7) { failed++; push("meetings", gap > 13 ? "red" : "yellow", `Last meeting logged ${gap} days ago (${last}).`); }
           else { passed++; notes.meetings.push(`Recency: last meeting ${last} (${gap} day${gap === 1 ? "" : "s"} ago) — within the 7-day limit.`); }
         }
+        observe("meetings:logged", `Meetings logged: ${teamLogs.length} this semester.`, teamLogs.length ? 0 : 1);
         const noMinutes = teamLogs.filter((l) => !l.minutes_posted).length;
         if (noMinutes) { failed += noMinutes; push("meetings", "yellow", `${noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? " has" : "s have"} no minutes posted.`); }
         if (teamLogs.length - noMinutes > 0) { passed += teamLogs.length - noMinutes; notes.meetings.push(`Minutes posted for ${teamLogs.length - noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? "" : "s"}.`); }
@@ -252,18 +281,34 @@ export async function computeHealthReview(
       if (isTeamLevel || techScope) {
         const researchDue = Date.parse("2026-10-18T23:59:59Z");
         const pastDue = now > researchDue;
-        const inResearch = teamFiles.filter((f) => f.section === "Team Documents" && subsectionMatches(f.subsection, "Client research"));
+        const inResearch = teamFiles.filter((f) => subsectionMatches(f.subsection, "Client research"));
         const looksResearch = (f: { file_name?: string }) => /research|org[ -]?chart|company (profile|analysis|overview)|history|culture|location|competitor|industry|job[ -]description/i.test(f.file_name ?? "");
         const misfiled = teamFiles.filter((f) => !subsectionMatches(f.subsection, "Client research") && looksResearch(f));
         const total = inResearch.length + misfiled.length;
         const techAdmin = tm.find((m) => m.job_title === "Client Vault & Tech Administrator");
         const taName = techAdmin ? nameOf(techAdmin.user_id) : null;
         const taId = techAdmin?.user_id ?? null;
-        if (total < 2)
-          push("vault", pastDue ? "red" : "yellow", `Client research: ${total} file${total === 1 ? "" : "s"} found — at least 2 expected now, 4 expected by 10/18.`);
-        else if (pastDue && total < 4)
-          push("vault", "red", `Client research: ${total} file${total === 1 ? "" : "s"} found — 4 expected by 10/18.`);
-        else notes.vault.push(`Client research on track: ${total} file${total === 1 ? "" : "s"} found (${pastDue ? "4 expected by 10/18" : "at least 2 expected now, 4 by 10/18"}).`);
+        const required = pastDue ? 4 : 2;
+        notes.vault.push(RESEARCH_NOTE);
+        if (total < required) {
+          const { inspectResearch } = await import("./health-research.server");
+          const research = await inspectResearch(db, [...inResearch, ...misfiled]);
+          researchByTeam.set(t.teamId, research);
+          const missing = research.topics.filter(topic => !topic.evidence.length).map(topic => topic.topic);
+          if (!missing.length) {
+            notes.vault.push(`All four research topics have text evidence across ${total} file(s). Combined documents accepted; content quality is not graded automatically.`);
+            observe("vault:research", "All four required research topics have supporting text excerpts in the uploaded documents.");
+          } else if (research.unreadable.length) {
+            notes.vault.push(`Research coverage unverified: ${research.unreadable.join(", ")} could not be read. Do not infer missing research from file count.`);
+            observe("vault:research", "Research coverage requires instructor review because some documents could not be read.", missing.length, false);
+          } else {
+            push("vault", pastDue ? "red" : "yellow", `Client research: ${total} file(s); no text evidence found for ${missing.join(", ")}. Expected ${required} files or combined coverage of all four topics. Please add the content or identify where it appears.`, null, null, null, "vault:research");
+            observe("vault:research", "Research topics without supporting text evidence.", missing.length);
+          }
+        } else {
+          notes.vault.push(`Client research file-count expectation met: ${total} files (${required} expected). Topic coverage has not been inspected because the count is met.`);
+          observe("vault:research", "File count met; topic coverage has not been verified.", 0, false);
+        }
         for (const f of misfiled)
           push("vault", "yellow", `"${f.file_name}" looks like client research but is filed under ${f.subsection} — move it to Client research.`, taName, "Client Vault & Tech Administrator", taId);
         if (!misfiled.length && inResearch.length) notes.vault.push("All research files are filed in the Client research folder.");
@@ -297,21 +342,20 @@ export async function computeHealthReview(
         }
       }
 
-      // 7. Health Report follow-up: has each member opened their team's health review report?
+      // Latest shared report only: historical openings cannot establish current follow-through.
       if (isTeamLevel) {
-        const hasReport = teamFiles.some((f) => subsectionMatches(f.subsection, "Health Reports"));
-        if (hasReport) {
-          const views = (reportViews ?? []).filter((v) => v.team_id === t.teamId);
+        const share = latestShare(t.teamId);
+        if (share) {
           for (const m of tm) {
-            const v = views.find((x) => x.user_id === m.user_id);
+            const v = (reportViews ?? []).find((x: any) => x.user_id === m.user_id && x.file_id === share.vault_file_id && x.last_viewed_at >= share.shared_at);
             const nm = nameOf(m.user_id);
-            if (v && (v.view_count > 0 || v.clicked_at)) {
-              notes.reports.push(`${nm}: opened the team health report${v.view_count > 1 ? ` (${v.view_count} times)` : ""}${v.clicked_at ? " via the dashboard banner" : ""}.`);
-            } else {
-              push("reports", "yellow", "Has not opened the team's Health Review report yet.", nm, m.job_title, m.user_id);
-            }
+            const opened = !!v && v.view_count > 0;
+            const ruleId = `reports:opened:${m.user_id}`;
+            if (opened) notes.reports.push(`${nm}: recorded opening of the report shared ${share.shared_at.slice(0, 10)}; last opened ${v.last_viewed_at}. Opening is not proof of reading or understanding.`);
+            else push("reports", "yellow", `No recorded opening of the report shared ${share.shared_at.slice(0, 10)}. Staying current with feedback is a team accountability concern, especially before peer review. Teammates should follow up. Emailed PDF reading is not independently tracked.`, nm, m.job_title, m.user_id, ruleId);
+            observe(ruleId, `${nm} has now opened the latest shared report.`, opened ? 0 : 1);
           }
-        }
+        } else notes.reports.push("No verified prior shared report baseline is available; member follow-through cannot yet be assessed.");
       }
     }
 
@@ -328,7 +372,7 @@ export async function computeHealthReview(
       const noRole = !!roleFilter && !roster.some((m) => m.job_title === roleFilter);
       const teamLevel = !roleFilter;
       const pmScope = roleFilter === "PM";
-      const hasReport = (files ?? []).some((f) => f.team_id === t.teamId && !f.is_template && subsectionMatches(f.subsection, "Health Reports"));
+      const hasReport = !!latestShare(t.teamId);
       const results = {} as Record<HealthCheck, CheckStatus>;
       for (const c of CHECK_KEYS) {
         const applicable =
@@ -342,6 +386,14 @@ export async function computeHealthReview(
         teamId: t.teamId,
         teamLabel: label,
         section: t.section,
+        observations: observationsByTeam.get(t.teamId) ?? [],
+        research: researchByTeam.get(t.teamId),
+        comparison: roleFilter ? undefined : (() => {
+          const share = latestShare(t.teamId);
+          if (!share) return { sharedAt: null, source: "No verified shared baseline", changes: [] };
+          const payload = share.payload as { exceptions?: HealthException[]; team?: TeamCheckResult };
+          return { sharedAt: share.shared_at, source: share.source, changes: compareConcerns(payload.exceptions ?? [], out.filter(e => e.teamId === t.teamId), observationsByTeam.get(t.teamId) ?? [], payload.team?.observations ?? []) };
+        })(),
         peopleChecked: (roleFilter ? roster.filter((m) => m.job_title === roleFilter) : roster).length,
         results,
         passNotes: passNotesByTeam.get(t.teamId) ?? { gaps: [], readiness: [], meetings: [], activity: [], vault: [], reports: [] },
