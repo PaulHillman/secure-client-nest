@@ -374,7 +374,8 @@ export async function computeHealthReview(
         const pastDue = now > researchDue;
         const inResearch = teamFiles.filter((f) => subsectionMatches(f.subsection, "Client research"));
         // Org charts are company materials filed under Organizational Chart, not client research.
-        const looksResearch = (f: { file_name?: string }) => /research|company (profile|analysis|overview)|history|culture|location|competitor|industry|job[ -]description/i.test(f.file_name ?? "");
+        // Common misspellings (reaserch/reserach/reseach) must still be caught as research.
+        const looksResearch = (f: { file_name?: string }) => /research|reaserch|reserach|reseach|resarch|company (profile|analysis|overview)|history|culture|location|competitor|industry|job[ -]description/i.test(f.file_name ?? "");
         const misfiled = teamFiles.filter((f) => !subsectionMatches(f.subsection, "Client research") && looksResearch(f));
         const total = inResearch.length + misfiled.length;
         const techAdmin = tm.find((m) => m.job_title === "Client Vault & Tech Administrator");
