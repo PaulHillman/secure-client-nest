@@ -2,6 +2,24 @@ export type Concern = { check: string; level: "red" | "yellow"; reason: string; 
 export type Observation = { ruleId: string; evidence: string; remaining?: number; verified: boolean };
 export type Change = { status: "Resolved" | "Partially improved" | "Still outstanding" | "Unable to verify" | "New concern" | "Reporting correction"; previous: string | null; current: string; person: string | null };
 export type Comparison = { sharedAt: string | null; source: string; changes: Change[] };
+// Varied but deterministic: the same concern always earns the same phrase, so re-running a report never rewords a compliment.
+const RESOLVED_COMPLIMENTS = [
+ "Thank you for addressing this deficiency—good follow-through.",
+ "This was corrected—well done following through on the feedback.",
+ "Nicely handled; the concern from the last report is cleared.",
+ "This improvement is confirmed—appreciate the quick response.",
+ "Good work turning this around since the last review.",
+ "The fix is verified—thanks for acting on the report.",
+ "That concern is now behind you—solid effort by the team.",
+ "Resolved and confirmed—your attention to this shows.",
+ "This deficiency was addressed promptly—keep that momentum.",
+ "The team acted on this feedback and the result is verified—well done.",
+];
+function pickCompliment(seed: string): string {
+ let h = 0;
+ for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+ return RESOLVED_COMPLIMENTS[h % RESOLVED_COMPLIMENTS.length];
+}
 const LEGACY: Record<string, string> = {
  "No selection rationale recorded": "readiness:no_rationale", "Group Norms are not posted": "readiness:no_norms",
  "PM verification is missing": "readiness:pm_verification", "Company size was not provided": "readiness:no_size",
