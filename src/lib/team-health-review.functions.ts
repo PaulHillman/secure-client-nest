@@ -93,20 +93,23 @@ export async function computeHealthReview(
     if (!ids.length) return { generatedAt, week, progress, teamsChecked: 0, peopleChecked: 0, teamResults: [] as TeamCheckResult[], exceptions: [] as HealthException[], ranking: [] as PersonRank[], reportId: null as string | null };
 
     const since = new Date(now - 7 * DAY).toISOString();
-    const [{ data: members }, { data: logs }, { data: files }, { data: norms }, { data: profiles }, { data: reportViews }] = await Promise.all([
+    const [{ data: members }, { data: logs }, { data: files }, { data: norms }, { data: profiles }, { data: reportViews }, { data: minutesTemplateRows }] = await Promise.all([
       db.from("team_members").select("team_id, user_id, job_title").in("team_id", ids),
       db.from("meeting_logs").select("team_id, meeting_date, attendance, minutes_posted").in("team_id", ids),
       db.from("files").select("id, current_version_id, created_at, team_id, section, subsection, file_name, uploaded_by, is_template, is_locked").in("team_id", ids),
       db.from("group_norms").select("team_id, version, group_norms_signatures(user_id, version)").in("team_id", ids),
       db.from("profiles").select("id, name, first_name, last_name, email"),
       db.from("health_report_views").select("user_id, file_id, last_version_id, team_id, view_count, clicked_at, last_viewed_at").in("team_id", ids),
+      db.from("files").select("id, current_version_id, file_name").eq("is_template", true).ilike("file_name", "Meeting Minutes Template%").limit(1),
     ]);
+    const minutesTemplate = minutesTemplateRows?.[0] ?? null;
     const { data: companyFocus } = await db.from("company_focus").select("team_id, company_name, confirmed_at").in("team_id", ids);
     const { data: shares, error: sharesError } = await db.from("health_review_shares").select("team_id, shared_at, generated_at, payload, source, vault_file_id, vault_version_id, recipient_ids").in("team_id", ids).order("shared_at", { ascending: false });
     if (sharesError) throw new Error("Unable to load prior shared reports; comparison cannot be verified.");
     const latestShare = (teamId: string) => (shares ?? []).find((s: any) => s.team_id === teamId);
     const observationsByTeam = new Map<string, Observation[]>();
     const researchByTeam = new Map<string, Awaited<ReturnType<typeof import("./health-research.server").inspectResearch>>>();
+    const minutesTextCache = new Map<string, string | null>();
     const userIds = [...new Set((members ?? []).map((m) => m.user_id))];
     const [{ data: auths }, { data: usage }, { data: versions }, { data: sessions }] = await Promise.all([
       db.from("auth_audit_log").select("user_id, created_at").in("user_id", userIds).gte("created_at", since),
@@ -223,7 +226,7 @@ export async function computeHealthReview(
         }
       }
 
-      // 3. Weekly Meetings — itemized sub-checks: (a) meetings logged, (b) recency, (c) minutes per meeting, (d) reason per absence
+      // 3. Weekly Meetings — itemized sub-checks: (a) meetings logged, (b) recency, (c) minutes per meeting, (d) reason per absence, (e) minutes follow the shared Meeting Minutes Template
       if ((isTeamLevel || pmScope) && week >= 3) {
         const last = teamLogs.map((l) => l.meeting_date).sort().pop();
         const gap = last ? Math.floor((now - new Date(last + "T12:00:00Z").getTime()) / DAY) : null;
@@ -242,6 +245,27 @@ export async function computeHealthReview(
         observe("meetings:Last meeting logged:team", `Latest logged meeting: ${last}; ${gap} days ago, within the 7-day limit.`, gap === null || gap > 7 ? 1 : 0);
         if (noMinutes) { failed += noMinutes; push("meetings", "yellow", `${noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? " has" : "s have"} no minutes posted.`); }
         if (teamLogs.length - noMinutes > 0) { passed += teamLogs.length - noMinutes; notes.meetings.push(`Minutes posted for ${teamLogs.length - noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? "" : "s"}.`); }
+        // (e) minutes follow the shared Meeting Minutes Template
+        const minutesFiles = teamFiles.filter((f) => f.section === "Team Documents" && subsectionMatches(f.subsection, "Minutes"));
+        if (minutesFiles.length && minutesTemplate) {
+          const { inspectMinutesTemplate } = await import("./health-research.server");
+          const minutesCheck = await inspectMinutesTemplate(db, minutesFiles, minutesTemplate, minutesTextCache);
+          const readableCount = minutesCheck.compliant.length + minutesCheck.violations.length;
+          observe("meetings:minutes_template:team", `Minutes template: ${minutesCheck.compliant.length} of ${readableCount} readable minutes files follow the shared Meeting Minutes Template.`, minutesCheck.violations.length, minutesCheck.unverified.length < minutesFiles.length);
+          if (minutesCheck.violations.length) {
+            failed += minutesCheck.violations.length;
+            passed += minutesCheck.compliant.length;
+            push("meetings", "yellow", `${minutesCheck.violations.length} of ${readableCount} minutes files do not follow the shared Meeting Minutes Template (${minutesCheck.violations.join(", ")}). Start each minutes document from the template in Operational Resources and Templates.`, null, null, null, "meetings:minutes_template");
+            notes.meetings.push(`Minutes template: ${minutesCheck.compliant.length} of ${readableCount} readable minutes files follow the shared Meeting Minutes Template.`);
+          } else if (minutesCheck.unverified.length >= minutesFiles.length) {
+            notes.meetings.push(`Minutes template: unable to verify — ${minutesCheck.unverified.join(", ")} could not be read. Not counted as a violation; instructor review required.`);
+          } else {
+            passed++;
+            notes.meetings.push(`Minutes template: all ${readableCount} readable minutes files follow the shared Meeting Minutes Template${minutesCheck.unverified.length ? `; ${minutesCheck.unverified.join(", ")} could not be read (not counted as violations)` : ""}.`);
+          }
+        } else {
+          notes.meetings.push(minutesFiles.length ? "Minutes template: the shared Meeting Minutes Template could not be loaded, so compliance could not be verified." : "Minutes template: no minutes files posted yet to check.");
+        }
         let absences = 0;
         let unexplained = 0;
         for (const l of teamLogs) {
@@ -258,7 +282,7 @@ export async function computeHealthReview(
         failed += unexplained;
         if (absences - unexplained > 0) { passed += absences - unexplained; notes.meetings.push(`Attendance: ${absences - unexplained} of ${absences} absence${absences === 1 ? "" : "s"} have a reason recorded.`); }
         else if (!absences && teamLogs.length) { passed++; notes.meetings.push("Attendance: no unexplained absences."); }
-        notes.meetings.unshift(`Weekly Meetings sub-checks: ${passed} passed, ${failed} flagged (meetings logged, recency vs. 7-day limit, minutes per meeting, reason per absence).`);
+        notes.meetings.unshift(`Weekly Meetings sub-checks: ${passed} passed, ${failed} flagged (meetings logged, recency vs. 7-day limit, minutes per meeting, minutes on the shared template, reason per absence).`);
       }
 
       // 4. Relative login / upload activity (vs. this team's own median)
