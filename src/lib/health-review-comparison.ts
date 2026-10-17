@@ -1,7 +1,7 @@
 export type Concern = { check: string; level: "red" | "yellow"; reason: string; person?: string | null; userId?: string | null; ruleId?: string };
 export type Observation = { ruleId: string; evidence: string; remaining?: number; verified: boolean };
 export type Change = { status: "Resolved" | "Partially improved" | "Still outstanding" | "Unable to verify" | "New concern" | "Reporting correction"; previous: string | null; current: string; person: string | null };
-export type Comparison = { sharedAt: string | null; source: string; changes: Change[] };
+export type Comparison = { sharedAt: string | null; source: string; changes: Change[]; streaks?: Record<string, number> };
 // Varied but deterministic: the same concern always earns the same phrase, so re-running a report never rewords a compliment.
 const RESOLVED_COMPLIMENTS = [
  "Thank you for addressing this deficiency—good follow-through.",

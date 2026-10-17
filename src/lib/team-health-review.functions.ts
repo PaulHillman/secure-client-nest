@@ -407,6 +407,33 @@ export async function computeHealthReview(
       }
     }
 
+    // Per-concern escalation across consecutive shared reports (team-level runs only):
+    // each warning is tracked independently; a 2nd consecutive appearance turns red,
+    // a 3rd adds a grade-deduction notice. Addressing one warning resets only that one.
+    const streaksByTeam = new Map<string, Map<string, number>>();
+    if (!roleFilter) {
+      const { escalateConcerns } = await import("./health-review-escalation");
+      for (const t of sorted) {
+        const mine = out.filter((e) => e.teamId === t.teamId);
+        if (!mine.length) continue;
+        const priors = (shares ?? [])
+          .filter((s: any) => s.team_id === t.teamId)
+          .map((s: any) => ((s.payload as { exceptions?: HealthException[] })?.exceptions ?? []).filter((e) => !PARFUNKEL.test(e.person ?? "")));
+        const escalated = escalateConcerns(mine, priors);
+        const streaks = new Map<string, number>();
+        // Replace in place, preserving order.
+        let i = 0;
+        for (let k = 0; k < out.length; k++) {
+          if (out[k].teamId !== t.teamId) continue;
+          const { concern, streak } = escalated[i++];
+          out[k] = concern;
+          const key = concern.ruleId ?? concernKey(concern);
+          if (key) streaks.set(key, streak);
+        }
+        streaksByTeam.set(t.teamId, streaks);
+      }
+    }
+
     const CHECK_KEYS: HealthCheck[] = ["gaps", "readiness", "meetings", "activity", "vault", "reports"];
     const worst = new Map<string, "red" | "yellow">();
     for (const e of out) {
@@ -440,7 +467,7 @@ export async function computeHealthReview(
           const share = latestShare(t.teamId);
           if (!share) return { sharedAt: null, source: "No verified shared baseline", changes: [] };
           const payload = share.payload as { exceptions?: HealthException[]; team?: TeamCheckResult };
-          return { sharedAt: share.shared_at, source: share.source, changes: compareConcerns((payload.exceptions ?? []).filter(e => !PARFUNKEL.test(e.person ?? "")), out.filter(e => e.teamId === t.teamId), observationsByTeam.get(t.teamId) ?? [], payload.team?.observations ?? []) };
+          return { sharedAt: share.shared_at, source: share.source, streaks: Object.fromEntries(streaksByTeam.get(t.teamId) ?? []), changes: compareConcerns((payload.exceptions ?? []).filter(e => !PARFUNKEL.test(e.person ?? "")), out.filter(e => e.teamId === t.teamId), observationsByTeam.get(t.teamId) ?? [], payload.team?.observations ?? []) };
         })(),
         peopleChecked: (roleFilter ? roster.filter((m) => m.job_title === roleFilter) : roster).length,
         results,
