@@ -12,7 +12,7 @@ test("research inspection reads actual PDF bytes and accepts all four topics in 
   const bytes = await doc.save();
   const db = {
     from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { storage_path: "test.pdf", file_size: bytes.length }, error: null }) }) }) }),
-    storage: { from: () => ({ download: async () => ({ data: new Blob([bytes]), error: null }) }) },
+    storage: { from: () => ({ download: async () => ({ data: new Blob([Uint8Array.from(bytes)]), error: null }) }) },
   };
   const result = await inspectResearch(db, [{ file_name: "Combined research.pdf", current_version_id: "test-version" }]);
   assert.equal(result.inspected.length, 1);
