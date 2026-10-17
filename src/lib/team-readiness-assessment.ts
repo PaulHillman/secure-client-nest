@@ -665,7 +665,12 @@ export function assessTeam(input: AssessmentInput): TeamAssessment {
       add(warnings, "outside_region", `Client location is outside ${WEST_MICHIGAN.label}`, client.location ?? undefined);
     }
     if (loc.verdict === "review") {
-      add(warnings, "location_review", "Client location needs your review", `${client.location} — ${loc.note}`);
+      add(
+        warnings,
+        "location_review",
+        "Client location could not be verified — check the client record",
+        `Recorded address: "${client.location ?? "none"}". It was not recognised against the ${WEST_MICHIGAN.label} list. To fix: open the client record and make sure the headquarters address is complete and correct (street, city, state). If the address is right and the client is genuinely outside ${WEST_MICHIGAN.label}, confirm it with your instructor. ${loc.note}`,
+      );
     }
     if (!client.industry) add(warnings, "no_industry", "Client industry was not provided");
     if (!rationale) add(warnings, "no_rationale", "No selection rationale recorded");
