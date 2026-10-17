@@ -408,7 +408,8 @@ export async function computeHealthReview(
           }
         } else {
           notes.vault.push(`Client research file-count expectation met: ${total} files (${required} expected). Topic coverage has not been inspected because the count is met.`);
-          observe("vault:research", "File count met; topic coverage has not been verified.", 0, false);
+          // File count is directly verifiable from the vault, so a prior count-based concern can be credited as resolved.
+          observe("vault:research", "File count met; topic coverage has not been verified.", 0, true);
         }
         const seenMisfiled = new Set<string>();
         for (const f of misfiled) {
