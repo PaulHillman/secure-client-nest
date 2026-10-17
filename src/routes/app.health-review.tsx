@@ -45,6 +45,27 @@ const SCOPES: [HealthScope, string][] = [
   ["team", "One team"], ["section", "One section"], ["all", "All teams"], ["role", "One role"],
 ];
 
+/** Admin control: confirm an unreadable file's contents by hand so the report stops escalating it. */
+function VerifyFileButton({ teamId, fileName }: { teamId: string; fileName: string }) {
+  const mark = useServerFn(setFileContentVerified);
+  const [done, setDone] = useState(false);
+  const mut = useMutation({
+    mutationFn: () => mark({ data: { teamId, fileName, verified: true } }),
+    onSuccess: () => setDone(true),
+  });
+  return (
+    <p className="flex items-center gap-2 flex-wrap">
+      <span>{fileName}</span>
+      {done ? (
+        <span className="text-xs text-muted-foreground">Verified — re-run the review to apply.</span>
+      ) : (
+        <Button size="sm" variant="outline" disabled={mut.isPending} onClick={() => mut.mutate()}>
+          {mut.isPending ? "Saving…" : "I've read it — mark content verified"}
+        </Button )}
+    </p>
+  );
+}
+
 function HealthReviewPage() {
   const { isAdmin, loading } = useAuth();
   const [scope, setScope] = useState<HealthScope>("all");
