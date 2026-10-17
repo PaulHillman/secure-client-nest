@@ -226,7 +226,7 @@ export async function computeHealthReview(
         }
       }
 
-      // 3. Weekly Meetings — itemized sub-checks: (a) meetings logged, (b) recency, (c) minutes per meeting, (d) reason per absence
+      // 3. Weekly Meetings — itemized sub-checks: (a) meetings logged, (b) recency, (c) minutes per meeting, (d) reason per absence, (e) minutes follow the shared Meeting Minutes Template
       if ((isTeamLevel || pmScope) && week >= 3) {
         const last = teamLogs.map((l) => l.meeting_date).sort().pop();
         const gap = last ? Math.floor((now - new Date(last + "T12:00:00Z").getTime()) / DAY) : null;
@@ -282,7 +282,7 @@ export async function computeHealthReview(
         failed += unexplained;
         if (absences - unexplained > 0) { passed += absences - unexplained; notes.meetings.push(`Attendance: ${absences - unexplained} of ${absences} absence${absences === 1 ? "" : "s"} have a reason recorded.`); }
         else if (!absences && teamLogs.length) { passed++; notes.meetings.push("Attendance: no unexplained absences."); }
-        notes.meetings.unshift(`Weekly Meetings sub-checks: ${passed} passed, ${failed} flagged (meetings logged, recency vs. 7-day limit, minutes per meeting, reason per absence).`);
+        notes.meetings.unshift(`Weekly Meetings sub-checks: ${passed} passed, ${failed} flagged (meetings logged, recency vs. 7-day limit, minutes per meeting, minutes on the shared template, reason per absence).`);
       }
 
       // 4. Relative login / upload activity (vs. this team's own median)
