@@ -4,6 +4,7 @@ import { buildAssessments } from "@/lib/team-readiness-assessment.functions";
 import { teamLineLabel, compareTeamsBySectionThenNumber } from "@/lib/team-label";
 import { compareConcerns, concernKey, RESEARCH_NOTE, type Comparison, type Observation } from "@/lib/health-review-comparison";
 import { subsectionMatches } from "@/lib/vault-structure";
+import { lowEngagementStreak, lowEngagementLevel, isMaterialView, LOW_ENGAGEMENT_START, type Contribution } from "@/lib/low-engagement";
 
 export type HealthScope = "team" | "section" | "all" | "role";
 
@@ -118,6 +119,22 @@ export async function computeHealthReview(
       // Authoritative sign-in/session activity straight from the auth system (admin-only function).
       context.supabase.rpc("auth_activity_since", { _since: since }),
     ]);
+
+    // Three-week low-engagement cycle: meaningful contributions over the last 21 days.
+    const since21 = new Date(now - 21 * DAY).toISOString();
+    const [{ data: v21 }, { data: c21 }, { data: p21 }, { data: u21 }] = await Promise.all([
+      db.from("file_versions").select("uploaded_by, uploaded_at").in("uploaded_by", userIds).gte("uploaded_at", since21),
+      db.from("file_comments").select("author_id, created_at").in("author_id", userIds).gte("created_at", since21),
+      db.from("proof_submissions").select("user_id, submitted_at").in("user_id", userIds).gte("submitted_at", since21),
+      db.from("usage_events").select("user_id, path, label, created_at").in("event", ["page_view", "click"]).in("user_id", userIds).gte("created_at", since21).limit(20000),
+    ]);
+    const contributions: Contribution[] = [
+      ...(v21 ?? []).map((r) => ({ userId: r.uploaded_by, at: r.uploaded_at })),
+      ...(c21 ?? []).map((r) => ({ userId: r.author_id, at: r.created_at })),
+      ...(p21 ?? []).map((r) => ({ userId: r.user_id, at: r.submitted_at })),
+      ...(u21 ?? []).filter((r) => isMaterialView(r.path, r.label)).map((r) => ({ userId: r.user_id, at: r.created_at })),
+      ...(logs ?? []).flatMap((l) => ((l.attendance as { user_id: string; status: string }[] | null) ?? []).filter((a) => a.status !== "absent").map((a) => ({ userId: a.user_id, at: `${l.meeting_date}T23:00:00Z` }))),
+    ];
 
     const nameOf = (id: string) => {
       const p = (profiles ?? []).find((x) => x.id === id);
@@ -301,6 +318,11 @@ export async function computeHealthReview(
         else if (medDays >= 2 && s.d < medDays / 2) push("activity", "yellow", `Active ${s.d} day(s) in 7 vs. team median ${medDays}.`, nm, s.m.job_title, s.m.user_id);
         else if (medUp >= 2 && s.u === 0) push("activity", "yellow", `No uploads in 7 days while teammates median ${medUp}.`, nm, s.m.job_title, s.m.user_id);
         else notes.activity.push(`${nm}: active ${s.d} of last 7 days, ${s.u} upload${s.u === 1 ? "" : "s"} — at or above the team's typical level.`);
+        const streak = lowEngagementStreak(s.m.user_id, contributions, now, 3, LOW_ENGAGEMENT_START);
+        const lvl = lowEngagementLevel(streak);
+        if (lvl === "yellow" || lvl === "red") push("activity", lvl, `Low engagement: ${streak} consecutive weeks with no uploads, comments, meeting attendance, role activities, or review of team materials beyond the dashboard/health report.`, nm, s.m.job_title, s.m.user_id, `activity:low_engagement:${s.m.user_id}`);
+        else if (lvl === "note") notes.activity.push(`${nm}: no meaningful contribution recorded this past week (note only — low engagement is flagged after 2 consecutive weeks).`);
+        observe(`activity:low_engagement:${s.m.user_id}`, `${nm}: meaningful contribution recorded this week; low-engagement cycle reset.`, streak >= 2 ? 1 : 0);
         observe(`activity:relative_activity:${s.m.user_id}`, `${nm}: ${s.d} active days and ${s.u} uploads in the last 7 days; no relative-activity concern remains.`, out.some(e => e.check === "activity" && e.userId === s.m.user_id) ? 1 : 0);
       }
 
