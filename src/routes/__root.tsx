@@ -95,7 +95,7 @@ function AuthSync() {
         try {
           const key = `auth_audit_signin:${userId}`;
           if (typeof sessionStorage === "undefined" || !sessionStorage.getItem(key)) {
-            void supabase.from("auth_audit_log").insert({ user_id: userId, event: "signin", user_agent: ua });
+            void supabase.from("auth_audit_log").insert({ user_id: userId, event: "signin", user_agent: ua }).then(() => {});
             if (typeof sessionStorage !== "undefined") sessionStorage.setItem(key, "1");
           }
         } catch { /* ignore */ }
