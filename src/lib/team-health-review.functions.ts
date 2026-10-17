@@ -143,7 +143,7 @@ export async function computeHealthReview(
       const label = teamLineLabel({ name: t.teamRecordName, display_name: t.teamName !== t.teamRecordName ? t.teamName : null, section: t.section });
       const push = (check: HealthCheck, level: "red" | "yellow", reason: string, person: string | null = null, role: string | null = null, userId: string | null = null, ruleId?: string) => {
         const inferred = concernKey({ check, level, reason, person, userId });
-        const rulePattern = check === "vault" ? /^(Minutes|Agendas|Mid-Semester Peer Reviews|No Interview Questions|No Video files|Video Final Submission|Client Communications)/.exec(reason)?.[1]
+        const rulePattern = check === "vault" ? /^(Minutes|Agendas|Mid-Semester Peer Reviews|Peer review|No Interview Questions|No Video files|Video Final Submission|Client Communications)/.exec(reason)?.[1]
           : check === "meetings" ? /^(Last meeting logged|\d+ of \d+ logged meeting|Missed \d{4}-\d{2}-\d{2} meeting)/.exec(reason)?.[0].replace(/^\d+ of \d+ logged meeting$/, "missing_minutes")
           : check === "activity" ? "relative_activity" : undefined;
         const generatedRule = rulePattern ? `${check}:${rulePattern}:${userId ?? "team"}` : undefined;
@@ -313,8 +313,27 @@ export async function computeHealthReview(
         if (ag < expectedMinutes) push("vault", ag < expectedMinutes / 2 ? "red" : "yellow", `Agendas: ${ag} posted, ${expectedMinutes} expected by week ${week}.`);
         else notes.vault.push(`Agendas on file: ${ag} (${expectedMinutes} expected by week ${week}).`);
       }
-      if (isTeamLevel && progress >= 0.5 && count("Mid-Semester Peer Reviews") === 0)
-        push("vault", "yellow", "Mid-Semester Peer Reviews not uploaded (past semester midpoint).");
+      // Mid-Semester Peer Reviews: one per student, due Friday 2026-10-23.
+      // Before the deadline: no warnings — early filers get a compliment only.
+      // After the deadline: each student without a review on file is flagged.
+      if (isTeamLevel) {
+        const peerDue = Date.parse("2026-10-24T03:59:59Z"); // end of Friday 10/23, America/Detroit
+        const reviews = teamFiles.filter((f) => subsectionMatches(f.subsection, "Mid-Semester Peer Reviews"));
+        const reviewedBy = new Set(reviews.map((f) => f.uploaded_by));
+        if (now <= peerDue) {
+          const early = tm.filter((m) => reviewedBy.has(m.user_id));
+          for (const m of early)
+            notes.vault.push(`${nameOf(m.user_id)}: peer review already filed — ahead of the 10/23 deadline. Nice early follow-through!`);
+          if (!early.length) notes.vault.push(`Peer reviews: due Friday 10/23 — none filed yet, none expected before then.`);
+        } else {
+          const missing = tm.filter((m) => !reviewedBy.has(m.user_id));
+          for (const m of missing)
+            push("vault", "yellow", "Peer review not filed (due Friday 10/23).", nameOf(m.user_id), m.job_title, m.user_id, "vault:peer_review");
+          if (missing.length)
+            observe("vault:peer_review:team", `Peer reviews on file for ${tm.length - missing.length} of ${tm.length} members.`, missing.length);
+          else notes.vault.push(`Peer reviews: all ${tm.length} members have filed (due 10/23).`);
+        }
+      }
       // Instructor granted a one-week grace period (2026-10-17): flag from 47% of the semester, not 40%.
       if (isTeamLevel && progress >= 0.47 && !teamFiles.some((f) => f.section === "Semester Long Project" && f.subsection === "Interview Questions"))
         push("vault", "yellow", "No Interview Questions uploaded (expected by 47% of semester).");
