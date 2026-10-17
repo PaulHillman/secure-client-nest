@@ -27,7 +27,8 @@ export function UsageTracker() {
     const flush = () => {
       if (!queue.current.length) return;
       const rows = queue.current.splice(0);
-      void supabase.from("usage_events").insert(rows);
+      // Query builders are lazy: without .then() the insert is never sent.
+      void supabase.from("usage_events").insert(rows).then(({ error }) => { if (error) console.warn("usage log failed", error.message); });
     };
     const closePage = () => {
       if (page.current) push("page_time", page.current.path, null, Math.min(Date.now() - page.current.start, 3_600_000));
