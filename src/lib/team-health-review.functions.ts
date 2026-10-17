@@ -265,8 +265,15 @@ export async function computeHealthReview(
         observe("meetings:Last meeting logged:team", `Latest logged meeting: ${last}; ${gap} days ago, within the 7-day limit.`, gap === null || gap > 7 ? 1 : 0);
         if (noMinutes) { failed += noMinutes; push("meetings", "yellow", `${noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? " has" : "s have"} no minutes posted.`); }
         if (teamLogs.length - noMinutes > 0) { passed += teamLogs.length - noMinutes; notes.meetings.push(`Minutes posted for ${teamLogs.length - noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? "" : "s"}.`); }
-        // (e) minutes follow the shared Meeting Minutes Template
-        const minutesFiles = teamFiles.filter((f) => f.section === "Team Documents" && subsectionMatches(f.subsection, "Minutes"));
+        // (e) minutes follow the shared Meeting Minutes Template.
+        // Minutes uploaded before 2026-09-27 are exempt: the template requirement was only
+        // communicated that week, so earlier minutes are not checked for compliance.
+        const TEMPLATE_REQUIRED_FROM = Date.parse("2026-09-27T00:00:00Z");
+        const allMinutesFiles = teamFiles.filter((f) => f.section === "Team Documents" && subsectionMatches(f.subsection, "Minutes"));
+        const exemptMinutes = allMinutesFiles.filter((f) => f.created_at && Date.parse(f.created_at) < TEMPLATE_REQUIRED_FROM);
+        const minutesFiles = allMinutesFiles.filter((f) => !exemptMinutes.includes(f));
+        if (exemptMinutes.length)
+          notes.meetings.push(`Minutes template: ${exemptMinutes.length} minutes file${exemptMinutes.length === 1 ? "" : "s"} uploaded before 9/27/26 are exempt — the template requirement was announced that week (${exemptMinutes.map((f) => f.file_name).join(", ")}).`);
         if (minutesFiles.length && minutesTemplate) {
           const { inspectMinutesTemplate } = await import("./health-research.server");
           const minutesCheck = await inspectMinutesTemplate(db, minutesFiles, minutesTemplate, minutesTextCache);
