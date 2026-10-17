@@ -328,7 +328,7 @@ export async function computeHealthReview(
         } else {
           const missing = tm.filter((m) => !reviewedBy.has(m.user_id));
           for (const m of missing)
-            push("vault", "yellow", "Peer review not filed (due Friday 10/23).", nameOf(m.user_id), m.job_title, m.user_id, "vault:peer_review");
+            push("vault", "red", "Peer review not filed (due Friday 10/23).", nameOf(m.user_id), m.job_title, m.user_id, "vault:peer_review");
           if (missing.length)
             observe("vault:peer_review:team", `Peer reviews on file for ${tm.length - missing.length} of ${tm.length} members.`, missing.length);
           else notes.vault.push(`Peer reviews: all ${tm.length} members have filed (due 10/23).`);
