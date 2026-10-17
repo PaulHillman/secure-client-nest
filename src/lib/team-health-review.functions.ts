@@ -105,6 +105,12 @@ export async function computeHealthReview(
     ]);
     const minutesTemplate = minutesTemplateRows?.[0] ?? null;
     const { data: companyFocus } = await db.from("company_focus").select("team_id, company_name, confirmed_at").in("team_id", ids);
+    const { data: fileVerifications } = await db.from("instructor_file_verifications").select("team_id, file_name").in("team_id", ids);
+    const verifiedFiles = new Map<string, Set<string>>();
+    for (const v of fileVerifications ?? []) {
+      if (!verifiedFiles.has(v.team_id)) verifiedFiles.set(v.team_id, new Set());
+      verifiedFiles.get(v.team_id)!.add(v.file_name);
+    }
     const { data: shares, error: sharesError } = await db.from("health_review_shares").select("team_id, shared_at, generated_at, payload, source, vault_file_id, vault_version_id, recipient_ids").in("team_id", ids).order("shared_at", { ascending: false });
     if (sharesError) throw new Error("Unable to load prior shared reports; comparison cannot be verified.");
     const latestShare = (teamId: string) => (shares ?? []).find((s: any) => s.team_id === teamId);
