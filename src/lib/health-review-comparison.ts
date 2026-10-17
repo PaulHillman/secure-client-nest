@@ -18,6 +18,11 @@ export function concernKey(c: Concern): string | undefined {
   const norms = /^Group Norms need clearer (communication|deadlines|accountability) detail$/.exec(c.reason);
   return norms ? `readiness:norms_${norms[1]}` : LEGACY[c.reason];
  }
+ if (c.check === "meetings") {
+  if (/^\d+ of \d+ logged meetings? (has|have) no minutes posted\.$/.test(c.reason)) return "meetings:missing_minutes:team";
+  if (/^Last meeting logged \d+ days ago \(\d{4}-\d{2}-\d{2}\)\.$/.test(c.reason)) return "meetings:Last meeting logged:team";
+ }
+ if (c.check === "vault" && /^(Minutes|Agendas): \d+ posted, \d+ expected by week \d+\.$/.test(c.reason)) return `vault:${c.reason.split(":")[0]}:team`;
  if (c.check === "gaps" && c.reason === "No weekly meeting consensus yet.") return "gaps:meeting";
  if (c.check === "meetings" && c.reason === "No weekly meetings logged this semester.") return "meetings:logged";
  return undefined;
@@ -25,8 +30,8 @@ export function concernKey(c: Concern): string | undefined {
 export function compareConcerns(previous: Concern[], current: Concern[], observations: Observation[], previousObservations: Observation[] = []): Change[] {
  const changes: Change[] = []; const matched = new Set<Concern>();
  for (const old of previous) {
-  if (/Group Norms.*not signed.*locked/i.test(old.reason)) {
-   changes.push({ status: "Reporting correction", previous: old.reason, current: "The older report relied on a lock flag rather than current-version signatures. This is a reporting correction, not student-earned progress.", person: old.person ?? null }); continue;
+  if (/Group Norms.*not signed.*locked/i.test(old.reason) || old.check === "activity" && !old.ruleId) {
+   changes.push({ status: "Reporting correction", previous: old.reason, current: old.check === "activity" ? "The earlier activity finding predates the authoritative sign-in tracking correction. It cannot establish student-earned progress; current activity is assessed separately." : "The older report relied on a lock flag rather than current-version signatures. This is a reporting correction, not student-earned progress.", person: old.person ?? null }); continue;
   }
   const key = concernKey(old);
   const candidates = current.filter(c => key ? concernKey(c) === key : c.check === old.check && c.reason === old.reason && c.person === old.person);

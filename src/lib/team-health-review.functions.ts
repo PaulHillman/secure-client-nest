@@ -203,7 +203,9 @@ export async function computeHealthReview(
         };
         for (const [key, fact] of Object.entries(evidence)) {
           const found = [...t.blockers, ...t.warnings].filter(f => f.key === key);
-          observe(`readiness:${key}`, fact, found.length);
+          const category = t.norms.categories.find(c => `norms_${c.key}` === key);
+          const remaining = category ? category.items.filter(i => i.status !== "found").length : key === "norms_not_agreed" ? t.norms.notAgreed.length : key === "norms_incomplete" ? t.norms.missingSections.length : found.length;
+          observe(`readiness:${key}`, fact, remaining);
         }
       } else {
         for (const m of t.members.filter((x) => x.role === roleFilter)) {
@@ -231,6 +233,8 @@ export async function computeHealthReview(
         }
         observe("meetings:logged", `Meetings logged: ${teamLogs.length} this semester.`, teamLogs.length ? 0 : 1);
         const noMinutes = teamLogs.filter((l) => !l.minutes_posted).length;
+        observe("meetings:missing_minutes:team", `Minutes are now posted for all ${teamLogs.length} logged meetings.`, noMinutes);
+        observe("meetings:Last meeting logged:team", `Latest logged meeting: ${last}; ${gap} days ago, within the 7-day limit.`, gap === null || gap > 7 ? 1 : 0);
         if (noMinutes) { failed += noMinutes; push("meetings", "yellow", `${noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? " has" : "s have"} no minutes posted.`); }
         if (teamLogs.length - noMinutes > 0) { passed += teamLogs.length - noMinutes; notes.meetings.push(`Minutes posted for ${teamLogs.length - noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? "" : "s"}.`); }
         let absences = 0;
@@ -265,6 +269,7 @@ export async function computeHealthReview(
         else if (medDays >= 2 && s.d < medDays / 2) push("activity", "yellow", `Active ${s.d} day(s) in 7 vs. team median ${medDays}.`, nm, s.m.job_title, s.m.user_id);
         else if (medUp >= 2 && s.u === 0) push("activity", "yellow", `No uploads in 7 days while teammates median ${medUp}.`, nm, s.m.job_title, s.m.user_id);
         else notes.activity.push(`${nm}: active ${s.d} of last 7 days, ${s.u} upload${s.u === 1 ? "" : "s"} — at or above the team's typical level.`);
+        observe(`activity:relative_activity:${s.m.user_id}`, `${nm}: ${s.d} active days and ${s.u} uploads in the last 7 days; no relative-activity concern remains.`, out.some(e => e.check === "activity" && e.userId === s.m.user_id) ? 1 : 0);
       }
 
       // 5. Semester-aware File Vault requirements
@@ -273,7 +278,9 @@ export async function computeHealthReview(
         const mins = count("Minutes");
         if (mins < expectedMinutes) push("vault", mins < expectedMinutes / 2 ? "red" : "yellow", `Minutes: ${mins} posted, ${expectedMinutes} expected by week ${week}.`);
         else notes.vault.push(`Minutes on file: ${mins} (${expectedMinutes} expected by week ${week}).`);
+        observe("vault:Minutes:team", `${mins} minutes files posted; ${expectedMinutes} expected in week ${week}.`, Math.max(0, expectedMinutes - mins));
         const ag = count("Agendas");
+        observe("vault:Agendas:team", `${ag} agenda files posted; ${expectedMinutes} expected in week ${week}.`, Math.max(0, expectedMinutes - ag));
         if (ag < expectedMinutes) push("vault", ag < expectedMinutes / 2 ? "red" : "yellow", `Agendas: ${ag} posted, ${expectedMinutes} expected by week ${week}.`);
         else notes.vault.push(`Agendas on file: ${ag} (${expectedMinutes} expected by week ${week}).`);
       }
@@ -402,7 +409,7 @@ export async function computeHealthReview(
           const share = latestShare(t.teamId);
           if (!share) return { sharedAt: null, source: "No verified shared baseline", changes: [] };
           const payload = share.payload as { exceptions?: HealthException[]; team?: TeamCheckResult };
-          return { sharedAt: share.shared_at, source: share.source, changes: compareConcerns(payload.exceptions ?? [], out.filter(e => e.teamId === t.teamId), observationsByTeam.get(t.teamId) ?? [], payload.team?.observations ?? []) };
+          return { sharedAt: share.shared_at, source: share.source, changes: compareConcerns((payload.exceptions ?? []).filter(e => !PARFUNKEL.test(e.person ?? "")), out.filter(e => e.teamId === t.teamId), observationsByTeam.get(t.teamId) ?? [], payload.team?.observations ?? []) };
         })(),
         peopleChecked: (roleFilter ? roster.filter((m) => m.job_title === roleFilter) : roster).length,
         results,
