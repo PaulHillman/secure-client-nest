@@ -193,8 +193,10 @@ export async function computeHealthReview(
         const rationaleRetired = now <= end;
         const activeBlockers = rationaleRetired ? t.blockers.filter((f) => f.key !== "no_rationale") : t.blockers;
         const activeWarnings = rationaleRetired ? t.warnings.filter((f) => f.key !== "no_rationale") : t.warnings;
-        for (const b of activeBlockers) push("readiness", "red", b.reason, null, null, null, `readiness:${b.key}`);
-        for (const w of activeWarnings) push("readiness", "yellow", w.reason, null, null, null, `readiness:${w.key}`);
+        // Agreement findings name the members still outstanding so the team knows exactly who must act.
+        const named = (f: { key: string; reason: string; detail?: string }) => (f.key === "meeting_not_agreed" || f.key === "norms_not_agreed") && f.detail ? `${f.reason}: ${f.detail}.` : f.reason;
+        for (const b of activeBlockers) push("readiness", "red", named(b), null, null, null, `readiness:${b.key}`);
+        for (const w of activeWarnings) push("readiness", "yellow", named(w), null, null, null, `readiness:${w.key}`);
         if (!activeBlockers.length && !activeWarnings.length) notes.readiness.push("No readiness concerns — all readiness checks came back clean.");
         const evidence: Record<string, string> = {
           no_rationale: "A client selection rationale is now recorded.", no_norms: "Group Norms are now posted.",
@@ -206,13 +208,14 @@ export async function computeHealthReview(
           norms_deadlines: "All internal deadline wording checks now have concrete, measurable details.",
           norms_accountability: "All accountability wording checks now have concrete actions and responsibilities.",
           norms_not_agreed: "All members have agreed to the current Group Norms version.",
+          meeting_not_agreed: "Every member has now agreed to the current weekly meeting day and time.",
           pm_verification: "Team Setup is submitted and the Project Manager has signed the current norms.",
         };
         for (const [key, fact] of Object.entries(evidence)) {
           if (rationaleRetired && key === "no_rationale") continue;
           const found = [...t.blockers, ...t.warnings].filter(f => f.key === key);
           const category = t.norms.categories.find(c => `norms_${c.key}` === key);
-          const remaining = category ? category.items.filter(i => i.status !== "found").length : key === "norms_not_agreed" ? t.norms.notAgreed.length : key === "norms_incomplete" ? t.norms.missingSections.length : found.length;
+          const remaining = category ? category.items.filter(i => i.status !== "found").length : key === "norms_not_agreed" ? t.norms.notAgreed.length : key === "norms_incomplete" ? t.norms.missingSections.length : key === "meeting_not_agreed" ? (found.length ? t.members.filter(m => !m.agreedToMeeting).length : 0) : found.length;
           observe(`readiness:${key}`, fact, remaining);
         }
       } else {

@@ -34,7 +34,10 @@ export function concernKey(c: Concern): string | undefined {
  if (c.ruleId) return c.ruleId;
  if (c.check === "readiness") {
   const norms = /^Group Norms need clearer (communication|deadlines|accountability) detail$/.exec(c.reason);
-  return norms ? `readiness:norms_${norms[1]}` : LEGACY[c.reason];
+  if (norms) return `readiness:norms_${norms[1]}`;
+  if (/^\d+ members? (has|have) not agreed to the meeting time\b/.test(c.reason)) return "readiness:meeting_not_agreed";
+  if (/^\d+ members? (has|have) not agreed to the current Group Norms\b/.test(c.reason)) return "readiness:norms_not_agreed";
+  return LEGACY[c.reason];
  }
  if (c.check === "meetings") {
   if (/^\d+ of \d+ logged meetings? (has|have) no minutes posted\.$/.test(c.reason)) return "meetings:missing_minutes:team";
