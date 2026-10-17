@@ -369,6 +369,12 @@ export async function computeHealthReview(
       //   3+ weeks after confirm    -> 0 files = red, 1 = yellow, 2+ = green
       if (isTeamLevel) {
         const comms = teamFiles.filter((f) => subsectionMatches(f.subsection, "Client Communications"));
+        // Correspondence filed anywhere else is misfiled: flag it to the Tech Admin (never moved automatically).
+        const looksComms = (f: { file_name?: string }) => /client.{0,20}(email|e-mail|mail|text|message|correspondence|communication)|(email|e-mail|text|message|correspondence).{0,20}client/i.test(f.file_name ?? "");
+        const misfiledComms = teamFiles.filter((f) => !subsectionMatches(f.subsection, "Client Communications") && looksComms(f));
+        const commsAdmin = tm.find((m) => m.job_title === "Client Vault & Tech Administrator");
+        for (const f of misfiledComms)
+          push("vault", "yellow", `"${f.file_name}" looks like client communication but is filed under ${f.subsection} — move it to Client Communications.`, commsAdmin ? nameOf(commsAdmin.user_id) : null, "Client Vault & Tech Administrator", commsAdmin?.user_id ?? null, "vault:Client Communications");
         const cfRow = (companyFocus ?? []).find((c) => c.team_id === t.teamId);
         const confirmedAt = cfRow?.confirmed_at ? Date.parse(cfRow.confirmed_at) : null;
         if (confirmedAt === null || Number.isNaN(confirmedAt)) {
