@@ -1,3 +1,4 @@
+import { RESEARCH_NOTE, type Comparison } from "./health-review-comparison";
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 
 export type PdfCheck = { label: string; status: "pass" | "flagged" | "skipped" };
@@ -15,6 +16,9 @@ const clean = (s: string) =>
 
 /** Builds a one-team Team Health Review PDF. */
 export async function buildHealthReportPdf(opts: {
+  comparison?: Comparison;
+  passNotes?: Record<string, string[]>;
+  research?: { topics: { topic: string; evidence: { fileName: string; excerpt: string }[] }[]; unreadable: string[]; inspected: string[] };
   teamLabel: string; runAt: string; week: number; checks: PdfCheck[]; concerns: PdfConcern[];
 }): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
@@ -53,6 +57,27 @@ export async function buildHealthReportPdf(opts: {
   const bad = opts.concerns.filter((c) => c.level === "red").length;
   text(`Good: ${good}  |  Fair: ${fair}  |  Bad: ${bad}`, bold, 11);
   y -= 8;
+  if (opts.comparison) {
+    text("Since your last shared report", bold, 13);
+    text(opts.comparison.sharedAt ? `Baseline shared: ${opts.comparison.sharedAt} (${opts.comparison.source})` : "No verified prior shared report; no improvement claims can be made.", font, 10, grey);
+    for (const change of opts.comparison.changes) {
+      y -= 5;
+      text(`${change.status}${change.person ? " - " + change.person : ""}`, bold, 10, change.status === "Resolved" ? green : change.status === "Partially improved" ? gold : navy);
+      if (change.previous) text(`Previously: ${change.previous}`, font, 10, grey);
+      text(`Now: ${change.current}`);
+    }
+    y -= 10;
+  }
+  text("Research expectations", bold, 13);
+  text(RESEARCH_NOTE, font, 10, grey);
+  if (opts.research) {
+    for (const topic of opts.research.topics) {
+      text(`${topic.topic}: ${topic.evidence.length ? "text evidence found" : opts.research.unreadable.length ? "unverified" : "no text evidence found"}`, bold, 10);
+      for (const e of topic.evidence) text(`${e.fileName}: ${e.excerpt}`, font, 9, grey);
+    }
+    if (opts.research.unreadable.length) text(`Unable to read: ${opts.research.unreadable.join(", ")}. Instructor review required.`, font, 10, grey);
+  }
+  y -= 10;
   text("What was checked", bold, 13);
   for (const c of opts.checks) {
     ensure(16);
@@ -60,6 +85,8 @@ export async function buildHealthReportPdf(opts: {
     const color = rating === "Good" ? green : rating === "Fair" ? gold : rating === "Bad" ? red : grey;
     page.drawCircle({ x: M + 4, y: y - 6, size: 4, color });
     text(`${c.label}: ${rating}`, font, 10, navy, M + 14);
+    const labels: Record<string, string> = { gaps: "Dashboard Gaps", readiness: "Team Readiness", meetings: "Weekly Meetings", activity: "Login / upload activity", vault: "File Vault requirements", reports: "Health Report follow-up" };
+    for (const [key, notes] of Object.entries(opts.passNotes ?? {})) if (labels[key] === c.label) for (const note of notes) text(note, font, 9, grey, M + 14, W - 2 * M - 14);
   }
   y -= 10;
   text(`Concerns (${opts.concerns.length})`, bold, 13);

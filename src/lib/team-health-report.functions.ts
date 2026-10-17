@@ -71,9 +71,11 @@ export const saveOrSendHealthReport = createServerFn({ method: "POST" })
       const stamp = Date.now();
 
       for (const t of p.teamResults) {
-        const score = scores.find((s) => s.team_id === t.teamId)!;
+        const score = scores.find((s) => s.team_id === t.teamId);
+        if (!score) continue;
         const pdf = await buildHealthReportPdf({
           teamLabel: t.teamLabel, runAt, week: p.week,
+          comparison: t.comparison, research: t.research, passNotes: t.passNotes,
           checks: (Object.keys(CHECK_LABELS) as HealthCheck[]).map((k) => ({ label: CHECK_LABELS[k], status: t.results[k] })),
           concerns: p.exceptions.filter((e) => e.teamId === t.teamId).map((e) => ({
             level: e.level, check: CHECK_LABELS[e.check], person: e.person, role: e.role, reason: e.reason,
@@ -84,25 +86,46 @@ export const saveOrSendHealthReport = createServerFn({ method: "POST" })
         if (up.error) { emailsFailed++; continue; }
         const { data: signed } = await db.storage.from("health-reports").createSignedUrl(path, 60 * 60 * 24 * 30);
         if (!signed?.signedUrl) { emailsFailed++; continue; }
-        teamsSent++;
+        // Publish the same PDF to the team vault; Save and refresh do not advance the shared baseline.
+        const vaultPath = `teams/${t.teamId}/health-reports/${stamp}-health-review.pdf`;
+        const vaultUpload = await db.storage.from("vault").upload(vaultPath, pdf, { contentType: "application/pdf" });
+        if (vaultUpload.error) throw new Error("Could not place the shared report in the team vault; no email was sent.");
+        const { data: oldFile } = await db.from("files").select("id").eq("team_id", t.teamId).eq("subsection", "Health Reports").order("created_at", { ascending: false }).limit(1).maybeSingle();
+        const fileId = oldFile?.id ?? crypto.randomUUID();
+        if (!oldFile) {
+          const { error: fileError } = await db.from("files").insert({ id: fileId, team_id: t.teamId, uploaded_by: context.userId, file_name: "Team Health Review.pdf", section: "Team Documents", subsection: "Health Reports", category: "Health Reports", is_locked: true });
+          if (fileError) throw new Error("Could not create the team report file.");
+        }
+        const { data: oldVersion } = await db.from("file_versions").select("version_number").eq("file_id", fileId).order("version_number", { ascending: false }).limit(1).maybeSingle();
+        const { data: vaultVersion, error: versionError } = await db.from("file_versions").insert({ file_id: fileId, version_number: (oldVersion?.version_number ?? 0) + 1, storage_path: vaultPath, mime_type: "application/pdf", file_size: pdf.byteLength, uploaded_by: context.userId }).select("id").single();
+        if (versionError || !vaultVersion) throw new Error("Could not create the shared report version.");
+        const { error: updateError } = await db.from("files").update({ current_version_id: vaultVersion.id }).eq("id", fileId);
+        if (updateError) throw new Error("Could not update the shared report in the vault.");
+        const accepted: string[] = [];
         const roster = (profs ?? []).filter((pr) =>
           (members ?? []).some((m) => m.team_id === t.teamId && m.user_id === pr.id) && pr.email && !PARFUNKEL.test(pr.name ?? ""));
         for (const pr of roster) {
           try {
-            await sendTemplateEmail("health-review", pr.email!, {
+            if (!pr.email) continue;
+            const sent = await sendTemplateEmail("health-review", pr.email, {
               templateData: { name: pr.first_name || pr.name, teamName: t.teamLabel, good: score.good, bad: score.bad, pdfUrl: signed.signedUrl },
               idempotencyKey: `health-${stamp}-${t.teamId}-${pr.id}`,
             });
-            emailsSent++;
+            if (sent.sent) { emailsSent++; accepted.push(pr.id); } else emailsFailed++;
           } catch { emailsFailed++; }
+        }
+        if (accepted.length) {
+          const { error: shareError } = await db.from("health_review_shares").insert({ team_id: t.teamId, generated_at: p.generatedAt, shared_by: context.userId, payload: JSON.parse(JSON.stringify({ team: t, exceptions: p.exceptions.filter(e => e.teamId === t.teamId) })), recipient_ids: accepted, vault_file_id: fileId, vault_version_id: vaultVersion.id });
+          if (shareError) throw new Error("Emails were accepted, but the shared baseline could not be recorded. Do not resend without checking the email log.");
+          teamsSent++;
         }
         // Instructor copy (cc) of every team report; logged in the email log like all sends.
         try {
-          await sendTemplateEmail("health-review", INSTRUCTOR_CC, {
+          const instructorSent = await sendTemplateEmail("health-review", INSTRUCTOR_CC, {
             templateData: { name: "Paul (instructor copy)", teamName: t.teamLabel, good: score.good, bad: score.bad, pdfUrl: signed.signedUrl },
             idempotencyKey: `health-${stamp}-${t.teamId}-instructor-cc`,
           });
-          emailsSent++;
+          if (instructorSent.sent) emailsSent++; else emailsFailed++;
         } catch { emailsFailed++; }
       }
     }
@@ -139,6 +162,7 @@ export const refreshVaultHealthReports = createServerFn({ method: "POST" })
         .map((e) => ({ level: e.level, check: CHECK_LABELS[e.check], person: e.person, role: e.role, reason: e.reason }));
       const pdf = await buildHealthReportPdf({
         teamLabel: t.teamLabel, runAt, week: review.week,
+        comparison: t.comparison, research: t.research, passNotes: t.passNotes,
         checks: (Object.keys(CHECK_LABELS) as HealthCheck[]).map((k) => ({ label: CHECK_LABELS[k], status: t.results[k] })),
         concerns,
       });
