@@ -45,6 +45,16 @@ describe("weekly shared-report concern comparisons", () => {
     const currentResearch = { check: "vault", level: "red" as const, reason: "Client research: 0 file(s); no text evidence found for company history, industry, competitors, client job description. Expected 4 files or combined coverage of all four topics.", ruleId: "vault:research" };
     assert.equal(compareConcerns([legacyResearch], [currentResearch], [])[0].status, "Still outstanding");
   });
+  test("legacy meeting-agreement finding is credited Resolved once every member agrees", () => {
+    const legacy = { check: "readiness", level: "yellow" as const, reason: "1 member has not agreed to the meeting time" };
+    const fact = { ruleId: "readiness:meeting_not_agreed", evidence: "Every member has now agreed to the current weekly meeting day and time.", remaining: 0, verified: true };
+    assert.equal(compareConcerns([legacy], [], [fact])[0].status, "Resolved");
+  });
+  test("legacy meeting-agreement finding stays outstanding against a named current finding", () => {
+    const legacy = { check: "readiness", level: "yellow" as const, reason: "1 member has not agreed to the meeting time" };
+    const current = { check: "readiness", level: "yellow" as const, reason: "1 member has not agreed to the meeting time: Jane Doe.", ruleId: "readiness:meeting_not_agreed" };
+    assert.equal(compareConcerns([legacy], [current], [])[0].status, "Still outstanding");
+  });
 });
 
 describe("research accepts combined coverage", () => {
