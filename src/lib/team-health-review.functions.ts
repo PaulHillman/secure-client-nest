@@ -611,3 +611,27 @@ export async function computeHealthReview(
 
     return result;
 }
+
+/** Admin-only: mark a file's contents as instructor-verified (or clear that mark). */
+export const setFileContentVerified = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: { teamId: string; fileName: string; verified: boolean }) => {
+    if (!i?.teamId || !i?.fileName) throw new Error("Team and file name are required.");
+    return i;
+  })
+  .handler(async ({ data, context }) => {
+    const { data: ok } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (ok !== true) throw new Error("Forbidden");
+    const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+    if (data.verified) {
+      const { error } = await db.from("instructor_file_verifications").upsert(
+        { team_id: data.teamId, file_name: data.fileName, verified_by: context.userId },
+        { onConflict: "team_id,file_name" },
+      );
+      if (error) throw error;
+    } else {
+      const { error } = await db.from("instructor_file_verifications").delete().eq("team_id", data.teamId).eq("file_name", data.fileName);
+      if (error) throw error;
+    }
+    return { ok: true };
+  });
