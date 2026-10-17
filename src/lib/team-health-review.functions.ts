@@ -410,8 +410,13 @@ export async function computeHealthReview(
           notes.vault.push(`Client research file-count expectation met: ${total} files (${required} expected). Topic coverage has not been inspected because the count is met.`);
           observe("vault:research", "File count met; topic coverage has not been verified.", 0, false);
         }
-        for (const f of misfiled)
-          push("vault", "yellow", `"${f.file_name}" looks like client research but is filed under ${f.subsection} — move it to Client research.`, taName, "Client Vault & Tech Administrator", taId);
+        const seenMisfiled = new Set<string>();
+        for (const f of misfiled) {
+          const dedupeKey = `${f.file_name}|${f.subsection}`;
+          if (seenMisfiled.has(dedupeKey)) continue;
+          seenMisfiled.add(dedupeKey);
+          push("vault", "yellow", `"${f.file_name}" looks like client research but is filed under ${f.subsection} — move it to Client research.`, taName, "Client Vault & Tech Administrator", taId, `vault:misfiled:${f.id}`);
+        }
         if (!misfiled.length && inResearch.length) notes.vault.push("All research files are filed in the Client research folder.");
       }
 
@@ -460,8 +465,18 @@ export async function computeHealthReview(
         ];
         for (const check of misfileChecks) {
           const owner = tm.find((m) => m.job_title === check.role);
-          for (const f of teamFiles.filter((f) => !subsectionMatches(f.subsection, check.subsection) && check.match.test(f.file_name ?? "")))
-            push("vault", "yellow", `"${f.file_name}" looks like ${check.label} but is filed under ${f.subsection} — move it to ${check.subsection}.`, owner ? nameOf(owner.user_id) : null, check.role, owner?.user_id ?? null);
+          const seen = new Set<string>();
+          for (const f of teamFiles.filter((f) =>
+            !subsectionMatches(f.subsection, check.subsection) &&
+            // The shared Meeting Minutes Template legitimately lives in Operational Resources and Templates.
+            !/^Meeting Minutes Template/i.test(f.file_name ?? "") &&
+            check.match.test(f.file_name ?? ""))) {
+            // Duplicate uploads of the same file into the same wrong folder are one finding, not many.
+            const dedupeKey = `${f.file_name}|${f.subsection}`;
+            if (seen.has(dedupeKey)) continue;
+            seen.add(dedupeKey);
+            push("vault", "yellow", `"${f.file_name}" looks like ${check.label} but is filed under ${f.subsection} — move it to ${check.subsection}.`, owner ? nameOf(owner.user_id) : null, check.role, owner?.user_id ?? null, `vault:misfiled:${f.id}`);
+          }
         }
       }
 
