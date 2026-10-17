@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Download, FileWarning, Loader2 } from "lucide-react";
+import { recordHealthReportView } from "@/lib/health-report-views";
 import { toast } from "sonner";
 
 export type ViewerVersion = {
@@ -59,6 +60,13 @@ export function FileViewerDialog({
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
   const [plainText, setPlainText] = useState<string | null>(null);
   const docHostRef = useRef<HTMLDivElement>(null);
+  const trackedVersion = useRef<string | null>(null);
+  const trackDisplayed = async () => {
+    if (!version || trackedVersion.current === version.id) return;
+    trackedVersion.current = version.id;
+    const { data: row } = await supabase.from("file_versions").select("file_id, files(team_id, subsection)").eq("id", version.id).maybeSingle();
+    if (row?.files?.subsection === "Health Reports") await recordHealthReportView(row.file_id, row.files.team_id, false, version.id);
+  };
   const cleanupRef = useRef<(() => void) | null>(null);
 
   // Resolve a same-origin blob URL (via the app-domain download route) whenever
@@ -140,6 +148,7 @@ export function FileViewerDialog({
             if (!ctx) throw new Error("canvas unavailable");
             await pg.render({ canvasContext: ctx, viewport }).promise;
             if (!alive) return;
+            if (i === 1) void trackDisplayed();
           }
           cleanupRef.current = () => {
             if (docHostRef.current) docHostRef.current.innerHTML = "";

@@ -14,9 +14,9 @@ export const Route = createFileRoute("/app/health-review")({
   head: () => ({
     meta: [
       { title: "Team Health Review — ClientVault" },
-      { name: "description", content: "Read-only five-check health review across teams, sections, PMs and Video Specialists." },
+      { name: "description", content: "Team health reviews with evidence-based weekly progress and report follow-through." },
       { property: "og:title", content: "Team Health Review — ClientVault" },
-      { property: "og:description", content: "Read-only five-check health review with an exception list." },
+      { property: "og:description", content: "Compare team progress against the last shared report, with specific fixes and remaining concerns." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -34,9 +34,9 @@ const CHECKS: Record<HealthCheck, string> = {
   reports: "Health Report follow-up",
 };
 const CHECK_DESCRIPTIONS: Record<HealthCheck, string> = {
-  gaps: "Group Norms signed & locked; weekly meeting time agreed.",
+  gaps: "Group Norms current-version signatures; weekly meeting time agreed.",
   readiness: "Every readiness-report check (client, roles, norms, files, activities).",
-  meetings: "Per team: meetings logged, last meeting within 7 days (13 = action required), minutes posted for each logged meeting, a reason recorded for each absence.",
+  meetings: "Per team: meetings logged, last meeting within 7 days (13 = Bad), minutes posted for each logged meeting, a reason recorded for each absence.",
   activity: "Per student vs. teammates over the last 7 days: active days, uploads, any activity at all.",
   vault: "Minutes & agendas vs. semester week, client research (2 now, 4 by 10/18), misfiled research, interview questions, video files at semester milestones.",
   reports: "Per member: has the student opened their team's Health Review report (banner click or vault download)?",
@@ -79,7 +79,7 @@ function HealthReviewPage() {
     queryKey: ["health-report", report],
     enabled: isAdmin && !!report,
     queryFn: async () => {
-      const { data, error } = await supabase.from("health_review_reports").select("payload, scope_label, created_at").eq("id", report!).maybeSingle();
+      const { data, error } = await supabase.from("health_review_reports").select("payload, scope_label, created_at").eq("id", report ?? "").maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -104,7 +104,10 @@ function HealthReviewPage() {
   const [done, setDone] = useState<string | null>(null);
   const act = useMutation({
     mutationFn: (action: "save" | "send" | "both") =>
-      saveSend({ data: { action, scope: ranScope!.scope, scopeLabel: ranScope!.label, payload: m.data! as never } }),
+      (() => {
+        if (!ranScope || !m.data) throw new Error("Run a review first.");
+        return saveSend({ data: { action, scope: ranScope.scope, scopeLabel: ranScope.label, payload: m.data } });
+      })(),
     onSuccess: (r, action) => {
       qc.invalidateQueries({ queryKey: ["health-history"] });
       const parts: string[] = [];
@@ -204,6 +207,26 @@ function HealthReviewPage() {
           <button className="underline" onClick={() => navigate({ search: { report: undefined } })}>close</button>
         </p>
       )}
+      {d && d.teamResults.some(t => t.comparison) && (
+        <section className="mt-8 space-y-6" aria-label="Since your last shared report">
+          <h2 className="font-display text-2xl">Since your last shared report</h2>
+          {d.teamResults.map(t => t.comparison && (
+            <div key={t.teamId} className="border-t border-border pt-4">
+              <h3 className="font-medium">{t.teamLabel}</h3>
+              <p className="text-xs text-muted-foreground mt-1">{t.comparison.sharedAt ? `Baseline shared ${new Date(t.comparison.sharedAt).toLocaleString()} · ${t.comparison.source === "legacy_email_matched" ? "Historical saved report matched to a successful instructor-copy email; uncertain items require review" : "Verified student send"}` : "No verified shared baseline; no progress claims made."}</p>
+              <ul className="mt-3 space-y-4">
+                {t.comparison.changes.map((change, i) => <li key={i} className="text-sm">
+                  <strong className={change.status === "Resolved" ? "text-success" : change.status === "Partially improved" ? "text-gold" : "text-foreground"}>{change.status}{change.person ? ` · ${change.person}` : ""}</strong>
+                  {change.previous && <p className="text-muted-foreground mt-1">Previously: {change.previous}</p>}
+                  <p className="mt-1">Now: {change.current}</p>
+                </li>)}
+              </ul>
+              {t.research && <details className="mt-4"><summary className="cursor-pointer text-sm">Research topic evidence</summary><ul className="text-sm mt-2 space-y-2">{t.research.topics.map(topic => <li key={topic.topic}><strong>{topic.topic}</strong>: {topic.evidence.length ? "Text evidence found" : t.research?.unreadable.length ? "Unverified" : "No text evidence found"}{topic.evidence.map((e, i) => <p key={i} className="text-muted-foreground">{e.fileName}: {e.excerpt}</p>)}</li>)}</ul>{t.research.unreadable.length > 0 && <p className="text-sm text-muted-foreground mt-2">Unable to read: {t.research.unreadable.join(", ")}. Instructor review required.</p>}</details>}
+            </div>
+          ))}
+          <p className="text-xs text-muted-foreground">Parfunkel Hillman is excluded from member follow-up lists.</p>
+        </section>
+      )}
       {d && (
         <Card className="mt-6 border-border/60">
           <CardHeader>
@@ -213,10 +236,10 @@ function HealthReviewPage() {
             </p>
             <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1 text-xs">
               {CHECK_KEYS.map((k) => {
-                const passed = d!.teamResults.filter((t) => t.results[k] === "pass").length;
-                const flagged = d!.teamResults.filter((t) => t.results[k] === "flagged").length;
-                const itemsPassed = d!.teamResults.reduce((n, t) => n + (t.passNotes?.[k] ?? []).filter((note) => !note.includes("sub-checks:")).length, 0);
-                const itemsFlagged = d!.exceptions.filter((e) => e.check === k).length;
+                const passed = d.teamResults.filter((t) => t.results[k] === "pass").length;
+                const flagged = d.teamResults.filter((t) => t.results[k] === "flagged").length;
+                const itemsPassed = d.teamResults.reduce((n, t) => n + (t.passNotes?.[k] ?? []).filter((note) => !note.includes("sub-checks:")).length, 0);
+                const itemsFlagged = d.exceptions.filter((e) => e.check === k).length;
                 return (
                   <span key={k} title={CHECK_DESCRIPTIONS[k]}>
                     {CHECKS[k]}: <span className="text-success">{itemsPassed} items passed</span>
@@ -332,7 +355,7 @@ function HealthReviewPage() {
             </p>
             <div className="flex flex-wrap gap-2 pt-2">
               {(["all", ...Object.keys(CHECKS)] as (HealthCheck | "all")[]).map((k) => {
-                const n = k === "all" ? d!.exceptions.length : d!.exceptions.filter((e) => e.check === k).length;
+                const n = k === "all" ? d.exceptions.length : d.exceptions.filter((e) => e.check === k).length;
                 return (
                   <Button key={k} size="sm" variant={filter === k ? "default" : "outline"} onClick={() => setFilter(k)}>
                     {k === "all" ? "All" : CHECKS[k]} ({n})

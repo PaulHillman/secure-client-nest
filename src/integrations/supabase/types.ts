@@ -1056,6 +1056,7 @@ export type Database = {
           id: string
           last_session_id: string | null
           last_shown_at: string | null
+          last_version_id: string | null
           last_viewed_at: string | null
           logins_shown: number
           team_id: string | null
@@ -1070,6 +1071,7 @@ export type Database = {
           id?: string
           last_session_id?: string | null
           last_shown_at?: string | null
+          last_version_id?: string | null
           last_viewed_at?: string | null
           logins_shown?: number
           team_id?: string | null
@@ -1084,6 +1086,7 @@ export type Database = {
           id?: string
           last_session_id?: string | null
           last_shown_at?: string | null
+          last_version_id?: string | null
           last_viewed_at?: string | null
           logins_shown?: number
           team_id?: string | null
@@ -1171,6 +1174,53 @@ export type Database = {
             columns: ["report_id"]
             isOneToOne: false
             referencedRelation: "health_review_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      health_review_shares: {
+        Row: {
+          generated_at: string
+          id: string
+          payload: Json
+          recipient_ids: string[]
+          shared_at: string
+          shared_by: string | null
+          source: string
+          team_id: string
+          vault_file_id: string | null
+          vault_version_id: string | null
+        }
+        Insert: {
+          generated_at: string
+          id?: string
+          payload: Json
+          recipient_ids?: string[]
+          shared_at?: string
+          shared_by?: string | null
+          source?: string
+          team_id: string
+          vault_file_id?: string | null
+          vault_version_id?: string | null
+        }
+        Update: {
+          generated_at?: string
+          id?: string
+          payload?: Json
+          recipient_ids?: string[]
+          shared_at?: string
+          shared_by?: string | null
+          source?: string
+          team_id?: string
+          vault_file_id?: string | null
+          vault_version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_review_shares_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]

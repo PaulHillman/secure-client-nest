@@ -44,3 +44,9 @@
 
 ## Weekly review comparison — discussion only
 - [x] Recommend comparing individual concerns against the last report actually shared, with evidence and explicit uncertain matches; do not run a review or implement changes yet.
+
+## Weekly review follow-through
+- [x] Persist each team's actually shared baseline independently of Save.
+- [x] Compare specific prior concerns with current evidence; distinguish fixes, progress, outstanding, unverified, new and corrected reporting errors.
+- [x] Include named latest-report opening accountability, evidence-based compliments and research topic coverage in screen and PDF.
+- [x] Verify comparison and research rules with tests and authenticated preview; do not send emails or run this week's real review.

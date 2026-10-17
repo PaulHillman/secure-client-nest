@@ -257,7 +257,7 @@ export function FileVault({
       return toast.error("Could not open this file right now");
     }
     const { data: f } = await supabase.from("files").select("subsection, team_id").eq("id", v.file_id).single();
-    if (f?.subsection === "Health Reports") void recordHealthReportView(v.file_id, f.team_id, false);
+    if (f?.subsection === "Health Reports") void recordHealthReportView(v.file_id, f.team_id, false, versionId);
   };
 
   const remove = async (file: FileRow) => {
