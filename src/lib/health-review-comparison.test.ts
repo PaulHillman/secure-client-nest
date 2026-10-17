@@ -40,6 +40,11 @@ describe("weekly shared-report concern comparisons", () => {
   test("pre-correction activity findings do not earn improvement credit", () => {
     assert.equal(compareConcerns([{ ...old, check: "activity", reason: "No activity" }], [], [])[0].status, "Reporting correction");
   });
+  test("last week's legacy research finding matches this week's keyed research concern", () => {
+    const legacyResearch = { check: "vault", level: "yellow" as const, reason: "Client research: 0 files found — at least 2 expected now, 4 expected by 10/18." };
+    const currentResearch = { check: "vault", level: "red" as const, reason: "Client research: 0 file(s); no text evidence found for company history, industry, competitors, client job description. Expected 4 files or combined coverage of all four topics.", ruleId: "vault:research" };
+    assert.equal(compareConcerns([legacyResearch], [currentResearch], [])[0].status, "Still outstanding");
+  });
 });
 
 describe("research accepts combined coverage", () => {
