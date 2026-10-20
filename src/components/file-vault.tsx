@@ -1370,6 +1370,11 @@ function UploadDialog({
                   ))}
                 </SelectContent>
               </Select>
+              {subDef?.expectsCompiled && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Choose <strong>Final Compiled</strong> only for the combined version of everyone's questions — it will be named "Final Compiled - ..." automatically and appear in the Final Compiled slot.
+                </p>
+              )}
             </div>
           )}
           <div>
