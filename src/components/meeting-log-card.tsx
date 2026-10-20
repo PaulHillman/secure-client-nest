@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { NotebookPen, AlertTriangle, MapPin, Check, Paperclip, Users } from "lucide-react";
+import { NotebookPen, AlertTriangle, MapPin, Check, Paperclip, Users, Pencil } from "lucide-react";
+import { MeetingRecordEditor } from "@/components/meeting-record-editor";
 import { toast } from "sonner";
 import { FACE_TO_FACE, DAYS, fmtTime } from "@/lib/meeting-agreement";
 import { notifyMeetingMoved } from "@/lib/meeting.functions";
@@ -79,6 +80,7 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
   const mode = FACE_TO_FACE;
   const [minutes, setMinutes] = useState(false);
   const [reasonFor, setReasonFor] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   type Att = { status: "present" | "late" | "absent"; reason: string };
   const [attendance, setAttendance] = useState<Record<string, Att>>({});
   const [agendaFile, setAgendaFile] = useState<File | null>(null);
@@ -498,6 +500,11 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
                       {l.minutes_posted ? "Minutes posted" : "No minutes"}
                     </Badge>
                     {canLog && (
+                      <Button size="sm" variant="outline" onClick={() => setEditingId(l.id)} aria-label={`Edit meeting ${fmtDate(l.meeting_date)}`}>
+                        <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                      </Button>
+                    )}
+                    {canLog && (
                       <Button size="sm" variant="ghost" onClick={() => toggleMinutes.mutate(l)}>
                         {l.minutes_posted ? "Mark missing" : "Mark posted"}
                       </Button>
@@ -544,6 +551,16 @@ export function MeetingLogCard({ teamId }: { teamId: string }) {
           </ul>
         )}
       </CardContent>
+      {canLog && logs.find((log) => log.id === editingId) && (
+        <MeetingRecordEditor
+          key={editingId}
+          meeting={logs.find((log) => log.id === editingId) as (typeof logs)[number]}
+          members={members}
+          names={nameById as Map<string, string>}
+          proposal={proposal ?? null}
+          onClose={() => setEditingId(null)}
+        />
+      )}
     </Card>
   );
 }
