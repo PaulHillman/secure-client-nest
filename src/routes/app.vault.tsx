@@ -26,7 +26,7 @@ export const Route = createFileRoute("/app/vault")({
   component: VaultPage,
 });
 
-type SectionFilter = "all" | "03" | "04";
+type SectionFilter = "all" | "04" | "05";
 
 function VaultPage() {
   const { user, isAdmin } = useAuth();
@@ -130,8 +130,8 @@ function VaultPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All sections</SelectItem>
-                <SelectItem value="03">Section 03 only</SelectItem>
                 <SelectItem value="04">Section 04 only</SelectItem>
+                <SelectItem value="05">Section 05 only</SelectItem>
               </SelectContent>
             </Select>
           </div>
