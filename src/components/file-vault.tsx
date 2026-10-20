@@ -1007,10 +1007,10 @@ function FileDetailsEditor({ file, onDone }: { file: FileRow; onDone: () => void
             setSection(value); setSubsection(VAULT_STRUCTURE.find((s) => s.name === value)?.subsections[0]?.name ?? ""); setFinal(false);
           }}><SelectTrigger aria-label="File section"><SelectValue /></SelectTrigger><SelectContent>{VAULT_STRUCTURE.map((s) => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select></div>
           <div><Label>Folder</Label><Select value={subsection} onValueChange={(value) => { setSubsection(value); setFinal(false); }}><SelectTrigger aria-label="File folder"><SelectValue /></SelectTrigger><SelectContent>{definition?.subsections.map((s) => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select></div>
-          {expectsCompiled && <div className="flex items-center gap-2"><Checkbox id={`compiled-${file.id}`} checked={final} onCheckedChange={(value) => {
+          {expectsCompiled && <div className="space-y-1"><div className="flex items-center gap-2"><Checkbox id={`compiled-${file.id}`} checked={final} onCheckedChange={(value) => {
             setFinal(value === true);
             if (value !== true) setName((previous) => previous.replace(/^Final Compiled\s*-\s*/i, ""));
-          }} /><Label htmlFor={`compiled-${file.id}`}>Final Compiled</Label></div>}
+          }} /><Label htmlFor={`compiled-${file.id}`}>Final Compiled</Label></div><p className="text-xs text-muted-foreground">Check this for the combined version of everyone's work — the file will be named "Final Compiled - ..." and move into the Final Compiled slot.</p></div>}
         </div>
         <DialogFooter><Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={save} disabled={busy || !name.trim()}>{busy ? "Saving…" : "Save"}</Button></DialogFooter>
       </DialogContent>
