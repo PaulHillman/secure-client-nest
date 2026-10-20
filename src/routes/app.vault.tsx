@@ -18,7 +18,14 @@ import {
 import { FolderOpen } from "lucide-react";
 
 export const Route = createFileRoute("/app/vault")({
-  head: () => ({ meta: [{ title: "File Vault — ClientVault" }] }),
+  head: () => ({ meta: [
+    { title: "File Vault — ClientVault" },
+    { name: "description", content: "Access and organize your team's shared ClientVault documents." },
+    { property: "og:title", content: "File Vault — ClientVault" },
+    { property: "og:description", content: "Access and organize your team's shared ClientVault documents." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   validateSearch: (search: Record<string, unknown>) => ({
     team: typeof search.team === "string" ? search.team : undefined,
     file: typeof search.file === "string" ? search.file : undefined,

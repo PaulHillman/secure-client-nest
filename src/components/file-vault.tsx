@@ -53,6 +53,7 @@ import {
   Star,
   Video,
   Mail,
+  Pencil,
 } from "lucide-react";
 import { FileViewerDialog } from "@/components/file-viewer-dialog";
 import {
@@ -65,6 +66,7 @@ import {
 } from "@/lib/vault-structure";
 import { safeStorageFileName } from "@/lib/storage-path";
 import { compareTeamRoles } from "@/lib/team-roles";
+import { finalCompiledName, isFinalCompiled } from "@/lib/vault-file-label";
 
 type FileRow = {
   id: string;
@@ -510,7 +512,7 @@ function SubsectionBlock({
       const arr = memberFiles.get(f.assigned_to) ?? [];
       arr.push(f);
       memberFiles.set(f.assigned_to, arr);
-    } else if (expectsCompiled && /compiled|final/i.test(f.file_name) && !f.assigned_to) {
+    } else if (expectsCompiled && isFinalCompiled(f)) {
       compiledFiles.push(f);
     } else {
       otherFiles.push(f);
@@ -844,7 +846,7 @@ function FileLine({
 
   return (
     <Card className="border-border/60">
-      <CardContent className="p-2.5 flex items-start gap-2">
+      <CardContent className="p-2.5 flex flex-wrap items-start gap-2">
         <FileText className="h-4 w-4 text-gold mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
           {showMeetingDate && (
@@ -925,6 +927,9 @@ function FileLine({
           {canManage && userId && (
             <NewVersionButton file={file} userId={userId} versions={versions} onDone={onRefresh} />
           )}
+          {canManage && !file.is_locked && !file.is_template && (
+            <FileDetailsEditor file={file} onDone={onRefresh} />
+          )}
           {canManage && (
             <Button
               variant="ghost" size="icon"
@@ -946,6 +951,70 @@ function FileLine({
         fileName={file.file_name}
       />
     </Card>
+  );
+}
+
+function FileDetailsEditor({ file, onDone }: { file: FileRow; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(file.file_name);
+  const [section, setSection] = useState(file.section);
+  const [subsection, setSubsection] = useState(file.subsection);
+  const [final, setFinal] = useState(isFinalCompiled(file));
+  const [busy, setBusy] = useState(false);
+  const definition = VAULT_STRUCTURE.find((s) => s.name === section);
+  const expectsCompiled = !!definition?.subsections.find((s) => s.name === subsection)?.expectsCompiled;
+
+  const save = async () => {
+    if (!name.trim()) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.from("files").update({
+        file_name: expectsCompiled && final ? finalCompiledName(name) : name.trim(),
+        section,
+        subsection,
+        assigned_to: expectsCompiled && final ? null : (section === file.section && subsection === file.subsection ? file.assigned_to : null),
+      }).eq("id", file.id).select("id").single();
+      if (error) throw error;
+      if (!data) throw new Error("You do not have permission to change this file.");
+      toast.success("File updated");
+      setOpen(false);
+      onDone();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update this file");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(value) => {
+      setOpen(value);
+      if (value) { setName(file.file_name); setSection(file.section); setSubsection(file.subsection); setFinal(isFinalCompiled(file)); }
+    }}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label="Rename or move file" title="Rename or move file">
+          <Pencil className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Rename or move file</DialogTitle>
+          <DialogDescription>{file.file_name}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div><Label htmlFor={`rename-${file.id}`}>Display name</Label><Input id={`rename-${file.id}`} value={name} maxLength={200} onChange={(e) => setName(e.target.value)} /></div>
+          <div><Label>Section</Label><Select value={section} onValueChange={(value) => {
+            setSection(value); setSubsection(VAULT_STRUCTURE.find((s) => s.name === value)?.subsections[0]?.name ?? ""); setFinal(false);
+          }}><SelectTrigger aria-label="File section"><SelectValue /></SelectTrigger><SelectContent>{VAULT_STRUCTURE.map((s) => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select></div>
+          <div><Label>Folder</Label><Select value={subsection} onValueChange={(value) => { setSubsection(value); setFinal(false); }}><SelectTrigger aria-label="File folder"><SelectValue /></SelectTrigger><SelectContent>{definition?.subsections.map((s) => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select></div>
+          {expectsCompiled && <div className="flex items-center gap-2"><Checkbox id={`compiled-${file.id}`} checked={final} onCheckedChange={(value) => {
+            setFinal(value === true);
+            if (value !== true) setName((previous) => previous.replace(/^Final Compiled\s*-\s*/i, ""));
+          }} /><Label htmlFor={`compiled-${file.id}`}>Final Compiled</Label></div>}
+        </div>
+        <DialogFooter><Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={save} disabled={busy || !name.trim()}>{busy ? "Saving…" : "Save"}</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1149,7 +1218,8 @@ function UploadDialog({
 
   const submit = async () => {
     if (!file) return toast.error("Pick a file first");
-    const fileName = name.trim() || file.name;
+    const rawName = name.trim() || file.name;
+    const fileName = showAssignee && assignedTo === "final" ? finalCompiledName(rawName) : rawName;
     // Map the virtual "Competitions" choice back to the stored section/subsection.
     const storedSection = isCompetitions ? `Competition ${subsection}` : section;
     const storedSubsection = isCompetitions ? compPlacement : subsection;
@@ -1164,7 +1234,7 @@ function UploadDialog({
           section: storedSection,
           subsection: storedSubsection,
           meeting_date: subsection === "Agendas" && meetingDate ? meetingDate : null,
-          assigned_to: showAssignee && assignedTo ? assignedTo : null,
+          assigned_to: showAssignee && assignedTo && assignedTo !== "final" && assignedTo !== "other" ? assignedTo : null,
           uploaded_by: userId,
           is_template: false,
           category: "Other",
@@ -1287,10 +1357,12 @@ function UploadDialog({
           )}
           {showAssignee && (
             <div>
-              <Label>Assigned to (team member)</Label>
+              <Label>Placement</Label>
               <Select value={assignedTo} onValueChange={setAssignedTo}>
-                <SelectTrigger><SelectValue placeholder="Leave blank for the Final Compiled slot" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Choose a team member or Final Compiled" /></SelectTrigger>
                 <SelectContent>
+                  {subDef?.expectsCompiled && <SelectItem value="final">Final Compiled</SelectItem>}
+                  <SelectItem value="other">Other uploads</SelectItem>
                   {members.map((m) => (
                     <SelectItem key={m.user_id} value={m.user_id}>
                       {m.name || m.email || "Member"}
