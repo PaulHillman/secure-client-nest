@@ -1,5 +1,9 @@
 # ClientVault roadmap
 
+## Meeting document connections
+- [ ] Include agenda/minutes connection reminders and exact linkage evidence in future health reviews.
+- [ ] Audit all non-test teams and report how many share the connection gap, without saving or emailing reports.
+
 ## Stage A — status model, kickoff, PM chasing (done)
 - [x] Five-state readiness model (Not started / In progress / Submitted / Needs revision / Approved)
 - [x] Unassigned member = "Needs a role"; blocks team-setup approval
