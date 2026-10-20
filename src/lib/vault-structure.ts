@@ -43,7 +43,8 @@ export const VAULT_STRUCTURE: VaultSection[] = [
         name: "Interview Questions",
         perMember: true,
         expectsCompiled: true,
-        description: "One set per team member, plus a final compiled version.",
+        description:
+          "One set per team member. When everyone's questions are ready, upload or rename one combined copy and choose \"Final Compiled\" — it is automatically named \"Final Compiled - ...\" and appears in the Final Compiled slot. This compiled version is what your instructor reviews.",
       },
       { name: "Organizational Chart" },
     ],
