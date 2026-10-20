@@ -5,6 +5,7 @@ import { teamLineLabel, compareTeamsBySectionThenNumber } from "@/lib/team-label
 import { compareConcerns, concernKey, RESEARCH_NOTE, type Comparison, type Observation } from "@/lib/health-review-comparison";
 import { subsectionMatches } from "@/lib/vault-structure";
 import { lowEngagementStreak, lowEngagementLevel, isMaterialView, LOW_ENGAGEMENT_START, type Contribution } from "@/lib/low-engagement";
+import { meetingDocumentLinks } from "@/lib/meeting-document-links";
 
 export type HealthScope = "team" | "section" | "all" | "role";
 
@@ -96,8 +97,8 @@ export async function computeHealthReview(
     const since = new Date(now - 7 * DAY).toISOString();
     const [{ data: members }, { data: logs }, { data: files }, { data: norms }, { data: profiles }, { data: reportViews }, { data: minutesTemplateRows }] = await Promise.all([
       db.from("team_members").select("team_id, user_id, job_title").in("team_id", ids),
-      db.from("meeting_logs").select("team_id, meeting_date, attendance, minutes_posted").in("team_id", ids),
-      db.from("files").select("id, current_version_id, created_at, team_id, section, subsection, file_name, uploaded_by, is_template, is_locked").in("team_id", ids),
+      db.from("meeting_logs").select("id, team_id, meeting_date, attendance, minutes_posted, minutes_file_id").in("team_id", ids),
+      db.from("files").select("id, current_version_id, created_at, team_id, section, subsection, file_name, uploaded_by, is_template, is_locked, meeting_log_id").in("team_id", ids),
       db.from("group_norms").select("team_id, version, group_norms_signatures(user_id, version)").in("team_id", ids),
       db.from("profiles").select("id, name, first_name, last_name, email"),
       db.from("health_report_views").select("user_id, file_id, last_version_id, team_id, view_count, clicked_at, last_viewed_at").in("team_id", ids),
@@ -270,7 +271,15 @@ export async function computeHealthReview(
         observe("meetings:missing_minutes:team", `Minutes are now posted for all ${teamLogs.length} logged meetings.`, noMinutes);
         observe("meetings:Last meeting logged:team", `Latest logged meeting: ${last}; ${gap} days ago, within the 7-day limit.`, gap === null || gap > 7 ? 1 : 0);
         if (noMinutes) { failed += noMinutes; push("meetings", "yellow", `${noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? " has" : "s have"} no minutes posted.`); }
-        if (teamLogs.length - noMinutes > 0) { passed += teamLogs.length - noMinutes; notes.meetings.push(`Minutes posted for ${teamLogs.length - noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? "" : "s"}.`); }
+        if (teamLogs.length - noMinutes > 0) { passed += teamLogs.length - noMinutes; notes.meetings.push(`Minutes marked posted for ${teamLogs.length - noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? "" : "s"}; this checkbox does not verify a document connection.`); }
+        const connections = meetingDocumentLinks(teamLogs, teamFiles);
+        const agendaGaps = connections.filter(m => !m.agendas.length);
+        const minutesGaps = connections.filter(m => !m.minutes.length);
+        notes.meetings.push("Meeting document reminder: connect each agenda and minutes document to the meeting it belongs to. The Project Manager should check agenda connections; the Communication Specialist should check minutes connections. Files stored only in File Vault may not appear on the meeting record. A missing connection is not proof that the document was never uploaded; no additional grading penalty is applied for this reminder.");
+        notes.meetings.push(`Explicit connections: ${connections.length - agendaGaps.length}/${connections.length} meetings have an agenda connected; ${connections.length - minutesGaps.length}/${connections.length} have minutes connected.`);
+        for (const meeting of connections.sort((a, b) => a.date.localeCompare(b.date))) {
+          notes.meetings.push(`${meeting.date} — Agenda: ${meeting.agendas.length ? meeting.agendas.join(", ") : "not connected — check Agendas and connect the correct file"}; Minutes: ${meeting.minutes.length ? meeting.minutes.join(", ") : "not connected — check Minutes and connect the correct file"}.`);
+        }
         // (e) minutes follow the shared Meeting Minutes Template.
         // Minutes uploaded before 2026-09-27 are exempt: the template requirement was only
         // communicated that week, so earlier minutes are not checked for compliance.
