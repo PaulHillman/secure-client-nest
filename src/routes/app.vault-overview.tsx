@@ -56,7 +56,7 @@ const OPEN_STATUSES: VaultStatus[] = ["Submitted", "Awaiting Review", "Needs Rev
 
 function VaultOverview() {
   const { isAdmin, loading } = useAuth();
-  const [filter, setFilter] = useState<"all" | "03" | "04">("all");
+  const [filter, setFilter] = useState<"all" | "04" | "05">("all");
 
   const { data, isLoading } = useQuery({
     enabled: isAdmin,
@@ -128,7 +128,7 @@ function VaultOverview() {
           </p>
         </div>
         <div className="flex items-center gap-1">
-          {(["all", "03", "04"] as const).map((s) => (
+          {(["all", "04", "05"] as const).map((s) => (
             <Button
               key={s}
               size="sm"
