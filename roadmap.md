@@ -1,5 +1,10 @@
 # ClientVault roadmap
 
+## Editable peer-review criteria
+- [ ] Save the instructor's collected criteria as an admin-only editable document.
+- [ ] Add a recurring yearly review reminder in Dashboard and Health Review, linked to the document.
+- [ ] Verify saved edits, yearly-review acknowledgement, and admin-only access.
+
 ## Meeting document connections
 - [x] Include agenda/minutes connection reminders and exact linkage evidence in future health reviews.
 - [x] Audit all non-test teams and report how many share the connection gap, without saving or emailing reports.
