@@ -19,7 +19,7 @@ import {
 import { Building2, Search, ArrowUpDown } from "lucide-react";
 
 export const Route = createFileRoute("/app/teams")({
-  head: () => ({ meta: [{ title: "Teams — ClientVault" }] }),
+  head: () => ({ meta: [{ title: "Teams — ClientVault" }, { name: "description", content: "Browse ClientVault consulting teams by section and team number." }, { property: "og:title", content: "Teams — ClientVault" }, { property: "og:description", content: "Consulting team rosters and readiness in ClientVault." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: Teams,
 });
 

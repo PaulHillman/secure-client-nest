@@ -1,9 +1,9 @@
 # ClientVault roadmap
 
 ## Editable peer-review criteria
-- [ ] Save the instructor's collected criteria as an admin-only editable document.
-- [ ] Add a recurring yearly review reminder in Dashboard and Health Review, linked to the document.
-- [ ] Verify saved edits, yearly-review acknowledgement, and admin-only access.
+- [x] Save the instructor's collected criteria as an admin-only editable document.
+- [x] Add a recurring yearly review reminder in Dashboard and Health Review, linked to the document.
+- [x] Verify saved edits, yearly-review acknowledgement, and admin-only access.
 
 ## Meeting document connections
 - [x] Include agenda/minutes connection reminders and exact linkage evidence in future health reviews.
@@ -44,7 +44,7 @@
 - [x] Show the same actionable Team Readiness prompt at the top of the student's team page
 - [x] Make every Team Readiness role check use the student's assigned team role, including admin view-as
 
-- [ ] Teams view: compact readiness indicator beside the Section badge, with hover/focus reasons (shared assessment, test fixtures excluded)
+- [x] Teams view: compact readiness indicator beside the Section badge, with hover/focus reasons (shared assessment, test fixtures excluded)
 
 ## In-app document viewing (new)
 - [x] Agenda list: meeting date above title + sort by date/name
