@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { PeerReviewCriteriaReminder } from "@/components/peer-review-criteria-reminder";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { compareTeamsBySectionThenNumber, teamLineLabel } from "@/lib/team-label";
@@ -165,6 +166,8 @@ function HealthReviewPage() {
           Read-only. Shows what was checked and passed, then the concerns at the end — nothing is changed, sent, or emailed.
         </p>
       </header>
+
+      <PeerReviewCriteriaReminder />
 
       <Card className="border-border/60">
         <CardContent className="pt-6 space-y-4">

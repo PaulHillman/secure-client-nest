@@ -24,6 +24,7 @@ import { ProfileCompletionCard } from "@/components/profile-completion-card";
 import { RoleSelectCard } from "@/components/role-select-card";
 import { DashboardReadinessNotice } from "@/components/dashboard-readiness-notice";
 import { HealthReportBanner } from "@/components/health-report-banner";
+import { PeerReviewCriteriaReminder } from "@/components/peer-review-criteria-reminder";
 
 
 import { ProofsAdminCard } from "@/components/proofs-admin-card";
@@ -31,7 +32,7 @@ import { ProofsAdminCard } from "@/components/proofs-admin-card";
 
 
 export const Route = createFileRoute("/app/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — ClientVault" }] }),
+  head: () => ({ meta: [{ title: "Dashboard — ClientVault" }, { name: "description", content: "Your ClientVault workspace, team activity and instructor review reminders." }, { property: "og:title", content: "Dashboard — ClientVault" }, { property: "og:description", content: "Team activity and current instructor reminders in ClientVault." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: Dashboard,
 });
 
@@ -205,6 +206,7 @@ function Dashboard() {
       </nav>
 
       <HealthReportBanner />
+      <PeerReviewCriteriaReminder />
       <DashboardReadinessNotice />
 
       {isAdmin && Date.now() >= new Date("2026-10-16T12:00:00Z").getTime() && (
