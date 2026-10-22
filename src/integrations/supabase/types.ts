@@ -1443,6 +1443,36 @@ export type Database = {
           },
         ]
       }
+      peer_review_criteria: {
+        Row: {
+          content: string
+          id: string
+          reminder_month_day: string
+          reviewed_at: string | null
+          reviewed_year: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content?: string
+          id?: string
+          reminder_month_day?: string
+          reviewed_at?: string | null
+          reviewed_year?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content?: string
+          id?: string
+          reminder_month_day?: string
+          reviewed_at?: string | null
+          reviewed_year?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       pm_duties: {
         Row: {
           active: boolean
