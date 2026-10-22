@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Save, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
-export const Route = createFileRoute('/app/admin/peer-review-criteria')({
+export const Route = createFileRoute('/app/admin_/peer-review-criteria')({
   head: () => ({ meta: [
     { title: 'Peer Review Criteria — ClientVault Admin' },
     { name: 'description', content: 'Instructor-editable peer-review evaluation criteria and annual review reminder.' },
