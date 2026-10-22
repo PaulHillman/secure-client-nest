@@ -35,3 +35,17 @@ test("a minutes file missing several template labels does not", () => {
   const partial = "Minutes | October 14, 2026 | Discussion about the competition | Conclusions reached.";
   assert.equal(minutesFollowTemplate(partial), false);
 });
+
+import { minutesExemptFromTemplate } from "./minutes-template";
+describe("template exemption by meeting date", () => {
+  it("exempts September minutes uploaded late", () => {
+    expect(minutesExemptFromTemplate({ id: "a", file_name: "09-16-2026_MEETING_MINUTES", created_at: "2026-10-20T12:00:00Z" }, [])).toBe(true);
+  });
+  it("holds minutes for meetings on/after 9/27 to the template", () => {
+    expect(minutesExemptFromTemplate({ id: "b", file_name: "09-30-2026_MEETING_MINUTES", created_at: "2026-10-12T12:00:00Z" }, [])).toBe(false);
+    expect(minutesExemptFromTemplate({ id: "c", file_name: "10_21 meeting minutes.pdf", created_at: "2026-10-22T12:00:00Z" }, [])).toBe(false);
+  });
+  it("uses the connected meeting's date first", () => {
+    expect(minutesExemptFromTemplate({ id: "d", file_name: "notes.docx", created_at: "2026-10-20T12:00:00Z", meeting_log_id: "m" }, [{ id: "m", meeting_date: "2026-09-23" }])).toBe(true);
+  });
+});

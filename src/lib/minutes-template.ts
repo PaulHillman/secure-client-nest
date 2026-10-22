@@ -43,3 +43,35 @@ export function countMinutesTemplateMarkers(text: string): number {
 export function minutesFollowTemplate(text: string): boolean {
   return countMinutesTemplateMarkers(text) >= MINUTES_TEMPLATE_MIN_MARKERS;
 }
+
+/** Minutes for meetings held before this date are exempt from the template requirement. */
+export const MINUTES_TEMPLATE_REQUIRED_FROM = "2026-09-27";
+
+/** Date (YYYY-MM-DD) parsed from a minutes file name, e.g. 09-16-2026, 9-16-26, 2026-10-07, 10_21. */
+export function dateFromMinutesFileName(name: string, fallbackYear: number): string | null {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const iso = name.match(/(20\d{2})[-_.](\d{1,2})[-_.](\d{1,2})/);
+  if (iso) return `${iso[1]}-${pad(+iso[2])}-${pad(+iso[3])}`;
+  const mdy = name.match(/(?:^|\D)(\d{1,2})[-_.](\d{1,2})(?:[-_.](\d{2,4}))?(?!\d)/);
+  if (!mdy) return null;
+  const m = +mdy[1], d = +mdy[2];
+  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+  const y = mdy[3] ? (mdy[3].length === 2 ? 2000 + +mdy[3] : +mdy[3]) : fallbackYear;
+  return `${y}-${pad(m)}-${pad(d)}`;
+}
+
+/** Meeting date a minutes file belongs to: connected meeting, else file-name date, else upload date. */
+export function minutesMeetingDate(
+  file: { id: string; file_name: string; created_at?: string | null; meeting_log_id?: string | null },
+  meetings: { id: string; meeting_date: string; minutes_file_id?: string | null }[],
+): string | null {
+  const linked = meetings.find((m) => m.id === file.meeting_log_id || m.minutes_file_id === file.id);
+  if (linked) return linked.meeting_date;
+  const year = file.created_at ? new Date(file.created_at).getUTCFullYear() : new Date().getUTCFullYear();
+  return dateFromMinutesFileName(file.file_name, year) ?? (file.created_at ? file.created_at.slice(0, 10) : null);
+}
+
+export function minutesExemptFromTemplate(...args: Parameters<typeof minutesMeetingDate>): boolean {
+  const date = minutesMeetingDate(...args);
+  return !!date && date < MINUTES_TEMPLATE_REQUIRED_FROM;
+}
