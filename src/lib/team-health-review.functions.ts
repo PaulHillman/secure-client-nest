@@ -1,3 +1,4 @@
+import { minutesExemptFromTemplate } from "./minutes-template";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildAssessments } from "@/lib/team-readiness-assessment.functions";
@@ -281,14 +282,13 @@ export async function computeHealthReview(
           notes.meetings.push(`${meeting.date} — Agenda: ${meeting.agendas.length ? meeting.agendas.join(", ") : "not connected — check Agendas and connect the correct file"}; Minutes: ${meeting.minutes.length ? meeting.minutes.join(", ") : "not connected — check Minutes and connect the correct file"}.`);
         }
         // (e) minutes follow the shared Meeting Minutes Template.
-        // Minutes uploaded before 2026-09-27 are exempt: the template requirement was only
+        // Minutes for meetings held before 2026-09-27 are exempt (by meeting date, not upload date): the template requirement was only
         // communicated that week, so earlier minutes are not checked for compliance.
-        const TEMPLATE_REQUIRED_FROM = Date.parse("2026-09-27T00:00:00Z");
         const allMinutesFiles = teamFiles.filter((f) => f.section === "Team Documents" && subsectionMatches(f.subsection, "Minutes"));
-        const exemptMinutes = allMinutesFiles.filter((f) => f.created_at && Date.parse(f.created_at) < TEMPLATE_REQUIRED_FROM);
+        const exemptMinutes = allMinutesFiles.filter((f) => minutesExemptFromTemplate(f, teamLogs));
         const minutesFiles = allMinutesFiles.filter((f) => !exemptMinutes.includes(f));
         if (exemptMinutes.length)
-          notes.meetings.push(`Minutes template: ${exemptMinutes.length} minutes file${exemptMinutes.length === 1 ? "" : "s"} uploaded before 9/27/26 are exempt — the template requirement was announced that week (${exemptMinutes.map((f) => f.file_name).join(", ")}).`);
+          notes.meetings.push(`Minutes template: ${exemptMinutes.length} minutes file${exemptMinutes.length === 1 ? "" : "s"} for meetings before 9/27/26 are exempt — the template requirement was announced that week (${exemptMinutes.map((f) => f.file_name).join(", ")}).`);
         if (minutesFiles.length && minutesTemplate) {
           const { inspectMinutesTemplate } = await import("./health-research.server");
           const minutesCheck = await inspectMinutesTemplate(db, minutesFiles, minutesTemplate, minutesTextCache);

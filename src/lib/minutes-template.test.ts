@@ -35,3 +35,11 @@ test("a minutes file missing several template labels does not", () => {
   const partial = "Minutes | October 14, 2026 | Discussion about the competition | Conclusions reached.";
   assert.equal(minutesFollowTemplate(partial), false);
 });
+
+test("template exemption follows the meeting date, not the upload date", async () => {
+  const { minutesExemptFromTemplate: ex } = await import("./minutes-template");
+  assert.equal(ex({ id: "a", file_name: "09-16-2026_MEETING_MINUTES", created_at: "2026-10-20T12:00:00Z" }, []), true);
+  assert.equal(ex({ id: "b", file_name: "09-30-2026_MEETING_MINUTES", created_at: "2026-10-12T12:00:00Z" }, []), false);
+  assert.equal(ex({ id: "c", file_name: "10_21 meeting minutes.pdf", created_at: "2026-10-22T12:00:00Z" }, []), false);
+  assert.equal(ex({ id: "d", file_name: "notes.docx", created_at: "2026-10-20T12:00:00Z", meeting_log_id: "m" }, [{ id: "m", meeting_date: "2026-09-23" }]), true);
+});
