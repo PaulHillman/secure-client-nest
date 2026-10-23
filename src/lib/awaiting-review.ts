@@ -16,6 +16,9 @@ export type AwaitingManager = {
   teamName: string;
   managerName: string;
   companyName: string;
+  companyWebsite: string | null;
+  industry: string | null;
+  numEmployees: number | null;
   createdAt: string;
 };
 
@@ -57,6 +60,9 @@ type ManagerRow = {
   manager_first_name: string | null;
   manager_last_name: string | null;
   company_name: string | null;
+  company_website: string | null;
+  industry: string | null;
+  num_employees: number | null;
   created_at: string;
 };
 
