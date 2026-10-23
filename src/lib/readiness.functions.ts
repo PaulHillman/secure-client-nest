@@ -3,6 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isPastDue, READINESS_STATUSES, TEAM_SETTABLE, type ReadinessStatus } from "@/lib/readiness";
 import type { Database } from "@/integrations/supabase/types";
 import { compareTeamRoles } from "@/lib/team-roles";
+import { resolveReviewAnswers } from "@/lib/submission-review-answers";
 
 type RoleChecker = {
   rpc: (
@@ -412,7 +413,7 @@ export const getSubmissionReview = createServerFn({ method: "GET" })
     if (!(await isAdmin(context.supabase, context.userId))) throw new Error("Forbidden");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const [{ data: sub }, { data: status }, { data: req }] = await Promise.all([
+    const [{ data: sub }, { data: status }, { data: req }, companyResult] = await Promise.all([
       supabaseAdmin
         .from("requirement_submissions")
         .select("answers, submitted_at, submitted_by, submit_count, updated_at, updated_by")
@@ -426,7 +427,13 @@ export const getSubmissionReview = createServerFn({ method: "GET" })
         .eq("requirement_key", data.key)
         .maybeSingle(),
       supabaseAdmin.from("project_requirements").select("key, title").eq("key", data.key).maybeSingle(),
+      data.key === "client_proposal"
+        ? supabaseAdmin.from("company_focus")
+          .select("company_name, contact_person, contact_job_title, industry, employee_count, hq_address")
+          .eq("team_id", data.teamId).maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
     ]);
+    if (companyResult.error) throw companyResult.error;
 
     const answers: Record<string, string> = {};
     const raw = sub?.answers;
@@ -464,7 +471,8 @@ export const getSubmissionReview = createServerFn({ method: "GET" })
 
     return {
       title: req?.title ?? data.key,
-      answers,
+      ...resolveReviewAnswers(answers, companyResult.data),
+      hasAnswerSheet: !!sub,
       roster,
       status: (status?.status ?? "not_started") as ReadinessStatus,
       revisionNote: status?.revision_note ?? null,
