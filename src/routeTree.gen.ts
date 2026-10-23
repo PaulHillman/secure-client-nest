@@ -24,6 +24,7 @@ import { Route as AppTeamsRouteImport } from './routes/app.teams'
 import { Route as AppVaultRouteImport } from './routes/app.vault'
 import { Route as AppVaultOverviewRouteImport } from './routes/app.vault-overview'
 import { Route as ApiPublicFileDownloadRouteImport } from './routes/api/public/file-download'
+import { Route as AppAdminAwaitingReviewRouteImport } from './routes/app.admin_.awaiting-review'
 import { Route as AppAdminPeerReviewAssessmentsRouteImport } from './routes/app.admin_.peer-review-assessments'
 import { Route as AppAdminPeerReviewCriteriaRouteImport } from './routes/app.admin_.peer-review-criteria'
 import { Route as AppAdminUsageRouteImport } from './routes/app.admin_.usage'
@@ -110,6 +111,11 @@ const ApiPublicFileDownloadRoute = ApiPublicFileDownloadRouteImport.update({
   path: '/api/public/file-download',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppAdminAwaitingReviewRoute = AppAdminAwaitingReviewRouteImport.update({
+  id: '/admin_/awaiting-review',
+  path: '/admin/awaiting-review',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminPeerReviewAssessmentsRoute =
   AppAdminPeerReviewAssessmentsRouteImport.update({
     id: '/admin_/peer-review-assessments',
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
   '/api/public/file-download': typeof ApiPublicFileDownloadRoute
+  '/app/admin/awaiting-review': typeof AppAdminAwaitingReviewRoute
   '/app/admin/peer-review-assessments': typeof AppAdminPeerReviewAssessmentsRoute
   '/app/admin/peer-review-criteria': typeof AppAdminPeerReviewCriteriaRoute
   '/app/admin/usage': typeof AppAdminUsageRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
   '/api/public/file-download': typeof ApiPublicFileDownloadRoute
+  '/app/admin/awaiting-review': typeof AppAdminAwaitingReviewRoute
   '/app/admin/peer-review-assessments': typeof AppAdminPeerReviewAssessmentsRoute
   '/app/admin/peer-review-criteria': typeof AppAdminPeerReviewCriteriaRoute
   '/app/admin/usage': typeof AppAdminUsageRoute
@@ -240,6 +248,7 @@ export interface FileRoutesById {
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
   '/api/public/file-download': typeof ApiPublicFileDownloadRoute
+  '/app/admin_/awaiting-review': typeof AppAdminAwaitingReviewRoute
   '/app/admin_/peer-review-assessments': typeof AppAdminPeerReviewAssessmentsRoute
   '/app/admin_/peer-review-criteria': typeof AppAdminPeerReviewCriteriaRoute
   '/app/admin_/usage': typeof AppAdminUsageRoute
@@ -269,6 +278,7 @@ export interface FileRouteTypes {
     | '/app/vault'
     | '/app/vault-overview'
     | '/api/public/file-download'
+    | '/app/admin/awaiting-review'
     | '/app/admin/peer-review-assessments'
     | '/app/admin/peer-review-criteria'
     | '/app/admin/usage'
@@ -296,6 +306,7 @@ export interface FileRouteTypes {
     | '/app/vault'
     | '/app/vault-overview'
     | '/api/public/file-download'
+    | '/app/admin/awaiting-review'
     | '/app/admin/peer-review-assessments'
     | '/app/admin/peer-review-criteria'
     | '/app/admin/usage'
@@ -323,6 +334,7 @@ export interface FileRouteTypes {
     | '/app/vault'
     | '/app/vault-overview'
     | '/api/public/file-download'
+    | '/app/admin_/awaiting-review'
     | '/app/admin_/peer-review-assessments'
     | '/app/admin_/peer-review-criteria'
     | '/app/admin_/usage'
@@ -454,6 +466,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFileDownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/admin_/awaiting-review': {
+      id: '/app/admin_/awaiting-review'
+      path: '/admin/awaiting-review'
+      fullPath: '/app/admin/awaiting-review'
+      preLoaderRoute: typeof AppAdminAwaitingReviewRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/admin_/peer-review-assessments': {
       id: '/app/admin_/peer-review-assessments'
       path: '/admin/peer-review-assessments'
@@ -550,6 +569,7 @@ interface AppRouteChildren {
   AppTeamsRoute: typeof AppTeamsRouteWithChildren
   AppVaultRoute: typeof AppVaultRoute
   AppVaultOverviewRoute: typeof AppVaultOverviewRoute
+  AppAdminAwaitingReviewRoute: typeof AppAdminAwaitingReviewRoute
   AppAdminPeerReviewAssessmentsRoute: typeof AppAdminPeerReviewAssessmentsRoute
   AppAdminPeerReviewCriteriaRoute: typeof AppAdminPeerReviewCriteriaRoute
   AppAdminUsageRoute: typeof AppAdminUsageRoute
@@ -568,6 +588,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTeamsRoute: AppTeamsRouteWithChildren,
   AppVaultRoute: AppVaultRoute,
   AppVaultOverviewRoute: AppVaultOverviewRoute,
+  AppAdminAwaitingReviewRoute: AppAdminAwaitingReviewRoute,
   AppAdminPeerReviewAssessmentsRoute: AppAdminPeerReviewAssessmentsRoute,
   AppAdminPeerReviewCriteriaRoute: AppAdminPeerReviewCriteriaRoute,
   AppAdminUsageRoute: AppAdminUsageRoute,
