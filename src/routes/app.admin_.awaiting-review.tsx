@@ -70,6 +70,25 @@ function Page() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const decideManager = useMutation({
+    mutationFn: async (v: { id: string; status: "approved" | "rejected"; note?: string }) => {
+      const { error } = await supabase
+        .from("manager_submissions")
+        .update({ status: v.status, admin_notes: v.note ?? null })
+        .eq("id", v.id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      toast.success(
+        v.status === "approved"
+          ? "Approved. The team can proceed with this client."
+          : "Rejected with your note.",
+      );
+      setReviewingManager(null);
+      void qc.invalidateQueries({ queryKey: ["awaiting-review"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   if (loading) return null;
   if (!isAdmin) return <Navigate to="/app/dashboard" />;
 
