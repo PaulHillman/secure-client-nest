@@ -3,6 +3,7 @@ import { template as profileIncompleteTemplate } from './profile-incomplete'
 import { template as requirementDecisionTemplate } from './requirement-decision'
 import { template as requirementNudgeTemplate } from './requirement-nudge'
 import { template as healthReviewTemplate } from './health-review'
+import { template as peerReviewAnalysisTemplate } from './peer-review-analysis'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -22,6 +23,7 @@ export interface TemplateEntry {
  *   // then add to TEMPLATES: 'welcome': welcomeTemplate
  */
 export const TEMPLATES: Record<string, TemplateEntry> = {
+  'peer-review-analysis': peerReviewAnalysisTemplate,
   'profile-incomplete': profileIncompleteTemplate,
   'requirement-decision': requirementDecisionTemplate,
   'requirement-nudge': requirementNudgeTemplate,

@@ -70,6 +70,7 @@ function Admin() {
       </header>
 
       <Button asChild variant="outline" className="mb-6"><Link to="/app/admin/peer-review-criteria"><FileStack className="h-4 w-4 mr-2" />Peer Review Evaluation Criteria</Link></Button>
+      <Button asChild variant="outline" className="mb-6 ml-2"><Link to="/app/admin/peer-review-assessments"><FileStack className="h-4 w-4 mr-2" />Individual Peer Review Results</Link></Button>
 
       <Tabs defaultValue="users">
         <TabsList>
