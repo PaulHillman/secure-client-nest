@@ -26,6 +26,21 @@ export const Route = createFileRoute("/app/teams")({
 
 type SortMode = "section-team" | "name-asc" | "team-number";
 
+type ProfileLite = {
+  id: string;
+  name: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+};
+
+type RosterMember = { userId: string; name: string; role: string };
+
+function displayName(p: ProfileLite | undefined): string {
+  const full = `${p?.first_name ?? ""} ${p?.last_name ?? ""}`.trim();
+  return full || p?.name || p?.email || "Unnamed";
+}
+
 function extractTeamNumber(name: string | null): number {
   if (!name) return Infinity;
   const match = name.match(/\d+/);
@@ -264,6 +279,7 @@ function Teams() {
           const canEnter = isAdmin || isMine;
           const primary = teamPrimaryName(t);
           const ra = readinessByTeam.get(t.id);
+          const roster = rosterByTeam?.get(t.id) ?? [];
 
 
           const card = (
@@ -328,6 +344,24 @@ function Teams() {
                   </div>
                 ) : (
                   <span className="italic">No company selected</span>
+                )}
+                {roster.length > 0 && (
+                  <div className="mt-3 border-t border-border/60 pt-3">
+                    <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                      Team members
+                    </p>
+                    <ul className="mt-1.5 space-y-1">
+                      {roster.map((m) => (
+                        <li key={m.userId} className="text-xs leading-snug">
+                          <span className="text-foreground">{m.name}</span>
+                          <span className="text-muted-foreground"> · </span>
+                          <span className={m.role === "Unassigned" ? "italic text-muted-foreground" : "text-gold"}>
+                            {m.role}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
                 {t.description && <p className="mt-2 line-clamp-2">{t.description}</p>}
                 {!canEnter && (
