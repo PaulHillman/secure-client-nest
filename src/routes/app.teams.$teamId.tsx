@@ -132,7 +132,8 @@ function TeamDetail() {
       const profileMap = new Map(profiles.map((p) => [p.id, p]));
       const peerMap = new Map<string, PeerScore>();
       (peerRows ?? []).forEach((a) => {
-        if (!peerMap.has(a.user_id)) peerMap.set(a.user_id, { score: a.score, status: a.status });
+        if (!peerMap.has(a.user_id))
+          peerMap.set(a.user_id, { score: a.score, status: a.status, attempt: a.attempt });
       });
       const members = (tm ?? []).map((m) => ({ ...m, profiles: profileMap.get(m.user_id) }));
       return { team, companyFocus: cf, members, peerMap };
@@ -518,29 +519,13 @@ function MemberCard({
           ) : (
             <div className="text-xs text-gold">{member.job_title}</div>
           )}
-          {peer && (() => {
-            const tone =
-              peer.score === null
-                ? "bg-muted text-muted-foreground border-border"
-                : peer.score >= 7
-                  ? "bg-success/15 text-success border-success/30"
-                  : peer.score >= 4
-                    ? "bg-gold/15 text-gold border-gold/30"
-                    : "bg-destructive/15 text-destructive border-destructive/30";
-            const label =
-              peer.score !== null
-                ? `Original ${peer.score}/10`
-                : peer.status === "missing"
-                  ? "Not submitted"
-                  : peer.status;
-            return (
-              <div className="mt-1">
-                <Badge variant="outline" className={`text-[10px] ${tone}`}>
-                  {label}
-                </Badge>
-              </div>
-            );
-          })()}
+          {peer && (
+            <div className="mt-1">
+              <Badge variant="outline" className={`text-[10px] ${peerBadgeTone(peer.score)}`}>
+                {peerBadgeLabel(peer)}
+              </Badge>
+            </div>
+          )}
           {p?.email && (
             <a
               href={`mailto:${p.email}`}
