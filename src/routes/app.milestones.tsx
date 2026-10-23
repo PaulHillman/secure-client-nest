@@ -47,7 +47,7 @@ function Page() {
   return (
     <main className="p-4 sm:p-8 max-w-4xl mx-auto">
       <header className="mb-6">
-        <h1 className="font-display text-3xl">Milestones</h1>
+        <h1 className="font-display text-3xl">Milestones / Deadlines</h1>
         <p className="text-muted-foreground mt-1">
           Completed, outstanding, and coming up for your team.
         </p>

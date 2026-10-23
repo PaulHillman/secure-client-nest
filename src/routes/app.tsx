@@ -46,7 +46,7 @@ function AppLayout() {
   const nav = [
     { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
     { to: "/app/teams", label: "Teams", icon: Users },
-    { to: "/app/milestones", label: "Milestones", icon: ClipboardList },
+    { to: "/app/milestones", label: "Milestones / Deadlines", icon: ClipboardList },
     { to: "/app/meetings", label: "Weekly Meetings", icon: CalendarCheck },
     { to: "/app/vault", label: "File Vault", icon: FolderOpen },
     { to: "/app/competitions", label: "Competitions", icon: Trophy },
