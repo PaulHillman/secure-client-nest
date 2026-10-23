@@ -204,6 +204,12 @@ function Dashboard() {
             {label}
           </button>
         ))}
+        <Link
+          to="/app/milestones"
+          className="rounded-full border border-border/60 px-3 py-1 text-muted-foreground hover:border-gold hover:text-foreground"
+        >
+          Milestones
+        </Link>
       </nav>
 
       <HealthReportBanner />
