@@ -1,8 +1,9 @@
+import { useEffect, useRef, useState } from "react";
 import type { TeamAssessment } from "@/lib/team-readiness-assessment";
 import { WEST_MICHIGAN } from "@/lib/team-readiness-assessment";
 import { ReadinessStatusBadge } from "@/components/readiness-status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, XCircle } from "lucide-react";
 
 function when(value: string | null) {
   if (!value) return "Not recorded";
@@ -46,6 +47,60 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       </CardHeader>
       <CardContent className="space-y-3">{children}</CardContent>
     </Card>
+  );
+}
+
+function CollapsibleText({
+  text,
+  label,
+  className,
+  clampClassName = "line-clamp-3",
+}: {
+  text: string;
+  label?: string;
+  className?: string;
+  clampClassName?: string;
+}) {
+  const ref = useRef<HTMLParagraphElement | null>(null);
+  const [open, setOpen] = useState(false);
+  const [clipped, setClipped] = useState(false);
+
+  useEffect(() => {
+    if (open) return;
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => setClipped(el.scrollHeight - el.clientHeight > 4);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [open, text]);
+
+  return (
+    <>
+      <p
+        ref={ref}
+        className={`${className ?? ""} ${open ? "" : clampClassName} print:line-clamp-none`}
+      >
+        {text}
+      </p>
+      {clipped && (
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-label={label ? `${open ? "Show less" : "Show more"} for ${label}` : undefined}
+          className="mt-1 inline-flex items-center gap-1 text-xs font-medium underline-offset-2 hover:underline print:hidden"
+        >
+          {open ? (
+            <ChevronUp className="h-3 w-3" aria-hidden />
+          ) : (
+            <ChevronDown className="h-3 w-3" aria-hidden />
+          )}
+          {open ? "Show less" : "Show more"}
+        </button>
+      )}
+    </>
   );
 }
 
@@ -455,7 +510,11 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
                       </p>
                     ) : null}
                     {p.feedback && p.feedback.trim() ? (
-                      <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{p.feedback}</p>
+                      <CollapsibleText
+                        text={p.feedback}
+                        label={`${m.name} — ${p.title}`}
+                        className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground"
+                      />
                     ) : null}
                     {p.reviewStatus === "needs_revision" || p.reviewStatus === "sent_back" ? (
                       <p className="mt-1 text-xs text-amber-400">This activity was sent back for revision.</p>
@@ -468,7 +527,11 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
                   </li>
                 )}
               </ul>
-              <p className="mt-2 text-xs text-muted-foreground">{m.feedbackSummary}</p>
+              <CollapsibleText
+                text={m.feedbackSummary}
+                label={`${m.name} — summary`}
+                className="mt-2 text-xs text-muted-foreground"
+              />
               <p className="mt-2 text-xs">
                 <span className="font-medium">Question to ask:</span> {m.suggestedQuestion}
               </p>
