@@ -1,14 +1,48 @@
-import { describe, it } from 'node:test';
-import { strict as assert } from 'node:assert';
-import { peerReviewPass, peerOriginalFiled, ORIGINAL_PEER_DUE, REVISION_PEER_DUE, MEETING_PEER_DUE } from './peer-review-policy';
-describe('instructor peer-review rules', () => {
-  it('original 7 passes', () => assert.equal(peerReviewPass(7, 1), true));
-  it('original 6 requires revision', () => assert.equal(peerReviewPass(6, 1), false));
-  it('revision 7 does not pass', () => assert.equal(peerReviewPass(7, 2), false));
-  it('revision 8 passes', () => assert.equal(peerReviewPass(8, 2), true));
-  it('partial appendix is not a complete original', () => assert.equal(peerOriginalFiled('incomplete', 'appendix-file'), false));
-  it('named original counts even when another teammate uploaded it', () => assert.equal(peerOriginalFiled('assessed', 'shared-upload'), true));
-  it('original due Sunday October 25 at 11:59 Eastern', () => assert.equal(ORIGINAL_PEER_DUE, '2026-10-26T03:59:59Z'));
-  it('revision due Sunday November 1 at 11:59 Eastern after DST', () => assert.equal(REVISION_PEER_DUE, '2026-11-02T04:59:59Z'));
-  it('meeting due Sunday November 8 at 11:59 Eastern', () => assert.equal(MEETING_PEER_DUE, '2026-11-09T04:59:59Z'));
+import { describe, test } from "node:test";
+import { strict as assert } from "node:assert";
+import { peerBadgeLabel, peerBadgeTone, MEETING_PEER_DUE } from "./peer-review-policy";
+
+const before = new Date("2026-11-01T12:00:00Z");
+const after = new Date("2026-11-10T12:00:00Z");
+
+describe("peerBadgeLabel", () => {
+  test("labels attempt 1 as Original Peer Review with the score", () => {
+    assert.equal(
+      peerBadgeLabel({ score: 6, status: "scored", attempt: 1 }),
+      "Original Peer Review 6/10",
+    );
+  });
+
+  test("labels later attempts as Updated Peer Review with the score", () => {
+    assert.equal(
+      peerBadgeLabel({ score: 8, status: "scored", attempt: 2 }),
+      "Updated Peer Review 8/10",
+    );
+  });
+
+  test("shows Not submitted when there is no score and status is missing", () => {
+    assert.equal(peerBadgeLabel({ score: null, status: "missing", attempt: 1 }), "Not submitted");
+  });
+});
+
+describe("peerBadgeTone", () => {
+  test("uses 0-3 red, 4-6 yellow, 7-10 green before the deadline", () => {
+    assert.match(peerBadgeTone(3, before), /destructive/);
+    assert.match(peerBadgeTone(4, before), /gold/);
+    assert.match(peerBadgeTone(6, before), /gold/);
+    assert.match(peerBadgeTone(7, before), /success/);
+    assert.match(peerBadgeTone(10, before), /success/);
+  });
+
+  test("turns any score below 8 red after the 11/8 deadline", () => {
+    assert.ok(after > new Date(MEETING_PEER_DUE));
+    assert.match(peerBadgeTone(7, after), /destructive/);
+    assert.match(peerBadgeTone(5, after), /destructive/);
+    assert.match(peerBadgeTone(8, after), /success/);
+    assert.match(peerBadgeTone(9, after), /success/);
+  });
+
+  test("keeps unscored badges muted", () => {
+    assert.match(peerBadgeTone(null, after), /muted/);
+  });
 });

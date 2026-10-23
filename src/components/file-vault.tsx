@@ -1,4 +1,5 @@
 import { recordHealthReportView } from "@/lib/health-report-views";
+import { peerBadgeLabel, peerBadgeTone } from "@/lib/peer-review-policy";
 import { openVaultFileInNewTab } from "@/lib/file-download";
 import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -86,7 +87,7 @@ type FileRow = {
   meeting_date: string | null;
 };
 
-type PeerScore = { score: number | null; status: string };
+type PeerScore = { score: number | null; status: string; attempt: number };
 
 const VAULT_FOLDERS = [
   { key: "agendas", label: "Agendas", icon: Calendar, entries: [["Team Documents", "Agendas"]] },
@@ -201,12 +202,11 @@ export function FileVault({
             .order("updated_at", { ascending: false }),
           supabase.from("file_versions").select("*").order("version_number", { ascending: false }),
           loadMembers(teamId),
-          // Original (attempt 1) peer-review scores; RLS limits students to their own row.
+          // Peer-review scores per file; RLS limits students to their own rows.
           supabase
             .from("peer_review_assessments")
-            .select("file_id, score, status")
-            .eq("team_id", teamId)
-            .eq("attempt", 1),
+            .select("file_id, score, status, attempt")
+            .eq("team_id", teamId),
         ]);
       if (fErr) throw fErr;
       if (vErr) throw vErr;
@@ -218,7 +218,7 @@ export function FileVault({
       });
       const peerMap = new Map<string, PeerScore>();
       (assessments ?? []).forEach((a) => {
-        if (a.file_id) peerMap.set(a.file_id, { score: a.score, status: a.status });
+        if (a.file_id) peerMap.set(a.file_id, { score: a.score, status: a.status, attempt: a.attempt });
       });
       return { files: (files ?? []) as FileRow[], verMap, members, peerMap };
     },
@@ -897,17 +897,14 @@ function FileLine({
             {(() => {
               const assessment = peerMap.get(file.id);
               if (!assessment) return null;
-              const tone = assessment.score === null
-                ? "bg-muted text-muted-foreground border-border"
-                : assessment.score >= 7
-                  ? "bg-success/15 text-success border-success/30"
-                  : assessment.score >= 4
-                    ? "bg-gold/15 text-gold border-gold/30"
-                    : "bg-destructive/15 text-destructive border-destructive/30";
-              const label = assessment.score !== null
-                ? `Original ${assessment.score}/10`
-                : assessment.status === "missing" ? "Not submitted" : assessment.status;
-              return <Badge variant="outline" className={`text-[10px] ${tone}`}>{label}</Badge>;
+              return (
+                <Badge
+                  variant="outline"
+                  className={`text-[10px] ${peerBadgeTone(assessment.score)}`}
+                >
+                  {peerBadgeLabel(assessment)}
+                </Badge>
+              );
             })()}
           </div>
           {file.description && (
