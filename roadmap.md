@@ -5,6 +5,9 @@
 - [x] Remove the retired "No selection rationale recorded" display from the readiness assessment and client detail (verified live; regression test added).
 - [x] Team page jump menu: "Meeting Times" wording, new "Review Past Meetings" choice opening that team's logged meetings, all choices alphabetized (verified live).
 
+## Awaiting Review queue
+- [x] Exclude the C/D/H Consulting fixture team (teams.is_test) from every queue section and count (verified live: 14 → 11 items; regression tests added).
+
 
 
 ## Current peer-review processing
