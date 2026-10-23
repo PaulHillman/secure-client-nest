@@ -107,7 +107,7 @@ export async function computeHealthReview(
       db.from("files").select("id, current_version_id, file_name").eq("is_template", true).ilike("file_name", "Meeting Minutes Template%").limit(1),
     ]);
     const minutesTemplate = minutesTemplateRows?.[0] ?? null;
-    const { data: peerAssessments, error: peerError } = await db.from('peer_review_assessments').select('user_id, team_id, score, status, summary, strengths, concerns').eq('attempt', 1).in('team_id', ids).order('created_at', { ascending: false });
+    const { data: peerAssessments, error: peerError } = await db.from('peer_review_assessments').select('user_id, team_id, file_id, score, status, summary, strengths, concerns, changes').eq('attempt', 1).in('team_id', ids).order('created_at', { ascending: false });
     if (peerError) throw new Error('Unable to load retained peer-review analyses.');
     const { data: companyFocus } = await db.from("company_focus").select("team_id, company_name, confirmed_at").in("team_id", ids);
     const { data: fileVerifications } = await db.from("instructor_file_verifications").select("team_id, file_name").in("team_id", ids);
@@ -369,7 +369,12 @@ export async function computeHealthReview(
       if (isTeamLevel) {
         const peerDue = Date.parse(ORIGINAL_PEER_DUE);
         const reviews = teamFiles.filter((f) => subsectionMatches(f.subsection, "Mid-Semester Peer Reviews"));
-        const reviewedBy = new Set(reviews.map((f) => f.uploaded_by));
+        // Retained authorship takes precedence over upload ownership for shared uploads.
+        const attributedFiles = new Set((peerAssessments ?? []).filter(a => a.team_id === t.teamId && a.file_id).map(a => a.file_id));
+        const reviewedBy = new Set([
+          ...reviews.filter(f => !attributedFiles.has(f.id)).map(f => f.uploaded_by),
+          ...(peerAssessments ?? []).filter(a => a.team_id === t.teamId && a.file_id && a.status !== 'missing').map(a => a.user_id),
+        ]);
         if (now <= peerDue) {
           const early = tm.filter((m) => reviewedBy.has(m.user_id));
           for (const m of early)
@@ -387,7 +392,7 @@ export async function computeHealthReview(
         for (const a of peerAssessments ?? []) {
           if (a.team_id !== t.teamId || seenPeerUsers.has(a.user_id) || a.status === 'missing' || !tm.some(m => m.user_id === a.user_id)) continue;
           seenPeerUsers.add(a.user_id);
-          const narrative = `${nameOf(a.user_id)}: first peer-review analysis ${a.score === null ? 'unverified' : `${a.score}/10`}. ${a.summary} Strengths: ${(a.strengths as string[]).join('; ')}. Improvements: ${(a.concerns as string[]).join('; ')}.`;
+          const narrative = `${nameOf(a.user_id)}: first peer-review analysis ${a.score === null ? 'unverified' : `${a.score}/10`}. ${a.summary} Strengths: ${(a.strengths as string[]).join('; ')}. Concerns: ${(a.concerns as string[]).join('; ')}. ${a.score !== null && a.score < 7 ? `Required changes: ${(a.changes as string[]).join('; ')}.` : ''}`;
           if (a.score !== null && a.score < 7) {
             const member = tm.find(m => m.user_id === a.user_id);
             push('vault', a.score < 4 ? 'red' : 'yellow', narrative, nameOf(a.user_id), member?.job_title ?? null, a.user_id, `vault:peer_quality:${a.user_id}`);
