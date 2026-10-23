@@ -66,6 +66,20 @@ import {
   type VaultStatus,
 } from "@/lib/vault-structure";
 import { safeStorageFileName } from "@/lib/storage-path";
+import { autoAssessPeerReviewUpload } from "@/lib/peer-review-assessments.functions";
+
+/** Kick off the automatic peer-review assessment and tell the student to stand by. */
+function runPeerAssessment(versionId: string, onDone: () => void) {
+  const id = toast.loading("Stand by — your peer review is being assessed…");
+  autoAssessPeerReviewUpload({ data: { versionId } })
+    .then((r: any) => {
+      if (r?.status === "assessed") toast.success(`Peer review assessed: ${r.score}/10. Your analysis has been emailed.`, { id });
+      else if (r?.status === "unreadable") toast.warning("This file couldn't be read automatically — your instructor will review it.", { id });
+      else toast.dismiss(id);
+      onDone();
+    })
+    .catch(() => { toast.error("Automatic assessment didn't finish — your instructor will review it.", { id }); });
+}
 import { compareTeamRoles } from "@/lib/team-roles";
 import { finalCompiledName, isFinalCompiled } from "@/lib/vault-file-label";
 import { peerUploadSequence, groupPeerUploads } from "@/lib/vault-upload-identity";
@@ -978,7 +992,7 @@ function FileLine({
           {isPeerReview && !assessment && (
             <p className="text-xs text-muted-foreground mt-0.5">
               {uploadNumber && uploadNumber > 1
-                ? "Revised score pending assessment · Target: 8/10 or higher"
+                ? "Stand by — revised score being assessed · Target: 8/10 or higher"
                 : "No assessment recorded for this upload."}
             </p>
           )}
@@ -1206,6 +1220,7 @@ function NewVersionButton({
         .eq("id", file.id);
       toast.success(`Uploaded v${nextVer}`);
       onDone();
+      if (file.subsection === "Mid-Semester Peer Reviews") runPeerAssessment(v.id, onDone);
     } catch (err: any) {
       toast.error(err.message ?? "Upload failed");
     } finally {
@@ -1383,6 +1398,7 @@ function UploadDialog({
       reset();
       setOpen(false);
       onDone();
+      if (storedSubsection === "Mid-Semester Peer Reviews") runPeerAssessment(ver.id, onDone);
     } catch (err: any) {
       toast.error(err.message ?? "Upload failed");
     } finally {
