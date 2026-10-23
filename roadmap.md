@@ -2,6 +2,8 @@
 
 ## Teams page
 - [x] Show each team's member first/last names and roles on the Teams page cards (verified as admin; students see only their own team's roster under existing access rules).
+- [x] Remove the retired "No selection rationale recorded" display from the readiness assessment and client detail (verified live; regression test added).
+
 
 ## Current peer-review processing
 - [x] Evaluate all eligible submitted originals; retain scores, evidence and exact individual emails (59 scores and 12 complete-original reminders).
