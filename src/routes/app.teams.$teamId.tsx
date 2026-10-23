@@ -391,7 +391,15 @@ function JumpLink({
   );
 }
 
-function MemberCard({ member, teamId }: { member: Member; teamId: string }) {
+function MemberCard({
+  member,
+  teamId,
+  peer,
+}: {
+  member: Member;
+  teamId: string;
+  peer?: PeerScore;
+}) {
   const { user, isAdmin } = useAuth();
   const qc = useQueryClient();
   const p = member.profiles;
@@ -448,6 +456,29 @@ function MemberCard({ member, teamId }: { member: Member; teamId: string }) {
           ) : (
             <div className="text-xs text-gold">{member.job_title}</div>
           )}
+          {peer && (() => {
+            const tone =
+              peer.score === null
+                ? "bg-muted text-muted-foreground border-border"
+                : peer.score >= 7
+                  ? "bg-success/15 text-success border-success/30"
+                  : peer.score >= 4
+                    ? "bg-gold/15 text-gold border-gold/30"
+                    : "bg-destructive/15 text-destructive border-destructive/30";
+            const label =
+              peer.score !== null
+                ? `Original ${peer.score}/10`
+                : peer.status === "missing"
+                  ? "Not submitted"
+                  : peer.status;
+            return (
+              <div className="mt-1">
+                <Badge variant="outline" className={`text-[10px] ${tone}`}>
+                  {label}
+                </Badge>
+              </div>
+            );
+          })()}
           {p?.email && (
             <a
               href={`mailto:${p.email}`}
