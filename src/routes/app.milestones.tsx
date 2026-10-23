@@ -9,12 +9,12 @@ import { Card, CardContent } from "@/components/ui/card";
 export const Route = createFileRoute("/app/milestones")({
   head: () => ({
     meta: [
-      { title: "Milestones — ClientVault" },
+      { title: "Milestones / Deadlines — ClientVault" },
       {
         name: "description",
         content: "Your team's milestones and deadlines: completed, outstanding, and coming up.",
       },
-      { property: "og:title", content: "Milestones — ClientVault" },
+      { property: "og:title", content: "Milestones / Deadlines — ClientVault" },
       {
         property: "og:description",
         content: "Track your team's milestones: what is done, what is left, and what is coming up.",
@@ -47,7 +47,7 @@ function Page() {
   return (
     <main className="p-4 sm:p-8 max-w-4xl mx-auto">
       <header className="mb-6">
-        <h1 className="font-display text-3xl">Milestones</h1>
+        <h1 className="font-display text-3xl">Milestones / Deadlines</h1>
         <p className="text-muted-foreground mt-1">
           Completed, outstanding, and coming up for your team.
         </p>
