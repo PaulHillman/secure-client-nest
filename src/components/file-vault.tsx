@@ -191,7 +191,9 @@ export function FileVault({
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["vault", teamId],
+    // Separate the enriched result from pre-update cached lists in open previews.
+    // Keep the prefix so existing upload/status invalidations still refresh it.
+    queryKey: ["vault", teamId, "upload-identity-v2"],
     queryFn: async () => {
       const [{ data: files, error: fErr }, { data: versions, error: vErr }, members, { data: assessments }] =
         await Promise.all([
