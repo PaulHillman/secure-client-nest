@@ -20,6 +20,7 @@ import { Route as AppCompetitionsRouteImport } from './routes/app.competitions'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppHealthReviewRouteImport } from './routes/app.health-review'
 import { Route as AppMeetingsRouteImport } from './routes/app.meetings'
+import { Route as AppMilestonesRouteImport } from './routes/app.milestones'
 import { Route as AppTeamsRouteImport } from './routes/app.teams'
 import { Route as AppVaultRouteImport } from './routes/app.vault'
 import { Route as AppVaultOverviewRouteImport } from './routes/app.vault-overview'
@@ -89,6 +90,11 @@ const AppHealthReviewRoute = AppHealthReviewRouteImport.update({
 const AppMeetingsRoute = AppMeetingsRouteImport.update({
   id: '/meetings',
   path: '/meetings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMilestonesRoute = AppMilestonesRouteImport.update({
+  id: '/milestones',
+  path: '/milestones',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTeamsRoute = AppTeamsRouteImport.update({
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/app/dashboard': typeof AppDashboardRoute
   '/app/health-review': typeof AppHealthReviewRoute
   '/app/meetings': typeof AppMeetingsRoute
+  '/app/milestones': typeof AppMilestonesRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
@@ -215,6 +222,7 @@ export interface FileRoutesByTo {
   '/app/dashboard': typeof AppDashboardRoute
   '/app/health-review': typeof AppHealthReviewRoute
   '/app/meetings': typeof AppMeetingsRoute
+  '/app/milestones': typeof AppMilestonesRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
@@ -244,6 +252,7 @@ export interface FileRoutesById {
   '/app/dashboard': typeof AppDashboardRoute
   '/app/health-review': typeof AppHealthReviewRoute
   '/app/meetings': typeof AppMeetingsRoute
+  '/app/milestones': typeof AppMilestonesRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
@@ -274,6 +283,7 @@ export interface FileRouteTypes {
     | '/app/dashboard'
     | '/app/health-review'
     | '/app/meetings'
+    | '/app/milestones'
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
@@ -302,6 +312,7 @@ export interface FileRouteTypes {
     | '/app/dashboard'
     | '/app/health-review'
     | '/app/meetings'
+    | '/app/milestones'
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
@@ -330,6 +341,7 @@ export interface FileRouteTypes {
     | '/app/dashboard'
     | '/app/health-review'
     | '/app/meetings'
+    | '/app/milestones'
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
@@ -436,6 +448,13 @@ declare module '@tanstack/react-router' {
       path: '/meetings'
       fullPath: '/app/meetings'
       preLoaderRoute: typeof AppMeetingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/milestones': {
+      id: '/app/milestones'
+      path: '/milestones'
+      fullPath: '/app/milestones'
+      preLoaderRoute: typeof AppMilestonesRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/teams': {
@@ -566,6 +585,7 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppHealthReviewRoute: typeof AppHealthReviewRoute
   AppMeetingsRoute: typeof AppMeetingsRoute
+  AppMilestonesRoute: typeof AppMilestonesRoute
   AppTeamsRoute: typeof AppTeamsRouteWithChildren
   AppVaultRoute: typeof AppVaultRoute
   AppVaultOverviewRoute: typeof AppVaultOverviewRoute
@@ -585,6 +605,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppHealthReviewRoute: AppHealthReviewRoute,
   AppMeetingsRoute: AppMeetingsRoute,
+  AppMilestonesRoute: AppMilestonesRoute,
   AppTeamsRoute: AppTeamsRouteWithChildren,
   AppVaultRoute: AppVaultRoute,
   AppVaultOverviewRoute: AppVaultOverviewRoute,

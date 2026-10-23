@@ -337,6 +337,23 @@ function TeamDetail() {
         />
       </div>
 
+      {(isMember || isAdmin) && (
+        !isAdmin ? (
+          <DashboardSection
+            id="pm-duties"
+            open={expandedSections["pm-duties"] ?? false}
+            onToggle={() => setSectionOpen("pm-duties", !(expandedSections["pm-duties"] ?? false))}
+            collapsedHeight={210}
+          >
+            <PmDutiesCard teamId={teamId} />
+          </DashboardSection>
+        ) : (
+          <div id="pm-duties" className="mt-6 scroll-mt-6">
+            <PmDutiesCard teamId={teamId} />
+          </div>
+        )
+      )}
+
       <div id="project-arch" className="mt-6 scroll-mt-6">
         <ProjectArchCard variant="wide" />
       </div>
@@ -354,23 +371,6 @@ function TeamDetail() {
         <div id="team-readiness" className="mt-6 scroll-mt-6">
           <TeamReadinessCard teamId={teamId} />
         </div>
-      )}
-
-      {isMember && (
-        !isAdmin ? (
-          <DashboardSection
-            id="pm-duties"
-            open={expandedSections["pm-duties"] ?? false}
-            onToggle={() => setSectionOpen("pm-duties", !(expandedSections["pm-duties"] ?? false))}
-            collapsedHeight={210}
-          >
-            <PmDutiesCard teamId={teamId} />
-          </DashboardSection>
-        ) : (
-          <div id="pm-duties" className="mt-6 scroll-mt-6">
-            <PmDutiesCard teamId={teamId} />
-          </div>
-        )
       )}
 
       {isMember && (
