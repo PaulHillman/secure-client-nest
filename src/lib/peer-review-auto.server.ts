@@ -112,7 +112,7 @@ export async function autoAssessPeerUpload(versionId: string) {
   const { data: crit } = await db.from("peer_review_criteria").select("content").limit(1).single();
   const criteria = crit?.content ?? "";
   const { data: blob } = await db.storage.from("vault").download(version.storage_path);
-  const text = blob && version.file_size < 10_000_000 ? await extractText(blob, version.storage_path) : null;
+  const text = blob && (version.file_size ?? 0) < 10_000_000 ? await extractText(blob, version.storage_path) : null;
   const { data: instructor } = await db.from("profiles").select("id").ilike("email", INSTRUCTOR_EMAIL).limit(1).single();
 
   const base = { user_id: ownerId, team_id: file.team_id, file_id: file.id, version_id: versionId, attempt, criteria_snapshot: criteria, assessed_by: instructor?.id ?? ownerId };
