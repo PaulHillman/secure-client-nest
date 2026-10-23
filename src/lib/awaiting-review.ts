@@ -60,9 +60,9 @@ type ManagerRow = {
   manager_first_name: string | null;
   manager_last_name: string | null;
   company_name: string | null;
-  company_website: string | null;
-  industry: string | null;
-  num_employees: number | null;
+  company_website?: string | null;
+  industry?: string | null;
+  num_employees?: number | null;
   created_at: string;
 };
 
