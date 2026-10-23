@@ -50,6 +50,60 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+function CollapsibleText({
+  text,
+  label,
+  className,
+  clampClassName = "line-clamp-3",
+}: {
+  text: string;
+  label?: string;
+  className?: string;
+  clampClassName?: string;
+}) {
+  const ref = useRef<HTMLParagraphElement | null>(null);
+  const [open, setOpen] = useState(false);
+  const [clipped, setClipped] = useState(false);
+
+  useEffect(() => {
+    if (open) return;
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => setClipped(el.scrollHeight - el.clientHeight > 4);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [open, text]);
+
+  return (
+    <>
+      <p
+        ref={ref}
+        className={`${className ?? ""} ${open ? "" : clampClassName} print:line-clamp-none`}
+      >
+        {text}
+      </p>
+      {clipped && (
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          aria-label={label ? `${open ? "Show less" : "Show more"} for ${label}` : undefined}
+          className="mt-1 inline-flex items-center gap-1 text-xs font-medium underline-offset-2 hover:underline print:hidden"
+        >
+          {open ? (
+            <ChevronUp className="h-3 w-3" aria-hidden />
+          ) : (
+            <ChevronDown className="h-3 w-3" aria-hidden />
+          )}
+          {open ? "Show less" : "Show more"}
+        </button>
+      )}
+    </>
+  );
+}
+
 const CHECK_ICON = {
   found: CheckCircle2,
   missing: XCircle,
