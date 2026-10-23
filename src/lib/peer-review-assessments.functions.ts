@@ -52,3 +52,14 @@ export const sendPeerReviewAssessment = createServerFn({ method: 'POST' })
     if (saveError) throw saveError;
     return { status };
   });
+/** Runs right after a peer-review upload. Caller must be the uploader or an admin. */
+export const autoAssessPeerReviewUpload = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ versionId: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const { data: version } = await context.supabase.from('file_versions').select('uploaded_by').eq('id', data.versionId).maybeSingle();
+    const { data: admin } = await context.supabase.rpc('has_role', { _user_id: context.userId, _role: 'admin' });
+    if (!version || (version.uploaded_by !== context.userId && !admin)) throw new Error('Not allowed');
+    const { autoAssessPeerUpload } = await import('./peer-review-auto.server');
+    return autoAssessPeerUpload(data.versionId);
+  });
