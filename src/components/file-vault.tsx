@@ -86,6 +86,8 @@ type FileRow = {
   meeting_date: string | null;
 };
 
+type PeerScore = { score: number | null; status: string };
+
 const VAULT_FOLDERS = [
   { key: "agendas", label: "Agendas", icon: Calendar, entries: [["Team Documents", "Agendas"]] },
   {
@@ -189,7 +191,7 @@ export function FileVault({
   const { data, isLoading } = useQuery({
     queryKey: ["vault", teamId],
     queryFn: async () => {
-      const [{ data: files, error: fErr }, { data: versions, error: vErr }, members] =
+      const [{ data: files, error: fErr }, { data: versions, error: vErr }, members, { data: assessments }] =
         await Promise.all([
           supabase
             .from("files")
@@ -199,6 +201,12 @@ export function FileVault({
             .order("updated_at", { ascending: false }),
           supabase.from("file_versions").select("*").order("version_number", { ascending: false }),
           loadMembers(teamId),
+          // Original (attempt 1) peer-review scores; RLS limits students to their own row.
+          supabase
+            .from("peer_review_assessments")
+            .select("file_id, score, status")
+            .eq("team_id", teamId)
+            .eq("attempt", 1),
         ]);
       if (fErr) throw fErr;
       if (vErr) throw vErr;
@@ -208,13 +216,18 @@ export function FileVault({
         arr.push(v as VersionRow);
         verMap.set(v.file_id, arr);
       });
-      return { files: (files ?? []) as FileRow[], verMap, members };
+      const peerMap = new Map<string, PeerScore>();
+      (assessments ?? []).forEach((a) => {
+        if (a.file_id) peerMap.set(a.file_id, { score: a.score, status: a.status });
+      });
+      return { files: (files ?? []) as FileRow[], verMap, members, peerMap };
     },
   });
 
   const files = data?.files ?? [];
   const verMap = data?.verMap ?? new Map<string, VersionRow[]>();
   const members = data?.members ?? [];
+  const peerMap = data?.peerMap ?? new Map<string, PeerScore>();
 
   // Group files: section -> subsection -> FileRow[]
   const grouped = useMemo(() => {
@@ -352,6 +365,7 @@ export function FileVault({
                 files={subFiles}
                 members={members}
                 verMap={verMap}
+                peerMap={peerMap}
                 isAdmin={isAdmin}
                 userId={user?.id}
                 onDownload={download}
@@ -409,6 +423,7 @@ export function FileVault({
                     files={subsectionNames(sub.name).flatMap((name) => subMap?.get(name) ?? [])}
                     members={members}
                     verMap={verMap}
+                    peerMap={peerMap}
                     isAdmin={isAdmin}
                     userId={user?.id}
                     onDownload={download}
@@ -469,6 +484,7 @@ function SubsectionBlock({
   files,
   members,
   verMap,
+  peerMap,
   isAdmin,
   userId,
   onDownload,
@@ -486,6 +502,7 @@ function SubsectionBlock({
   files: FileRow[];
   members: MemberRow[];
   verMap: Map<string, VersionRow[]>;
+  peerMap: Map<string, PeerScore>;
   isAdmin: boolean;
   userId?: string;
   onDownload: (versionId: string | null, fileName: string) => void;
@@ -520,7 +537,7 @@ function SubsectionBlock({
   }
 
   const commonProps = {
-    verMap, isAdmin, userId,
+    verMap, peerMap, isAdmin, userId,
     onDownload, onDelete, onSetStatus, onOpenComments, onRefresh,
   };
 
@@ -726,6 +743,7 @@ function GroupNormsReadOnly({ teamId }: { teamId: string }) {
 
 type RowCommonProps = {
   verMap: Map<string, VersionRow[]>;
+  peerMap: Map<string, PeerScore>;
   isAdmin: boolean;
   userId?: string;
   onDownload: (versionId: string | null, fileName: string) => void;
@@ -739,6 +757,7 @@ function SlotRow({
   label,
   files,
   verMap,
+  peerMap,
   isAdmin,
   userId,
   onDownload,
@@ -761,6 +780,7 @@ function SlotRow({
               versions={verMap.get(f.id) ?? []}
               canManage={isAdmin || (f.uploaded_by === userId && !f.is_locked)}
               verMap={verMap}
+              peerMap={peerMap}
               isAdmin={isAdmin}
               userId={userId}
               onDownload={onDownload}
@@ -819,6 +839,7 @@ function FileLine({
   canManage,
   isAdmin,
   userId,
+  peerMap,
   showMeetingDate,
   onDownload,
   onDelete,
@@ -873,6 +894,21 @@ function FileLine({
             <Badge variant="outline" className={`text-[10px] ${STATUS_TONE[file.status]}`}>
               {file.status}
             </Badge>
+            {(() => {
+              const assessment = peerMap.get(file.id);
+              if (!assessment) return null;
+              const tone = assessment.score === null
+                ? "bg-muted text-muted-foreground border-border"
+                : assessment.score >= 8
+                  ? "bg-success/15 text-success border-success/30"
+                  : assessment.score === 7
+                    ? "bg-gold/15 text-gold border-gold/30"
+                    : "bg-destructive/15 text-destructive border-destructive/30";
+              const label = assessment.score !== null
+                ? `Original ${assessment.score}/10`
+                : assessment.status === "missing" ? "Not submitted" : assessment.status;
+              return <Badge variant="outline" className={`text-[10px] ${tone}`}>{label}</Badge>;
+            })()}
           </div>
           {file.description && (
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{file.description}</p>

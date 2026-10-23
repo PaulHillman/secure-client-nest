@@ -113,6 +113,13 @@
       "when": 1792718110233,
       "tag": "0015_peer_review_individual_assessments",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792726282435,
+      "tag": "0016_students_read_own_peer_review_assessment",
+      "breakpoints": true
     }
   ]
 }
