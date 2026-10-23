@@ -11,6 +11,9 @@ import { FileVault } from "@/components/file-vault";
 import { NON_COMPETITION_SECTIONS } from "@/lib/vault-structure";
 
 export const Route = createFileRoute("/app/meetings")({
+  validateSearch: (search: Record<string, unknown>): { team?: string } => ({
+    team: typeof search.team === "string" && search.team.trim() ? search.team : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Weekly Meetings — ClientVault" },
@@ -25,6 +28,7 @@ export const Route = createFileRoute("/app/meetings")({
 function WeeklyMeetings() {
   const { user, isAdmin } = useAuth();
   const [pickedTeam, setPickedTeam] = useState<string | null>(null);
+  const { team: teamParam } = Route.useSearch();
 
   const { data: myTeams, isLoading } = useQuery({
     queryKey: ["my-teams", user?.id],
@@ -55,7 +59,7 @@ function WeeklyMeetings() {
   });
 
   const myTeamId = myTeams?.[0]?.team_id ?? null;
-  const teamId = pickedTeam ?? myTeamId;
+  const teamId = pickedTeam ?? teamParam ?? myTeamId;
 
   const teamLabel = (t: { name: string; display_name: string | null; section: string | null }) =>
     `${t.display_name?.trim() || t.name}${t.section ? ` · Section ${t.section}` : ""}`;
