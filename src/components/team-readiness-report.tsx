@@ -1,8 +1,9 @@
+import { useEffect, useRef, useState } from "react";
 import type { TeamAssessment } from "@/lib/team-readiness-assessment";
 import { WEST_MICHIGAN } from "@/lib/team-readiness-assessment";
 import { ReadinessStatusBadge } from "@/components/readiness-status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, XCircle } from "lucide-react";
 
 function when(value: string | null) {
   if (!value) return "Not recorded";
