@@ -73,6 +73,8 @@ type Member = {
   >;
 };
 
+type PeerScore = { score: number | null; status: string };
+
 function initials(name: string) {
   return name
     .split(/\s+/)
