@@ -73,6 +73,8 @@ type Member = {
   >;
 };
 
+type PeerScore = { score: number | null; status: string };
+
 function initials(name: string) {
   return name
     .split(/\s+/)
@@ -93,15 +95,27 @@ function TeamDetail() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["team", teamId],
     queryFn: async () => {
-      const [{ data: team, error: tErr }, { data: cf, error: cfErr }, { data: tm, error: mErr }] =
-        await Promise.all([
-          supabase.from("teams").select("*").eq("id", teamId).single(),
-          supabase.from("company_focus").select("*").eq("team_id", teamId).maybeSingle(),
-          supabase.from("team_members").select("id, job_title, user_id").eq("team_id", teamId),
-        ]);
+      const [
+        { data: team, error: tErr },
+        { data: cf, error: cfErr },
+        { data: tm, error: mErr },
+        { data: peerRows, error: pErr },
+      ] = await Promise.all([
+        supabase.from("teams").select("*").eq("id", teamId).single(),
+        supabase.from("company_focus").select("*").eq("team_id", teamId).maybeSingle(),
+        supabase.from("team_members").select("id, job_title, user_id").eq("team_id", teamId),
+        // Original (attempt 1) peer-review scores; RLS limits students to their own row.
+        supabase
+          .from("peer_review_assessments")
+          .select("user_id, score, status")
+          .eq("team_id", teamId)
+          .eq("attempt", 1)
+          .order("created_at", { ascending: false }),
+      ]);
       if (tErr) throw tErr;
       if (cfErr) throw cfErr;
       if (mErr) throw mErr;
+      if (pErr) throw pErr;
 
       const userIds = (tm ?? []).map((m) => m.user_id);
       let profiles: NonNullable<Member["profiles"]>[] = [];
@@ -116,14 +130,19 @@ function TeamDetail() {
         profiles = pData ?? [];
       }
       const profileMap = new Map(profiles.map((p) => [p.id, p]));
+      const peerMap = new Map<string, PeerScore>();
+      (peerRows ?? []).forEach((a) => {
+        if (!peerMap.has(a.user_id)) peerMap.set(a.user_id, { score: a.score, status: a.status });
+      });
       const members = (tm ?? []).map((m) => ({ ...m, profiles: profileMap.get(m.user_id) }));
-      return { team, companyFocus: cf, members };
+      return { team, companyFocus: cf, members, peerMap };
     },
   });
 
   const { user, isAdmin } = useAuth();
   const team = data?.team;
   const cf = data?.companyFocus;
+  const peerMap = data?.peerMap ?? new Map<string, PeerScore>();
   const isMember = !!user && (data?.members ?? []).some((m) => m.user_id === user.id);
   const isTeamPM =
     !!user && (data?.members ?? []).some((m) => m.user_id === user.id && m.job_title === "PM");
@@ -229,7 +248,12 @@ function TeamDetail() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {members.map((m) => (
-              <MemberCard key={m.id} member={m} teamId={teamId} />
+              <MemberCard
+                key={m.id}
+                member={m}
+                teamId={teamId}
+                peer={peerMap.get(m.user_id)}
+              />
             ))}
           </div>
         )}
@@ -367,7 +391,15 @@ function JumpLink({
   );
 }
 
-function MemberCard({ member, teamId }: { member: Member; teamId: string }) {
+function MemberCard({
+  member,
+  teamId,
+  peer,
+}: {
+  member: Member;
+  teamId: string;
+  peer?: PeerScore;
+}) {
   const { user, isAdmin } = useAuth();
   const qc = useQueryClient();
   const p = member.profiles;
@@ -424,6 +456,29 @@ function MemberCard({ member, teamId }: { member: Member; teamId: string }) {
           ) : (
             <div className="text-xs text-gold">{member.job_title}</div>
           )}
+          {peer && (() => {
+            const tone =
+              peer.score === null
+                ? "bg-muted text-muted-foreground border-border"
+                : peer.score >= 7
+                  ? "bg-success/15 text-success border-success/30"
+                  : peer.score >= 4
+                    ? "bg-gold/15 text-gold border-gold/30"
+                    : "bg-destructive/15 text-destructive border-destructive/30";
+            const label =
+              peer.score !== null
+                ? `Original ${peer.score}/10`
+                : peer.status === "missing"
+                  ? "Not submitted"
+                  : peer.status;
+            return (
+              <div className="mt-1">
+                <Badge variant="outline" className={`text-[10px] ${tone}`}>
+                  {label}
+                </Badge>
+              </div>
+            );
+          })()}
           {p?.email && (
             <a
               href={`mailto:${p.email}`}
