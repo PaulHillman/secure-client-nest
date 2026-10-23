@@ -510,7 +510,11 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
                       </p>
                     ) : null}
                     {p.feedback && p.feedback.trim() ? (
-                      <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">{p.feedback}</p>
+                      <CollapsibleText
+                        text={p.feedback}
+                        label={`${m.name} — ${p.title}`}
+                        className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground"
+                      />
                     ) : null}
                     {p.reviewStatus === "needs_revision" || p.reviewStatus === "sent_back" ? (
                       <p className="mt-1 text-xs text-amber-400">This activity was sent back for revision.</p>
