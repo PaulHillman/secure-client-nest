@@ -1,5 +1,8 @@
 # ClientVault roadmap
 
+## File Vault identification
+- [ ] Show full uploader names, original/revised upload labels across peer-review files, and exact-version scores; verify the pictured revision and version history.
+
 ## Teams page
 - [x] Show each team's member first/last names and roles on the Teams page cards (verified as admin; students see only their own team's roster under existing access rules).
 - [x] Remove the retired "No selection rationale recorded" display from the readiness assessment and client detail (verified live; regression test added).
