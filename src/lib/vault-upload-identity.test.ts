@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { peerUploadSequence } from "./vault-upload-identity";
+import { peerUploadSequence, groupPeerUploads } from "./vault-upload-identity";
 
 const file = (id: string, owner: string, assigned: string | null = null) => ({
   id, section: "Team Documents", subsection: "Mid-Semester Peer Reviews",
@@ -8,6 +8,16 @@ const file = (id: string, owner: string, assigned: string | null = null) => ({
 });
 const version = (id: string, fileId: string, day: number, number = 1) => ({
   id, file_id: fileId, uploaded_at: `2026-10-${day}T12:00:00Z`, version_number: number,
+});
+
+test("Isabella's original stays directly before her revision regardless of intervening teammates", () => {
+  const groups = groupPeerUploads([
+    { ...file("revision", "Isabella"), created_at: "2026-10-23" },
+    { ...file("other", "Taylor"), created_at: "2026-10-20" },
+    { ...file("original", "Isabella"), created_at: "2026-10-20" },
+  ]);
+  assert.deepEqual(groups.find((g) => g.owner === "Isabella")?.files.map((f) => f.id), ["original", "revision"]);
+  assert.equal(groups.length, 2);
 });
 
 test("a second peer-review file uploaded by the same member is revised even at v1", () => {

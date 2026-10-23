@@ -13,6 +13,21 @@ type UploadVersion = {
   version_number: number;
 };
 
+/** Keep originals and revisions adjacent under the member's identity. */
+export function groupPeerUploads<T extends UploadFile & { created_at: string }>(files: T[]) {
+  const groups = new Map<string, T[]>();
+  for (const file of files) {
+    const owner = file.assigned_to ?? file.uploaded_by;
+    const group = groups.get(owner) ?? [];
+    group.push(file);
+    groups.set(owner, group);
+  }
+  return Array.from(groups, ([owner, uploads]) => ({
+    owner,
+    files: uploads.sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id)),
+  }));
+}
+
 /** Count peer-review uploads across separate file rows, never from filenames. */
 export function peerUploadSequence(files: UploadFile[], versions: UploadVersion[]) {
   const fileById = new Map(files.map((file) => [file.id, file]));

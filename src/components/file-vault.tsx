@@ -68,7 +68,7 @@ import {
 import { safeStorageFileName } from "@/lib/storage-path";
 import { compareTeamRoles } from "@/lib/team-roles";
 import { finalCompiledName, isFinalCompiled } from "@/lib/vault-file-label";
-import { peerUploadSequence } from "@/lib/vault-upload-identity";
+import { peerUploadSequence, groupPeerUploads } from "@/lib/vault-upload-identity";
 
 type FileRow = {
   id: string;
@@ -537,6 +537,9 @@ function SubsectionBlock({
 }) {
   const isGroupNorms = sectionName === "Team Documents" && subName === "Group Norms";
   const isAgendas = sectionName === "Team Documents" && subName === "Agendas";
+  const isPeerReviews = subName === "Mid-Semester Peer Reviews";
+  const peerGroups = groupPeerUploads(files).sort((a, b) =>
+    (uploaderNames.get(a.owner) ?? "").localeCompare(uploaderNames.get(b.owner) ?? ""));
 
   const [agendaSort, setAgendaSort] = useState<AgendaSort>("date-asc");
   const agendaFiles = useMemo(
@@ -591,7 +594,24 @@ function SubsectionBlock({
         )}
       </div>
 
-      {perMember && members.length > 0 ? (
+      {isPeerReviews && files.length > 0 ? (
+        <div className="space-y-5">
+          {peerGroups.map((group) => (
+            <div key={group.owner} className="space-y-2" data-peer-owner={group.owner}>
+              <h5 className="text-sm font-semibold">{uploaderNames.get(group.owner) ?? members.find((m) => m.user_id === group.owner)?.name ?? "Member name unavailable"}</h5>
+              {group.files.map((f) => (
+                <FileLine
+                  key={f.id}
+                  file={f}
+                  versions={verMap.get(f.id) ?? []}
+                  canManage={isAdmin || (f.uploaded_by === userId && !f.is_locked)}
+                  {...commonProps}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      ) : perMember && members.length > 0 ? (
         <div className="space-y-2">
           {members.map((m) => {
             const mf = memberFiles.get(m.user_id) ?? [];
@@ -956,7 +976,11 @@ function FileLine({
             )}
           </div>
           {isPeerReview && !assessment && (
-            <p className="text-xs text-muted-foreground mt-0.5">No assessment recorded for this upload.</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {uploadNumber && uploadNumber > 1
+                ? "Revised score pending assessment · Target: 8/10 or higher"
+                : "No assessment recorded for this upload."}
+            </p>
           )}
           {file.description && (
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{file.description}</p>
