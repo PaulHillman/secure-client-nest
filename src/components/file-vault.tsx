@@ -365,6 +365,7 @@ export function FileVault({
                 files={subFiles}
                 members={members}
                 verMap={verMap}
+                peerMap={peerMap}
                 isAdmin={isAdmin}
                 userId={user?.id}
                 onDownload={download}
@@ -756,6 +757,7 @@ function SlotRow({
   label,
   files,
   verMap,
+  peerMap,
   isAdmin,
   userId,
   onDownload,
@@ -778,6 +780,7 @@ function SlotRow({
               versions={verMap.get(f.id) ?? []}
               canManage={isAdmin || (f.uploaded_by === userId && !f.is_locked)}
               verMap={verMap}
+              peerMap={peerMap}
               isAdmin={isAdmin}
               userId={userId}
               onDownload={onDownload}
