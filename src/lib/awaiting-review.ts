@@ -4,6 +4,7 @@ import { teamPrimaryName } from "@/lib/team-label";
 export type AwaitingRequirement = {
   id: string;
   teamId: string;
+  requirementKey: string;
   teamName: string;
   requirementTitle: string;
   submittedAt: string | null;
@@ -105,6 +106,7 @@ export function assembleAwaitingReview(input: {
     .map((r) => ({
       id: r.id,
       teamId: r.team_id,
+      requirementKey: r.requirement_key,
       teamName: teamName.get(r.team_id) ?? "Unknown team",
       requirementTitle: reqTitle.get(r.requirement_key) ?? r.requirement_key,
       submittedAt: r.submitted_at,

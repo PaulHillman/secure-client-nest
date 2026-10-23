@@ -1,5 +1,12 @@
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useState } from "react";
+import { toast } from "sonner";
+import { decideRequirement } from "@/lib/readiness.functions";
+import type { ReadinessStatus } from "@/lib/readiness";
+import { SubmissionReviewDialog } from "@/components/submission-review-dialog";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { fetchAwaitingReview } from "@/lib/awaiting-review";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,10 +42,29 @@ function fmtWaiting(iso: string | null) {
 
 function Page() {
   const { isAdmin, loading } = useAuth();
+  const qc = useQueryClient();
+  const decideFn = useServerFn(decideRequirement);
+  const [reviewing, setReviewing] = useState<{ teamId: string; teamName: string; key: string } | null>(
+    null,
+  );
   const query = useQuery({
     queryKey: ["awaiting-review"],
     queryFn: fetchAwaitingReview,
     enabled: isAdmin,
+  });
+  const decide = useMutation({
+    mutationFn: (v: { teamId: string; key: string; status: ReadinessStatus; note?: string }) =>
+      decideFn({ data: v }),
+    onSuccess: (_d, v) => {
+      toast.success(
+        v.status === "approved" ? "Approved. The Project Manager has been told." : "Sent back with your note.",
+      );
+      setReviewing(null);
+      void qc.invalidateQueries({ queryKey: ["awaiting-review"] });
+      void qc.invalidateQueries({ queryKey: ["submission-queue"] });
+      void qc.invalidateQueries({ queryKey: ["readiness-board"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
   if (loading) return null;
   if (!isAdmin) return <Navigate to="/app/dashboard" />;
@@ -51,10 +77,23 @@ function Page() {
         <h1 className="font-display text-3xl">Awaiting Review</h1>
         <p className="text-muted-foreground mt-1">
           Everything waiting on you, oldest first. {data?.total ?? 0} item
-          {data?.total === 1 ? "" : "s"} outstanding.
+          {data?.total === 1 ? "" : "s"} outstanding. Click "Review &amp; decide" to read what the
+          team sent, then Approve or Send back.
         </p>
       </header>
       {query.error && <p role="alert">{query.error.message}</p>}
+      {reviewing && (
+        <SubmissionReviewDialog
+          open
+          onOpenChange={(o) => !o && setReviewing(null)}
+          teamId={reviewing.teamId}
+          teamName={reviewing.teamName}
+          requirementKey={reviewing.key}
+          busy={decide.isPending}
+          onDecide={(v) => decide.mutate({ teamId: reviewing.teamId, key: reviewing.key, ...v })}
+        />
+      )}
+
 
       <Card className="border-border/60">
         <CardHeader>
@@ -77,13 +116,14 @@ function Page() {
                 <span className="text-xs text-muted-foreground">
                   waiting {fmtWaiting(r.submittedAt)}
                 </span>
-                <Link
-                  to="/app/admin/team-readiness/$teamId"
-                  params={{ teamId: r.teamId }}
-                  className="text-primary underline text-xs"
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    setReviewing({ teamId: r.teamId, teamName: r.teamName, key: r.requirementKey })
+                  }
                 >
-                  Review
-                </Link>
+                  Review &amp; decide
+                </Button>
               </div>
             </div>
           ))}
