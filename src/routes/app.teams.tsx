@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { teamPrimaryName } from "@/lib/team-label";
+import { compareTeamRoles } from "@/lib/team-roles";
 import { getReadinessAssessments } from "@/lib/team-readiness-assessment.functions";
 import { TeamReadinessIndicator, TestFixtureBadge } from "@/components/readiness-status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,21 @@ export const Route = createFileRoute("/app/teams")({
 });
 
 type SortMode = "section-team" | "name-asc" | "team-number";
+
+type ProfileLite = {
+  id: string;
+  name: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+};
+
+type RosterMember = { userId: string; name: string; role: string };
+
+function displayName(p: ProfileLite | undefined): string {
+  const full = `${p?.first_name ?? ""} ${p?.last_name ?? ""}`.trim();
+  return full || p?.name || p?.email || "Unnamed";
+}
 
 function extractTeamNumber(name: string | null): number {
   if (!name) return Infinity;
@@ -76,6 +92,47 @@ function Teams() {
         .eq("user_id", user!.id);
       if (error) throw error;
       return new Set((data ?? []).map((m) => m.team_id));
+    },
+  });
+
+  // Rosters for the team cards. Row-level security limits students to the teams
+  // they belong to, so other teams simply come back with no members.
+  const { data: rosterByTeam } = useQuery({
+    queryKey: ["team-rosters"],
+    queryFn: async () => {
+      const { data: members, error: mErr } = await supabase
+        .from("team_members")
+        .select("team_id, user_id, job_title");
+      if (mErr) throw mErr;
+
+      const userIds = Array.from(new Set((members ?? []).map((m) => m.user_id)));
+      const profileById = new Map<string, ProfileLite>();
+      if (userIds.length) {
+        const { data: profiles, error: pErr } = await supabase
+          .from("profiles")
+          .select("id, name, first_name, last_name, email")
+          .in("id", userIds);
+        if (pErr) throw pErr;
+        (profiles ?? []).forEach((p) => profileById.set(p.id, p));
+      }
+
+      const grouped = new Map<string, RosterMember[]>();
+      (members ?? []).forEach((m) => {
+        const p = profileById.get(m.user_id);
+        const list = grouped.get(m.team_id) ?? [];
+        list.push({
+          userId: m.user_id,
+          name: displayName(p),
+          role: m.job_title ?? "Unassigned",
+        });
+        grouped.set(m.team_id, list);
+      });
+      grouped.forEach((list) =>
+        list.sort(
+          (a, b) => compareTeamRoles(a.role, b.role) || a.name.localeCompare(b.name),
+        ),
+      );
+      return grouped;
     },
   });
 
@@ -222,6 +279,7 @@ function Teams() {
           const canEnter = isAdmin || isMine;
           const primary = teamPrimaryName(t);
           const ra = readinessByTeam.get(t.id);
+          const roster = rosterByTeam?.get(t.id) ?? [];
 
 
           const card = (
@@ -286,6 +344,24 @@ function Teams() {
                   </div>
                 ) : (
                   <span className="italic">No company selected</span>
+                )}
+                {roster.length > 0 && (
+                  <div className="mt-3 border-t border-border/60 pt-3">
+                    <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">
+                      Team members
+                    </p>
+                    <ul className="mt-1.5 space-y-1">
+                      {roster.map((m) => (
+                        <li key={m.userId} className="text-xs leading-snug">
+                          <span className="text-foreground">{m.name}</span>
+                          <span className="text-muted-foreground"> · </span>
+                          <span className={m.role === "Unassigned" ? "italic text-muted-foreground" : "text-gold"}>
+                            {m.role}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
                 {t.description && <p className="mt-2 line-clamp-2">{t.description}</p>}
                 {!canEnter && (

@@ -1,5 +1,8 @@
 # ClientVault roadmap
 
+## Teams page
+- [x] Show each team's member first/last names and roles on the Teams page cards (verified as admin; students see only their own team's roster under existing access rules).
+
 ## Current peer-review processing
 - [x] Evaluate all eligible submitted originals; retain scores, evidence and exact individual emails (59 scores and 12 complete-original reminders).
 - [x] Remaining peer-review emails sent (105/106); Colt Myers PM copy rate-limited, retry after ~12:30 a.m. Eastern
