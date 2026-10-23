@@ -527,7 +527,11 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
                   </li>
                 )}
               </ul>
-              <p className="mt-2 text-xs text-muted-foreground">{m.feedbackSummary}</p>
+              <CollapsibleText
+                text={m.feedbackSummary}
+                label={`${m.name} — summary`}
+                className="mt-2 text-xs text-muted-foreground"
+              />
               <p className="mt-2 text-xs">
                 <span className="font-medium">Question to ask:</span> {m.suggestedQuestion}
               </p>
