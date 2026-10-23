@@ -1443,6 +1443,101 @@ export type Database = {
           },
         ]
       }
+      peer_review_assessments: {
+        Row: {
+          assessed_by: string
+          attempt: number
+          changes: Json
+          concerns: Json
+          created_at: string
+          criteria_snapshot: string
+          email_body: string
+          file_id: string | null
+          id: string
+          instructor_email_status: string
+          pm_email_status: string
+          score: number | null
+          status: string
+          strengths: Json
+          student_email_status: string
+          summary: string
+          team_id: string
+          user_id: string
+          version_id: string | null
+        }
+        Insert: {
+          assessed_by: string
+          attempt?: number
+          changes?: Json
+          concerns?: Json
+          created_at?: string
+          criteria_snapshot: string
+          email_body: string
+          file_id?: string | null
+          id?: string
+          instructor_email_status?: string
+          pm_email_status?: string
+          score?: number | null
+          status?: string
+          strengths?: Json
+          student_email_status?: string
+          summary?: string
+          team_id: string
+          user_id: string
+          version_id?: string | null
+        }
+        Update: {
+          assessed_by?: string
+          attempt?: number
+          changes?: Json
+          concerns?: Json
+          created_at?: string
+          criteria_snapshot?: string
+          email_body?: string
+          file_id?: string | null
+          id?: string
+          instructor_email_status?: string
+          pm_email_status?: string
+          score?: number | null
+          status?: string
+          strengths?: Json
+          student_email_status?: string
+          summary?: string
+          team_id?: string
+          user_id?: string
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "peer_review_assessments_file_id_fkey"
+            columns: ["file_id"]
+            isOneToOne: false
+            referencedRelation: "files"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peer_review_assessments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peer_review_assessments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peer_review_assessments_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: true
+            referencedRelation: "file_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       peer_review_criteria: {
         Row: {
           content: string

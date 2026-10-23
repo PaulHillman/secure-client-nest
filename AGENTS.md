@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Individual peer-review assessments retain the source version, rubric snapshot and exact email separately from team health reports; each authorized assessment delivery handles one derived recipient and has its own idempotency key.
+
 - Peer-review criteria persist separately from semester team data in an admin-only document; annual review acknowledgement and optimistic edit checks prevent stale evaluation criteria and overwritten changes.
 
 - Weekly health comparisons use immutable per-team shared snapshots, not saved-history totals; Save and vault refresh never advance the shared baseline.

@@ -1,5 +1,10 @@
 # ClientVault roadmap
 
+## Current peer-review processing
+- [ ] Evaluate all eligible submitted originals; retain scores, evidence and exact individual emails.
+- [ ] Send each assessment event individually with instructor and PM copies; verify outcomes.
+- [ ] Make retained first-analysis summaries available in Admin and Friday Health Review; provide final score list.
+
 ## Editable peer-review criteria
 - [x] Save the instructor's collected criteria as an admin-only editable document.
 - [x] Add a recurring yearly review reminder in Dashboard and Health Review, linked to the document.

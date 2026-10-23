@@ -7,6 +7,7 @@ import { compareConcerns, concernKey, RESEARCH_NOTE, type Comparison, type Obser
 import { subsectionMatches } from "@/lib/vault-structure";
 import { lowEngagementStreak, lowEngagementLevel, isMaterialView, LOW_ENGAGEMENT_START, type Contribution } from "@/lib/low-engagement";
 import { meetingDocumentLinks } from "@/lib/meeting-document-links";
+import { ORIGINAL_PEER_DUE } from './peer-review-policy';
 
 export type HealthScope = "team" | "section" | "all" | "role";
 
@@ -106,6 +107,8 @@ export async function computeHealthReview(
       db.from("files").select("id, current_version_id, file_name").eq("is_template", true).ilike("file_name", "Meeting Minutes Template%").limit(1),
     ]);
     const minutesTemplate = minutesTemplateRows?.[0] ?? null;
+    const { data: peerAssessments, error: peerError } = await db.from('peer_review_assessments').select('user_id, team_id, file_id, score, status, summary, strengths, concerns, changes').eq('attempt', 1).in('team_id', ids).order('created_at', { ascending: false });
+    if (peerError) throw new Error('Unable to load retained peer-review analyses.');
     const { data: companyFocus } = await db.from("company_focus").select("team_id, company_name, confirmed_at").in("team_id", ids);
     const { data: fileVerifications } = await db.from("instructor_file_verifications").select("team_id, file_name").in("team_id", ids);
     const verifiedFiles = new Map<string, Set<string>>();
@@ -360,25 +363,40 @@ export async function computeHealthReview(
         if (ag < expectedMinutes) push("vault", ag < expectedMinutes / 2 ? "red" : "yellow", `Agendas: ${ag} posted, ${expectedMinutes} expected by week ${week}.`);
         else notes.vault.push(`Agendas on file: ${ag} (${expectedMinutes} expected by week ${week}).`);
       }
-      // Mid-Semester Peer Reviews: one per student, due Friday 2026-10-23.
+      // Mid-Semester Peer Reviews: originals due Sunday 10/25 at 11:59 Eastern.
       // Before the deadline: no warnings — early filers get a compliment only.
       // After the deadline: each student without a review on file is flagged.
       if (isTeamLevel) {
-        const peerDue = Date.parse("2026-10-24T03:59:59Z"); // end of Friday 10/23, America/Detroit
+        const peerDue = Date.parse(ORIGINAL_PEER_DUE);
         const reviews = teamFiles.filter((f) => subsectionMatches(f.subsection, "Mid-Semester Peer Reviews"));
-        const reviewedBy = new Set(reviews.map((f) => f.uploaded_by));
+        // Retained authorship takes precedence over upload ownership for shared uploads.
+        const attributedFiles = new Set((peerAssessments ?? []).filter(a => a.team_id === t.teamId && a.file_id).map(a => a.file_id));
+        const reviewedBy = new Set([
+          ...reviews.filter(f => !attributedFiles.has(f.id)).map(f => f.uploaded_by),
+          ...(peerAssessments ?? []).filter(a => a.team_id === t.teamId && a.file_id && a.status !== 'missing').map(a => a.user_id),
+        ]);
         if (now <= peerDue) {
           const early = tm.filter((m) => reviewedBy.has(m.user_id));
           for (const m of early)
-            notes.vault.push(`${nameOf(m.user_id)}: peer review already filed — ahead of the 10/23 deadline. Nice early follow-through!`);
-          if (!early.length) notes.vault.push(`Peer reviews: due Friday 10/23 — none filed yet, none expected before then.`);
+            notes.vault.push(`${nameOf(m.user_id)}: peer review already filed — this week's submission requirement completed. Nice early follow-through!`);
+          if (!early.length) notes.vault.push(`Peer reviews: originals due Sunday 10/25 at 11:59 p.m. Eastern — none filed yet; no missing-submission warning before the deadline.`);
         } else {
           const missing = tm.filter((m) => !reviewedBy.has(m.user_id));
           for (const m of missing)
-            push("vault", "red", "Peer review not filed (due Friday 10/23).", nameOf(m.user_id), m.job_title, m.user_id, "vault:peer_review");
+            push("vault", "red", "Peer review not filed (due Sunday 10/25 at 11:59 p.m. Eastern).", nameOf(m.user_id), m.job_title, m.user_id, "vault:peer_review");
           if (missing.length)
             observe("vault:peer_review:team", `Peer reviews on file for ${tm.length - missing.length} of ${tm.length} members.`, missing.length);
-          else notes.vault.push(`Peer reviews: all ${tm.length} members have filed (due 10/23).`);
+          else notes.vault.push(`Peer reviews: all ${tm.length} members have filed (due Sunday 10/25 at 11:59 p.m. Eastern).`);
+        }
+        const seenPeerUsers = new Set<string>();
+        for (const a of peerAssessments ?? []) {
+          if (a.team_id !== t.teamId || seenPeerUsers.has(a.user_id) || a.status === 'missing' || !tm.some(m => m.user_id === a.user_id)) continue;
+          seenPeerUsers.add(a.user_id);
+          const narrative = `${nameOf(a.user_id)}: first peer-review analysis ${a.score === null ? 'unverified' : `${a.score}/10`}. ${a.summary} Strengths: ${(a.strengths as string[]).join('; ')}. Concerns: ${(a.concerns as string[]).join('; ')}. ${a.score !== null && a.score < 7 ? `Required changes: ${(a.changes as string[]).join('; ')}.` : ''}`;
+          if (a.score !== null && a.score < 7) {
+            const member = tm.find(m => m.user_id === a.user_id);
+            push('vault', a.score < 4 ? 'red' : 'yellow', narrative, nameOf(a.user_id), member?.job_title ?? null, a.user_id, `vault:peer_quality:${a.user_id}`);
+          } else notes.vault.push(narrative);
         }
       }
       // Instructor granted a one-week grace period (2026-10-17): flag from 47% of the semester, not 40%.
