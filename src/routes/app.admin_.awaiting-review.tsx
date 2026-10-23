@@ -3,9 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { decideRequirement } from "@/lib/readiness.functions";
 import type { ReadinessStatus } from "@/lib/readiness";
+import type { AwaitingManager } from "@/lib/awaiting-review";
 import { SubmissionReviewDialog } from "@/components/submission-review-dialog";
+import { ManagerReviewDialog } from "@/components/manager-review-dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { fetchAwaitingReview } from "@/lib/awaiting-review";
@@ -47,6 +50,7 @@ function Page() {
   const [reviewing, setReviewing] = useState<{ teamId: string; teamName: string; key: string } | null>(
     null,
   );
+  const [reviewingManager, setReviewingManager] = useState<AwaitingManager | null>(null);
   const query = useQuery({
     queryKey: ["awaiting-review"],
     queryFn: fetchAwaitingReview,
@@ -63,6 +67,25 @@ function Page() {
       void qc.invalidateQueries({ queryKey: ["awaiting-review"] });
       void qc.invalidateQueries({ queryKey: ["submission-queue"] });
       void qc.invalidateQueries({ queryKey: ["readiness-board"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const decideManager = useMutation({
+    mutationFn: async (v: { id: string; status: "approved" | "rejected"; note?: string }) => {
+      const { error } = await supabase
+        .from("manager_submissions")
+        .update({ status: v.status, admin_notes: v.note ?? null })
+        .eq("id", v.id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      toast.success(
+        v.status === "approved"
+          ? "Approved. The team can proceed with this client."
+          : "Rejected with your note.",
+      );
+      setReviewingManager(null);
+      void qc.invalidateQueries({ queryKey: ["awaiting-review"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -91,6 +114,14 @@ function Page() {
           requirementKey={reviewing.key}
           busy={decide.isPending}
           onDecide={(v) => decide.mutate({ teamId: reviewing.teamId, key: reviewing.key, ...v })}
+        />
+      )}
+      {reviewingManager && (
+        <ManagerReviewDialog
+          item={reviewingManager}
+          busy={decideManager.isPending}
+          onDecide={(v) => decideManager.mutate({ id: reviewingManager.id, ...v })}
+          onOpenChange={(o) => !o && setReviewingManager(null)}
         />
       )}
 
@@ -154,9 +185,9 @@ function Page() {
                 <span className="text-xs text-muted-foreground">
                   waiting {fmtWaiting(m.createdAt)}
                 </span>
-                <Link to="/app/admin" className="text-primary underline text-xs">
-                  Review
-                </Link>
+                <Button size="sm" onClick={() => setReviewingManager(m)}>
+                  Review & decide
+                </Button>
               </div>
             </div>
           ))}
