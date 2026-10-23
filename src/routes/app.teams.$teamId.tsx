@@ -142,6 +142,7 @@ function TeamDetail() {
   const { user, isAdmin } = useAuth();
   const team = data?.team;
   const cf = data?.companyFocus;
+  const peerMap = data?.peerMap ?? new Map<string, PeerScore>();
   const isMember = !!user && (data?.members ?? []).some((m) => m.user_id === user.id);
   const isTeamPM =
     !!user && (data?.members ?? []).some((m) => m.user_id === user.id && m.job_title === "PM");
@@ -247,7 +248,12 @@ function TeamDetail() {
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {members.map((m) => (
-              <MemberCard key={m.id} member={m} teamId={teamId} />
+              <MemberCard
+                key={m.id}
+                member={m}
+                teamId={teamId}
+                peer={peerMap.get(m.user_id)}
+              />
             ))}
           </div>
         )}
