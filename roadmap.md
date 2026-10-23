@@ -1,9 +1,9 @@
 # ClientVault roadmap
 
 ## Current peer-review processing
-- [ ] Evaluate all eligible submitted originals; retain scores, evidence and exact individual emails.
-- [ ] Send each assessment event individually with instructor and PM copies; verify outcomes.
-- [ ] Make retained first-analysis summaries available in Admin and Friday Health Review; provide final score list.
+- [x] Evaluate all eligible submitted originals; retain scores, evidence and exact individual emails (59 scores and 12 complete-original reminders).
+- [ ] Finish 35 pending individual deliveries and instructor/PM copies after the provider retry time, approximately 2026-10-23 02:31:44 UTC. Edwin's student copy is blocked by a bounced mailbox; a corrected address is required. Nothing is scheduled or running after this turn.
+- [x] Make retained first-analysis summaries available in Admin and Friday Health Review; provide final score list.
 
 ## Editable peer-review criteria
 - [x] Save the instructor's collected criteria as an admin-only editable document.

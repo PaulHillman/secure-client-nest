@@ -7,7 +7,7 @@ import { compareConcerns, concernKey, RESEARCH_NOTE, type Comparison, type Obser
 import { subsectionMatches } from "@/lib/vault-structure";
 import { lowEngagementStreak, lowEngagementLevel, isMaterialView, LOW_ENGAGEMENT_START, type Contribution } from "@/lib/low-engagement";
 import { meetingDocumentLinks } from "@/lib/meeting-document-links";
-import { ORIGINAL_PEER_DUE } from './peer-review-policy';
+import { ORIGINAL_PEER_DUE, peerOriginalFiled } from './peer-review-policy';
 
 export type HealthScope = "team" | "section" | "all" | "role";
 
@@ -373,7 +373,7 @@ export async function computeHealthReview(
         const attributedFiles = new Set((peerAssessments ?? []).filter(a => a.team_id === t.teamId && a.file_id).map(a => a.file_id));
         const reviewedBy = new Set([
           ...reviews.filter(f => !attributedFiles.has(f.id)).map(f => f.uploaded_by),
-          ...(peerAssessments ?? []).filter(a => a.team_id === t.teamId && a.file_id && a.status !== 'missing').map(a => a.user_id),
+          ...(peerAssessments ?? []).filter(a => a.team_id === t.teamId && peerOriginalFiled(a.status, a.file_id)).map(a => a.user_id),
         ]);
         if (now <= peerDue) {
           const early = tm.filter((m) => reviewedBy.has(m.user_id));
