@@ -73,7 +73,7 @@ type Member = {
   >;
 };
 
-type PeerScore = { score: number | null; status: string };
+type PeerScore = { score: number | null; status: string; attempt: number };
 
 function initials(name: string) {
   return name
@@ -104,12 +104,12 @@ function TeamDetail() {
         supabase.from("teams").select("*").eq("id", teamId).single(),
         supabase.from("company_focus").select("*").eq("team_id", teamId).maybeSingle(),
         supabase.from("team_members").select("id, job_title, user_id").eq("team_id", teamId),
-        // Original (attempt 1) peer-review scores; RLS limits students to their own row.
+        // Latest peer-review attempt per member; RLS limits students to their own rows.
         supabase
           .from("peer_review_assessments")
-          .select("user_id, score, status")
+          .select("user_id, score, status, attempt")
           .eq("team_id", teamId)
-          .eq("attempt", 1)
+          .order("attempt", { ascending: false })
           .order("created_at", { ascending: false }),
       ]);
       if (tErr) throw tErr;
