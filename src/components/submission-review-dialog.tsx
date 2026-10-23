@@ -66,7 +66,7 @@ export function SubmissionReviewDialog({
           <DialogDescription>
             {teamName}
             {data?.submittedByName ? ` · sent by ${data.submittedByName}` : ""}
-            {when(data?.submittedAt ?? null) ? ` · ${when(data!.submittedAt)}` : ""}
+            {when(data?.submittedAt ?? null) ? ` · ${when(data?.submittedAt ?? null)}` : ""}
           </DialogDescription>
         </DialogHeader>
 
@@ -124,17 +124,26 @@ export function SubmissionReviewDialog({
             )}
 
             <div className="space-y-3">
+              {!data.hasAnswerSheet && (
+                <p className="text-sm text-muted-foreground">
+                  No separate answer sheet was saved with this review request.
+                  {data.currentRecordFields.length > 0 ? " The client details below are from the team’s current saved company information, not the original submission." : ""}
+                </p>
+              )}
               {fields.map((f) => {
                 const value = (data.answers[f.name] ?? "").trim();
                 return (
                   <div key={f.name} className="rounded-lg border p-3">
                     <div className="text-xs font-medium text-muted-foreground">{f.label}</div>
+                    {data.currentRecordFields.includes(f.name) && (
+                      <div className="text-xs text-muted-foreground">Current saved company information</div>
+                    )}
                     <p
                       className={`mt-1 whitespace-pre-wrap text-sm ${
                         value ? "" : "italic text-muted-foreground"
                       }`}
                     >
-                      {value || "Left blank"}
+                      {value || (data.hasAnswerSheet ? "Left blank" : "Not recorded in an answer sheet")}
                     </p>
                   </div>
                 );

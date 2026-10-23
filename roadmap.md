@@ -6,6 +6,7 @@
 - [x] Team page jump menu: "Meeting Times" wording, new "Review Past Meetings" choice opening that team's logged meetings, all choices alphabetized (verified live).
 
 ## Awaiting Review queue
+- [ ] Correct client review blanks using clearly labelled saved company details; verify Profit Pioneers without approving or sending anything.
 - [x] Exclude the C/D/H Consulting fixture team (teams.is_test) from every queue section and count (verified live: 14 → 11 items; regression tests added).
 
 
