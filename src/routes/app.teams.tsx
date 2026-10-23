@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { teamPrimaryName } from "@/lib/team-label";
+import { compareTeamRoles } from "@/lib/team-roles";
 import { getReadinessAssessments } from "@/lib/team-readiness-assessment.functions";
 import { TeamReadinessIndicator, TestFixtureBadge } from "@/components/readiness-status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -76,6 +77,47 @@ function Teams() {
         .eq("user_id", user!.id);
       if (error) throw error;
       return new Set((data ?? []).map((m) => m.team_id));
+    },
+  });
+
+  // Rosters for the team cards. Row-level security limits students to the teams
+  // they belong to, so other teams simply come back with no members.
+  const { data: rosterByTeam } = useQuery({
+    queryKey: ["team-rosters"],
+    queryFn: async () => {
+      const { data: members, error: mErr } = await supabase
+        .from("team_members")
+        .select("team_id, user_id, job_title");
+      if (mErr) throw mErr;
+
+      const userIds = Array.from(new Set((members ?? []).map((m) => m.user_id)));
+      const profileById = new Map<string, ProfileLite>();
+      if (userIds.length) {
+        const { data: profiles, error: pErr } = await supabase
+          .from("profiles")
+          .select("id, name, first_name, last_name, email")
+          .in("id", userIds);
+        if (pErr) throw pErr;
+        (profiles ?? []).forEach((p) => profileById.set(p.id, p));
+      }
+
+      const grouped = new Map<string, RosterMember[]>();
+      (members ?? []).forEach((m) => {
+        const p = profileById.get(m.user_id);
+        const list = grouped.get(m.team_id) ?? [];
+        list.push({
+          userId: m.user_id,
+          name: displayName(p),
+          role: m.job_title ?? "Unassigned",
+        });
+        grouped.set(m.team_id, list);
+      });
+      grouped.forEach((list) =>
+        list.sort(
+          (a, b) => compareTeamRoles(a.role, b.role) || a.name.localeCompare(b.name),
+        ),
+      );
+      return grouped;
     },
   });
 
