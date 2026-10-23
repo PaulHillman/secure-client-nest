@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PmDutiesCard } from "@/components/pm-duties-card";
+import { PmDutiesAdminPanel } from "@/components/pm-duties-admin-panel";
 import { Card, CardContent } from "@/components/ui/card";
 
 export const Route = createFileRoute("/app/milestones")({
@@ -65,15 +66,15 @@ function Page() {
       ) : (
         <Card>
           <CardContent className="py-8 text-sm text-muted-foreground">
-            You are not on a team yet, so there are no milestones to show.
-            {isAdmin && (
+            {isAdmin ? (
               <>
-                {" "}
-                <Link to="/app/admin" className="underline text-primary">
-                  Open Admin → Milestones
-                </Link>{" "}
-                to manage the published list.
+                You are not on a team, so here is the published milestone list you manage.
+                <div className="mt-4 [&>section]:mt-0">
+                  <PmDutiesAdminPanel />
+                </div>
               </>
+            ) : (
+              <>You are not on a team yet, so there are no milestones to show.</>
             )}
           </CardContent>
         </Card>
