@@ -1,0 +1,1 @@
+CREATE POLICY "Students read their own assessment" ON public.peer_review_assessments FOR SELECT TO authenticated USING (auth.uid() = user_id);
