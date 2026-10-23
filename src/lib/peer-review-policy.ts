@@ -5,3 +5,20 @@ export function peerReviewPass(score: number, attempt = 1) { return score >= (at
 export function peerOriginalFiled(status: string, fileId: string | null) {
   return fileId !== null && status !== 'missing' && status !== 'incomplete';
 }
+
+export type PeerBadgeInfo = { score: number | null; status: string; attempt: number };
+
+// After Sunday 11/8 11:59 p.m. ET any latest score below 8 shows red.
+export function peerBadgeLabel(a: PeerBadgeInfo) {
+  if (a.score === null) return a.status === 'missing' ? 'Not submitted' : a.status;
+  return `${a.attempt <= 1 ? 'Original' : 'Updated'} Peer Review ${a.score}/10`;
+}
+
+export function peerBadgeTone(score: number | null, now: Date = new Date()) {
+  if (score === null) return 'bg-muted text-muted-foreground border-border';
+  if (now > new Date(MEETING_PEER_DUE) && score < 8)
+    return 'bg-destructive/15 text-destructive border-destructive/30';
+  if (score >= 7) return 'bg-success/15 text-success border-success/30';
+  if (score >= 4) return 'bg-gold/15 text-gold border-gold/30';
+  return 'bg-destructive/15 text-destructive border-destructive/30';
+}
