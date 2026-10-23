@@ -116,6 +116,14 @@ function Page() {
           onDecide={(v) => decide.mutate({ teamId: reviewing.teamId, key: reviewing.key, ...v })}
         />
       )}
+      {reviewingManager && (
+        <ManagerReviewDialog
+          item={reviewingManager}
+          busy={decideManager.isPending}
+          onDecide={(v) => decideManager.mutate({ id: reviewingManager.id, ...v })}
+          onOpenChange={(o) => !o && setReviewingManager(null)}
+        />
+      )}
 
 
       <Card className="border-border/60">
@@ -177,9 +185,9 @@ function Page() {
                 <span className="text-xs text-muted-foreground">
                   waiting {fmtWaiting(m.createdAt)}
                 </span>
-                <Link to="/app/admin" className="text-primary underline text-xs">
-                  Review
-                </Link>
+                <Button size="sm" onClick={() => setReviewingManager(m)}>
+                  Review & decide
+                </Button>
               </div>
             </div>
           ))}
