@@ -221,7 +221,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
       <CardHeader>
         <CardTitle className="font-display text-2xl flex items-center gap-2">
           <CalendarClock className="h-5 w-5 text-gold" />
-          Weekly Meeting Time
+          Meeting Times
           {allAgreed && (
             <Badge className="ml-2 bg-emerald-600 hover:bg-emerald-600">Consensus reached</Badge>
           )}
