@@ -1,5 +1,8 @@
 # ClientVault roadmap
 
+## File Vault identification
+- [x] Show full uploader names, original/revised peer-review upload labels across separate files, and exact-version scores; verified Isabella Tiseo's revised upload in the live vault at desktop and narrow widths, with six passing tests. History rows also identify uploaders.
+
 ## Teams page
 - [x] Show each team's member first/last names and roles on the Teams page cards (verified as admin; students see only their own team's roster under existing access rules).
 - [x] Remove the retired "No selection rationale recorded" display from the readiness assessment and client detail (verified live; regression test added).
