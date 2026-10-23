@@ -899,9 +899,9 @@ function FileLine({
               if (!assessment) return null;
               const tone = assessment.score === null
                 ? "bg-muted text-muted-foreground border-border"
-                : assessment.score >= 8
+                : assessment.score >= 7
                   ? "bg-success/15 text-success border-success/30"
-                  : assessment.score === 7
+                  : assessment.score >= 4
                     ? "bg-gold/15 text-gold border-gold/30"
                     : "bg-destructive/15 text-destructive border-destructive/30";
               const label = assessment.score !== null
