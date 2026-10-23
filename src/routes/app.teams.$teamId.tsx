@@ -16,6 +16,7 @@ import { TeamAvailabilityCard } from "@/components/team-availability-card";
 import { TeamSkillsMap } from "@/components/team-skills-map";
 import { roleMatches, skillLabel } from "@/lib/student-skills";
 import { Badge } from "@/components/ui/badge";
+import { peerBadgeLabel, peerBadgeTone } from "@/lib/peer-review-policy";
 import type { Database } from "@/integrations/supabase/types";
 
 import { VAULT_ADMIN_ROLE } from "@/components/vault-admin-duties-card";
