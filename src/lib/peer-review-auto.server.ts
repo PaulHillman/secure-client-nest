@@ -134,11 +134,11 @@ export async function autoAssessPeerUpload(versionId: string) {
   const subject = `Your peer-review ${attempt === 1 ? "analysis" : "revision analysis"} — ${student.name} — ${score}/10`;
   const send = async (copy: "student" | "instructor" | "pm", to: string | null) => {
     const col = `${copy}_email_status` as const;
-    if (!to) { await db.from("peer_review_assessments").update({ [col]: "failed" }).eq("id", row.id); return; }
+    if (!to) { await db.from("peer_review_assessments").update(({ [col]: "failed" } as any)).eq("id", row.id); return; }
     try {
       const r = await sendTemplateEmail("peer-review-analysis", to, { templateData: { name: student.name, body, subject: copy === "student" ? subject : `Copy: ${subject}` }, replyTo: INSTRUCTOR_EMAIL, idempotencyKey: `peer-analysis-${row.id}-${copy}-${to.toLowerCase()}` });
-      await db.from("peer_review_assessments").update({ [col]: r.sent ? "sent" : "suppressed" }).eq("id", row.id);
-    } catch { await db.from("peer_review_assessments").update({ [col]: "pending" }).eq("id", row.id); }
+      await db.from("peer_review_assessments").update(({ [col]: r.sent ? "sent" : "suppressed" } as any)).eq("id", row.id);
+    } catch { await db.from("peer_review_assessments").update(({ [col]: "pending" } as any)).eq("id", row.id); }
   };
   await send("student", student.email);
   await send("instructor", INSTRUCTOR_EMAIL);
