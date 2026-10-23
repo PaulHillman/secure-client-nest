@@ -28,6 +28,7 @@ import { PeerReviewCriteriaReminder } from "@/components/peer-review-criteria-re
 
 
 import { ProofsAdminCard } from "@/components/proofs-admin-card";
+import { AwaitingReviewCard } from "@/components/awaiting-review-card";
 
 
 
@@ -213,6 +214,12 @@ function Dashboard() {
         <div className="mb-6 rounded-lg border border-gold/60 bg-card p-4 text-sm">
           <strong>Reminder:</strong> it's been a few weeks of student usage data — time to review the UI and workflow.{" "}
           <Link to="/app/admin/usage" className="underline text-primary">Open Student Usage</Link>
+        </div>
+      )}
+
+      {isAdmin && (
+        <div className="mb-6">
+          <AwaitingReviewCard />
         </div>
       )}
 
