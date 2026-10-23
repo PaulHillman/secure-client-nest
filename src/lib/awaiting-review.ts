@@ -125,6 +125,9 @@ export function assembleAwaitingReview(input: {
       teamName: teamName.get(m.team_id) ?? "Unknown team",
       managerName: `${m.manager_first_name ?? ""} ${m.manager_last_name ?? ""}`.trim(),
       companyName: m.company_name ?? "",
+      companyWebsite: m.company_website ?? null,
+      industry: m.industry ?? null,
+      numEmployees: m.num_employees ?? null,
       createdAt: m.created_at,
     }));
   const peerDecisions: AwaitingPeerDecision[] = peerAssessments
@@ -157,7 +160,9 @@ export async function fetchAwaitingReview(): Promise<AwaitingReview> {
       .order("submitted_at", { ascending: true }),
     supabase
       .from("manager_submissions")
-      .select("id, team_id, manager_first_name, manager_last_name, company_name, created_at")
+      .select(
+        "id, team_id, manager_first_name, manager_last_name, company_name, company_website, industry, num_employees, created_at",
+      )
       .eq("status", "pending")
       .order("created_at", { ascending: true }),
     // Third attempt still below 8 — requires the instructor meeting decision.
