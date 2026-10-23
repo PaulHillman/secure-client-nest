@@ -1,6 +1,6 @@
 import { StudentAvatar, StudentName } from "@/components/student-avatar";
 import { teamLabel } from "@/lib/team-label";
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Navigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
@@ -41,7 +41,7 @@ import { ReadinessBoardCard } from "@/components/readiness-board-card";
 import { EmailLogCard } from "@/components/email-log-card";
 
 export const Route = createFileRoute("/app/admin")({
-  head: () => ({ meta: [{ title: "Admin — ClientVault" }] }),
+  head: () => ({ meta: [{ title: "Admin — ClientVault" }, { name: "description", content: "Manage ClientVault students, teams, templates and instructor evaluation criteria." }, { property: "og:title", content: "Admin — ClientVault" }, { property: "og:description", content: "Instructor administration and evaluation criteria for ClientVault." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: Admin,
 });
 
@@ -68,6 +68,8 @@ function Admin() {
           Manage users, teams, and roster assignments.
         </p>
       </header>
+
+      <Button asChild variant="outline" className="mb-6"><Link to="/app/admin/peer-review-criteria"><FileStack className="h-4 w-4 mr-2" />Peer Review Evaluation Criteria</Link></Button>
 
       <Tabs defaultValue="users">
         <TabsList>

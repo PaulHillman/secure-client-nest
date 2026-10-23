@@ -33,7 +33,7 @@ import {
 } from "@/lib/team-label";
 
 export const Route = createFileRoute("/app/vault-overview")({
-  head: () => ({ meta: [{ title: "Vault Overview — ClientVault" }] }),
+  head: () => ({ meta: [{ title: "Vault Overview — ClientVault" }, { name: "description", content: "Instructor overview of team files and outstanding document reviews." }, { property: "og:title", content: "Vault Overview — ClientVault" }, { property: "og:description", content: "Review team documents and file status across ClientVault." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: VaultOverview,
 });
 

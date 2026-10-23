@@ -24,6 +24,7 @@ import { Route as AppTeamsRouteImport } from './routes/app.teams'
 import { Route as AppVaultRouteImport } from './routes/app.vault'
 import { Route as AppVaultOverviewRouteImport } from './routes/app.vault-overview'
 import { Route as ApiPublicFileDownloadRouteImport } from './routes/api/public/file-download'
+import { Route as AppAdminPeerReviewCriteriaRouteImport } from './routes/app.admin_.peer-review-criteria'
 import { Route as AppAdminUsageRouteImport } from './routes/app.admin_.usage'
 import { Route as AppTeamsTeamIdRouteImport } from './routes/app.teams.$teamId'
 import { Route as ApiPublicHooksAutoArchiveRouteImport } from './routes/api/public/hooks/auto-archive'
@@ -108,6 +109,12 @@ const ApiPublicFileDownloadRoute = ApiPublicFileDownloadRouteImport.update({
   path: '/api/public/file-download',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppAdminPeerReviewCriteriaRoute =
+  AppAdminPeerReviewCriteriaRouteImport.update({
+    id: '/admin_/peer-review-criteria',
+    path: '/admin/peer-review-criteria',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppAdminUsageRoute = AppAdminUsageRouteImport.update({
   id: '/admin_/usage',
   path: '/admin/usage',
@@ -171,6 +178,7 @@ export interface FileRoutesByFullPath {
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
   '/api/public/file-download': typeof ApiPublicFileDownloadRoute
+  '/app/admin/peer-review-criteria': typeof AppAdminPeerReviewCriteriaRoute
   '/app/admin/usage': typeof AppAdminUsageRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
@@ -196,6 +204,7 @@ export interface FileRoutesByTo {
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
   '/api/public/file-download': typeof ApiPublicFileDownloadRoute
+  '/app/admin/peer-review-criteria': typeof AppAdminPeerReviewCriteriaRoute
   '/app/admin/usage': typeof AppAdminUsageRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
@@ -222,6 +231,7 @@ export interface FileRoutesById {
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
   '/api/public/file-download': typeof ApiPublicFileDownloadRoute
+  '/app/admin_/peer-review-criteria': typeof AppAdminPeerReviewCriteriaRoute
   '/app/admin_/usage': typeof AppAdminUsageRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
     | '/app/vault'
     | '/app/vault-overview'
     | '/api/public/file-download'
+    | '/app/admin/peer-review-criteria'
     | '/app/admin/usage'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/app/vault'
     | '/app/vault-overview'
     | '/api/public/file-download'
+    | '/app/admin/peer-review-criteria'
     | '/app/admin/usage'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
@@ -299,6 +311,7 @@ export interface FileRouteTypes {
     | '/app/vault'
     | '/app/vault-overview'
     | '/api/public/file-download'
+    | '/app/admin_/peer-review-criteria'
     | '/app/admin_/usage'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
@@ -428,6 +441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFileDownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/admin_/peer-review-criteria': {
+      id: '/app/admin_/peer-review-criteria'
+      path: '/admin/peer-review-criteria'
+      fullPath: '/app/admin/peer-review-criteria'
+      preLoaderRoute: typeof AppAdminPeerReviewCriteriaRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/admin_/usage': {
       id: '/app/admin_/usage'
       path: '/admin/usage'
@@ -510,6 +530,7 @@ interface AppRouteChildren {
   AppTeamsRoute: typeof AppTeamsRouteWithChildren
   AppVaultRoute: typeof AppVaultRoute
   AppVaultOverviewRoute: typeof AppVaultOverviewRoute
+  AppAdminPeerReviewCriteriaRoute: typeof AppAdminPeerReviewCriteriaRoute
   AppAdminUsageRoute: typeof AppAdminUsageRoute
   AppAdminTeamReadinessTeamIdRoute: typeof AppAdminTeamReadinessTeamIdRoute
   AppAdminTeamReadinessIndexRoute: typeof AppAdminTeamReadinessIndexRoute
@@ -526,6 +547,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTeamsRoute: AppTeamsRouteWithChildren,
   AppVaultRoute: AppVaultRoute,
   AppVaultOverviewRoute: AppVaultOverviewRoute,
+  AppAdminPeerReviewCriteriaRoute: AppAdminPeerReviewCriteriaRoute,
   AppAdminUsageRoute: AppAdminUsageRoute,
   AppAdminTeamReadinessTeamIdRoute: AppAdminTeamReadinessTeamIdRoute,
   AppAdminTeamReadinessIndexRoute: AppAdminTeamReadinessIndexRoute,

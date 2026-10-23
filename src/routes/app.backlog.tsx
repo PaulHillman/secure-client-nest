@@ -15,6 +15,7 @@ import { Plus, Trash2, ClipboardList, ArrowRight, ArrowLeft, Play, CheckCircle2,
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/backlog")({
+  head: () => ({ meta: [{ title: "Work List — ClientVault Admin" }, { name: "description", content: "Instructor work list for ClientVault tasks and priorities." }, { property: "og:title", content: "Work List — ClientVault Admin" }, { property: "og:description", content: "Track instructor tasks and priorities in ClientVault." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: BacklogPage,
 });
 
