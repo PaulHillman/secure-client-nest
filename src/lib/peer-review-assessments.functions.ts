@@ -47,7 +47,8 @@ export const sendPeerReviewAssessment = createServerFn({ method: 'POST' })
     const subject = assessment.status === 'missing' ? `Peer review due Sunday — ${student.name}` : assessment.score === null ? `Peer-review reading check — ${student.name}` : `Your peer-review analysis — ${student.name} — ${assessment.score}/10`;
     const result = await sendTemplateEmail('peer-review-analysis', recipient, { templateData: { name: student.name, body: assessment.email_body, subject: data.copy === 'student' ? subject : `Copy: ${subject}` }, replyTo: 'hillmanp@gvsu.edu', idempotencyKey: `peer-analysis-${assessment.id}-${data.copy}` });
     const status = result.sent ? 'sent' : 'suppressed';
-    const { error: saveError } = await context.supabase.from('peer_review_assessments').update({ [column]: status }).eq('id', data.id);
+    const update = data.copy === 'student' ? { student_email_status: status } : data.copy === 'instructor' ? { instructor_email_status: status } : { pm_email_status: status };
+    const { error: saveError } = await context.supabase.from('peer_review_assessments').update(update).eq('id', data.id);
     if (saveError) throw saveError;
     return { status };
   });
