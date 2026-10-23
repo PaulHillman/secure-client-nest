@@ -68,6 +68,7 @@ import {
 import { safeStorageFileName } from "@/lib/storage-path";
 import { compareTeamRoles } from "@/lib/team-roles";
 import { finalCompiledName, isFinalCompiled } from "@/lib/vault-file-label";
+import { peerUploadSequence } from "@/lib/vault-upload-identity";
 
 type FileRow = {
   id: string;
@@ -205,7 +206,7 @@ export function FileVault({
           // Peer-review scores per file; RLS limits students to their own rows.
           supabase
             .from("peer_review_assessments")
-            .select("file_id, score, status, attempt")
+            .select("file_id, version_id, score, status, attempt")
             .eq("team_id", teamId),
         ]);
       if (fErr) throw fErr;
@@ -218,9 +219,20 @@ export function FileVault({
       });
       const peerMap = new Map<string, PeerScore>();
       (assessments ?? []).forEach((a) => {
-        if (a.file_id) peerMap.set(a.file_id, { score: a.score, status: a.status, attempt: a.attempt });
+        if (a.version_id) peerMap.set(a.version_id, { score: a.score, status: a.status, attempt: a.attempt });
       });
-      return { files: (files ?? []) as FileRow[], verMap, members, peerMap };
+      const uploaderIds = Array.from(new Set([
+        ...(files ?? []).map((f) => f.uploaded_by),
+        ...(files ?? []).flatMap((f) => (verMap.get(f.id) ?? []).map((v) => v.uploaded_by)),
+      ]));
+      const { data: uploaders, error: uploaderError } = uploaderIds.length
+        ? await supabase.from("profiles").select("id, first_name, last_name, name").in("id", uploaderIds)
+        : { data: [], error: null };
+      if (uploaderError) throw uploaderError;
+      const uploaderNames = new Map((uploaders ?? []).map((p) => [p.id,
+        [p.first_name, p.last_name].filter(Boolean).join(" ").trim() || p.name]));
+      const peerSequence = peerUploadSequence((files ?? []) as FileRow[], versions ?? []);
+      return { files: (files ?? []) as FileRow[], verMap, members, peerMap, uploaderNames, peerSequence };
     },
   });
 
@@ -228,6 +240,8 @@ export function FileVault({
   const verMap = data?.verMap ?? new Map<string, VersionRow[]>();
   const members = data?.members ?? [];
   const peerMap = data?.peerMap ?? new Map<string, PeerScore>();
+  const uploaderNames = data?.uploaderNames ?? new Map<string, string>();
+  const peerSequence = data?.peerSequence ?? new Map<string, number>();
 
   // Group files: section -> subsection -> FileRow[]
   const grouped = useMemo(() => {
@@ -366,6 +380,8 @@ export function FileVault({
                 members={members}
                 verMap={verMap}
                 peerMap={peerMap}
+                uploaderNames={uploaderNames}
+                peerSequence={peerSequence}
                 isAdmin={isAdmin}
                 userId={user?.id}
                 onDownload={download}
@@ -424,6 +440,8 @@ export function FileVault({
                     members={members}
                     verMap={verMap}
                     peerMap={peerMap}
+                uploaderNames={uploaderNames}
+                peerSequence={peerSequence}
                     isAdmin={isAdmin}
                     userId={user?.id}
                     onDownload={download}
@@ -485,6 +503,8 @@ function SubsectionBlock({
   members,
   verMap,
   peerMap,
+  uploaderNames,
+  peerSequence,
   isAdmin,
   userId,
   onDownload,
@@ -503,6 +523,8 @@ function SubsectionBlock({
   members: MemberRow[];
   verMap: Map<string, VersionRow[]>;
   peerMap: Map<string, PeerScore>;
+  uploaderNames: Map<string, string>;
+  peerSequence: Map<string, number>;
   isAdmin: boolean;
   userId?: string;
   onDownload: (versionId: string | null, fileName: string) => void;
@@ -537,7 +559,7 @@ function SubsectionBlock({
   }
 
   const commonProps = {
-    verMap, peerMap, isAdmin, userId,
+    verMap, peerMap, uploaderNames, peerSequence, isAdmin, userId,
     onDownload, onDelete, onSetStatus, onOpenComments, onRefresh,
   };
 
@@ -744,6 +766,8 @@ function GroupNormsReadOnly({ teamId }: { teamId: string }) {
 type RowCommonProps = {
   verMap: Map<string, VersionRow[]>;
   peerMap: Map<string, PeerScore>;
+  uploaderNames: Map<string, string>;
+  peerSequence: Map<string, number>;
   isAdmin: boolean;
   userId?: string;
   onDownload: (versionId: string | null, fileName: string) => void;
@@ -758,6 +782,8 @@ function SlotRow({
   files,
   verMap,
   peerMap,
+  uploaderNames,
+  peerSequence,
   isAdmin,
   userId,
   onDownload,
@@ -781,6 +807,8 @@ function SlotRow({
               canManage={isAdmin || (f.uploaded_by === userId && !f.is_locked)}
               verMap={verMap}
               peerMap={peerMap}
+                uploaderNames={uploaderNames}
+                peerSequence={peerSequence}
               isAdmin={isAdmin}
               userId={userId}
               onDownload={onDownload}
@@ -840,6 +868,8 @@ function FileLine({
   isAdmin,
   userId,
   peerMap,
+  uploaderNames,
+  peerSequence,
   showMeetingDate,
   onDownload,
   onDelete,
@@ -854,6 +884,13 @@ function FileLine({
 } & RowCommonProps) {
   const current = versions.find((v) => v.id === file.current_version_id) ?? versions[0];
   const [viewerOpen, setViewerOpen] = useState(false);
+  const isPeerReview = file.subsection === "Mid-Semester Peer Reviews";
+  const uploadNumber = current ? peerSequence.get(current.id) : undefined;
+  const assessment = current ? peerMap.get(current.id) : undefined;
+  const uploaderName = uploaderNames.get(current?.uploaded_by ?? file.uploaded_by) ?? "Name unavailable";
+  const assignedName = file.assigned_to
+    ? uploaderNames.get(file.assigned_to)
+    : undefined;
 
   const handleStatusChange = (v: string) => {
     const next = v as VaultStatus;
@@ -882,9 +919,13 @@ function FileLine({
             </div>
           )}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-medium text-sm truncate">{file.file_name}</span>
+            <span className="font-medium text-sm break-words min-w-0">{file.file_name}</span>
             {current && (
-              <Badge variant="outline" className="text-[10px]">v{current.version_number}</Badge>
+              <Badge variant="outline" className="text-[10px]">
+                {isPeerReview
+                  ? uploadNumber === 1 ? "Original Peer Review" : uploadNumber ? `Revised Peer Review · Upload ${uploadNumber}` : "Peer Review · Order unverified"
+                  : current.version_number === 1 ? "Original · v1" : `Revised · v${current.version_number}`}
+              </Badge>
             )}
             {file.is_locked && (
               <Badge variant="outline" className="text-[10px] bg-gold/15 text-gold border-gold/30">
@@ -895,7 +936,6 @@ function FileLine({
               {file.status}
             </Badge>
             {(() => {
-              const assessment = peerMap.get(file.id);
               if (!assessment) return null;
               return (
                 <Badge
@@ -907,11 +947,20 @@ function FileLine({
               );
             })()}
           </div>
+          <div className="text-xs font-medium mt-1 break-words">
+            Uploaded by {uploaderName}
+            {assignedName && file.assigned_to !== (current?.uploaded_by ?? file.uploaded_by) && (
+              <span className="text-muted-foreground"> · For {assignedName}</span>
+            )}
+          </div>
+          {isPeerReview && !assessment && (
+            <p className="text-xs text-muted-foreground mt-0.5">No assessment recorded for this upload.</p>
+          )}
           {file.description && (
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{file.description}</p>
           )}
           <div className="text-[11px] text-muted-foreground mt-0.5">
-            {fmtSize(current?.file_size)} · Updated {new Date(file.updated_at).toLocaleDateString()}
+            {fmtSize(current?.file_size)} · Uploaded {new Date(current?.uploaded_at ?? file.created_at).toLocaleDateString()}
           </div>
         </div>
         <div className="flex items-center gap-0.5 shrink-0">
@@ -955,7 +1004,7 @@ function FileLine({
             <Download className="h-4 w-4" />
           </Button>
           {versions.length > 1 && (
-            <VersionHistoryDialog file={file} versions={versions} onDownload={onDownload} />
+            <VersionHistoryDialog file={file} versions={versions} uploaderNames={uploaderNames} peerSequence={peerSequence} onDownload={onDownload} />
           )}
           {canManage && userId && (
             <NewVersionButton file={file} userId={userId} versions={versions} onDone={onRefresh} />
@@ -1052,10 +1101,12 @@ function FileDetailsEditor({ file, onDone }: { file: FileRow; onDone: () => void
 }
 
 function VersionHistoryDialog({
-  file, versions, onDownload,
+  file, versions, uploaderNames, peerSequence, onDownload,
 }: {
   file: FileRow;
   versions: VersionRow[];
+  uploaderNames: Map<string, string>;
+  peerSequence: Map<string, number>;
   onDownload: (versionId: string | null, fileName: string) => void;
 }) {
   return (
@@ -1075,13 +1126,16 @@ function VersionHistoryDialog({
             <div key={v.id} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
               <div>
                 <div className="font-medium">
-                  v{v.version_number}
+                  {file.subsection === "Mid-Semester Peer Reviews"
+                    ? peerSequence.get(v.id) === 1 ? "Original Peer Review" : `Revised Peer Review · Upload ${peerSequence.get(v.id) ?? "?"}`
+                    : v.version_number === 1 ? "Original · v1" : `Revised · v${v.version_number}`}
                   {v.id === file.current_version_id && (
                     <Badge variant="secondary" className="ml-2 text-[10px]">current</Badge>
                   )}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {new Date(v.uploaded_at).toLocaleString()} · {fmtSize(v.file_size)}
+                  Uploaded by {uploaderNames.get(v.uploaded_by) ?? "Name unavailable"}
+                  <br />{new Date(v.uploaded_at).toLocaleString()} · {fmtSize(v.file_size)}
                 </div>
               </div>
               <Button size="sm" variant="outline" onClick={() => onDownload(v.id, file.file_name)}>
