@@ -2,7 +2,8 @@ import { createFileRoute, Outlet, Link, Navigate, useRouterState } from "@tansta
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, Users, FolderLock, LogOut, FolderOpen, ClipboardList, ListTodo, CalendarCheck, Trophy, GaugeCircle, BarChart3, HeartPulse } from "lucide-react";
+import { LayoutDashboard, Users, FolderLock, LogOut, FolderOpen, ClipboardList, ListTodo, CalendarCheck, Trophy, GaugeCircle, BarChart3, HeartPulse, Inbox } from "lucide-react";
+import { fetchAwaitingReview } from "@/lib/awaiting-review";
 import { Button } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/notifications-bell";
 import logoAsset from "@/assets/clientvault-safe.png.asset.json";
@@ -31,6 +32,14 @@ function AppLayout() {
     },
   });
 
+  const { data: awaiting } = useQuery({
+    queryKey: ["awaiting-review"],
+    queryFn: fetchAwaitingReview,
+    enabled: !!user && isAdmin,
+    refetchInterval: 60_000,
+  });
+  const awaitingCount = awaiting?.total ?? 0;
+
   if (loading) return null;
   if (!user) return <Navigate to="/login" />;
 
@@ -42,6 +51,7 @@ function AppLayout() {
     { to: "/app/competitions", label: "Competitions", icon: Trophy },
     ...(isAdmin
       ? [
+          { to: "/app/admin/awaiting-review", label: "Awaiting Review", icon: Inbox, badge: awaitingCount },
           { to: "/app/health-review", label: "Team Health Review", icon: HeartPulse },
           { to: "/app/admin/team-readiness", label: "Team Readiness Assessment", icon: GaugeCircle },
           { to: "/app/admin/usage", label: "Student Usage", icon: BarChart3 },
@@ -71,6 +81,11 @@ function AppLayout() {
                   active ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                 }`}>
                 <n.icon className="h-4 w-4" />{n.label}
+                {"badge" in n && typeof n.badge === "number" && n.badge > 0 && (
+                  <span className="ml-auto rounded-full bg-destructive/15 text-destructive text-xs px-2 py-0.5">
+                    {n.badge}
+                  </span>
+                )}
               </Link>
             );
           })}
