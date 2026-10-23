@@ -344,7 +344,6 @@ export function TeamReadinessReport({ a }: { a: TeamAssessment }) {
               <Field label="Proposal status" value={a.client.proposalStatus} />
               <Field label="Professor decision" value={a.client.professorDecision} />
             </dl>
-            <Field label="Selection rationale" value={a.client.rationale} />
             {a.client.locationVerdict === "outside" && (
               <p className="text-sm text-amber-400">
                 This location reads as outside {WEST_MICHIGAN.label}. Warning only — it does not by

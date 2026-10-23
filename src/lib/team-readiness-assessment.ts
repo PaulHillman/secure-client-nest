@@ -673,7 +673,8 @@ export function assessTeam(input: AssessmentInput): TeamAssessment {
       );
     }
     if (!client.industry) add(warnings, "no_industry", "Client industry was not provided");
-    if (!rationale) add(warnings, "no_rationale", "No selection rationale recorded");
+    // Retired at the instructor's request: teams were never briefed on where to
+    // record a client selection rationale, so its absence is never reported.
   }
 
   /* --------------------------------- norms -------------------------------- */
