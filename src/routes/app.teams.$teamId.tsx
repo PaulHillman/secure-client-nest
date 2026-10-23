@@ -337,7 +337,7 @@ function TeamDetail() {
         />
       </div>
 
-      {isMember && (
+      {(isMember || isAdmin) && (
         !isAdmin ? (
           <DashboardSection
             id="pm-duties"
