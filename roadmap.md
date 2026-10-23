@@ -3,6 +3,8 @@
 ## Teams page
 - [x] Show each team's member first/last names and roles on the Teams page cards (verified as admin; students see only their own team's roster under existing access rules).
 - [x] Remove the retired "No selection rationale recorded" display from the readiness assessment and client detail (verified live; regression test added).
+- [x] Team page jump menu: "Meeting Times" wording, new "Review Past Meetings" choice opening that team's logged meetings, all choices alphabetized (verified live).
+
 
 
 ## Current peer-review processing

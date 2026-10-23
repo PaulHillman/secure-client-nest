@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -179,45 +179,107 @@ function TeamDetail() {
       <nav aria-label="Jump to team section" className="mt-5 border-y border-border/60 py-3">
         <div className="mb-2 text-xs font-semibold uppercase text-muted-foreground">Jump to</div>
         <div className="flex flex-wrap gap-2">
-          <JumpLink target="team-members">Team members</JumpLink>
-          <JumpLink target="client-focus">Client</JumpLink>
-          <JumpLink target="project-arch">Project arch</JumpLink>
-          <JumpLink
-            target="team-readiness"
-            onNavigate={!isAdmin ? () => setSectionOpen("team-readiness", true) : undefined}
-          >
-            Team readiness
-          </JumpLink>
-          {isMember && (
-            <JumpLink
-              target="pm-duties"
-              onNavigate={!isAdmin ? () => setSectionOpen("pm-duties", true) : undefined}
-            >
-              PM duties
-            </JumpLink>
-          )}
-          {isMember && <JumpLink target="your-role">Your role</JumpLink>}
-          {canAssignRoles && members.length > 0 && (
-            <JumpLink target="assign-roles" onNavigate={() => setSectionOpen("assign-roles", true)}>
-              Assign roles
-            </JumpLink>
-          )}
-          {isMember && user && (
-            <JumpLink
-              target="role-practice"
-              onNavigate={!isAdmin ? () => setSectionOpen("role-practice", true) : undefined}
-            >
-              Role practice
-            </JumpLink>
-          )}
-          <JumpLink target="team-skills">Skills</JumpLink>
-          <JumpLink target="team-availability">Availability</JumpLink>
-          <JumpLink target="meeting-time" onNavigate={() => setSectionOpen("meeting-time", true)}>
-            Weekly meeting
-          </JumpLink>
-          <JumpLink target="group-norms" onNavigate={() => setSectionOpen("group-norms", true)}>
-            Group Norms
-          </JumpLink>
+          {(
+            [
+              { label: "Team members", node: <JumpLink target="team-members">Team members</JumpLink> },
+              { label: "Client", node: <JumpLink target="client-focus">Client</JumpLink> },
+              {
+                label: "Project arch",
+                node: <JumpLink target="project-arch">Project arch</JumpLink>,
+              },
+              {
+                label: "Team readiness",
+                node: (
+                  <JumpLink
+                    target="team-readiness"
+                    onNavigate={!isAdmin ? () => setSectionOpen("team-readiness", true) : undefined}
+                  >
+                    Team readiness
+                  </JumpLink>
+                ),
+              },
+              ...(isMember
+                ? [
+                    {
+                      label: "PM duties",
+                      node: (
+                        <JumpLink
+                          target="pm-duties"
+                          onNavigate={!isAdmin ? () => setSectionOpen("pm-duties", true) : undefined}
+                        >
+                          PM duties
+                        </JumpLink>
+                      ),
+                    },
+                    { label: "Your role", node: <JumpLink target="your-role">Your role</JumpLink> },
+                  ]
+                : []),
+              ...(canAssignRoles && members.length > 0
+                ? [
+                    {
+                      label: "Assign roles",
+                      node: (
+                        <JumpLink
+                          target="assign-roles"
+                          onNavigate={() => setSectionOpen("assign-roles", true)}
+                        >
+                          Assign roles
+                        </JumpLink>
+                      ),
+                    },
+                  ]
+                : []),
+              ...(isMember && user
+                ? [
+                    {
+                      label: "Role practice",
+                      node: (
+                        <JumpLink
+                          target="role-practice"
+                          onNavigate={!isAdmin ? () => setSectionOpen("role-practice", true) : undefined}
+                        >
+                          Role practice
+                        </JumpLink>
+                      ),
+                    },
+                  ]
+                : []),
+              { label: "Availability", node: <JumpLink target="team-availability">Availability</JumpLink> },
+              { label: "Skills", node: <JumpLink target="team-skills">Skills</JumpLink> },
+              {
+                label: "Meeting Times",
+                node: (
+                  <JumpLink target="meeting-time" onNavigate={() => setSectionOpen("meeting-time", true)}>
+                    Meeting Times
+                  </JumpLink>
+                ),
+              },
+              {
+                label: "Review Past Meetings",
+                node: (
+                  <Button asChild variant="outline" size="sm">
+                    <Link to="/app/meetings" search={{ team: teamId }}>
+                      Review Past Meetings
+                    </Link>
+                  </Button>
+                ),
+              },
+              {
+                label: "Group Norms",
+                node: (
+                  <JumpLink target="group-norms" onNavigate={() => setSectionOpen("group-norms", true)}>
+                    Group Norms
+                  </JumpLink>
+                ),
+              },
+            ] as { label: string; node: ReactNode }[]
+          )
+            .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }))
+            .map((item) => (
+              <span key={item.label} className="contents">
+                {item.node}
+              </span>
+            ))}
         </div>
       </nav>
 
