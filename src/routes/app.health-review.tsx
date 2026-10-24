@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { PeerReviewCriteriaReminder } from "@/components/peer-review-criteria-reminder";
+import { HealthReviewGuideReminder } from "@/components/health-review-guide-reminder";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { compareTeamsBySectionThenNumber, teamLineLabel } from "@/lib/team-label";
@@ -167,6 +168,7 @@ function HealthReviewPage() {
         </p>
       </header>
 
+      <HealthReviewGuideReminder />
       <PeerReviewCriteriaReminder />
 
       <Card className="border-border/60">
