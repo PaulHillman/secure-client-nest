@@ -134,6 +134,13 @@
       "when": 1792862462296,
       "tag": "0018_health_review_editable_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792864787027,
+      "tag": "0019_health_review_disabled_checks",
+      "breakpoints": true
     }
   ]
 }
