@@ -32,7 +32,7 @@ function GuidePage() {
   if (!isAdmin) return <Navigate to="/app/dashboard" />;
   return <div className="p-4 sm:p-8 max-w-6xl mx-auto">
     <h1 className="font-display text-3xl mb-2">Weekly Health Check Review</h1>
-    <p className="text-sm text-muted-foreground mb-4">What the <Link to="/app/health-review" className="text-primary underline">Team Health Review</Link> checks this week. Editing here documents the rules; it does not change the checks themselves.</p>
+    <p className="text-sm text-muted-foreground mb-4">What the <Link to="/app/health-review" search={{ report: undefined }} className="text-primary underline">Team Health Review</Link> checks this week. Editing here documents the rules; it does not change the checks themselves.</p>
     {error && <p role="alert" className="text-destructive">{error.message}</p>}
     {data ? <GuideEditor key={data.updated_at} document={data} /> : !error && <p>Loading…</p>}
   </div>;
