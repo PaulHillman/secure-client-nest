@@ -1136,6 +1136,7 @@ export type Database = {
           activity_window_days: number
           comms_expected_files: number
           comms_grace_weeks: number
+          disabled_checks: string[]
           escalate_grade_after: number
           escalate_red_after: number
           id: string
@@ -1159,6 +1160,7 @@ export type Database = {
           activity_window_days?: number
           comms_expected_files?: number
           comms_grace_weeks?: number
+          disabled_checks?: string[]
           escalate_grade_after?: number
           escalate_red_after?: number
           id: string
@@ -1182,6 +1184,7 @@ export type Database = {
           activity_window_days?: number
           comms_expected_files?: number
           comms_grace_weeks?: number
+          disabled_checks?: string[]
           escalate_grade_after?: number
           escalate_red_after?: number
           id?: string

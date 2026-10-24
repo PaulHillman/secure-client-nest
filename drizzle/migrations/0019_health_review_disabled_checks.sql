@@ -1,0 +1,1 @@
+ALTER TABLE public.health_review_rules ADD COLUMN IF NOT EXISTS disabled_checks text[] NOT NULL DEFAULT '{}';
