@@ -7,6 +7,7 @@ import { getHealthReviewGuide, saveHealthReviewGuide } from '@/lib/health-review
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { HealthReviewRulesEditor } from '@/components/health-review-rules-editor';
 import { Save, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
