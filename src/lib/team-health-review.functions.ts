@@ -9,6 +9,7 @@ import { lowEngagementStreak, lowEngagementLevel, isMaterialView, type Contribut
 import { meetingDocumentLinks } from "@/lib/meeting-document-links";
 import { ORIGINAL_PEER_DUE, peerOriginalFiled } from './peer-review-policy';
 import { RULES_ROW_ID, resolveHealthReviewRules, lowEngagementStartMs } from './health-review-rules';
+import { effectiveDisabled, checkLabel } from './health-check-switches';
 
 export type HealthScope = "team" | "section" | "all" | "role";
 
@@ -58,7 +59,7 @@ const PARFUNKEL = /parfunkel/i;
 /** Read-only: runs the five Team Health checks and returns exceptions only. */
 export const runTeamHealthReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { scope: HealthScope; teamId?: string; section?: string; role?: string }) => {
+  .inputValidator((i: { scope: HealthScope; teamId?: string; section?: string; role?: string; skipChecks?: string[] }) => {
     if (!["team", "section", "all", "role"].includes(i?.scope)) throw new Error("Bad scope");
     if (i.scope === "team" && !i.teamId) throw new Error("Choose a team.");
     if (i.scope === "section" && !i.section) throw new Error("Choose a section.");
@@ -84,6 +85,8 @@ export async function computeHealthReview(
     // A missing or half-filled row falls back to the documented defaults, never to a looser check.
     const { data: rulesRow } = await db.from("health_review_rules").select("*").eq("id", RULES_ROW_ID).maybeSingle();
     const rules = resolveHealthReviewRules(rulesRow);
+    // Checks switched off in settings (every run) or just for this run.
+    const checksOff = effectiveDisabled((rulesRow as { disabled_checks?: unknown } | null)?.disabled_checks, data.skipChecks);
 
     const { assessments, generatedAt } = await buildAssessments(data.scope === "team" ? data.teamId : undefined);
     let teams = assessments.filter((a) => data.scope === "team" || !a.isTest);
@@ -175,6 +178,7 @@ export async function computeHealthReview(
     for (const t of sorted) {
       const label = teamLineLabel({ name: t.teamRecordName, display_name: t.teamName !== t.teamRecordName ? t.teamName : null, section: t.section });
       const push = (check: HealthCheck, level: "red" | "yellow", reason: string, person: string | null = null, role: string | null = null, userId: string | null = null, ruleId?: string) => {
+        if (ruleId && checksOff.has(ruleId)) return;
         const inferred = concernKey({ check, level, reason, person, userId });
         const rulePattern = check === "vault" ? /^(Minutes|Agendas|Mid-Semester Peer Reviews|Peer review|No Interview Questions|No Video files|Video Final Submission|Client Communications)/.exec(reason)?.[1]
           : check === "meetings" ? /^(Last meeting logged|\d+ of \d+ logged meeting|Missed \d{4}-\d{2}-\d{2} meeting)/.exec(reason)?.[0].replace(/^\d+ of \d+ logged meeting$/, "missing_minutes")
@@ -184,9 +188,10 @@ export async function computeHealthReview(
       };
       const observations: Observation[] = [];
       observationsByTeam.set(t.teamId, observations);
-      const observe = (ruleId: string, evidence: string, remaining = 0, verified = true) => observations.push({ ruleId, evidence, remaining, verified });
+      const observe = (ruleId: string, evidence: string, remaining = 0, verified = true) => { if (!checksOff.has(ruleId)) observations.push({ ruleId, evidence, remaining, verified }); };
       const notes: Record<HealthCheck, string[]> = { gaps: [], readiness: [], meetings: [], activity: [], vault: [], reports: [] };
       passNotesByTeam.set(t.teamId, notes);
+      if (checksOff.size) notes.readiness.push(`Turned off for this run: ${[...checksOff].map(checkLabel).join("; ")}.`);
       const tm = (members ?? []).filter((m) => m.team_id === t.teamId && !PARFUNKEL.test(nameOf(m.user_id)));
       const roleHolders = roleFilter ? tm.filter((m) => m.job_title === roleFilter) : tm;
       const teamFiles = (files ?? []).filter((f) => f.team_id === t.teamId && !f.is_template);

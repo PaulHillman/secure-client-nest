@@ -7,6 +7,7 @@ import {
   resolveHealthReviewRules,
   type HealthReviewRules,
 } from "./health-review-rules";
+import { cleanCheckKeys } from "./health-check-switches";
 
 async function requireAdmin(context: { supabase: any; userId: string }) {
   const { data: ok } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
@@ -31,6 +32,7 @@ export const getHealthReviewRules = createServerFn({ method: "GET" })
       defaults: HEALTH_REVIEW_RULE_DEFAULTS,
       updated_at: (data?.updated_at as string | null) ?? null,
       saved: !!data,
+      disabled_checks: cleanCheckKeys((data as { disabled_checks?: unknown } | null)?.disabled_checks),
     };
   });
 
@@ -68,4 +70,16 @@ export const saveHealthReviewRules = createServerFn({ method: "POST" })
     if (error) throw error;
     if (!saved) throw new Error("These settings changed elsewhere while you were saving. Reload and try again.");
     return { rules: resolveHealthReviewRules(saved), updated_at: (saved.updated_at as string | null) ?? null };
+  });
+
+/** Admin-only: which checks are switched off on every run. */
+export const saveDisabledChecks = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ keys: z.array(z.string()) }))
+  .handler(async ({ context, data }) => {
+    await requireAdmin(context);
+    const keys = cleanCheckKeys(data.keys);
+    const { error } = await context.supabase.from("health_review_rules").update({ disabled_checks: keys, updated_by: context.userId }).eq("id", RULES_ROW_ID);
+    if (error) throw error;
+    return { disabled_checks: keys };
   });
