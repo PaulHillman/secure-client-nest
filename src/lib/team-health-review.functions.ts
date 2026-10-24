@@ -524,6 +524,8 @@ export async function computeHealthReview(
             !subsectionMatches(f.subsection, check.subsection) &&
             // The shared Meeting Minutes Template legitimately lives in Operational Resources and Templates.
             !/^Meeting Minutes Template/i.test(f.file_name ?? "") &&
+            // Emails/texts with the client about the interview (scheduling, directions, confirming questions were sent) are correspondence, correctly filed.
+            !(check.subsection === "Interview Questions" && subsectionMatches(f.subsection, "Client Communications")) &&
             check.match.test(f.file_name ?? ""))) {
             // Duplicate uploads of the same file into the same wrong folder are one finding, not many.
             const dedupeKey = `${f.file_name}|${f.subsection}`;
