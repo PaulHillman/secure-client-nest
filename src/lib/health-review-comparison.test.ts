@@ -74,4 +74,8 @@ describe("research accepts combined coverage", () => {
   test("filename alone does not demonstrate content coverage", () => {
     assert.equal(researchCoverage([{ fileName: "company history.pdf", text: "Meeting agenda for Friday" }])[0].evidence.length, 0);
   });
+  test("a previous concern whose check is switched off is not shown at all", () => {
+    const old = { check: "readiness", level: "red", reason: "Group Norms need clearer communication detail", ruleId: "readiness:norms_communication" } as any;
+    assert.equal(compareConcerns([old], [], [], [], new Set(["readiness:norms_communication"])).length, 0);
+  });
 });

@@ -50,9 +50,12 @@ export function concernKey(c: Concern): string | undefined {
  if (c.check === "meetings" && c.reason === "No weekly meetings logged this semester.") return "meetings:logged";
  return undefined;
 }
-export function compareConcerns(previous: Concern[], current: Concern[], observations: Observation[], previousObservations: Observation[] = []): Change[] {
+export function compareConcerns(previous: Concern[], current: Concern[], observations: Observation[], previousObservations: Observation[] = [], checksOff: ReadonlySet<string> = new Set()): Change[] {
  const changes: Change[] = []; const matched = new Set<Concern>();
  for (const old of previous) {
+  // A check the instructor switched off is not shown at all — neither as progress nor as unverified.
+  const offKey = concernKey(old);
+  if (offKey && checksOff.has(offKey)) continue;
   if (/Group Norms.*not signed.*locked/i.test(old.reason) || old.check === "activity" && !old.ruleId) {
    changes.push({ status: "Reporting correction", previous: old.reason, current: old.check === "activity" ? "The earlier activity finding predates the authoritative sign-in tracking correction. It cannot establish student-earned progress; current activity is assessed separately." : "The older report relied on a lock flag rather than current-version signatures. This is a reporting correction, not student-earned progress.", person: old.person ?? null }); continue;
   }
