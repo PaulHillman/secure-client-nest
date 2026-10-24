@@ -404,7 +404,8 @@ export async function computeHealthReview(
           } else notes.vault.push(narrative);
         }
       }
-      // Instructor granted a one-week grace period (2026-10-17): flag from 47% of the semester, not 40%.
+      // Interview questions, video files and the final video are expected once the semester
+      // has progressed past the configured percentages (editable in Admin).
       if (isTeamLevel && progress >= rules.interview_questions_percent / 100 && !teamFiles.some((f) => f.section === "Semester Long Project" && f.subsection === "Interview Questions"))
         push("vault", "yellow", `No Interview Questions uploaded (expected by ${rules.interview_questions_percent}% of semester).`);
       if ((isTeamLevel || vidScope) && progress >= rules.video_percent / 100 && !teamFiles.some((f) => f.section === "Video"))
@@ -483,21 +484,21 @@ export async function computeHealthReview(
         const cfRow = (companyFocus ?? []).find((c) => c.team_id === t.teamId);
         const confirmedAt = cfRow?.confirmed_at ? Date.parse(cfRow.confirmed_at) : null;
         if (confirmedAt === null || Number.isNaN(confirmedAt)) {
-          notes.vault.push("Client Communications: client not confirmed yet — correspondence is expected within 3 weeks of confirmation.");
+          notes.vault.push(`Client Communications: client not confirmed yet — correspondence is expected within ${rules.comms_grace_weeks} weeks of confirmation.`);
         } else {
           const weeksSince = (now - confirmedAt) / (7 * DAY);
-          const dueDate = new Date(confirmedAt + 21 * DAY).toISOString().slice(0, 10);
-          if (weeksSince < 3) {
+          const dueDate = new Date(confirmedAt + rules.comms_grace_weeks * 7 * DAY).toISOString().slice(0, 10);
+          if (weeksSince < rules.comms_grace_weeks) {
             if (comms.length)
-              notes.vault.push(`Client Communications: ${comms.length} file${comms.length === 1 ? "" : "s"} filed within 3 weeks of confirmation — on track.`);
+              notes.vault.push(`Client Communications: ${comms.length} file${comms.length === 1 ? "" : "s"} filed within ${rules.comms_grace_weeks} weeks of confirmation — on track.`);
             else
-              notes.vault.push(`Client Communications: none filed yet — not expected until 3 weeks after confirmation (${dueDate}).`);
+              notes.vault.push(`Client Communications: none filed yet — not expected until ${rules.comms_grace_weeks} weeks after confirmation (${dueDate}).`);
           } else if (!comms.length) {
-            push("vault", "red", `Client Communications: no client emails or texts filed — expected since 3 weeks after confirmation (${dueDate}).`);
-          } else if (comms.length === 1) {
-            push("vault", "yellow", `Client Communications: only 1 client email or text filed — 2+ expected 3+ weeks after confirmation (${dueDate}).`);
+            push("vault", "red", `Client Communications: no client emails or texts filed — expected since ${rules.comms_grace_weeks} weeks after confirmation (${dueDate}).`);
+          } else if (comms.length < rules.comms_expected_files) {
+            push("vault", "yellow", `Client Communications: only ${comms.length} client email or text filed — ${rules.comms_expected_files}+ expected ${rules.comms_grace_weeks}+ weeks after confirmation (${dueDate}).`);
           } else {
-            notes.vault.push(`Client Communications on track: ${comms.length} files filed (2+ expected 3+ weeks after confirmation).`);
+            notes.vault.push(`Client Communications on track: ${comms.length} files filed (${rules.comms_expected_files}+ expected ${rules.comms_grace_weeks}+ weeks after confirmation).`);
           }
         }
       }
@@ -557,7 +558,7 @@ export async function computeHealthReview(
         const priors = (shares ?? [])
           .filter((s: any) => s.team_id === t.teamId)
           .map((s: any) => ((s.payload as { exceptions?: HealthException[] })?.exceptions ?? []).filter((e) => !PARFUNKEL.test(e.person ?? "")));
-        const escalated = escalateConcerns(mine, priors);
+        const escalated = escalateConcerns(mine, priors, { redAfter: rules.escalate_red_after, gradeAfter: rules.escalate_grade_after });
         const streaks = new Map<string, number>();
         // Replace in place, preserving order.
         let i = 0;
@@ -591,7 +592,7 @@ export async function computeHealthReview(
         const applicable =
           !noRole &&
           (c !== "gaps" || teamLevel || pmScope) &&
-          (c !== "meetings" || ((teamLevel || pmScope) && week >= 3)) &&
+          (c !== "meetings" || ((teamLevel || pmScope) && week >= rules.meetings_start_week)) &&
           (c !== "reports" || (teamLevel && hasReport));
         results[c] = !applicable ? "skipped" : worst.has(`${t.teamId}:${c}`) ? "flagged" : "pass";
       }
