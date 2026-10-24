@@ -263,7 +263,7 @@ export async function computeHealthReview(
       }
 
       // 3. Weekly Meetings — itemized sub-checks: (a) meetings logged, (b) recency, (c) minutes per meeting, (d) reason per absence, (e) minutes follow the shared Meeting Minutes Template
-      if ((isTeamLevel || pmScope) && week >= 3) {
+      if ((isTeamLevel || pmScope) && week >= rules.meetings_start_week) {
         const last = teamLogs.map((l) => l.meeting_date).sort().pop();
         const gap = last ? Math.floor((now - new Date(last + "T12:00:00Z").getTime()) / DAY) : null;
         let passed = 0;
@@ -272,13 +272,13 @@ export async function computeHealthReview(
         else {
           passed++;
           notes.meetings.push(`Meetings logged: ${teamLogs.length} this semester.`);
-          if (gap > 7) { failed++; push("meetings", gap > 13 ? "red" : "yellow", `Last meeting logged ${gap} days ago (${last}).`); }
-          else { passed++; notes.meetings.push(`Recency: last meeting ${last} (${gap} day${gap === 1 ? "" : "s"} ago) — within the 7-day limit.`); }
+          if (gap > rules.meeting_yellow_days) { failed++; push("meetings", gap > rules.meeting_red_days ? "red" : "yellow", `Last meeting logged ${gap} days ago (${last}).`); }
+          else { passed++; notes.meetings.push(`Recency: last meeting ${last} (${gap} day${gap === 1 ? "" : "s"} ago) — within the ${rules.meeting_yellow_days}-day limit.`); }
         }
         observe("meetings:logged", `Meetings logged: ${teamLogs.length} this semester.`, teamLogs.length ? 0 : 1);
         const noMinutes = teamLogs.filter((l) => !l.minutes_posted).length;
         observe("meetings:missing_minutes:team", `Minutes are now posted for all ${teamLogs.length} logged meetings.`, noMinutes);
-        observe("meetings:Last meeting logged:team", `Latest logged meeting: ${last}; ${gap} days ago, within the 7-day limit.`, gap === null || gap > 7 ? 1 : 0);
+        observe("meetings:Last meeting logged:team", `Latest logged meeting: ${last}; ${gap} days ago, within the ${rules.meeting_yellow_days}-day limit.`, gap === null || gap > rules.meeting_yellow_days ? 1 : 0);
         if (noMinutes) { failed += noMinutes; push("meetings", "yellow", `${noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? " has" : "s have"} no minutes posted.`); }
         if (teamLogs.length - noMinutes > 0) { passed += teamLogs.length - noMinutes; notes.meetings.push(`Minutes marked posted for ${teamLogs.length - noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? "" : "s"}; this checkbox does not verify a document connection.`); }
         const connections = meetingDocumentLinks(teamLogs, teamFiles);
@@ -293,13 +293,13 @@ export async function computeHealthReview(
         // Minutes for meetings held before 2026-09-27 are exempt (by meeting date, not upload date): the template requirement was only
         // communicated that week, so earlier minutes are not checked for compliance.
         const allMinutesFiles = teamFiles.filter((f) => f.section === "Team Documents" && subsectionMatches(f.subsection, "Minutes"));
-        const exemptMinutes = allMinutesFiles.filter((f) => minutesExemptFromTemplate(f, teamLogs));
+        const exemptMinutes = allMinutesFiles.filter((f) => minutesExemptFromTemplate(f, teamLogs, rules.minutes_template_from));
         const minutesFiles = allMinutesFiles.filter((f) => !exemptMinutes.includes(f));
         if (exemptMinutes.length)
-          notes.meetings.push(`Minutes template: ${exemptMinutes.length} minutes file${exemptMinutes.length === 1 ? "" : "s"} for meetings before 9/27/26 are exempt — the template requirement was announced that week (${exemptMinutes.map((f) => f.file_name).join(", ")}).`);
+          notes.meetings.push(`Minutes template: ${exemptMinutes.length} minutes file${exemptMinutes.length === 1 ? "" : "s"} for meetings before ${rules.minutes_template_from} are exempt — the template requirement was announced that week (${exemptMinutes.map((f) => f.file_name).join(", ")}).`);
         if (minutesFiles.length && minutesTemplate) {
           const { inspectMinutesTemplate } = await import("./health-research.server");
-          const minutesCheck = await inspectMinutesTemplate(db, minutesFiles, minutesTemplate, minutesTextCache);
+          const minutesCheck = await inspectMinutesTemplate(db, minutesFiles, minutesTemplate, minutesTextCache, rules.minutes_min_markers);
           const readableCount = minutesCheck.compliant.length + minutesCheck.violations.length;
           observe("meetings:minutes_template:team", `Minutes template: ${minutesCheck.compliant.length} of ${readableCount} readable minutes files follow the shared Meeting Minutes Template.`, minutesCheck.violations.length, minutesCheck.unverified.length < minutesFiles.length);
           if (minutesCheck.violations.length) {
@@ -332,7 +332,7 @@ export async function computeHealthReview(
         failed += unexplained;
         if (absences - unexplained > 0) { passed += absences - unexplained; notes.meetings.push(`Attendance: ${absences - unexplained} of ${absences} absence${absences === 1 ? "" : "s"} have a reason recorded.`); }
         else if (!absences && teamLogs.length) { passed++; notes.meetings.push("Attendance: no unexplained absences."); }
-        notes.meetings.unshift(`Weekly Meetings sub-checks: ${passed} passed, ${failed} flagged (meetings logged, recency vs. 7-day limit, minutes per meeting, minutes on the shared template, reason per absence).`);
+        notes.meetings.unshift(`Weekly Meetings sub-checks: ${passed} passed, ${failed} flagged (meetings logged, recency vs. the ${rules.meeting_yellow_days}-day limit, minutes per meeting, minutes on the shared template, reason per absence).`);
       }
 
       // 4. Relative login / upload activity (vs. this team's own median)
