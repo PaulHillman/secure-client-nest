@@ -1,3 +1,4 @@
+import { HealthCheckSwitchesEditor } from "@/components/health-check-switches";
 import { createFileRoute, Navigate, Link } from '@tanstack/react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useServerFn } from '@tanstack/react-start';
@@ -37,6 +38,7 @@ function GuidePage() {
     <p className="text-sm text-muted-foreground mb-4">The settings below are the numbers the <Link to="/app/health-review" search={{ report: undefined }} className="text-primary underline">Team Health Review</Link> applies — saving one here changes what the next report checks. The document underneath records those rules in words and is not what the review reads.</p>
     {error && <p role="alert" className="text-destructive">{error.message}</p>}
     <HealthReviewRulesEditor />
+      <HealthCheckSwitchesEditor />
     {data ? <GuideEditor key={data.id} document={data} /> : !error && <p>Loading…</p>}
   </div>;
 }

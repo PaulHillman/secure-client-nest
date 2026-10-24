@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { compareTeamsBySectionThenNumber, teamLineLabel } from "@/lib/team-label";
 import { saveOrSendHealthReport, refreshVaultHealthReports } from "@/lib/team-health-report.functions";
+import { RunCheckSwitches } from "@/components/health-check-switches";
 import { runTeamHealthReview, setFileContentVerified, ROLE_SCOPES, type HealthCheck, type HealthScope, type CheckStatus } from "@/lib/team-health-review.functions";
 
 export const Route = createFileRoute("/app/health-review")({
@@ -77,6 +78,7 @@ function HealthReviewPage() {
   const [role, setRole] = useState("");
   const [filter, setFilter] = useState<HealthCheck | "all">("all");
   const run = useServerFn(runTeamHealthReview);
+  const [runOff, setRunOff] = useState<Set<string>>(() => new Set());
 
   const { data: teams = [] } = useQuery({
     queryKey: ["health-teams"],
@@ -93,7 +95,7 @@ function HealthReviewPage() {
   const navigate = Route.useNavigate();
   const qc = useQueryClient();
   const m = useMutation({
-    mutationFn: () => run({ data: { scope, teamId: teamId || undefined, section: section || undefined, role: role || undefined } }),
+    mutationFn: () => run({ data: { scope, teamId: teamId || undefined, section: section || undefined, role: role || undefined, skipChecks: [...runOff] } }),
     onSuccess: () => {
       navigate({ search: { report: undefined } });
       qc.invalidateQueries({ queryKey: ["health-history"] });
@@ -196,6 +198,7 @@ function HealthReviewPage() {
               {ROLE_SCOPES.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
           )}
+          <RunCheckSwitches off={runOff} onChange={setRunOff} />
           <Button disabled={!canRun || m.isPending} onClick={() => {
             setDone(null);
             const label = scope === "all" ? "All teams" : scope === "section" ? `Section ${section}` : scope === "team" ? teamLineLabel(teams.find((t) => t.id === teamId) ?? { name: "One team", display_name: null, section: null }) : role;
