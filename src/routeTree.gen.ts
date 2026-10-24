@@ -30,6 +30,7 @@ import { Route as AppAdminHealthReviewGuideRouteImport } from './routes/app.admi
 import { Route as AppAdminPeerReviewAssessmentsRouteImport } from './routes/app.admin_.peer-review-assessments'
 import { Route as AppAdminPeerReviewCriteriaRouteImport } from './routes/app.admin_.peer-review-criteria'
 import { Route as AppAdminUsageRouteImport } from './routes/app.admin_.usage'
+import { Route as AppHealthReportFileIdRouteImport } from './routes/app.health-report.$fileId'
 import { Route as AppTeamsTeamIdRouteImport } from './routes/app.teams.$teamId'
 import { Route as ApiPublicHooksAutoArchiveRouteImport } from './routes/api/public/hooks/auto-archive'
 import { Route as ApiPublicHooksProfileRemindersRouteImport } from './routes/api/public/hooks/profile-reminders'
@@ -146,6 +147,11 @@ const AppAdminUsageRoute = AppAdminUsageRouteImport.update({
   path: '/admin/usage',
   getParentRoute: () => AppRoute,
 } as any)
+const AppHealthReportFileIdRoute = AppHealthReportFileIdRouteImport.update({
+  id: '/health-report/$fileId',
+  path: '/health-report/$fileId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTeamsTeamIdRoute = AppTeamsTeamIdRouteImport.update({
   id: '/$teamId',
   path: '/$teamId',
@@ -210,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/peer-review-assessments': typeof AppAdminPeerReviewAssessmentsRoute
   '/app/admin/peer-review-criteria': typeof AppAdminPeerReviewCriteriaRoute
   '/app/admin/usage': typeof AppAdminUsageRoute
+  '/app/health-report/$fileId': typeof AppHealthReportFileIdRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
   '/api/public/hooks/profile-reminders': typeof ApiPublicHooksProfileRemindersRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByTo {
   '/app/admin/peer-review-assessments': typeof AppAdminPeerReviewAssessmentsRoute
   '/app/admin/peer-review-criteria': typeof AppAdminPeerReviewCriteriaRoute
   '/app/admin/usage': typeof AppAdminUsageRoute
+  '/app/health-report/$fileId': typeof AppHealthReportFileIdRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
   '/api/public/hooks/profile-reminders': typeof ApiPublicHooksProfileRemindersRoute
@@ -271,6 +279,7 @@ export interface FileRoutesById {
   '/app/admin_/peer-review-assessments': typeof AppAdminPeerReviewAssessmentsRoute
   '/app/admin_/peer-review-criteria': typeof AppAdminPeerReviewCriteriaRoute
   '/app/admin_/usage': typeof AppAdminUsageRoute
+  '/app/health-report/$fileId': typeof AppHealthReportFileIdRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
   '/api/public/hooks/profile-reminders': typeof ApiPublicHooksProfileRemindersRoute
@@ -303,6 +312,7 @@ export interface FileRouteTypes {
     | '/app/admin/peer-review-assessments'
     | '/app/admin/peer-review-criteria'
     | '/app/admin/usage'
+    | '/app/health-report/$fileId'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
     | '/api/public/hooks/profile-reminders'
@@ -333,6 +343,7 @@ export interface FileRouteTypes {
     | '/app/admin/peer-review-assessments'
     | '/app/admin/peer-review-criteria'
     | '/app/admin/usage'
+    | '/app/health-report/$fileId'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
     | '/api/public/hooks/profile-reminders'
@@ -363,6 +374,7 @@ export interface FileRouteTypes {
     | '/app/admin_/peer-review-assessments'
     | '/app/admin_/peer-review-criteria'
     | '/app/admin_/usage'
+    | '/app/health-report/$fileId'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
     | '/api/public/hooks/profile-reminders'
@@ -533,6 +545,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminUsageRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/health-report/$fileId': {
+      id: '/app/health-report/$fileId'
+      path: '/health-report/$fileId'
+      fullPath: '/app/health-report/$fileId'
+      preLoaderRoute: typeof AppHealthReportFileIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/teams/$teamId': {
       id: '/app/teams/$teamId'
       path: '/$teamId'
@@ -614,6 +633,7 @@ interface AppRouteChildren {
   AppAdminPeerReviewAssessmentsRoute: typeof AppAdminPeerReviewAssessmentsRoute
   AppAdminPeerReviewCriteriaRoute: typeof AppAdminPeerReviewCriteriaRoute
   AppAdminUsageRoute: typeof AppAdminUsageRoute
+  AppHealthReportFileIdRoute: typeof AppHealthReportFileIdRoute
   AppAdminTeamReadinessTeamIdRoute: typeof AppAdminTeamReadinessTeamIdRoute
   AppAdminTeamReadinessIndexRoute: typeof AppAdminTeamReadinessIndexRoute
 }
@@ -635,6 +655,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminPeerReviewAssessmentsRoute: AppAdminPeerReviewAssessmentsRoute,
   AppAdminPeerReviewCriteriaRoute: AppAdminPeerReviewCriteriaRoute,
   AppAdminUsageRoute: AppAdminUsageRoute,
+  AppHealthReportFileIdRoute: AppHealthReportFileIdRoute,
   AppAdminTeamReadinessTeamIdRoute: AppAdminTeamReadinessTeamIdRoute,
   AppAdminTeamReadinessIndexRoute: AppAdminTeamReadinessIndexRoute,
 }

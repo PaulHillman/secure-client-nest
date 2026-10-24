@@ -9,6 +9,7 @@ import { NotificationsBell } from "@/components/notifications-bell";
 import logoAsset from "@/assets/clientvault-safe.png.asset.json";
 import { ViewAsStudentPicker, ViewAsBanner } from "@/components/view-as-student";
 import { UsageTracker } from "@/components/usage-tracker";
+import { rememberReturnPath } from "@/lib/return-path";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -41,7 +42,10 @@ function AppLayout() {
   const awaitingCount = awaiting?.total ?? 0;
 
   if (loading) return null;
-  if (!user) return <Navigate to="/login" />;
+  if (!user) {
+    if (typeof window !== "undefined") rememberReturnPath(window.location.pathname + window.location.search);
+    return <Navigate to="/login" />;
+  }
 
   const nav = [
     { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },

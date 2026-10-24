@@ -15,8 +15,8 @@ const Email = ({ name, teamName = "your team", good = 0, bad = 0, pdfUrl = "#" }
         <Text style={text}>
           {`Your instructor shared your team's latest health review. ${good} checks passed and ${bad} item${bad === 1 ? "" : "s"} still need${bad === 1 ? "s" : ""} attention.`}
         </Text>
-        <Button style={button} href={pdfUrl}>Download the PDF report</Button>
-        <Text style={small}>The download link works for 30 days.</Text>
+        <Button style={button} href={pdfUrl}>Open the report in ClientVault</Button>
+        <Text style={small}>Sign in to ClientVault when asked — opening the report there counts as reading it.</Text>
         <Hr style={hr} />
         <Text style={footer}>Your Project Manager is copied on team messages.</Text>
       </Container>
