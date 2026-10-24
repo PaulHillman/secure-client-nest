@@ -344,20 +344,20 @@ export async function computeHealthReview(
         if (roleFilter && s.m.job_title !== roleFilter) continue;
         people++;
         const nm = nameOf(s.m.user_id);
-        if (s.d === 0 && s.u === 0) push("activity", "red", "No sign-ins, visits, or uploads in the last 7 days.", nm, s.m.job_title, s.m.user_id);
-        else if (medDays >= 2 && s.d < medDays / 2) push("activity", "yellow", `Active ${s.d} day(s) in 7 vs. team median ${medDays}.`, nm, s.m.job_title, s.m.user_id);
-        else if (medUp >= 2 && s.u === 0) push("activity", "yellow", `No uploads in 7 days while teammates median ${medUp}.`, nm, s.m.job_title, s.m.user_id);
-        else notes.activity.push(`${nm}: active ${s.d} of last 7 days, ${s.u} upload${s.u === 1 ? "" : "s"} — at or above the team's typical level.`);
-        const streak = lowEngagementStreak(s.m.user_id, contributions, now, 3, LOW_ENGAGEMENT_START);
-        const lvl = lowEngagementLevel(streak);
+        if (s.d === 0 && s.u === 0) push("activity", "red", `No sign-ins, visits, or uploads in the last ${rules.activity_window_days} days.`, nm, s.m.job_title, s.m.user_id);
+        else if (medDays >= 2 && s.d < medDays / 2) push("activity", "yellow", `Active ${s.d} day(s) in ${rules.activity_window_days} vs. team median ${medDays}.`, nm, s.m.job_title, s.m.user_id);
+        else if (medUp >= 2 && s.u === 0) push("activity", "yellow", `No uploads in ${rules.activity_window_days} days while teammates median ${medUp}.`, nm, s.m.job_title, s.m.user_id);
+        else notes.activity.push(`${nm}: active ${s.d} of last ${rules.activity_window_days} days, ${s.u} upload${s.u === 1 ? "" : "s"} — at or above the team's typical level.`);
+        const streak = lowEngagementStreak(s.m.user_id, contributions, now, rules.low_engagement_weeks, lowEngagementStartMs(rules));
+        const lvl = lowEngagementLevel(streak, rules.low_engagement_weeks);
         if (lvl === "yellow" || lvl === "red") push("activity", lvl, `Low engagement: ${streak} consecutive weeks with no uploads, comments, meeting attendance, role activities, or review of team materials beyond the dashboard/health report.`, nm, s.m.job_title, s.m.user_id, `activity:low_engagement:${s.m.user_id}`);
-        else if (lvl === "note") notes.activity.push(`${nm}: no meaningful contribution recorded this past week (note only — low engagement is flagged after 2 consecutive weeks).`);
-        observe(`activity:low_engagement:${s.m.user_id}`, `${nm}: meaningful contribution recorded this week; low-engagement cycle reset.`, streak >= 2 ? 1 : 0);
-        observe(`activity:relative_activity:${s.m.user_id}`, `${nm}: ${s.d} active days and ${s.u} uploads in the last 7 days; no relative-activity concern remains.`, out.some(e => e.check === "activity" && e.userId === s.m.user_id) ? 1 : 0);
+        else if (lvl === "note") notes.activity.push(`${nm}: no meaningful contribution recorded this past week (note only — low engagement is flagged after ${rules.low_engagement_weeks - 1} consecutive weeks).`);
+        observe(`activity:low_engagement:${s.m.user_id}`, `${nm}: meaningful contribution recorded this week; low-engagement cycle reset.`, streak >= rules.low_engagement_weeks - 1 ? 1 : 0);
+        observe(`activity:relative_activity:${s.m.user_id}`, `${nm}: ${s.d} active days and ${s.u} uploads in the last ${rules.activity_window_days} days; no relative-activity concern remains.`, out.some(e => e.check === "activity" && e.userId === s.m.user_id) ? 1 : 0);
       }
 
       // 5. Semester-aware File Vault requirements
-      const expectedMinutes = Math.max(0, week - 3);
+      const expectedMinutes = Math.max(0, week - rules.meetings_start_week);
       if ((isTeamLevel || pmScope) && expectedMinutes > 0) {
         const mins = count("Minutes");
         if (mins < expectedMinutes) push("vault", mins < expectedMinutes / 2 ? "red" : "yellow", `Minutes: ${mins} posted, ${expectedMinutes} expected by week ${week}.`);
@@ -405,17 +405,17 @@ export async function computeHealthReview(
         }
       }
       // Instructor granted a one-week grace period (2026-10-17): flag from 47% of the semester, not 40%.
-      if (isTeamLevel && progress >= 0.47 && !teamFiles.some((f) => f.section === "Semester Long Project" && f.subsection === "Interview Questions"))
-        push("vault", "yellow", "No Interview Questions uploaded (expected by 47% of semester).");
-      if ((isTeamLevel || vidScope) && progress >= 0.6 && !teamFiles.some((f) => f.section === "Video"))
-        push("vault", vidScope ? "red" : "yellow", "No Video files uploaded (expected by 60% of semester).", null, vidScope ? "Video Specialist" : null);
-      if ((isTeamLevel || vidScope) && progress >= 0.9 && !teamFiles.some((f) => f.section === "Video" && f.subsection === "Final Submission"))
+      if (isTeamLevel && progress >= rules.interview_questions_percent / 100 && !teamFiles.some((f) => f.section === "Semester Long Project" && f.subsection === "Interview Questions"))
+        push("vault", "yellow", `No Interview Questions uploaded (expected by ${rules.interview_questions_percent}% of semester).`);
+      if ((isTeamLevel || vidScope) && progress >= rules.video_percent / 100 && !teamFiles.some((f) => f.section === "Video"))
+        push("vault", vidScope ? "red" : "yellow", `No Video files uploaded (expected by ${rules.video_percent}% of semester).`, null, vidScope ? "Video Specialist" : null);
+      if ((isTeamLevel || vidScope) && progress >= rules.video_final_percent / 100 && !teamFiles.some((f) => f.section === "Video" && f.subsection === "Final Submission"))
         push("vault", "red", "Video Final Submission not uploaded.");
 
       // 6. Client research: at least 2 files now, 4 expected by 10/18; misfiled research flagged to the Tech Admin
       const techScope = roleFilter === "Client Vault & Tech Administrator";
       if (isTeamLevel || techScope) {
-        const researchDue = Date.parse("2026-10-18T23:59:59Z");
+        const researchDue = Date.parse(`${rules.research_due}T23:59:59Z`);
         const pastDue = now > researchDue;
         const inResearch = teamFiles.filter((f) => subsectionMatches(f.subsection, "Client research"));
         // Org charts are company materials filed under Organizational Chart, not client research.
@@ -426,7 +426,7 @@ export async function computeHealthReview(
         const techAdmin = tm.find((m) => m.job_title === "Client Vault & Tech Administrator");
         const taName = techAdmin ? nameOf(techAdmin.user_id) : null;
         const taId = techAdmin?.user_id ?? null;
-        const required = pastDue ? 4 : 2;
+        const required = pastDue ? rules.research_required_late : rules.research_required_early;
         notes.vault.push(RESEARCH_NOTE);
         if (total < required) {
           const { inspectResearch } = await import("./health-research.server");
