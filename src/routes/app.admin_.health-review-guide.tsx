@@ -37,7 +37,7 @@ function GuidePage() {
     <p className="text-sm text-muted-foreground mb-4">The settings below are the numbers the <Link to="/app/health-review" search={{ report: undefined }} className="text-primary underline">Team Health Review</Link> applies — saving one here changes what the next report checks. The document underneath records those rules in words and is not what the review reads.</p>
     {error && <p role="alert" className="text-destructive">{error.message}</p>}
     <HealthReviewRulesEditor />
-    {data ? <GuideEditor key={data.updated_at} document={data} /> : !error && <p>Loading…</p>}
+    {data ? <GuideEditor key={data.id} document={data} /> : !error && <p>Loading…</p>}
   </div>;
 }
 
