@@ -611,7 +611,7 @@ export async function computeHealthReview(
           const share = latestShare(t.teamId);
           if (!share) return { sharedAt: null, source: "No verified shared baseline", changes: [] };
           const payload = share.payload as { exceptions?: HealthException[]; team?: TeamCheckResult };
-          return { sharedAt: share.shared_at, source: share.source, streaks: Object.fromEntries(streaksByTeam.get(t.teamId) ?? []), changes: compareConcerns((payload.exceptions ?? []).filter(e => !PARFUNKEL.test(e.person ?? "")), out.filter(e => e.teamId === t.teamId), observationsByTeam.get(t.teamId) ?? [], payload.team?.observations ?? []) };
+          return { sharedAt: share.shared_at, source: share.source, streaks: Object.fromEntries(streaksByTeam.get(t.teamId) ?? []), changes: compareConcerns((payload.exceptions ?? []).filter(e => !PARFUNKEL.test(e.person ?? "")), out.filter(e => e.teamId === t.teamId), observationsByTeam.get(t.teamId) ?? [], payload.team?.observations ?? [], checksOff) };
         })(),
         peopleChecked: (roleFilter ? roster.filter((m) => m.job_title === roleFilter) : roster).length,
         results,
