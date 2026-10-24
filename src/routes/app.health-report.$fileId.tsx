@@ -63,7 +63,7 @@ function HealthReportOpen() {
       </div>
       {error && (
         <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
-          {error} <Link to="/app/vault" className="underline">Go to File Vault</Link>
+          {error} <Link to="/app/vault" search={{} as never} className="underline">Go to File Vault</Link>
         </p>
       )}
       {url && <iframe title={name} src={url} className="h-[80vh] w-full rounded-md border" />}
