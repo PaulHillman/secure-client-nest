@@ -173,27 +173,28 @@ function clamp(n: number, min: number, max: number) {
  * applied, so a half-saved row can never silently change a check.
  */
 export function resolveHealthReviewRules(row: Record<string, unknown> | null | undefined): HealthReviewRules {
-  const out: Record<string, unknown> = { ...HEALTH_REVIEW_RULE_DEFAULTS };
+  const merged: Record<string, unknown> = { ...HEALTH_REVIEW_RULE_DEFAULTS };
   if (row) {
     for (const key of Object.keys(HEALTH_REVIEW_RULE_DEFAULTS) as HealthReviewRuleKey[]) {
       const raw = row[key];
       if (raw === null || raw === undefined || raw === "") continue;
       const field = RULE_FIELDS.find((f) => f.key === key);
       if (DATE_KEYS.includes(key)) {
-        if (typeof raw === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw) && !Number.isNaN(Date.parse(raw))) out[key] = raw;
+        if (typeof raw === "string" && /^\d{4}-\d{2}-\d{2}$/.test(raw) && !Number.isNaN(Date.parse(raw))) merged[key] = raw;
       } else if (field) {
         const n = typeof raw === "number" ? raw : Number(raw);
-        if (Number.isFinite(n)) out[key] = clamp(Math.round(n), field.min, field.max);
+        if (Number.isFinite(n)) merged[key] = clamp(Math.round(n), field.min, field.max);
       }
     }
   }
+  const out = merged as HealthReviewRules;
   // Ordering invariants: the red threshold can never be tighter than yellow, the
   // grade-deduction notice can never arrive before the escalation to red, and the
   // post-deadline research count can never ask for fewer files than before it.
   if (out.meeting_red_days < out.meeting_yellow_days) out.meeting_red_days = out.meeting_yellow_days;
   if (out.escalate_grade_after <= out.escalate_red_after) out.escalate_grade_after = out.escalate_red_after + 1;
   if (out.research_required_late < out.research_required_early) out.research_required_late = out.research_required_early;
-  return out as HealthReviewRules;
+  return out;
 }
 
 /**
