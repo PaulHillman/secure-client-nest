@@ -127,6 +127,13 @@
       "when": 1792862059492,
       "tag": "0017_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792862462296,
+      "tag": "0018_health_review_editable_rules",
+      "breakpoints": true
     }
   ]
 }

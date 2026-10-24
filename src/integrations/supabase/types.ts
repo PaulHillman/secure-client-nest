@@ -1131,6 +1131,78 @@ export type Database = {
         }
         Relationships: []
       }
+      health_review_rules: {
+        Row: {
+          activity_window_days: number
+          comms_expected_files: number
+          comms_grace_weeks: number
+          escalate_grade_after: number
+          escalate_red_after: number
+          id: string
+          interview_questions_percent: number
+          low_engagement_start: string
+          low_engagement_weeks: number
+          meeting_red_days: number
+          meeting_yellow_days: number
+          meetings_start_week: number
+          minutes_min_markers: number
+          minutes_template_from: string
+          research_due: string
+          research_required_early: number
+          research_required_late: number
+          updated_at: string
+          updated_by: string | null
+          video_final_percent: number
+          video_percent: number
+        }
+        Insert: {
+          activity_window_days?: number
+          comms_expected_files?: number
+          comms_grace_weeks?: number
+          escalate_grade_after?: number
+          escalate_red_after?: number
+          id: string
+          interview_questions_percent?: number
+          low_engagement_start?: string
+          low_engagement_weeks?: number
+          meeting_red_days?: number
+          meeting_yellow_days?: number
+          meetings_start_week?: number
+          minutes_min_markers?: number
+          minutes_template_from?: string
+          research_due?: string
+          research_required_early?: number
+          research_required_late?: number
+          updated_at?: string
+          updated_by?: string | null
+          video_final_percent?: number
+          video_percent?: number
+        }
+        Update: {
+          activity_window_days?: number
+          comms_expected_files?: number
+          comms_grace_weeks?: number
+          escalate_grade_after?: number
+          escalate_red_after?: number
+          id?: string
+          interview_questions_percent?: number
+          low_engagement_start?: string
+          low_engagement_weeks?: number
+          meeting_red_days?: number
+          meeting_yellow_days?: number
+          meetings_start_week?: number
+          minutes_min_markers?: number
+          minutes_template_from?: string
+          research_due?: string
+          research_required_early?: number
+          research_required_late?: number
+          updated_at?: string
+          updated_by?: string | null
+          video_final_percent?: number
+          video_percent?: number
+        }
+        Relationships: []
+      }
       health_review_scores: {
         Row: {
           bad: number
