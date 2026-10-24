@@ -5,9 +5,10 @@ import { buildAssessments } from "@/lib/team-readiness-assessment.functions";
 import { teamLineLabel, compareTeamsBySectionThenNumber } from "@/lib/team-label";
 import { compareConcerns, concernKey, RESEARCH_NOTE, type Comparison, type Observation } from "@/lib/health-review-comparison";
 import { subsectionMatches } from "@/lib/vault-structure";
-import { lowEngagementStreak, lowEngagementLevel, isMaterialView, LOW_ENGAGEMENT_START, type Contribution } from "@/lib/low-engagement";
+import { lowEngagementStreak, lowEngagementLevel, isMaterialView, type Contribution } from "@/lib/low-engagement";
 import { meetingDocumentLinks } from "@/lib/meeting-document-links";
 import { ORIGINAL_PEER_DUE, peerOriginalFiled } from './peer-review-policy';
+import { RULES_ROW_ID, resolveHealthReviewRules, lowEngagementStartMs } from './health-review-rules';
 
 export type HealthScope = "team" | "section" | "all" | "role";
 
@@ -79,6 +80,10 @@ export async function computeHealthReview(
   context: { supabase: any; userId: string },
 ) {
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+    // Saved thresholds: the admin can change what the review checks without a code change.
+    // A missing or half-filled row falls back to the documented defaults, never to a looser check.
+    const { data: rulesRow } = await db.from("health_review_rules").select("*").eq("id", RULES_ROW_ID).maybeSingle();
+    const rules = resolveHealthReviewRules(rulesRow);
 
     const { assessments, generatedAt } = await buildAssessments(data.scope === "team" ? data.teamId : undefined);
     let teams = assessments.filter((a) => data.scope === "team" || !a.isTest);
@@ -96,7 +101,7 @@ export async function computeHealthReview(
 
     if (!ids.length) return { generatedAt, week, progress, teamsChecked: 0, peopleChecked: 0, teamResults: [] as TeamCheckResult[], exceptions: [] as HealthException[], ranking: [] as PersonRank[], reportId: null as string | null };
 
-    const since = new Date(now - 7 * DAY).toISOString();
+    const since = new Date(now - rules.activity_window_days * DAY).toISOString();
     const [{ data: members }, { data: logs }, { data: files }, { data: norms }, { data: profiles }, { data: reportViews }, { data: minutesTemplateRows }] = await Promise.all([
       db.from("team_members").select("team_id, user_id, job_title").in("team_id", ids),
       db.from("meeting_logs").select("id, team_id, meeting_date, attendance, minutes_posted, minutes_file_id").in("team_id", ids),
@@ -131,8 +136,8 @@ export async function computeHealthReview(
       context.supabase.rpc("auth_activity_since", { _since: since }),
     ]);
 
-    // Three-week low-engagement cycle: meaningful contributions over the last 21 days.
-    const since21 = new Date(now - 21 * DAY).toISOString();
+    // Low-engagement cycle: meaningful contributions over the configured number of weeks.
+    const since21 = new Date(now - rules.low_engagement_weeks * 7 * DAY).toISOString();
     const [{ data: v21 }, { data: c21 }, { data: p21 }, { data: u21 }] = await Promise.all([
       db.from("file_versions").select("uploaded_by, uploaded_at").in("uploaded_by", userIds).gte("uploaded_at", since21),
       db.from("file_comments").select("author_id, created_at").in("author_id", userIds).gte("created_at", since21),
