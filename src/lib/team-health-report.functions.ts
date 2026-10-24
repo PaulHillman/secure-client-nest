@@ -69,6 +69,8 @@ export const saveOrSendHealthReport = createServerFn({ method: "POST" })
         : { data: [] as { id: string; name: string; first_name: string | null; email: string | null }[] };
       const runAt = new Date(p.generatedAt).toLocaleString("en-US", { timeZone: "America/New_York" });
       const stamp = Date.now();
+      // Student buttons open the report inside ClientVault so the open is recorded to them.
+      const APP_ORIGIN = "https://clientvault.immersivebusiness.net";
 
       for (const t of p.teamResults) {
         const score = scores.find((s) => s.team_id === t.teamId);
@@ -106,7 +108,7 @@ export const saveOrSendHealthReport = createServerFn({ method: "POST" })
           try {
             if (!pr.email) continue;
             const sent = await sendTemplateEmail("health-review", pr.email, {
-              templateData: { name: pr.first_name || pr.name, teamName: t.teamLabel, good: score.good, bad: score.bad, pdfUrl: signed.signedUrl },
+              templateData: { name: pr.first_name || pr.name, teamName: t.teamLabel, good: score.good, bad: score.bad, pdfUrl: `${APP_ORIGIN}/app/health-report/${fileId}` },
               idempotencyKey: `health-${stamp}-${t.teamId}-${pr.id}`,
             });
             if (sent.sent) { emailsSent++; accepted.push(pr.id); } else emailsFailed++;

@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { takeReturnPath } from "@/lib/return-path";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -38,8 +39,14 @@ function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) navigate({ to: "/app/dashboard", replace: true });
+    if (user) goNext();
   }, [user, navigate]);
+
+  function goNext() {
+    const next = takeReturnPath();
+    if (next) window.location.replace(next);
+    else navigate({ to: "/app/dashboard", replace: true });
+  }
 
   const switchMode = (m: Mode) => {
     setMode(m);
@@ -67,7 +74,7 @@ function LoginPage() {
       const { error } = await supabase.auth.signInWithPassword({ email: normalizeEmail(email), password });
       if (error) throw error;
       toast.success("Welcome back");
-      navigate({ to: "/app/dashboard", replace: true });
+      goNext();
     });
   };
 
@@ -89,7 +96,7 @@ function LoginPage() {
       const { error } = await supabase.auth.verifyOtp({ email: normalizeEmail(email), token: code.trim(), type: "email" });
       if (error) throw error;
       toast.success("Signed in");
-      navigate({ to: "/app/dashboard", replace: true });
+      goNext();
     });
   };
 
