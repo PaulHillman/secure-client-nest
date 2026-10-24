@@ -1,5 +1,5 @@
 import { researchCoverage } from "./health-review-comparison";
-import { minutesFollowTemplate } from "./minutes-template";
+import { MINUTES_TEMPLATE_MIN_MARKERS, minutesFollowTemplate } from "./minutes-template";
 
 /** Downloads one vault file version and extracts its text (null when unreadable). */
 async function readVaultText(db: any, file: { file_name: string; current_version_id: string | null }): Promise<string | null> {
@@ -40,6 +40,7 @@ export async function inspectMinutesTemplate(
   files: { file_name: string; current_version_id: string | null }[],
   template: { file_name: string; current_version_id: string | null } | null,
   textCache?: Map<string, string | null>,
+  minMarkers: number = MINUTES_TEMPLATE_MIN_MARKERS,
 ) {
   const cache = textCache ?? new Map<string, string | null>();
   const textOf = async (file: { file_name: string; current_version_id: string | null }) => {
@@ -52,10 +53,10 @@ export async function inspectMinutesTemplate(
   for (const file of files) {
     const text = await textOf(file);
     // The template itself, or unreadable files, stay unverified rather than violations.
-    if (!text || (templateText && minutesFollowTemplate(templateText) === false)) {
+    if (!text || (templateText && minutesFollowTemplate(templateText, minMarkers) === false)) {
       results.push({ fileName: file.file_name, follows: null });
     } else {
-      results.push({ fileName: file.file_name, follows: minutesFollowTemplate(text) });
+      results.push({ fileName: file.file_name, follows: minutesFollowTemplate(text, minMarkers) });
     }
   }
   return {

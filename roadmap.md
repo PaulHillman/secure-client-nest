@@ -1,5 +1,9 @@
 # ClientVault roadmap
 
+## Weekly Health Check Review
+- [x] Add admin-editable rule settings (meeting gaps, activity window, low-engagement cycle, research counts and due date, client-communication grace and count, semester vault milestones, minutes template start and markers, repeat-warning escalation) that the review reads on every run; verified live that a saved change reaches the report text and the value was restored.
+- [x] Keep the prose guide as documentation beside the settings, with a seven-day review reminder.
+
 ## File Vault identification
 - [x] Group peer reviews by member, keeping originals immediately before revisions; verified Isabella's original 6/10 alongside Upload 2 with a pending-assessment label and 8/10+ target.
 - [x] Show full uploader names, original/revised peer-review upload labels across separate files, and exact-version scores; verified Isabella Tiseo's revised upload in the live vault at desktop and narrow widths, with six passing tests. History rows also identify uploaders.

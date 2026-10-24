@@ -5,9 +5,10 @@ import { buildAssessments } from "@/lib/team-readiness-assessment.functions";
 import { teamLineLabel, compareTeamsBySectionThenNumber } from "@/lib/team-label";
 import { compareConcerns, concernKey, RESEARCH_NOTE, type Comparison, type Observation } from "@/lib/health-review-comparison";
 import { subsectionMatches } from "@/lib/vault-structure";
-import { lowEngagementStreak, lowEngagementLevel, isMaterialView, LOW_ENGAGEMENT_START, type Contribution } from "@/lib/low-engagement";
+import { lowEngagementStreak, lowEngagementLevel, isMaterialView, type Contribution } from "@/lib/low-engagement";
 import { meetingDocumentLinks } from "@/lib/meeting-document-links";
 import { ORIGINAL_PEER_DUE, peerOriginalFiled } from './peer-review-policy';
+import { RULES_ROW_ID, resolveHealthReviewRules, lowEngagementStartMs } from './health-review-rules';
 
 export type HealthScope = "team" | "section" | "all" | "role";
 
@@ -79,6 +80,10 @@ export async function computeHealthReview(
   context: { supabase: any; userId: string },
 ) {
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+    // Saved thresholds: the admin can change what the review checks without a code change.
+    // A missing or half-filled row falls back to the documented defaults, never to a looser check.
+    const { data: rulesRow } = await db.from("health_review_rules").select("*").eq("id", RULES_ROW_ID).maybeSingle();
+    const rules = resolveHealthReviewRules(rulesRow);
 
     const { assessments, generatedAt } = await buildAssessments(data.scope === "team" ? data.teamId : undefined);
     let teams = assessments.filter((a) => data.scope === "team" || !a.isTest);
@@ -96,7 +101,7 @@ export async function computeHealthReview(
 
     if (!ids.length) return { generatedAt, week, progress, teamsChecked: 0, peopleChecked: 0, teamResults: [] as TeamCheckResult[], exceptions: [] as HealthException[], ranking: [] as PersonRank[], reportId: null as string | null };
 
-    const since = new Date(now - 7 * DAY).toISOString();
+    const since = new Date(now - rules.activity_window_days * DAY).toISOString();
     const [{ data: members }, { data: logs }, { data: files }, { data: norms }, { data: profiles }, { data: reportViews }, { data: minutesTemplateRows }] = await Promise.all([
       db.from("team_members").select("team_id, user_id, job_title").in("team_id", ids),
       db.from("meeting_logs").select("id, team_id, meeting_date, attendance, minutes_posted, minutes_file_id").in("team_id", ids),
@@ -131,8 +136,8 @@ export async function computeHealthReview(
       context.supabase.rpc("auth_activity_since", { _since: since }),
     ]);
 
-    // Three-week low-engagement cycle: meaningful contributions over the last 21 days.
-    const since21 = new Date(now - 21 * DAY).toISOString();
+    // Low-engagement cycle: meaningful contributions over the configured number of weeks.
+    const since21 = new Date(now - rules.low_engagement_weeks * 7 * DAY).toISOString();
     const [{ data: v21 }, { data: c21 }, { data: p21 }, { data: u21 }] = await Promise.all([
       db.from("file_versions").select("uploaded_by, uploaded_at").in("uploaded_by", userIds).gte("uploaded_at", since21),
       db.from("file_comments").select("author_id, created_at").in("author_id", userIds).gte("created_at", since21),
@@ -258,7 +263,7 @@ export async function computeHealthReview(
       }
 
       // 3. Weekly Meetings — itemized sub-checks: (a) meetings logged, (b) recency, (c) minutes per meeting, (d) reason per absence, (e) minutes follow the shared Meeting Minutes Template
-      if ((isTeamLevel || pmScope) && week >= 3) {
+      if ((isTeamLevel || pmScope) && week >= rules.meetings_start_week) {
         const last = teamLogs.map((l) => l.meeting_date).sort().pop();
         const gap = last ? Math.floor((now - new Date(last + "T12:00:00Z").getTime()) / DAY) : null;
         let passed = 0;
@@ -267,13 +272,13 @@ export async function computeHealthReview(
         else {
           passed++;
           notes.meetings.push(`Meetings logged: ${teamLogs.length} this semester.`);
-          if (gap > 7) { failed++; push("meetings", gap > 13 ? "red" : "yellow", `Last meeting logged ${gap} days ago (${last}).`); }
-          else { passed++; notes.meetings.push(`Recency: last meeting ${last} (${gap} day${gap === 1 ? "" : "s"} ago) — within the 7-day limit.`); }
+          if (gap > rules.meeting_yellow_days) { failed++; push("meetings", gap > rules.meeting_red_days ? "red" : "yellow", `Last meeting logged ${gap} days ago (${last}).`); }
+          else { passed++; notes.meetings.push(`Recency: last meeting ${last} (${gap} day${gap === 1 ? "" : "s"} ago) — within the ${rules.meeting_yellow_days}-day limit.`); }
         }
         observe("meetings:logged", `Meetings logged: ${teamLogs.length} this semester.`, teamLogs.length ? 0 : 1);
         const noMinutes = teamLogs.filter((l) => !l.minutes_posted).length;
         observe("meetings:missing_minutes:team", `Minutes are now posted for all ${teamLogs.length} logged meetings.`, noMinutes);
-        observe("meetings:Last meeting logged:team", `Latest logged meeting: ${last}; ${gap} days ago, within the 7-day limit.`, gap === null || gap > 7 ? 1 : 0);
+        observe("meetings:Last meeting logged:team", `Latest logged meeting: ${last}; ${gap} days ago, within the ${rules.meeting_yellow_days}-day limit.`, gap === null || gap > rules.meeting_yellow_days ? 1 : 0);
         if (noMinutes) { failed += noMinutes; push("meetings", "yellow", `${noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? " has" : "s have"} no minutes posted.`); }
         if (teamLogs.length - noMinutes > 0) { passed += teamLogs.length - noMinutes; notes.meetings.push(`Minutes marked posted for ${teamLogs.length - noMinutes} of ${teamLogs.length} logged meeting${teamLogs.length === 1 ? "" : "s"}; this checkbox does not verify a document connection.`); }
         const connections = meetingDocumentLinks(teamLogs, teamFiles);
@@ -288,13 +293,13 @@ export async function computeHealthReview(
         // Minutes for meetings held before 2026-09-27 are exempt (by meeting date, not upload date): the template requirement was only
         // communicated that week, so earlier minutes are not checked for compliance.
         const allMinutesFiles = teamFiles.filter((f) => f.section === "Team Documents" && subsectionMatches(f.subsection, "Minutes"));
-        const exemptMinutes = allMinutesFiles.filter((f) => minutesExemptFromTemplate(f, teamLogs));
+        const exemptMinutes = allMinutesFiles.filter((f) => minutesExemptFromTemplate(f, teamLogs, rules.minutes_template_from));
         const minutesFiles = allMinutesFiles.filter((f) => !exemptMinutes.includes(f));
         if (exemptMinutes.length)
-          notes.meetings.push(`Minutes template: ${exemptMinutes.length} minutes file${exemptMinutes.length === 1 ? "" : "s"} for meetings before 9/27/26 are exempt — the template requirement was announced that week (${exemptMinutes.map((f) => f.file_name).join(", ")}).`);
+          notes.meetings.push(`Minutes template: ${exemptMinutes.length} minutes file${exemptMinutes.length === 1 ? "" : "s"} for meetings before ${rules.minutes_template_from} are exempt — the template requirement was announced that week (${exemptMinutes.map((f) => f.file_name).join(", ")}).`);
         if (minutesFiles.length && minutesTemplate) {
           const { inspectMinutesTemplate } = await import("./health-research.server");
-          const minutesCheck = await inspectMinutesTemplate(db, minutesFiles, minutesTemplate, minutesTextCache);
+          const minutesCheck = await inspectMinutesTemplate(db, minutesFiles, minutesTemplate, minutesTextCache, rules.minutes_min_markers);
           const readableCount = minutesCheck.compliant.length + minutesCheck.violations.length;
           observe("meetings:minutes_template:team", `Minutes template: ${minutesCheck.compliant.length} of ${readableCount} readable minutes files follow the shared Meeting Minutes Template.`, minutesCheck.violations.length, minutesCheck.unverified.length < minutesFiles.length);
           if (minutesCheck.violations.length) {
@@ -327,7 +332,7 @@ export async function computeHealthReview(
         failed += unexplained;
         if (absences - unexplained > 0) { passed += absences - unexplained; notes.meetings.push(`Attendance: ${absences - unexplained} of ${absences} absence${absences === 1 ? "" : "s"} have a reason recorded.`); }
         else if (!absences && teamLogs.length) { passed++; notes.meetings.push("Attendance: no unexplained absences."); }
-        notes.meetings.unshift(`Weekly Meetings sub-checks: ${passed} passed, ${failed} flagged (meetings logged, recency vs. 7-day limit, minutes per meeting, minutes on the shared template, reason per absence).`);
+        notes.meetings.unshift(`Weekly Meetings sub-checks: ${passed} passed, ${failed} flagged (meetings logged, recency vs. the ${rules.meeting_yellow_days}-day limit, minutes per meeting, minutes on the shared template, reason per absence).`);
       }
 
       // 4. Relative login / upload activity (vs. this team's own median)
@@ -339,20 +344,20 @@ export async function computeHealthReview(
         if (roleFilter && s.m.job_title !== roleFilter) continue;
         people++;
         const nm = nameOf(s.m.user_id);
-        if (s.d === 0 && s.u === 0) push("activity", "red", "No sign-ins, visits, or uploads in the last 7 days.", nm, s.m.job_title, s.m.user_id);
-        else if (medDays >= 2 && s.d < medDays / 2) push("activity", "yellow", `Active ${s.d} day(s) in 7 vs. team median ${medDays}.`, nm, s.m.job_title, s.m.user_id);
-        else if (medUp >= 2 && s.u === 0) push("activity", "yellow", `No uploads in 7 days while teammates median ${medUp}.`, nm, s.m.job_title, s.m.user_id);
-        else notes.activity.push(`${nm}: active ${s.d} of last 7 days, ${s.u} upload${s.u === 1 ? "" : "s"} — at or above the team's typical level.`);
-        const streak = lowEngagementStreak(s.m.user_id, contributions, now, 3, LOW_ENGAGEMENT_START);
-        const lvl = lowEngagementLevel(streak);
+        if (s.d === 0 && s.u === 0) push("activity", "red", `No sign-ins, visits, or uploads in the last ${rules.activity_window_days} days.`, nm, s.m.job_title, s.m.user_id);
+        else if (medDays >= 2 && s.d < medDays / 2) push("activity", "yellow", `Active ${s.d} day(s) in ${rules.activity_window_days} vs. team median ${medDays}.`, nm, s.m.job_title, s.m.user_id);
+        else if (medUp >= 2 && s.u === 0) push("activity", "yellow", `No uploads in ${rules.activity_window_days} days while teammates median ${medUp}.`, nm, s.m.job_title, s.m.user_id);
+        else notes.activity.push(`${nm}: active ${s.d} of last ${rules.activity_window_days} days, ${s.u} upload${s.u === 1 ? "" : "s"} — at or above the team's typical level.`);
+        const streak = lowEngagementStreak(s.m.user_id, contributions, now, rules.low_engagement_weeks, lowEngagementStartMs(rules));
+        const lvl = lowEngagementLevel(streak, rules.low_engagement_weeks);
         if (lvl === "yellow" || lvl === "red") push("activity", lvl, `Low engagement: ${streak} consecutive weeks with no uploads, comments, meeting attendance, role activities, or review of team materials beyond the dashboard/health report.`, nm, s.m.job_title, s.m.user_id, `activity:low_engagement:${s.m.user_id}`);
-        else if (lvl === "note") notes.activity.push(`${nm}: no meaningful contribution recorded this past week (note only — low engagement is flagged after 2 consecutive weeks).`);
-        observe(`activity:low_engagement:${s.m.user_id}`, `${nm}: meaningful contribution recorded this week; low-engagement cycle reset.`, streak >= 2 ? 1 : 0);
-        observe(`activity:relative_activity:${s.m.user_id}`, `${nm}: ${s.d} active days and ${s.u} uploads in the last 7 days; no relative-activity concern remains.`, out.some(e => e.check === "activity" && e.userId === s.m.user_id) ? 1 : 0);
+        else if (lvl === "note") notes.activity.push(`${nm}: no meaningful contribution recorded this past week (note only — low engagement is flagged after ${rules.low_engagement_weeks - 1} consecutive weeks).`);
+        observe(`activity:low_engagement:${s.m.user_id}`, `${nm}: meaningful contribution recorded this week; low-engagement cycle reset.`, streak >= rules.low_engagement_weeks - 1 ? 1 : 0);
+        observe(`activity:relative_activity:${s.m.user_id}`, `${nm}: ${s.d} active days and ${s.u} uploads in the last ${rules.activity_window_days} days; no relative-activity concern remains.`, out.some(e => e.check === "activity" && e.userId === s.m.user_id) ? 1 : 0);
       }
 
       // 5. Semester-aware File Vault requirements
-      const expectedMinutes = Math.max(0, week - 3);
+      const expectedMinutes = Math.max(0, week - rules.meetings_start_week);
       if ((isTeamLevel || pmScope) && expectedMinutes > 0) {
         const mins = count("Minutes");
         if (mins < expectedMinutes) push("vault", mins < expectedMinutes / 2 ? "red" : "yellow", `Minutes: ${mins} posted, ${expectedMinutes} expected by week ${week}.`);
@@ -399,18 +404,19 @@ export async function computeHealthReview(
           } else notes.vault.push(narrative);
         }
       }
-      // Instructor granted a one-week grace period (2026-10-17): flag from 47% of the semester, not 40%.
-      if (isTeamLevel && progress >= 0.47 && !teamFiles.some((f) => f.section === "Semester Long Project" && f.subsection === "Interview Questions"))
-        push("vault", "yellow", "No Interview Questions uploaded (expected by 47% of semester).");
-      if ((isTeamLevel || vidScope) && progress >= 0.6 && !teamFiles.some((f) => f.section === "Video"))
-        push("vault", vidScope ? "red" : "yellow", "No Video files uploaded (expected by 60% of semester).", null, vidScope ? "Video Specialist" : null);
-      if ((isTeamLevel || vidScope) && progress >= 0.9 && !teamFiles.some((f) => f.section === "Video" && f.subsection === "Final Submission"))
+      // Interview questions, video files and the final video are expected once the semester
+      // has progressed past the configured percentages (editable in Admin).
+      if (isTeamLevel && progress >= rules.interview_questions_percent / 100 && !teamFiles.some((f) => f.section === "Semester Long Project" && f.subsection === "Interview Questions"))
+        push("vault", "yellow", `No Interview Questions uploaded (expected by ${rules.interview_questions_percent}% of semester).`);
+      if ((isTeamLevel || vidScope) && progress >= rules.video_percent / 100 && !teamFiles.some((f) => f.section === "Video"))
+        push("vault", vidScope ? "red" : "yellow", `No Video files uploaded (expected by ${rules.video_percent}% of semester).`, null, vidScope ? "Video Specialist" : null);
+      if ((isTeamLevel || vidScope) && progress >= rules.video_final_percent / 100 && !teamFiles.some((f) => f.section === "Video" && f.subsection === "Final Submission"))
         push("vault", "red", "Video Final Submission not uploaded.");
 
       // 6. Client research: at least 2 files now, 4 expected by 10/18; misfiled research flagged to the Tech Admin
       const techScope = roleFilter === "Client Vault & Tech Administrator";
       if (isTeamLevel || techScope) {
-        const researchDue = Date.parse("2026-10-18T23:59:59Z");
+        const researchDue = Date.parse(`${rules.research_due}T23:59:59Z`);
         const pastDue = now > researchDue;
         const inResearch = teamFiles.filter((f) => subsectionMatches(f.subsection, "Client research"));
         // Org charts are company materials filed under Organizational Chart, not client research.
@@ -421,7 +427,7 @@ export async function computeHealthReview(
         const techAdmin = tm.find((m) => m.job_title === "Client Vault & Tech Administrator");
         const taName = techAdmin ? nameOf(techAdmin.user_id) : null;
         const taId = techAdmin?.user_id ?? null;
-        const required = pastDue ? 4 : 2;
+        const required = pastDue ? rules.research_required_late : rules.research_required_early;
         notes.vault.push(RESEARCH_NOTE);
         if (total < required) {
           const { inspectResearch } = await import("./health-research.server");
@@ -478,21 +484,21 @@ export async function computeHealthReview(
         const cfRow = (companyFocus ?? []).find((c) => c.team_id === t.teamId);
         const confirmedAt = cfRow?.confirmed_at ? Date.parse(cfRow.confirmed_at) : null;
         if (confirmedAt === null || Number.isNaN(confirmedAt)) {
-          notes.vault.push("Client Communications: client not confirmed yet — correspondence is expected within 3 weeks of confirmation.");
+          notes.vault.push(`Client Communications: client not confirmed yet — correspondence is expected within ${rules.comms_grace_weeks} weeks of confirmation.`);
         } else {
           const weeksSince = (now - confirmedAt) / (7 * DAY);
-          const dueDate = new Date(confirmedAt + 21 * DAY).toISOString().slice(0, 10);
-          if (weeksSince < 3) {
+          const dueDate = new Date(confirmedAt + rules.comms_grace_weeks * 7 * DAY).toISOString().slice(0, 10);
+          if (weeksSince < rules.comms_grace_weeks) {
             if (comms.length)
-              notes.vault.push(`Client Communications: ${comms.length} file${comms.length === 1 ? "" : "s"} filed within 3 weeks of confirmation — on track.`);
+              notes.vault.push(`Client Communications: ${comms.length} file${comms.length === 1 ? "" : "s"} filed within ${rules.comms_grace_weeks} weeks of confirmation — on track.`);
             else
-              notes.vault.push(`Client Communications: none filed yet — not expected until 3 weeks after confirmation (${dueDate}).`);
+              notes.vault.push(`Client Communications: none filed yet — not expected until ${rules.comms_grace_weeks} weeks after confirmation (${dueDate}).`);
           } else if (!comms.length) {
-            push("vault", "red", `Client Communications: no client emails or texts filed — expected since 3 weeks after confirmation (${dueDate}).`);
-          } else if (comms.length === 1) {
-            push("vault", "yellow", `Client Communications: only 1 client email or text filed — 2+ expected 3+ weeks after confirmation (${dueDate}).`);
+            push("vault", "red", `Client Communications: no client emails or texts filed — expected since ${rules.comms_grace_weeks} weeks after confirmation (${dueDate}).`);
+          } else if (comms.length < rules.comms_expected_files) {
+            push("vault", "yellow", `Client Communications: only ${comms.length} client email or text filed — ${rules.comms_expected_files}+ expected ${rules.comms_grace_weeks}+ weeks after confirmation (${dueDate}).`);
           } else {
-            notes.vault.push(`Client Communications on track: ${comms.length} files filed (2+ expected 3+ weeks after confirmation).`);
+            notes.vault.push(`Client Communications on track: ${comms.length} files filed (${rules.comms_expected_files}+ expected ${rules.comms_grace_weeks}+ weeks after confirmation).`);
           }
         }
       }
@@ -552,7 +558,7 @@ export async function computeHealthReview(
         const priors = (shares ?? [])
           .filter((s: any) => s.team_id === t.teamId)
           .map((s: any) => ((s.payload as { exceptions?: HealthException[] })?.exceptions ?? []).filter((e) => !PARFUNKEL.test(e.person ?? "")));
-        const escalated = escalateConcerns(mine, priors);
+        const escalated = escalateConcerns(mine, priors, { redAfter: rules.escalate_red_after, gradeAfter: rules.escalate_grade_after });
         const streaks = new Map<string, number>();
         // Replace in place, preserving order.
         let i = 0;
@@ -586,7 +592,7 @@ export async function computeHealthReview(
         const applicable =
           !noRole &&
           (c !== "gaps" || teamLevel || pmScope) &&
-          (c !== "meetings" || ((teamLevel || pmScope) && week >= 3)) &&
+          (c !== "meetings" || ((teamLevel || pmScope) && week >= rules.meetings_start_week)) &&
           (c !== "reports" || (teamLevel && hasReport));
         results[c] = !applicable ? "skipped" : worst.has(`${t.teamId}:${c}`) ? "flagged" : "pass";
       }

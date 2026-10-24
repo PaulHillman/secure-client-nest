@@ -40,8 +40,8 @@ export function countMinutesTemplateMarkers(text: string): number {
 }
 
 /** True when the extracted minutes text follows the shared template structure. */
-export function minutesFollowTemplate(text: string): boolean {
-  return countMinutesTemplateMarkers(text) >= MINUTES_TEMPLATE_MIN_MARKERS;
+export function minutesFollowTemplate(text: string, minMarkers: number = MINUTES_TEMPLATE_MIN_MARKERS): boolean {
+  return countMinutesTemplateMarkers(text) >= minMarkers;
 }
 
 /** Minutes for meetings held before this date are exempt from the template requirement. */
@@ -71,7 +71,11 @@ export function minutesMeetingDate(
   return dateFromMinutesFileName(file.file_name, year) ?? (file.created_at ? file.created_at.slice(0, 10) : null);
 }
 
-export function minutesExemptFromTemplate(...args: Parameters<typeof minutesMeetingDate>): boolean {
-  const date = minutesMeetingDate(...args);
-  return !!date && date < MINUTES_TEMPLATE_REQUIRED_FROM;
+export function minutesExemptFromTemplate(
+  file: Parameters<typeof minutesMeetingDate>[0],
+  meetings: Parameters<typeof minutesMeetingDate>[1],
+  requiredFrom: string = MINUTES_TEMPLATE_REQUIRED_FROM,
+): boolean {
+  const date = minutesMeetingDate(file, meetings);
+  return !!date && date < requiredFrom;
 }
