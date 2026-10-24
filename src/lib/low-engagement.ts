@@ -23,8 +23,14 @@ export function lowEngagementStreak(userId: string, contributions: Contribution[
   return streak;
 }
 
-export function lowEngagementLevel(streak: number): "note" | "yellow" | "red" | null {
-  return streak >= 3 ? "red" : streak === 2 ? "yellow" : streak === 1 ? "note" : null;
+/**
+ * `weeks` is the configured cycle length: the final week is red, the week before it
+ * is yellow, and a single empty week is only a note. With the default of 3 this is
+ * exactly the original note / yellow / red escalation.
+ */
+export function lowEngagementLevel(streak: number, weeks = 3): "note" | "yellow" | "red" | null {
+  const redAt = Math.max(2, weeks);
+  return streak >= redAt ? "red" : streak === redAt - 1 ? "yellow" : streak >= 1 ? "note" : null;
 }
 
 /** Page views that count as reviewing team materials (not just the dashboard or health report). */

@@ -28,14 +28,21 @@ function keyFor(c: Concern): string | undefined {
   return concernKey(c) ?? c.ruleId;
 }
 
+export type EscalationThresholds = { redAfter: number; gradeAfter: number };
+
 /**
  * @param current  Concerns from the current run for one team.
  * @param priorPayloads  Exceptions arrays from that team's shared reports, newest first.
+ * @param thresholds  Consecutive-report counts at which a concern turns red and at which
+ *                    the grade-deduction notice is added; defaults reproduce the original 2/3.
  */
 export function escalateConcerns<T extends Concern>(
   current: T[],
   priorPayloads: Concern[][],
+  thresholds: EscalationThresholds = { redAfter: 2, gradeAfter: 3 },
 ): EscalationResult<T>[] {
+  const redAfter = Math.max(2, thresholds.redAfter);
+  const gradeAfter = Math.max(redAfter + 1, thresholds.gradeAfter);
   return current.map((concern) => {
     const key = keyFor(concern);
     if (!key) return { concern, streak: 1 };
@@ -46,12 +53,12 @@ export function escalateConcerns<T extends Concern>(
       else break; // consecutive only — a clean report in between resets the count
     }
 
-    if (streak < 2) return { concern, streak };
+    if (streak < redAfter) return { concern, streak };
 
     const escalated: T = {
       ...concern,
       level: "red",
-      reason: `${concern.reason} ${streak === 2 ? SECOND_WARNING : GRADE_NOTICE}`,
+      reason: `${concern.reason} ${streak < gradeAfter ? SECOND_WARNING : GRADE_NOTICE}`,
     };
     return { concern: escalated, streak };
   });
