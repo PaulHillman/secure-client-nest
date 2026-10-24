@@ -77,7 +77,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
 
 /** Shared review logic; also used when regenerating vault report PDFs. */
 export async function computeHealthReview(
-  data: { scope: HealthScope; teamId?: string; section?: string; role?: string },
+  data: { scope: HealthScope; teamId?: string; section?: string; role?: string; skipChecks?: string[] },
   context: { supabase: any; userId: string },
 ) {
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
