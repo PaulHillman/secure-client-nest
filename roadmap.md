@@ -1,5 +1,9 @@
 # ClientVault roadmap
 
+## Oak & Iron peer reviews
+- [ ] Verify document authors, correct ownership and retain misattributed assessment history.
+- [ ] Assess all five originals, including the OpenDocument file, and verify scores and delivery outcomes.
+
 ## Three-week health history
 - [x] Group each team's latest three weekly reports, newest first, and add accessible green up/yellow sideways/red down trend assessments.
 - [x] Verify grouping, trend rules, report links and narrow-screen rendering: eight tests passed; authenticated history showed 14 real teams with three reports each, report links opened correctly, and no runtime errors.
