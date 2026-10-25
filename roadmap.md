@@ -1,8 +1,8 @@
 # ClientVault roadmap
 
 ## Oak & Iron peer reviews
-- [ ] Verify document authors, correct ownership and retain misattributed assessment history.
-- [ ] Assess all five originals, including the OpenDocument file, and verify scores and delivery outcomes.
+- [x] Verify all five document author headers, correct ownership while preserving actual uploaders, and retain Alex's misattributed assessment as invalid audit history.
+- [x] Assess all five originals, including Phillip's OpenDocument file: each scored 6/10 on attempt 1 with three fixes; verified persisted vault badges after reload and all student/instructor/PM copies sent (PM's own copy uses student delivery); nine tests passed.
 
 ## Three-week health history
 - [x] Group each team's latest three weekly reports, newest first, and add accessible green up/yellow sideways/red down trend assessments.
