@@ -1,5 +1,6 @@
 // Server-only: automatic assessment of a Mid-Semester peer-review upload.
-import { MEETING_PEER_DUE } from "./peer-review-policy";
+import { revisionEmailBody } from './peer-review-email';
+export { revisionEmailBody } from './peer-review-email';
 
 const SUBSECTION = "Mid-Semester Peer Reviews";
 const MODEL = "openai/gpt-6-astra";
@@ -51,7 +52,7 @@ async function scoreWithAi(input: { criteria: string; text: string; studentName:
     body: JSON.stringify({
       model: MODEL, stream: true, store: false,
       reasoning: { effort: "medium" },
-      instructions: `You evaluate the QUALITY of a student's submitted mid-semester peer review (0-10 holistic) using ONLY the instructor's criteria below. Score harshly: prefer a justified 6 to a generous 7. Do not invent deduction formulas. Never flag a missing form date or reviewer role. Give 2-3 concise strengths and 2-3 concrete concerns quoting or naming the specific answers. For readable reviews below 8/10, changes MUST contain exactly three distinct, concrete, evidence-based fixes needed to reach 8/10, ordered highest impact first. Identify the relevant answer and what to replace or add; do not guarantee a score merely for editing. For scores 8+ give optional improvements. If the text is not a peer review or is unreadable, set readable=false and score 0.\n\nCRITERIA:\n${input.criteria}`,
+      instructions: `You evaluate the QUALITY of a student's submitted mid-semester peer review (0-10 holistic) using ONLY the instructor's criteria below. Score harshly: prefer a justified 6 to a generous 7. Do not invent deduction formulas. Never flag a missing form date or reviewer role. Give 2-3 concise strengths and 2-3 concrete concerns quoting or naming the specific answers. For revisions, strengths must distinguish verified improvements since the previous attempt from retained strengths. All strengths, concerns and changes must discuss document evidence only: never include pass exceptions, original 7/10 rules, deadlines, meeting instructions, submission limits or upload permissions; the application supplies next steps separately. For readable reviews below 8/10, changes MUST contain exactly three distinct, concrete, evidence-based fixes needed to reach 8/10, ordered highest impact first. Identify the relevant answer and what to replace or add; do not guarantee a score merely for editing. For scores 8+ give optional improvements. If the text is not a peer review or is unreadable, set readable=false and score 0.\n\nCRITERIA:\n${input.criteria}`,
       input: [{ role: "user", content: `Reviewer on record: ${input.studentName}. Team: ${input.teamName}. Attempt ${input.attempt} of 3.${prev}\n\nSUBMITTED DOCUMENT TEXT:\n${input.text.slice(0, 40_000)}` }],
       text: { format: { type: "json_schema", name: "peer_review_quality", strict: true, schema } },
     }),
@@ -83,17 +84,6 @@ async function scoreWithAi(input: { criteria: string; text: string; studentName:
     throw new Error("Assessment did not provide three specific priority fixes; retry assessment.");
   }
   return v;
-}
-
-export function revisionEmailBody(name: string, attempt: number, score: number, v: Verdict) {
-  const label = attempt === 1 ? "original" : `revision (submission ${attempt} of 3)`;
-  const band = score >= 8 ? "GREEN — target met" : score >= 7 ? (attempt === 1 ? "GREEN — pass" : "below the 8+ revision target") : score >= 4 ? "YELLOW" : "RED";
-  let next: string;
-  if (attempt === 1 && score >= 7) next = score === 7 ? "Your review was very close to requiring revision. No further action is required." : "No further action is required.";
-  else if (score >= 8) next = "Your revision meets the 8/10 target. No further action is required.";
-  else if (attempt >= 3) next = "This was your third submission and it remains below 8. You must meet with me by Sunday, November 8 at 11:59 p.m. Eastern and bring this latest submission. Schedule: https://calendly.com/hillman-gvsu/15-minute-meeting-clone-1. Do not upload further revisions before that meeting.";
-  else next = `Upload a revision aiming for 8/10 or higher, or book a meeting with me, by Sunday, November 1, 2026 at 11:59 p.m. Eastern. You have ${3 - attempt} submission${3 - attempt === 1 ? "" : "s"} left. Schedule: https://calendly.com/hillman-gvsu/15-minute-meeting-clone-1.`;
-  return `Hi ${name},\n\nYour mid-semester peer-review ${label} quality score is ${score}/10 — ${band}. This evaluates the quality of your review, not the scores you gave teammates.\n\nWhat you did well:\n${v.strengths.map((s) => `- ${s}`).join("\n")}\n\nWhat needs attention:\n${v.concerns.map((s) => `- ${s}`).join("\n")}\n\n${score >= 8 ? "Optional further improvements" : "Specific changes needed to reach 8 or above"}:\n${v.changes.map((s) => `- ${s}`).join("\n")}\n\n${next}\n\nThis review was generated automatically right after your upload. Copies are sent separately to ${INSTRUCTOR_EMAIL} and your Project Manager.\n\nPaul W. Hillman`;
 }
 
 /** Assess one uploaded version; idempotent per version. Sends student, instructor and PM copies one at a time. */
@@ -160,6 +150,5 @@ export async function autoAssessPeerUpload(versionId: string) {
     const { data: pmProfile } = pm ? await db.from("profiles").select("email").eq("id", pm.user_id).single() : { data: null };
     await send("pm", pmProfile?.email ?? null);
   }
-  void MEETING_PEER_DUE;
   return { status: "assessed", score, attempt };
 }
