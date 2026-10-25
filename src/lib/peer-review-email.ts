@@ -20,7 +20,9 @@ export function revisionEmailBody(name: string, attempt: number, score: number, 
   let next: string;
   if (action.complete) next = revision ? 'Your peer review has reached the required 8/10 target. No further action is required.' : 'No further action is required.';
   else if (action.meetingRequired) next = `You have used all three submissions and have not yet delivered an 8/10 peer review. A meeting with me is now required. Book it by Sunday, November 1, 2026 at 11:59 p.m. Eastern and hold it by Sunday, November 8, 2026 at 11:59 p.m. Eastern. Bring this latest submission. Do not upload further revisions before the meeting.\nSchedule: ${PEER_MEETING_LINK}\n\nUnless you want to spend more time on this, follow the abundant suggestions already provided and fix the specific issues above before our meeting. Use truthful observations; do not invent examples.`;
-  else next = `${revision ? 'You have not yet delivered an 8/10 peer review. Your next submission—submission 3 of 3—is your last chance to reach 8/10 before a meeting with me is required. Unless you want to spend more time on this, follow the abundant suggestions already provided and fix the specific issues above.' : 'Revise your peer review to reach 8/10 or higher.'} Submit by Sunday, November 1, 2026 at 11:59 p.m. Eastern, or book a meeting by that deadline.\nSchedule: ${PEER_MEETING_LINK}`;
+  else next = revision
+    ? `You have not yet delivered an 8/10 peer review. Your next submission—submission 3 of 3—is your last chance to reach 8/10 before a meeting with me is required. Unless you want to spend more time on this, follow the abundant suggestions already provided and fix the specific issues above. Submit by Sunday, November 1, 2026 at 11:59 p.m. Eastern.`
+    : `Revise your peer review to reach 8/10 or higher. Submit by Sunday, November 1, 2026 at 11:59 p.m. Eastern.\nSchedule: ${PEER_MEETING_LINK}`;
   const feedback = revision
     ? `What improved or remains strong:\n${v.strengths.map(s => `- ${s}`).join('\n')}`
     : `What you did well:\n${v.strengths.map(s => `- ${s}`).join('\n')}\n\nWhat needs attention:\n${v.concerns.map(s => `- ${s}`).join('\n')}`;
