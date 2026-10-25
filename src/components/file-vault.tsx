@@ -970,7 +970,7 @@ function FileLine({
     <Card className="border-border/60">
       <CardContent className="p-2.5 flex flex-wrap items-start gap-2">
         <FileText className="h-4 w-4 text-gold mt-0.5 shrink-0" />
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-[min(100%,16rem)]">
           {showMeetingDate && (
             <div className="font-display text-sm font-semibold leading-tight">
               {file.meeting_date ? (
@@ -1048,7 +1048,7 @@ function FileLine({
             {fmtSize(current?.file_size)} · Uploaded {new Date(current?.uploaded_at ?? file.created_at).toLocaleDateString()}
           </div>
         </div>
-        <div className="flex items-center gap-0.5 shrink-0">
+        <div className="flex max-w-full flex-wrap items-center gap-0.5">
           {isAdmin && (
             <Select value={file.status} onValueChange={handleStatusChange}>
               <SelectTrigger className="h-7 w-[130px] text-xs">
