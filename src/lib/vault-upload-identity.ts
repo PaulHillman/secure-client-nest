@@ -17,7 +17,7 @@ type UploadVersion = {
 export function groupPeerUploads<T extends UploadFile & { created_at: string }>(files: T[]) {
   const groups = new Map<string, T[]>();
   for (const file of files) {
-    const owner = file.assigned_to ?? file.uploaded_by;
+    const owner = file.assigned_to ?? `unassigned:${file.id}`;
     const group = groups.get(owner) ?? [];
     group.push(file);
     groups.set(owner, group);
@@ -35,7 +35,8 @@ export function peerUploadSequence(files: UploadFile[], versions: UploadVersion[
   for (const version of versions) {
     const file = fileById.get(version.file_id);
     if (!file || file.subsection !== "Mid-Semester Peer Reviews") continue;
-    const owner = file.assigned_to ?? file.uploaded_by;
+    if (!file.assigned_to) continue;
+    const owner = file.assigned_to;
     const group = groups.get(owner) ?? [];
     group.push(version);
     groups.set(owner, group);
