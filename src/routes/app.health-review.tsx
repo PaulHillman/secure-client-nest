@@ -1,5 +1,7 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { Fragment, useMemo, useState } from "react";
+import { ArrowUp, ArrowRight, ArrowDown } from "lucide-react";
+import { threeWeekHistory, assessHistoryTrend } from "@/lib/health-history-trend";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -117,7 +119,7 @@ function HealthReviewPage() {
     queryFn: async () => {
       const [r, s] = await Promise.all([
         supabase.from("health_review_reports").select("id, scope_label, created_at, teams_checked, good_count, bad_count").order("created_at", { ascending: false }).limit(50),
-        supabase.from("health_review_scores").select("id, report_id, team_label, section, good, bad, red, yellow, created_at").order("created_at", { ascending: false }).limit(300),
+        supabase.from("health_review_scores").select("id, report_id, team_id, team_label, section, good, bad, red, yellow, created_at").order("created_at", { ascending: false }).limit(1000),
       ]);
       if (r.error) throw r.error;
       if (s.error) throw s.error;
@@ -448,25 +450,36 @@ function HealthReviewPage() {
               </table>
             </CardContent>
           </Card>
-          <Card className="mt-6 border-border/60">
-            <CardHeader><CardTitle className="font-display text-2xl">Team scores history</CardTitle></CardHeader>
-            <CardContent className="overflow-x-auto">
-              <p className="text-xs text-muted-foreground mb-2">Good = checks passed. Fair = yellow concerns. Bad = red concerns.</p>
-               <table className="w-full text-sm">
-                <thead><tr className="text-left text-muted-foreground"><th className="py-1">Date</th><th>Team</th><th>Good</th><th>Fair</th><th>Bad</th><th></th></tr></thead>
-                <tbody>
-                  {history.scores.map((x) => (
-                    <tr key={x.id} className="border-t border-border/40">
-                      <td className="py-1">{new Date(x.created_at).toLocaleDateString()}</td>
-                      <td>{x.team_label}</td>
-                      <td className="text-success">{x.good}</td><td className="text-gold">{x.yellow}</td><td className="text-destructive">{x.red}</td>
-                      <td><button className="underline" onClick={() => { navigate({ search: { report: x.report_id } }); window.scrollTo(0, 0); }}>View problems</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </CardContent>
-          </Card>
+          <section className="mt-8" aria-label="Three-week team progress">
+            <h2 className="font-display text-2xl">Team scores history · Last three weeks</h2>
+            <p className="text-xs text-muted-foreground mt-2">Reported concern trend, not a grade: Bad counts take priority, then Fair. Changed checks or reporting corrections can change totals; verified fixes remain in the shared-report comparison.</p>
+            <div className="mt-4 space-y-6">
+              {teams.map(team => {
+                const weeks = threeWeekHistory(history.scores, team.id);
+                if (!weeks.length) return null;
+                const trend = assessHistoryTrend(weeks);
+                const Icon = trend.direction === "up" ? ArrowUp : trend.direction === "down" ? ArrowDown : ArrowRight;
+                const tone = trend.direction === "up" ? "text-success" : trend.direction === "down" ? "text-destructive" : "text-gold";
+                return <div key={team.id} className="border-t border-border pt-4" data-testid="team-history">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="font-medium">{teamLineLabel(team)}</h3>
+                    <span className={`inline-flex items-center gap-2 font-medium text-sm ${tone}`}><Icon className="h-5 w-5 shrink-0" aria-hidden="true" />{trend.label}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{trend.detail}</p>
+                  <div className="overflow-x-auto mt-3">
+                    <table className="w-full text-sm min-w-[400px]">
+                      <thead><tr className="text-left text-muted-foreground"><th className="py-2">Report date</th><th>Good</th><th>Fair</th><th>Bad</th><th><span className="sr-only">Open report</span></th></tr></thead>
+                      <tbody>{weeks.map((x, index) => <tr key={x.id} className={`border-t border-border/40 ${index === 0 ? "font-medium" : ""}`}>
+                        <td className="py-2">{new Date(x.created_at).toLocaleDateString("en-US", { timeZone: "America/Detroit" })}{index === 0 && <span className="block text-xs text-muted-foreground">Most recent</span>}</td>
+                        <td className="text-success">{x.good}</td><td className="text-gold">{x.yellow}</td><td className="text-destructive">{x.red}</td>
+                        <td className="text-right"><Button variant="link" size="sm" aria-label={`View problems for ${teamLineLabel(team)} on ${new Date(x.created_at).toLocaleDateString("en-US", { timeZone: "America/Detroit" })}`} onClick={() => { navigate({ search: { report: x.report_id } }); window.scrollTo(0, 0); }}>View problems</Button></td>
+                      </tr>)}</tbody>
+                    </table>
+                  </div>
+                </div>;
+              })}
+            </div>
+          </section>
         </>
       )}
     </div>
