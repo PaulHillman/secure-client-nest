@@ -1,7 +1,7 @@
 /** Remove the listing atomically before touching its stored files. */
 export async function deleteVaultRecord(
-  deleteRecord: () => Promise<{ data: string[] | null; error: { message: string } | null }>,
-  removeStorage: (paths: string[]) => Promise<{ error: { message: string } | null }>,
+  deleteRecord: () => PromiseLike<{ data: string[] | null; error: { message: string } | null }>,
+  removeStorage: (paths: string[]) => PromiseLike<{ error: { message: string } | null }>,
 ) {
   const result = await deleteRecord();
   if (result.error) throw new Error(result.error.message);
