@@ -112,8 +112,9 @@ export async function autoAssessPeerUpload(versionId: string) {
   const attempt = (previous?.attempt ?? 0) + 1;
   if (attempt > 3) return { status: "limit" };
 
-  const { data: crit } = await db.from("peer_review_criteria").select("content").eq("id", "global").single();
-  const criteria = crit?.content ?? "";
+  const { data: crit, error: criteriaError } = await db.from("peer_review_criteria").select("content").eq("id", "peer-review").single();
+  if (criteriaError || !crit?.content.trim()) throw new Error("Peer-review criteria are unavailable. Please retry after checking the criteria document.");
+  const criteria = crit.content;
   const { data: blob } = await db.storage.from("vault").download(version.storage_path);
   const text = blob && (version.file_size ?? 0) < 10_000_000 ? await extractText(blob, version.storage_path) : null;
   const { data: instructor } = await db.from("profiles").select("id").ilike("email", INSTRUCTOR_EMAIL).limit(1).single();
