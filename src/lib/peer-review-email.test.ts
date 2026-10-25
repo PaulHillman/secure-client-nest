@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { peerEmailAction } from './peer-review-email';
+import { peerEmailAction, revisionEmailBody, PEER_MEETING_LINK } from './peer-review-email';
 
 describe('revision email next-step rules', () => {
   test('first revision below 8 has exactly one submission remaining', () => {
@@ -15,5 +15,16 @@ describe('revision email next-step rules', () => {
   });
   test('email changes do not revoke an original 7 pass', () => {
     assert.equal(peerEmailAction(7, 1).complete, true);
+  });
+  test('first-revision email omits the meeting link', () => {
+    const body = revisionEmailBody('Alex', 2, 6, { strengths: [], concerns: [], changes: ['Fix one'] });
+    assert.ok(body.includes('submission 3 of 3'));
+    assert.ok(!body.includes(PEER_MEETING_LINK));
+    assert.ok(!body.includes('book a meeting'));
+  });
+  test('second-revision email includes the meeting link', () => {
+    const body = revisionEmailBody('Alex', 3, 7, { strengths: [], concerns: [], changes: ['Fix one'] });
+    assert.ok(body.includes(PEER_MEETING_LINK));
+    assert.ok(body.includes('A meeting with me is now required'));
   });
 });
