@@ -83,6 +83,8 @@ function runPeerAssessment(versionId: string, onDone: () => void) {
 import { compareTeamRoles } from "@/lib/team-roles";
 import { finalCompiledName, isFinalCompiled } from "@/lib/vault-file-label";
 import { peerUploadSequence, groupPeerUploads } from "@/lib/vault-upload-identity";
+import { peerPriorityFixes } from "@/lib/peer-review-feedback";
+import { Calculator, LoaderCircle } from "lucide-react";
 
 type FileRow = {
   id: string;
@@ -102,7 +104,7 @@ type FileRow = {
   meeting_date: string | null;
 };
 
-type PeerScore = { score: number | null; status: string; attempt: number };
+type PeerScore = { score: number | null; status: string; attempt: number; changes: unknown };
 
 const VAULT_FOLDERS = [
   { key: "agendas", label: "Agendas", icon: Calendar, entries: [["Team Documents", "Agendas"]] },
@@ -207,7 +209,7 @@ export function FileVault({
   const { data, isLoading } = useQuery({
     // Separate the enriched result from pre-update cached lists in open previews.
     // Keep the prefix so existing upload/status invalidations still refresh it.
-    queryKey: ["vault", teamId, "upload-identity-v2"],
+    queryKey: ["vault", teamId, "peer-feedback-v3"],
     queryFn: async () => {
       const [{ data: files, error: fErr }, { data: versions, error: vErr }, members, { data: assessments }] =
         await Promise.all([
@@ -222,7 +224,7 @@ export function FileVault({
           // Peer-review scores per file; RLS limits students to their own rows.
           supabase
             .from("peer_review_assessments")
-            .select("file_id, version_id, score, status, attempt")
+            .select("file_id, version_id, score, status, attempt, changes")
             .eq("team_id", teamId),
         ]);
       if (fErr) throw fErr;
@@ -235,7 +237,7 @@ export function FileVault({
       });
       const peerMap = new Map<string, PeerScore>();
       (assessments ?? []).forEach((a) => {
-        if (a.version_id) peerMap.set(a.version_id, { score: a.score, status: a.status, attempt: a.attempt });
+        if (a.version_id) peerMap.set(a.version_id, { score: a.score, status: a.status, attempt: a.attempt, changes: a.changes });
       });
       const uploaderIds = Array.from(new Set([
         ...(files ?? []).map((f) => f.uploaded_by),
@@ -920,9 +922,35 @@ function FileLine({
 } & RowCommonProps) {
   const current = versions.find((v) => v.id === file.current_version_id) ?? versions[0];
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [calculating, setCalculating] = useState(false);
+  const calculateScore = useServerFn(autoAssessPeerReviewUpload);
+  const queryClient = useQueryClient();
   const isPeerReview = file.subsection === "Mid-Semester Peer Reviews";
   const uploadNumber = current ? peerSequence.get(current.id) : undefined;
   const assessment = current ? peerMap.get(current.id) : undefined;
+  const fixes = peerPriorityFixes(assessment?.score, assessment?.changes);
+  const handleCalculateScore = async () => {
+    if (!current || calculating) return;
+    setCalculating(true);
+    try {
+      const result = await calculateScore({ data: { versionId: current.id } });
+      if (result.status === "assessed" || (result.status === "already" && result.score != null)) {
+        toast.success(`Peer review score posted: ${result.score}/10`);
+      } else if (result.status === "unreadable" || result.status === "already") {
+        toast.warning("This upload needs instructor review; no score has been invented.");
+      } else if (result.status === "limit") {
+        toast.warning("The submission limit has been reached. Instructor review is required.");
+      } else {
+        toast.warning("This upload is not eligible for automatic assessment.");
+      }
+    } catch {
+      toast.error("The score could not be calculated. Please try again.");
+    } finally {
+      onRefresh();
+      void queryClient.invalidateQueries({ queryKey: ["peer-review-assessments"] });
+      setCalculating(false);
+    }
+  };
   const uploaderName = uploaderNames.get(current?.uploaded_by ?? file.uploaded_by) ?? "Name unavailable";
   const assignedName = file.assigned_to
     ? uploaderNames.get(file.assigned_to)
@@ -942,7 +970,7 @@ function FileLine({
     <Card className="border-border/60">
       <CardContent className="p-2.5 flex flex-wrap items-start gap-2">
         <FileText className="h-4 w-4 text-gold mt-0.5 shrink-0" />
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-[min(100%,16rem)]">
           {showMeetingDate && (
             <div className="font-display text-sm font-semibold leading-tight">
               {file.meeting_date ? (
@@ -996,6 +1024,23 @@ function FileLine({
                 : "No assessment recorded for this upload."}
             </p>
           )}
+          {isPeerReview && isAdmin && current && assessment?.score == null && (
+            <Button variant="outline" size="sm" className="mt-2" disabled={calculating}
+              onClick={() => void handleCalculateScore()}>
+              {calculating ? <LoaderCircle className="mr-1 h-4 w-4 animate-spin" /> : <Calculator className="mr-1 h-4 w-4" />}
+              {calculating ? "Calculating score…" : "Calculate score"}
+            </Button>
+          )}
+          {isPeerReview && fixes.length > 0 && (
+            <div className="mt-2 text-xs" aria-live="polite">
+              <p className="font-semibold">{assessment?.attempt === 1 && assessment.score === 7
+                ? "Optional improvements toward 8/10 — your original passes"
+                : "Priority fixes to reach 8/10"}</p>
+              <ol className="mt-1 list-decimal space-y-1 pl-5 break-words">
+                {fixes.map((fix, index) => <li key={index}>{fix}</li>)}
+              </ol>
+            </div>
+          )}
           {file.description && (
             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{file.description}</p>
           )}
@@ -1003,7 +1048,7 @@ function FileLine({
             {fmtSize(current?.file_size)} · Uploaded {new Date(current?.uploaded_at ?? file.created_at).toLocaleDateString()}
           </div>
         </div>
-        <div className="flex items-center gap-0.5 shrink-0">
+        <div className="flex max-w-full flex-wrap items-center gap-0.5">
           {isAdmin && (
             <Select value={file.status} onValueChange={handleStatusChange}>
               <SelectTrigger className="h-7 w-[130px] text-xs">

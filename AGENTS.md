@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Manual File Vault scoring uses the same authorized, idempotent exact-version assessment as upload automation; saved priority feedback is displayed without reusing an original grade or inventing fixes.
+
 - Submission reviews preserve written answers and label fallback client details as current company records, never as historical submitted answers.
 
 - Individual peer-review assessments retain the source version, rubric snapshot and exact email separately from team health reports; each authorized assessment delivery handles one derived recipient and has its own idempotency key.
