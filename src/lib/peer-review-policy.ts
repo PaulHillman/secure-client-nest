@@ -14,11 +14,11 @@ export function peerBadgeLabel(a: PeerBadgeInfo) {
   return `${a.attempt <= 1 ? 'Original' : 'Updated'} Peer Review ${a.score}/10`;
 }
 
-export function peerBadgeTone(score: number | null, now: Date = new Date()) {
+export function peerBadgeTone(score: number | null, now: Date = new Date(), attempt = 1) {
   if (score === null) return 'bg-muted text-muted-foreground border-border';
   if (now > new Date(MEETING_PEER_DUE) && score < 8)
     return 'bg-destructive/15 text-destructive border-destructive/30';
-  if (score >= 7) return 'bg-success/15 text-success border-success/30';
+  if (peerReviewPass(score, attempt)) return 'bg-success/15 text-success border-success/30';
   if (score >= 4) return 'bg-gold/15 text-gold border-gold/30';
   return 'bg-destructive/15 text-destructive border-destructive/30';
 }

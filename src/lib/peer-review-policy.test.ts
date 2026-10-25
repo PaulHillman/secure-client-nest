@@ -1,6 +1,6 @@
 import { describe, test } from "node:test";
 import { strict as assert } from "node:assert";
-import { peerBadgeLabel, peerBadgeTone, MEETING_PEER_DUE } from "./peer-review-policy";
+import { peerBadgeLabel, peerBadgeTone, peerReviewPass, MEETING_PEER_DUE } from "./peer-review-policy";
 
 const before = new Date("2026-11-01T12:00:00Z");
 const after = new Date("2026-11-10T12:00:00Z");
@@ -26,6 +26,29 @@ describe("peerBadgeLabel", () => {
 });
 
 describe("peerBadgeTone", () => {
+  test("a revised 7/10 stays yellow and does not pass", () => {
+    for (const attempt of [2, 3]) {
+      assert.match(peerBadgeTone(7, before, attempt), /gold/);
+      assert.equal(peerReviewPass(7, attempt), false);
+    }
+  });
+
+  test("revisions turn green starting at 8/10", () => {
+    for (const score of [8, 9, 10]) {
+      assert.match(peerBadgeTone(score, before, 2), /success/);
+      assert.equal(peerReviewPass(score, 2), true);
+    }
+  });
+
+  test("an original 7/10 remains a green pass", () => {
+    assert.match(peerBadgeTone(7, before, 1), /success/);
+    assert.equal(peerReviewPass(7, 1), true);
+  });
+
+  test("revised 7/10 turns red after the meeting deadline", () => {
+    assert.match(peerBadgeTone(7, after, 2), /destructive/);
+  });
+
   test("uses 0-3 red, 4-6 yellow, 7-10 green before the deadline", () => {
     assert.match(peerBadgeTone(3, before), /destructive/);
     assert.match(peerBadgeTone(4, before), /gold/);
