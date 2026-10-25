@@ -1,4 +1,5 @@
 # Architecture rules
+- Peer-review OpenDocument text is extracted from ordered XML paragraphs and table cells using bundled ZIP/XML readers; unreadable content is never scored.
 - Three-week saved-score history groups by team ID and Detroit calendar week, retaining the newest save per week; directional arrows describe reported concern counts, never verified student-earned fixes or grades.
 
 - Vault deletion uses an authorized atomic database function before storage cleanup, retaining assessment source snapshots; deleted-source assessments do not consume replacement attempts.
