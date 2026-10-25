@@ -111,7 +111,7 @@ export async function autoAssessPeerUpload(versionId: string) {
   const { data: student } = await db.from("profiles").select("name, email").eq("id", ownerId).single();
   if (!student || /parfunkel/i.test(student.name)) return { status: "skipped" };
 
-  const { data: prior } = await db.from("peer_review_assessments").select("attempt, score, concerns, changes, status").eq("user_id", ownerId).eq("team_id", file.team_id).not("file_id", "is", null).order("attempt", { ascending: false });
+  const { data: prior } = await db.from("peer_review_assessments").select("attempt, score, concerns, changes, status").eq("user_id", ownerId).eq("team_id", file.team_id).eq("status", "assessed").order("attempt", { ascending: false });
   const previous = prior?.[0] ?? null;
   const attempt = (previous?.attempt ?? 0) + 1;
   if (attempt > 3) return { status: "limit" };
