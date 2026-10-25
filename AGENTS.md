@@ -1,4 +1,5 @@
 # Architecture rules
+- Peer-review email next steps are deterministic and separate from AI document feedback; the shared policy controls attempt eligibility and revisions omit redundant concern narratives.
 - Peer-review OpenDocument text is extracted from ordered XML paragraphs and table cells using bundled ZIP/XML readers; unreadable content is never scored.
 - Three-week saved-score history groups by team ID and Detroit calendar week, retaining the newest save per week; directional arrows describe reported concern counts, never verified student-earned fixes or grades.
 
