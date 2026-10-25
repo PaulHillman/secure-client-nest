@@ -47,7 +47,7 @@ async function scoreWithAi(input: { criteria: string; text: string; studentName:
     body: JSON.stringify({
       model: MODEL, stream: true, store: false,
       reasoning: { effort: "medium" },
-      instructions: `You evaluate the QUALITY of a student's submitted mid-semester peer review (0-10 holistic) using ONLY the instructor's criteria below. Score harshly: prefer a justified 6 to a generous 7. Do not invent deduction formulas. Never flag a missing form date or reviewer role. Give 2-3 concise strengths, 2-3 concrete concerns quoting or naming the specific answers, and 2-4 specific changes needed to reach 8+. If the text is not a peer review or is unreadable, set readable=false and score 0.\n\nCRITERIA:\n${input.criteria}`,
+      instructions: `You evaluate the QUALITY of a student's submitted mid-semester peer review (0-10 holistic) using ONLY the instructor's criteria below. Score harshly: prefer a justified 6 to a generous 7. Do not invent deduction formulas. Never flag a missing form date or reviewer role. Give 2-3 concise strengths and 2-3 concrete concerns quoting or naming the specific answers. For readable reviews below 8/10, changes MUST contain exactly three distinct, concrete, evidence-based fixes needed to reach 8/10, ordered highest impact first. Identify the relevant answer and what to replace or add; do not guarantee a score merely for editing. For scores 8+ give optional improvements. If the text is not a peer review or is unreadable, set readable=false and score 0.\n\nCRITERIA:\n${input.criteria}`,
       input: [{ role: "user", content: `Reviewer on record: ${input.studentName}. Team: ${input.teamName}. Attempt ${input.attempt} of 3.${prev}\n\nSUBMITTED DOCUMENT TEXT:\n${input.text.slice(0, 40_000)}` }],
       text: { format: { type: "json_schema", name: "peer_review_quality", strict: true, schema } },
     }),
@@ -75,6 +75,9 @@ async function scoreWithAi(input: { criteria: string; text: string; studentName:
   }
   const v = JSON.parse(out) as Verdict;
   v.score = Math.max(0, Math.min(10, Math.round(v.score)));
+  if (v.readable && v.score < 8 && (v.changes.length !== 3 || v.changes.some((change) => !change.trim()))) {
+    throw new Error("Assessment did not provide three specific priority fixes; retry assessment.");
+  }
   return v;
 }
 
@@ -109,7 +112,7 @@ export async function autoAssessPeerUpload(versionId: string) {
   const attempt = (previous?.attempt ?? 0) + 1;
   if (attempt > 3) return { status: "limit" };
 
-  const { data: crit } = await db.from("peer_review_criteria").select("content").limit(1).single();
+  const { data: crit } = await db.from("peer_review_criteria").select("content").eq("id", "global").single();
   const criteria = crit?.content ?? "";
   const { data: blob } = await db.storage.from("vault").download(version.storage_path);
   const text = blob && (version.file_size ?? 0) < 10_000_000 ? await extractText(blob, version.storage_path) : null;
