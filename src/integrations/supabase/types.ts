@@ -1532,6 +1532,7 @@ export type Database = {
           instructor_email_status: string
           pm_email_status: string
           score: number | null
+          source_snapshot: Json | null
           status: string
           strengths: Json
           student_email_status: string
@@ -1553,6 +1554,7 @@ export type Database = {
           instructor_email_status?: string
           pm_email_status?: string
           score?: number | null
+          source_snapshot?: Json | null
           status?: string
           strengths?: Json
           student_email_status?: string
@@ -1574,6 +1576,7 @@ export type Database = {
           instructor_email_status?: string
           pm_email_status?: string
           score?: number | null
+          source_snapshot?: Json | null
           status?: string
           strengths?: Json
           student_email_status?: string
@@ -2525,6 +2528,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      delete_vault_file: { Args: { _file_id: string }; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
