@@ -30,6 +30,10 @@ async function extractText(blob: Blob, name: string): Promise<string | null> {
       const mammoth = await import("mammoth/mammoth.browser");
       return (await mammoth.extractRawText({ arrayBuffer: bytes })).value.trim() || null;
     }
+    if (/\.odt$/i.test(name)) {
+      const { extractOdtText } = await import('./odt-text');
+      return await extractOdtText(bytes);
+    }
     if (/\.(txt|md)$/i.test(name)) return new TextDecoder().decode(bytes).trim() || null;
   } catch { /* unreadable */ }
   return null;
