@@ -1,5 +1,9 @@
 # ClientVault roadmap
 
+## Missing upload replacement
+- [ ] Make deletion atomic, preserve assessment audit, and report failures rather than false success.
+- [ ] Remove Kendall's missing upload and correct her replacement to attempt 2; verify through the vault.
+
 ## Immediate peer-review scoring
 - [x] Add an instructor fallback button for unscored uploads and display the top three saved fixes below 8/10.
 - [x] Verify the fallback posts the exact version's score and preserves completed scores and attempts: Sky Lin revision scored 6/10 with three fixes; persisted on reload, original 0/10 preserved, all three email copies sent.
