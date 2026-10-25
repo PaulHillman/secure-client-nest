@@ -3,6 +3,7 @@
 ## Immediate peer-review scoring
 - [ ] Add an instructor fallback button for unscored uploads and display the top three saved fixes below 8/10.
 - [ ] Verify the fallback posts the exact version's score and preserves completed scores and attempts.
+- [ ] Check why the instructor cannot see the score button in the File Vault.
 
 ## Weekly Health Check Review
 - [x] Add admin-editable rule settings (meeting gaps, activity window, low-engagement cycle, research counts and due date, client-communication grace and count, semester vault milestones, minutes template start and markers, repeat-warning escalation) that the review reads on every run; verified live that a saved change reaches the report text and the value was restored.
