@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Vault deletion uses an authorized atomic database function before storage cleanup, retaining assessment source snapshots; deleted-source assessments do not consume replacement attempts.
+
 - Manual File Vault scoring uses the same authorized, idempotent exact-version assessment as upload automation; saved priority feedback is displayed without reusing an original grade or inventing fixes.
 - Peer-review badges receive the displayed assessment's attempt and use the shared pass policy, so original and revision thresholds stay consistent across File Vault and team rosters.
 

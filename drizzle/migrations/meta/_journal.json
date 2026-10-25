@@ -141,6 +141,13 @@
       "when": 1792864787027,
       "tag": "0019_health_review_disabled_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792929521182,
+      "tag": "0020_atomic_vault_deletion",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,7 @@
 import { recordHealthReportView } from "@/lib/health-report-views";
 import { peerBadgeLabel, peerBadgeTone } from "@/lib/peer-review-policy";
 import { openVaultFileInNewTab } from "@/lib/file-download";
+import { deleteVaultRecord } from "@/lib/vault-delete";
 import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -313,14 +314,20 @@ export function FileVault({
 
   const remove = async (file: FileRow) => {
     if (!confirm(`Delete "${file.file_name}" and all its versions?`)) return;
-    const versions = verMap.get(file.id) ?? [];
-    if (versions.length) {
-      await supabase.storage.from("vault").remove(versions.map((v) => v.storage_path));
+    try {
+      const result = await deleteVaultRecord(
+        () => supabase.rpc("delete_vault_file", { _file_id: file.id }),
+        (paths) => supabase.storage.from("vault").remove(paths),
+      );
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["vault", teamId] }),
+        qc.invalidateQueries({ queryKey: ["peer-review-assessments"] }),
+      ]);
+      if (result.cleanupPending) toast.warning("File deleted from the vault; stored-file cleanup could not be confirmed.");
+      else toast.success("File deleted");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "File could not be deleted. Please try again.");
     }
-    await supabase.from("file_versions").delete().eq("file_id", file.id);
-    await supabase.from("files").delete().eq("id", file.id);
-    toast.success("File deleted");
-    qc.invalidateQueries({ queryKey: ["vault", teamId] });
   };
 
   const setStatus = async (file: FileRow, status: VaultStatus) => {
