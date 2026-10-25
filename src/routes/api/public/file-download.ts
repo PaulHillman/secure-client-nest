@@ -33,7 +33,7 @@ export const Route = createFileRoute("/api/public/file-download")({
             .maybeSingle();
           if (!v) return json({ error: "Not found" }, 404);
           const { data: b, error: e } = await supabaseAdmin.storage.from("vault").download(v.storage_path);
-          if (e || !b) return json({ error: "Could not read file" }, 502);
+          if (e || !b) return json({ error: "This file's contents are missing from storage. Ask the uploader to upload it again." }, 404);
           const name = ((v.files as { file_name: string } | null)?.file_name ?? "file").replace(/["\r\n]/g, "_");
           return new Response(b, {
             status: 200,
@@ -83,7 +83,7 @@ export const Route = createFileRoute("/api/public/file-download")({
         const { data: blob, error: dErr } = await supabase.storage
           .from("vault")
           .download(version.storage_path);
-        if (dErr || !blob) return json({ error: "Could not read file" }, 502);
+        if (dErr || !blob) return json({ error: "This file's contents are missing from storage. Ask the uploader to upload it again." }, 404);
 
         const safeName = file.file_name.replace(/["\r\n]/g, "_");
         return new Response(blob, {
