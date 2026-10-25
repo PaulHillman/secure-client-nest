@@ -1,5 +1,9 @@
 # ClientVault roadmap
 
+## Concise revision emails
+- [ ] Focus revision feedback on 8/10, three fixes, remaining chance and one meeting instruction; preserve original pass policy.
+- [ ] Verify attempt-specific next steps and provide a first-revision email example without sending emails.
+
 ## Oak & Iron peer reviews
 - [x] Verify all five document author headers, correct ownership while preserving actual uploaders, and retain Alex's misattributed assessment as invalid audit history.
 - [x] Assess all five originals, including Phillip's OpenDocument file: each scored 6/10 on attempt 1 with three fixes; verified persisted vault badges after reload and all student/instructor/PM copies sent (PM's own copy uses student delivery); nine tests passed.
