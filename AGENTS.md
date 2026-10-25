@@ -1,6 +1,7 @@
 # Architecture rules
 
 - Manual File Vault scoring uses the same authorized, idempotent exact-version assessment as upload automation; saved priority feedback is displayed without reusing an original grade or inventing fixes.
+- Peer-review badges receive the displayed assessment's attempt and use the shared pass policy, so original and revision thresholds stay consistent across File Vault and team rosters.
 
 - Submission reviews preserve written answers and label fallback client details as current company records, never as historical submitted answers.
 
