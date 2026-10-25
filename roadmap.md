@@ -1,8 +1,8 @@
 # ClientVault roadmap
 
 ## Missing upload replacement
-- [ ] Make deletion atomic, preserve assessment audit, and report failures rather than false success.
-- [ ] Remove Kendall's missing upload and correct her replacement to attempt 2; verify through the vault.
+- [x] Make deletion atomic, preserve assessment audit, and report failures rather than false success.
+- [x] Remove Kendall's missing upload and correct her replacement to attempt 2; verified through the vault, original retained and replacement 6/10 shown as Upload 2.
 
 ## Immediate peer-review scoring
 - [x] Add an instructor fallback button for unscored uploads and display the top three saved fixes below 8/10.

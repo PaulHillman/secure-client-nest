@@ -27,6 +27,13 @@ test("a second peer-review file uploaded by the same member is revised even at v
   assert.equal(sequence.get("updated"), 2);
 });
 
+test("Kendall's replacement is upload 2 once the broken duplicate is deleted", () => {
+  const sequence = peerUploadSequence([file("original", "Kendall"), file("replacement", "Paul", "Kendall")],
+    [version("original-v", "original", 21), version("deleted-v", "broken", 24), version("replacement-v", "replacement", 25)]);
+  assert.equal(sequence.get("replacement-v"), 2);
+  assert.equal(sequence.has("deleted-v"), false);
+});
+
 test("each member has an independent original and assigned ownership is distinct from uploader", () => {
   const sequence = peerUploadSequence([file("a", "PM", "Isabella"), file("b", "PM", "Taylor")],
     [version("a1", "a", 20), version("b1", "b", 23)]);
