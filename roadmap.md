@@ -1,5 +1,9 @@
 # ClientVault roadmap
 
+## Three-week health history
+- [x] Group each team's latest three weekly reports, newest first, and add accessible green up/yellow sideways/red down trend assessments.
+- [x] Verify grouping, trend rules, report links and narrow-screen rendering: eight tests passed; authenticated history showed 14 real teams with three reports each, report links opened correctly, and no runtime errors.
+
 ## Missing upload replacement
 - [x] Make deletion atomic, preserve assessment audit, and report failures rather than false success.
 - [x] Remove Kendall's missing upload and correct her replacement to attempt 2; verified through the vault, original retained and replacement 6/10 shown as Upload 2.
