@@ -1,9 +1,9 @@
 # ClientVault roadmap
 
 ## Immediate peer-review scoring
-- [ ] Add an instructor fallback button for unscored uploads and display the top three saved fixes below 8/10.
-- [ ] Verify the fallback posts the exact version's score and preserves completed scores and attempts.
-- [ ] Check why the instructor cannot see the score button in the File Vault.
+- [x] Add an instructor fallback button for unscored uploads and display the top three saved fixes below 8/10.
+- [x] Verify the fallback posts the exact version's score and preserves completed scores and attempts: Sky Lin revision scored 6/10 with three fixes; persisted on reload, original 0/10 preserved, all three email copies sent.
+- [x] Verify the instructor button in the live File Vault; visible below uploader on unscored rows, replaced by saved score after assessment.
 
 ## Weekly Health Check Review
 - [x] Add admin-editable rule settings (meeting gaps, activity window, low-engagement cycle, research counts and due date, client-communication grace and count, semester vault milestones, minutes template start and markers, repeat-warning escalation) that the review reads on every run; verified live that a saved change reaches the report text and the value was restored.
