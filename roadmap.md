@@ -10,6 +10,7 @@
 - [x] Keep the prose guide as documentation beside the settings, with a seven-day review reminder.
 
 ## File Vault identification
+- [ ] Correct proxy-upload ownership so classmates' first reviews are not counted as the uploader's revisions; preserve uploader attribution and verify affected files.
 - [x] Group peer reviews by member, keeping originals immediately before revisions; verified Isabella's original 6/10 alongside Upload 2 with a pending-assessment label and 8/10+ target.
 - [x] Show full uploader names, original/revised peer-review upload labels across separate files, and exact-version scores; verified Isabella Tiseo's revised upload in the live vault at desktop and narrow widths, with six passing tests. History rows also identify uploaders.
 
