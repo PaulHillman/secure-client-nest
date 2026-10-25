@@ -209,7 +209,7 @@ export function FileVault({
   const { data, isLoading } = useQuery({
     // Separate the enriched result from pre-update cached lists in open previews.
     // Keep the prefix so existing upload/status invalidations still refresh it.
-    queryKey: ["vault", teamId, "peer-feedback-v3"],
+    queryKey: ["vault", teamId, "peer-feedback-owner-v4"],
     queryFn: async () => {
       const [{ data: files, error: fErr }, { data: versions, error: vErr }, members, { data: assessments }] =
         await Promise.all([
@@ -224,7 +224,7 @@ export function FileVault({
           // Peer-review scores per file; RLS limits students to their own rows.
           supabase
             .from("peer_review_assessments")
-            .select("file_id, version_id, score, status, attempt, changes")
+            .select("file_id, version_id, user_id, score, status, attempt, changes")
             .eq("team_id", teamId),
         ]);
       if (fErr) throw fErr;
@@ -241,6 +241,7 @@ export function FileVault({
       });
       const uploaderIds = Array.from(new Set([
         ...(files ?? []).map((f) => f.uploaded_by),
+        ...(files ?? []).flatMap((f) => f.assigned_to ? [f.assigned_to] : []),
         ...(files ?? []).flatMap((f) => (verMap.get(f.id) ?? []).map((v) => v.uploaded_by)),
       ]));
       const { data: uploaders, error: uploaderError } = uploaderIds.length
@@ -249,8 +250,11 @@ export function FileVault({
       if (uploaderError) throw uploaderError;
       const uploaderNames = new Map((uploaders ?? []).map((p) => [p.id,
         [p.first_name, p.last_name].filter(Boolean).join(" ").trim() || p.name]));
-      const peerSequence = peerUploadSequence((files ?? []) as FileRow[], versions ?? []);
-      return { files: (files ?? []) as FileRow[], verMap, members, peerMap, uploaderNames, peerSequence };
+      // Legacy assessed uploads have an established student identity even without an assignee.
+      const assessedOwners = new Map((assessments ?? []).filter(a => a.file_id && a.status !== "ownership_invalid").map(a => [a.file_id, a.user_id]));
+      const ownedFiles = (files ?? []).map(f => ({ ...f, assigned_to: f.assigned_to ?? assessedOwners.get(f.id) ?? null })) as FileRow[];
+      const peerSequence = peerUploadSequence(ownedFiles, versions ?? []);
+      return { files: ownedFiles, verMap, members, peerMap, uploaderNames, peerSequence };
     },
   });
 
@@ -614,7 +618,7 @@ function SubsectionBlock({
         <div className="space-y-5">
           {peerGroups.map((group) => (
             <div key={group.owner} className="space-y-2" data-peer-owner={group.owner}>
-              <h5 className="text-sm font-semibold">{uploaderNames.get(group.owner) ?? members.find((m) => m.user_id === group.owner)?.name ?? "Member name unavailable"}</h5>
+              <h5 className="text-sm font-semibold">{uploaderNames.get(group.owner) ?? members.find((m) => m.user_id === group.owner)?.name ?? "Review owner not selected"}</h5>
               {group.files.map((f) => (
                 <FileLine
                   key={f.id}
@@ -938,6 +942,8 @@ function FileLine({
         toast.success(`Peer review score posted: ${result.score}/10`);
       } else if (result.status === "unreadable" || result.status === "already") {
         toast.warning("This upload needs instructor review; no score has been invented.");
+      } else if (result.status === "owner_required") {
+        toast.warning("Select whose peer review this is before calculating its score.");
       } else if (result.status === "limit") {
         toast.warning("The submission limit has been reached. Instructor review is required.");
       } else {
@@ -1019,7 +1025,7 @@ function FileLine({
           </div>
           {isPeerReview && !assessment && (
             <p className="text-xs text-muted-foreground mt-0.5">
-              {uploadNumber && uploadNumber > 1
+              {!file.assigned_to ? "Review owner not selected — attempt order unverified." : uploadNumber && uploadNumber > 1
                 ? "Stand by — revised score being assessed · Target: 8/10 or higher"
                 : "No assessment recorded for this upload."}
             </p>
@@ -1371,7 +1377,9 @@ function UploadDialog({
   const isCompetitions = section === "Competitions";
 
   const subDef = sections.find((s) => s.name === section)?.subsections.find((x) => x.name === subsection);
-  const showAssignee = !!subDef?.perMember && members.length > 0;
+  const isPeerReview = subsection === "Mid-Semester Peer Reviews";
+  const showAssignee = (isPeerReview || !!subDef?.perMember) && members.length > 0;
+  const validPeerOwner = members.some((m) => m.user_id === assignedTo);
   const isCompetition = isCompetitions || section.startsWith("Competition");
 
   const onSectionChange = (s: string) => {
@@ -1391,6 +1399,7 @@ function UploadDialog({
 
   const submit = async () => {
     if (!file) return toast.error("Pick a file first");
+    if (isPeerReview && !validPeerOwner) return toast.error("Select whose peer review this is.");
     const rawName = name.trim() || file.name;
     const fileName = showAssignee && assignedTo === "final" ? finalCompiledName(rawName) : rawName;
     // Map the virtual "Competitions" choice back to the stored section/subsection.
@@ -1531,12 +1540,12 @@ function UploadDialog({
           )}
           {showAssignee && (
             <div>
-              <Label>Placement</Label>
+              <Label>{isPeerReview ? "Whose peer review is this?" : "Placement"}</Label>
               <Select value={assignedTo} onValueChange={setAssignedTo}>
-                <SelectTrigger><SelectValue placeholder="Choose a team member or Final Compiled" /></SelectTrigger>
+                <SelectTrigger aria-label={isPeerReview ? "Peer review student" : "Placement"}><SelectValue placeholder={isPeerReview ? "Choose the student who wrote this review" : "Choose a team member or Final Compiled"} /></SelectTrigger>
                 <SelectContent>
                   {subDef?.expectsCompiled && <SelectItem value="final">Final Compiled</SelectItem>}
-                  <SelectItem value="other">Other uploads</SelectItem>
+                  {!isPeerReview && <SelectItem value="other">Other uploads</SelectItem>}
                   {members.map((m) => (
                     <SelectItem key={m.user_id} value={m.user_id}>
                       {m.name || m.email || "Member"}
@@ -1570,7 +1579,7 @@ function UploadDialog({
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={submit} disabled={busy || !file}>
+          <Button onClick={submit} disabled={busy || !file || (isPeerReview && !validPeerOwner)}>
             {busy ? "Uploading…" : "Upload"}
           </Button>
         </DialogFooter>
