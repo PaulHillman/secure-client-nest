@@ -224,7 +224,7 @@ export function FileVault({
           // Peer-review scores per file; RLS limits students to their own rows.
           supabase
             .from("peer_review_assessments")
-            .select("file_id, version_id, score, status, attempt, changes")
+            .select("file_id, version_id, user_id, score, status, attempt, changes")
             .eq("team_id", teamId),
         ]);
       if (fErr) throw fErr;
@@ -250,8 +250,11 @@ export function FileVault({
       if (uploaderError) throw uploaderError;
       const uploaderNames = new Map((uploaders ?? []).map((p) => [p.id,
         [p.first_name, p.last_name].filter(Boolean).join(" ").trim() || p.name]));
-      const peerSequence = peerUploadSequence((files ?? []) as FileRow[], versions ?? []);
-      return { files: (files ?? []) as FileRow[], verMap, members, peerMap, uploaderNames, peerSequence };
+      // Legacy assessed uploads have an established student identity even without an assignee.
+      const assessedOwners = new Map((assessments ?? []).filter(a => a.file_id && a.status !== "ownership_invalid").map(a => [a.file_id, a.user_id]));
+      const ownedFiles = (files ?? []).map(f => ({ ...f, assigned_to: f.assigned_to ?? assessedOwners.get(f.id) ?? null })) as FileRow[];
+      const peerSequence = peerUploadSequence(ownedFiles, versions ?? []);
+      return { files: ownedFiles, verMap, members, peerMap, uploaderNames, peerSequence };
     },
   });
 

@@ -103,8 +103,9 @@ export async function autoAssessPeerUpload(versionId: string) {
   if (!file || file.subsection !== SUBSECTION || !file.team_id) return { status: "skipped" };
   const { data: team } = await db.from("teams").select("is_test, name, display_name").eq("id", file.team_id).single();
   if (!team || team.is_test) return { status: "skipped" };
-  if (!file.assigned_to) return { status: "owner_required" };
-  const ownerId = file.assigned_to;
+  const { data: established } = file.assigned_to ? { data: null } : await db.from("peer_review_assessments").select("user_id").eq("file_id", file.id).neq("status", "ownership_invalid").order("created_at").limit(1).maybeSingle();
+  const ownerId = file.assigned_to ?? established?.user_id;
+  if (!ownerId) return { status: "owner_required" };
   const { data: member } = await db.from("team_members").select("user_id").eq("team_id", file.team_id).eq("user_id", ownerId).maybeSingle();
   if (!member) return { status: "owner_required" };
   const { data: student } = await db.from("profiles").select("name, email").eq("id", ownerId).single();
