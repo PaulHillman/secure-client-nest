@@ -72,7 +72,7 @@ function AppLayout() {
     ...(isAdmin
       ? [
           { to: "/app/admin/awaiting-review", label: "Awaiting Review", icon: Inbox, badge: awaitingCount },
-          { to: "/app/admin/peer-review-meetings", label: "Peer-review Meetings", icon: CalendarClock, badge: upcomingMeetingsCount },
+          { to: "/app/admin/peer-review-meetings", label: "Peer Reviews", icon: CalendarClock, badge: upcomingMeetingsCount },
           { to: "/app/health-review", label: "Team Health Review", icon: HeartPulse },
           { to: "/app/admin/team-readiness", label: "Team Readiness Assessment", icon: GaugeCircle },
           { to: "/app/admin/usage", label: "Student Usage", icon: BarChart3 },

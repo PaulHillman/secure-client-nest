@@ -1,148 +1,52 @@
-import { createFileRoute, Navigate, Link } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { createFileRoute, Navigate } from '@tanstack/react-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useServerFn } from '@tanstack/react-start';
+import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { CalendarClock } from 'lucide-react';
+import { getPeerWorkspace, syncPeerMeetings } from '@/lib/peer-review-workspace.functions';
+import { PeerReviewStudentWorkspace } from '@/components/peer-review-student-workspace';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { CalendarClock, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const Route = createFileRoute('/app/admin_/peer-review-meetings')({
-  head: () => ({
-    meta: [
-      { title: 'Peer-review Meetings — ClientVault Admin' },
-      { name: 'description', content: 'Upcoming and past peer-review meetings booked with the instructor, with links to each student\'s latest submission.' },
-      { property: 'og:title', content: 'Peer-review Meetings — ClientVault Admin' },
-      { property: 'og:description', content: 'Booked peer-review meetings and each student\'s latest submission.' },
-      { property: 'og:type', content: 'website' },
-      { name: 'twitter:card', content: 'summary' },
-    ],
-  }),
-  component: Page,
+  head: () => ({ meta: [
+    { title: 'Peer Reviews — ClientVault Admin' },
+    { name: 'description', content: 'Student peer-review meetings, submission histories, scores, changes and instructor-authorized final uploads.' },
+    { property: 'og:title', content: 'Peer Reviews — ClientVault Admin' },
+    { property: 'og:description', content: 'Instructor peer-review meetings and exact student submission progress.' },
+    { property: 'og:type', content: 'website' }, { name: 'twitter:card', content: 'summary' },
+  ] }), component: Page,
 });
-
-type MeetingRow = {
-  id: string;
-  scheduled_at: string;
-  zoom_url: string | null;
-  score: number | null;
-  attempt: number | null;
-  student_id: string;
-  team_id: string | null;
-  profiles: { name: string; email: string | null } | null;
-  teams: { display_name: string | null; name: string; section: string | null } | null;
-};
-
 function easternDateTime(iso: string) {
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/New_York',
-    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-    hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
-  }).format(new Date(iso));
+  return new Intl.DateTimeFormat('en-US', { timeZone: 'America/Detroit', weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).format(new Date(iso));
 }
-
 function Page() {
   const { isAdmin, loading } = useAuth();
-  const query = useQuery({
-    queryKey: ['peer-review-meetings'],
-    enabled: isAdmin,
-    refetchInterval: 60_000,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('peer_review_meetings')
-        .select('id, scheduled_at, zoom_url, score, attempt, student_id, team_id, profiles:profiles!peer_review_meetings_student_id_fkey(name, email), teams:teams!peer_review_meetings_team_id_fkey(display_name, name, section)')
-        .order('scheduled_at');
-      if (error) throw error;
-      return (data ?? []) as MeetingRow[];
-    },
-  });
-
+  const fetch = useServerFn(getPeerWorkspace);
+  const sync = useServerFn(syncPeerMeetings);
+  const qc = useQueryClient();
+  const query = useQuery({ queryKey: ['peer-workspace'], queryFn: () => fetch(), enabled: isAdmin, refetchInterval: 30000 });
+  const [selected, setSelected] = useState<{ studentId: string; teamId: string } | null>(null);
+  const [search, setSearch] = useState('');
+  const [tab, setTab] = useState<'upcoming' | 'past' | 'students'>('upcoming');
+  const [busy, setBusy] = useState(false);
   if (loading) return null;
   if (!isAdmin) return <Navigate to="/app/dashboard" />;
-
-  const now = Date.now();
-  const rows = query.data ?? [];
-  const upcoming = rows.filter((r) => new Date(r.scheduled_at).getTime() >= now);
-  const past = rows.filter((r) => new Date(r.scheduled_at).getTime() < now).reverse();
-  const teamLabel = (t: MeetingRow['teams']) =>
-    t ? `${t.display_name?.trim() || t.name}${t.section ? ` · Section ${t.section}` : ''}` : '—';
-
-  const renderRows = (list: MeetingRow[]) => (
-    <tbody>
-      {list.map((row) => (
-        <tr key={row.id} className="border-b align-top">
-          <td className="p-2 min-w-48">
-            <div className="font-medium">{row.profiles?.name ?? 'Unknown student'}</div>
-            {row.profiles?.email && <div className="text-xs text-muted-foreground">{row.profiles.email}</div>}
-          </td>
-          <td className="p-2">{teamLabel(row.teams)}</td>
-          <td className="p-2 whitespace-nowrap">{easternDateTime(row.scheduled_at)}</td>
-          <td className="p-2">
-            {row.zoom_url ? (
-              <a href={row.zoom_url} target="_blank" rel="noreferrer" className="text-primary underline">Join link</a>
-            ) : (
-              <span className="text-muted-foreground text-xs">In calendar invite</span>
-            )}
-          </td>
-          <td className="p-2 whitespace-nowrap">
-            {row.score === null ? '—' : `${row.score}/10`} {row.attempt ? <span className="text-xs text-muted-foreground">(attempt {row.attempt})</span> : null}
-          </td>
-          <td className="p-2">
-            <Link to="/app/vault" search={{ team: row.team_id ?? undefined, file: undefined }} className="text-primary underline text-sm">
-              Latest submission
-            </Link>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  );
-
-  return (
-    <main className="p-4 sm:p-8 max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center gap-2">
-        <CalendarClock className="h-6 w-6 text-gold" />
-        <h1 className="font-display text-3xl">Peer-review Meetings</h1>
-      </div>
-      <p className="text-sm text-muted-foreground">
-        Students who used all three peer-review submissions without reaching 8/10 and booked a meeting with you.
-        Bookings appear here automatically when a student schedules on your Calendly page.
-      </p>
-      {query.error && <p role="alert" className="text-destructive text-sm">{query.error.message}</p>}
-
-      <section>
-        <h2 className="font-display text-xl mb-2">Upcoming meetings ({upcoming.length})</h2>
-        {upcoming.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No meetings booked yet.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left">
-                  <th className="p-2">Student</th><th className="p-2">Team</th><th className="p-2">When</th>
-                  <th className="p-2">Zoom</th><th className="p-2">Latest score</th><th className="p-2">Submission</th>
-                </tr>
-              </thead>
-              {renderRows(upcoming)}
-            </table>
-          </div>
-        )}
-      </section>
-
-      <section>
-        <h2 className="font-display text-xl mb-2">Held meetings ({past.length})</h2>
-        {past.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No past meetings.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left">
-                  <th className="p-2">Student</th><th className="p-2">Team</th><th className="p-2">When</th>
-                  <th className="p-2">Zoom</th><th className="p-2">Latest score</th><th className="p-2">Submission</th>
-                </tr>
-              </thead>
-              {renderRows(past)}
-            </table>
-          </div>
-        )}
-      </section>
-    </main>
-  );
+  const refresh = async () => {
+    setBusy(true);
+    try { const result = await sync(); toast.success(`${result.imported} calendar bookings checked and saved.${result.unmatched.length ? ` ${result.unmatched.length} unmatched bookings were not imported.` : ''}`); await qc.invalidateQueries({ queryKey: ['peer-workspace'] }); await qc.invalidateQueries({ queryKey: ['upcoming-peer-meetings'] }); }
+    catch (e) { toast.error(e instanceof Error ? e.message : 'Calendar sync failed'); }
+    finally { setBusy(false); }
+  };
+  const meetings = (query.data?.meetings ?? []).filter(m => tab === 'past' ? new Date(m.scheduled_at).getTime() < Date.now() : new Date(m.scheduled_at).getTime() >= Date.now());
+  const students = Array.from(new Map((query.data?.assessments ?? []).filter(a => a.status === 'assessed').map(a => [`${a.team_id}:${a.user_id}`, a])).values()).filter(a => a.profiles?.name.toLowerCase().includes(search.toLowerCase())).sort((a,b) => (a.profiles?.name ?? '').localeCompare(b.profiles?.name ?? ''));
+  return <main className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6">
+    <header className="flex flex-wrap items-center justify-between gap-3"><h1 className="font-display text-3xl flex items-center gap-2"><CalendarClock className="h-6 w-6 text-gold" />Peer Reviews</h1><Button variant="outline" disabled={busy} onClick={refresh}><RefreshCw className="h-4 w-4 mr-2" />{busy ? 'Checking calendar…' : 'Sync Calendly'}</Button></header>
+    {query.error && <p role="alert" className="text-destructive">{query.error.message}</p>}
+    <div className="flex flex-wrap gap-2" role="group" aria-label="Peer review views">{(['upcoming', 'past', 'students'] as const).map(t => <Button key={t} size="sm" variant={tab === t ? 'default' : 'outline'} onClick={() => setTab(t)}>{t === 'upcoming' ? 'Upcoming meetings' : t === 'past' ? 'Past scheduled meetings' : 'All students'}</Button>)}</div>
+    {tab === 'students' ? <><Input aria-label="Search students" placeholder="Search student name" value={search} onChange={e => setSearch(e.target.value)} /><div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">{students.map(a => <Button key={`${a.user_id}-${a.team_id}`} variant="outline" className="h-auto min-h-14 justify-between whitespace-normal text-left" onClick={() => setSelected({ studentId: a.user_id, teamId: a.team_id })}><span>{a.profiles?.name}<span className="block text-xs text-muted-foreground">{a.teams?.display_name || a.teams?.name} · Section {a.teams?.section}</span></span><span className="shrink-0 ml-2">{a.score}/10</span></Button>)}</div></> : <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Student</th><th className="p-2">Team</th><th className="p-2">When</th><th className="p-2">Booking topic</th><th className="p-2">Zoom</th></tr></thead><tbody>{meetings.map(m => <tr key={m.id} className="border-b align-top"><td className="p-2"><Button variant="link" className="p-0 h-auto text-left whitespace-normal" onClick={() => m.team_id && setSelected({ studentId: m.student_id, teamId: m.team_id })}>{m.profiles?.name}</Button>{m.identity_match !== 'email' && <p className="text-xs text-muted-foreground">Matched by full name; calendar email differs</p>}</td><td className="p-2">{m.teams?.display_name || m.teams?.name} · {m.teams?.section}</td><td className="p-2 whitespace-nowrap">{easternDateTime(m.scheduled_at)}</td><td className="p-2 max-w-sm">{m.booking_topic || 'Peer-review meeting'}</td><td className="p-2">{m.zoom_url ? <a href={m.zoom_url} target="_blank" rel="noreferrer" className="text-primary underline">Join Zoom</a> : 'In calendar invite'}</td></tr>)}</tbody></table>{meetings.length === 0 && <p className="py-4 text-sm text-muted-foreground">No meetings in this view.</p>}</div>}
+    {selected && query.data && <PeerReviewStudentWorkspace key={`${selected.studentId}-${selected.teamId}`} data={query.data} {...selected} />}
+  </main>;
 }

@@ -206,6 +206,17 @@ export function FileVault({
   const { user, isAdmin } = useAuth();
   const qc = useQueryClient();
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const { data: finalPermission } = useQuery({
+    queryKey: ['peer-final-permission', teamId, user?.id],
+    enabled: !!user && !isAdmin,
+    refetchInterval: 5000,
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase.from('peer_review_final_uploads').select('consumed_at').eq('student_id', user.id).eq('team_id', teamId).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const { data, isLoading } = useQuery({
     // Separate the enriched result from pre-update cached lists in open previews.

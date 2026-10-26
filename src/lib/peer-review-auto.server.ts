@@ -1,5 +1,6 @@
 // Server-only: automatic assessment of a Mid-Semester peer-review upload.
 import { revisionEmailBody } from './peer-review-email';
+import { canAssessPeerAttempt } from './peer-review-workspace';
 export { revisionEmailBody } from './peer-review-email';
 
 const SUBSECTION = "Mid-Semester Peer Reviews";
@@ -42,7 +43,7 @@ async function extractText(blob: Blob, name: string): Promise<string | null> {
 
 type Media = { type: "input_file"; file_url: string } | { type: "input_image"; image_url: string };
 
-async function scoreWithAi(input: { criteria: string; text: string; media?: Media | null; studentName: string; teamName: string; attempt: number; previous: any | null }): Promise<Verdict> {
+async function scoreWithAi(input: { criteria: string; text: string; media?: Media | null; studentName: string; teamName: string; attempt: number; finalSubmission?: boolean; previous: any | null }): Promise<Verdict> {
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("AI key missing");
   const prev = input.previous
@@ -56,7 +57,7 @@ async function scoreWithAi(input: { criteria: string; text: string; media?: Medi
       reasoning: { effort: "medium" },
       instructions: `You evaluate the QUALITY of a student's submitted mid-semester peer review (0-10 holistic) using ONLY the instructor's criteria below. Score harshly: prefer a justified 6 to a generous 7. Do not invent deduction formulas. Never flag a missing form date or reviewer role. Give 2-3 concise strengths and 2-3 concrete concerns quoting or naming the specific answers. For revisions, strengths must distinguish verified improvements since the previous attempt from retained strengths. All strengths, concerns and changes must discuss document evidence only: never include pass exceptions, original 7/10 rules, deadlines, meeting instructions, submission limits or upload permissions; the application supplies next steps separately. For readable reviews below 8/10, changes MUST contain exactly three distinct, concrete, evidence-based fixes needed to reach 8/10, ordered highest impact first. Identify the relevant answer and what to replace or add; do not guarantee a score merely for editing. For scores 8+ give optional improvements. If the text is not a peer review or is unreadable, set readable=false and score 0.\n\nCRITERIA:\n${input.criteria}`,
       input: [{ role: "user", content: [
-        { type: "input_text", text: `Reviewer on record: ${input.studentName}. Team: ${input.teamName}. Attempt ${input.attempt} of 3.${prev}\n\n${input.media ? "The submitted document is attached (it may be photographed or scanned pages). Read the handwriting/print carefully; set readable=false only if the answers truly cannot be made out." : `SUBMITTED DOCUMENT TEXT:\n${input.text.slice(0, 40_000)}`}` },
+        { type: "input_text", text: `Reviewer on record: ${input.studentName}. Team: ${input.teamName}. ${input.finalSubmission ? `Instructor-authorized final submission (attempt ${input.attempt}), evaluated against the same criteria; do not automatically raise the score.` : `Attempt ${input.attempt} of 3.`}${prev}\n\n${input.media ? "The submitted document is attached (it may be photographed or scanned pages). Read the handwriting/print carefully; set readable=false only if the answers truly cannot be made out." : `SUBMITTED DOCUMENT TEXT:\n${input.text.slice(0, 40_000)}`}` },
         ...(input.media ? [input.media] : []),
       ] }],
       text: { format: { type: "json_schema", name: "peer_review_quality", strict: true, schema } },
@@ -113,7 +114,9 @@ export async function autoAssessPeerUpload(versionId: string) {
   const { data: prior } = await db.from("peer_review_assessments").select("attempt, score, concerns, changes, status").eq("user_id", ownerId).eq("team_id", file.team_id).eq("status", "assessed").order("attempt", { ascending: false });
   const previous = prior?.[0] ?? null;
   const attempt = (previous?.attempt ?? 0) + 1;
-  if (attempt > 3) return { status: "limit" };
+  const { data: permission } = await db.from('peer_review_final_uploads').select('id').eq('version_id', versionId).eq('student_id', ownerId).eq('team_id', file.team_id).maybeSingle();
+  const finalSubmission = permission !== null;
+  if (!canAssessPeerAttempt(attempt, finalSubmission)) return { status: "limit" };
 
   const { data: crit, error: criteriaError } = await db.from("peer_review_criteria").select("content").eq("id", "peer-review").single();
   if (criteriaError || !crit?.content.trim()) throw new Error("Peer-review criteria are unavailable. Please retry after checking the criteria document.");
@@ -131,18 +134,18 @@ export async function autoAssessPeerUpload(versionId: string) {
   }
   const { data: instructor } = await db.from("profiles").select("id").ilike("email", INSTRUCTOR_EMAIL).limit(1).single();
 
-  const base = { user_id: ownerId, team_id: file.team_id, file_id: file.id, version_id: versionId, attempt, criteria_snapshot: criteria, assessed_by: instructor?.id ?? ownerId };
+  const base = { user_id: ownerId, team_id: file.team_id, file_id: file.id, version_id: versionId, attempt, final_submission: finalSubmission, criteria_snapshot: criteria, assessed_by: instructor?.id ?? ownerId };
   if (!text && !media) {
     await db.from("peer_review_assessments").insert({ ...base, score: null, status: "unreadable", summary: "File could not be read automatically — instructor review needed.", email_body: "", student_email_status: "suppressed", instructor_email_status: "suppressed", pm_email_status: "suppressed" });
     return { status: "unreadable" };
   }
-  const verdict = await scoreWithAi({ criteria, text: text ?? "", media, studentName: student.name, teamName: team.display_name ?? team.name, attempt, previous });
+  const verdict = await scoreWithAi({ criteria, text: text ?? "", media, studentName: student.name, teamName: team.display_name ?? team.name, attempt, finalSubmission, previous });
   if (!verdict.readable) {
     await db.from("peer_review_assessments").insert({ ...base, score: null, status: "unreadable", strengths: [], concerns: verdict.concerns, changes: [], summary: "Upload did not read as a peer review — instructor review needed.", email_body: "", student_email_status: "suppressed", instructor_email_status: "suppressed", pm_email_status: "suppressed" });
     return { status: "unreadable" };
   }
   const score = verdict.score;
-  const body = revisionEmailBody(student.name, attempt, score, verdict);
+  const body = revisionEmailBody(student.name, attempt, score, verdict, finalSubmission);
   const { data: row, error: insErr } = await db.from("peer_review_assessments").insert({ ...base, score, status: "assessed", strengths: verdict.strengths, concerns: verdict.concerns, changes: verdict.changes, summary: `${attempt === 1 ? "Original" : "Revision"} ${score}/10`, email_body: body, student_email_status: "pending", instructor_email_status: "pending", pm_email_status: "pending" }).select("id").single();
   if (insErr) { if (/duplicate/i.test(insErr.message)) return { status: "already" }; throw insErr; }
 
