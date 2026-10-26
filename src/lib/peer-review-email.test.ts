@@ -28,3 +28,19 @@ describe('revision email next-step rules', () => {
     assert.ok(body.includes('A meeting with me is now required'));
   });
 });
+describe('meeting confirmed email', () => {
+  test('includes score, meeting time, preparation warning, and example link', () => {
+    const body = meetingConfirmedEmailBody('Alex', 7, 'Monday, November 2, 2026 at 3:30 PM EDT', 'https://zoom.us/j/123');
+    assert.ok(body.includes('confirmed for Monday, November 2, 2026 at 3:30 PM EDT'));
+    assert.ok(body.includes('currently stands at 7/10'));
+    assert.ok(body.includes('MUST be prepared to show me the changes'));
+    assert.ok(body.includes('points deducted'));
+    assert.ok(body.includes(PEER_REVISION_EXAMPLE_LINK));
+    assert.ok(body.includes('https://zoom.us/j/123'));
+    assert.ok(body.includes(PEER_MEETING_LINK));
+  });
+  test('falls back to calendar invitation when no zoom link', () => {
+    const body = meetingConfirmedEmailBody('Alex', 6, 'Monday, November 2, 2026 at 3:30 PM EDT', null);
+    assert.ok(body.includes('Zoom link is in your calendar invitation'));
+  });
+});
