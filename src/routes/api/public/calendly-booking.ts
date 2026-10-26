@@ -12,7 +12,7 @@ const payloadSchema = z.object({
       uri: z.string().max(500),
       start_time: z.string().max(100),
       location: z.object({ join_url: z.string().max(1000).optional() }).passthrough().optional(),
-    }).passthrough(),
+    }).passthrough().optional(),
   }).passthrough(),
 })
 
@@ -54,6 +54,14 @@ export const Route = createFileRoute('/api/public/calendly-booking')({
         const parsed = payloadSchema.safeParse(JSON.parse(rawBody))
         if (!parsed.success) return new Response('Invalid payload', { status: 400 })
         const event = parsed.data
+        if (event.event === 'invitee.canceled') {
+          const canceledUri = event.payload.scheduled_event?.uri
+          if (canceledUri) {
+            const { supabaseAdmin: db } = await import('@/integrations/supabase/client.server')
+            await db.from('peer_review_meetings').delete().eq('calendly_event_uri', canceledUri)
+          }
+          return Response.json({ ignored: true })
+        }
         if (event.event !== 'invitee.created') return Response.json({ ignored: true })
 
         const inviteeEmail = event.payload.email.toLowerCase()
@@ -80,6 +88,18 @@ export const Route = createFileRoute('/api/public/calendly-booking')({
         }
         const { data: team } = await db.from('teams').select('is_test').eq('id', latest.team_id).single()
         if (!team || team.is_test) return Response.json({ ignored: true })
+
+        // Keep a record of the booking so the admin Meetings page can list it.
+        const { error: saveError } = await db.from('peer_review_meetings').upsert({
+          calendly_event_uri: eventUri,
+          student_id: student.id,
+          team_id: latest.team_id,
+          scheduled_at: startTime,
+          zoom_url: zoomLink,
+          score: latest.score,
+          attempt: latest.attempt,
+        }, { onConflict: 'calendly_event_uri' })
+        if (saveError) console.error('Failed to save peer-review meeting:', saveError)
 
         const meetingTime = new Intl.DateTimeFormat('en-US', {
           timeZone: 'America/New_York',
