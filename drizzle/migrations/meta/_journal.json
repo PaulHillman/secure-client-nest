@@ -169,6 +169,13 @@
       "when": 1793034797483,
       "tag": "0023_peer_final_upload_policy_and_assessment",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793034982369,
+      "tag": "0024_protect_peer_upload_identity",
+      "breakpoints": true
     }
   ]
 }

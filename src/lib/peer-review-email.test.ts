@@ -3,6 +3,14 @@ import { strict as assert } from 'node:assert';
 import { peerEmailAction, revisionEmailBody, meetingConfirmedEmailBody, PEER_MEETING_LINK, PEER_REVISION_EXAMPLE_LINK } from './peer-review-email';
 
 describe('revision email next-step rules', () => {
+  test('authorized final submission is evaluated against 8 even when it occurs earlier', () => {
+    const fail = revisionEmailBody('Alex', 2, 7, { strengths: [], concerns: [], changes: ['Fix'] }, true);
+    const pass = revisionEmailBody('Alex', 4, 8, { strengths: [], concerns: [], changes: [] }, true);
+    assert.ok(fail.includes('final submission'));
+    assert.ok(fail.includes('has not reached'));
+    assert.ok(!fail.includes(PEER_MEETING_LINK));
+    assert.ok(pass.includes('has reached'));
+  });
   test('first revision below 8 has exactly one submission remaining', () => {
     assert.deepEqual(peerEmailAction(7, 2), { target: 8, complete: false, remainingSubmissions: 1, meetingRequired: false });
   });
