@@ -1,5 +1,11 @@
 # ClientVault roadmap
 
+## Peer-review meeting workspace
+- [ ] Verify named student bookings in Calendly and import verified meetings.
+- [ ] Add student histories, exact-version documents, highlighted text comparisons and saved remaining fixes.
+- [ ] Securely authorize one final upload during the meeting and score it against 8/10, preserving prior attempts.
+- [ ] Verify authorization rules, calendar sync and the live instructor workspace.
+
 ## Concise revision emails
 - [x] Focus revision feedback on 8/10, three fixes, remaining chance and one meeting instruction; preserve original pass policy.
 - [x] Verify attempt-specific next steps and provide a first-revision email example without sending emails; 14 tests passed, both revision emails rendered with one meeting link and no redundant concerns, build OK.
