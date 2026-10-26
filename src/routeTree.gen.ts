@@ -24,6 +24,7 @@ import { Route as AppMilestonesRouteImport } from './routes/app.milestones'
 import { Route as AppTeamsRouteImport } from './routes/app.teams'
 import { Route as AppVaultRouteImport } from './routes/app.vault'
 import { Route as AppVaultOverviewRouteImport } from './routes/app.vault-overview'
+import { Route as ApiPublicCalendlyBookingRouteImport } from './routes/api/public/calendly-booking'
 import { Route as ApiPublicFileDownloadRouteImport } from './routes/api/public/file-download'
 import { Route as AppAdminAwaitingReviewRouteImport } from './routes/app.admin_.awaiting-review'
 import { Route as AppAdminHealthReviewGuideRouteImport } from './routes/app.admin_.health-review-guide'
@@ -114,6 +115,12 @@ const AppVaultOverviewRoute = AppVaultOverviewRouteImport.update({
   path: '/vault-overview',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicCalendlyBookingRoute =
+  ApiPublicCalendlyBookingRouteImport.update({
+    id: '/api/public/calendly-booking',
+    path: '/api/public/calendly-booking',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicFileDownloadRoute = ApiPublicFileDownloadRouteImport.update({
   id: '/api/public/file-download',
   path: '/api/public/file-download',
@@ -210,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
+  '/api/public/calendly-booking': typeof ApiPublicCalendlyBookingRoute
   '/api/public/file-download': typeof ApiPublicFileDownloadRoute
   '/app/admin/awaiting-review': typeof AppAdminAwaitingReviewRoute
   '/app/admin/health-review-guide': typeof AppAdminHealthReviewGuideRoute
@@ -241,6 +249,7 @@ export interface FileRoutesByTo {
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
+  '/api/public/calendly-booking': typeof ApiPublicCalendlyBookingRoute
   '/api/public/file-download': typeof ApiPublicFileDownloadRoute
   '/app/admin/awaiting-review': typeof AppAdminAwaitingReviewRoute
   '/app/admin/health-review-guide': typeof AppAdminHealthReviewGuideRoute
@@ -273,6 +282,7 @@ export interface FileRoutesById {
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
+  '/api/public/calendly-booking': typeof ApiPublicCalendlyBookingRoute
   '/api/public/file-download': typeof ApiPublicFileDownloadRoute
   '/app/admin_/awaiting-review': typeof AppAdminAwaitingReviewRoute
   '/app/admin_/health-review-guide': typeof AppAdminHealthReviewGuideRoute
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
+    | '/api/public/calendly-booking'
     | '/api/public/file-download'
     | '/app/admin/awaiting-review'
     | '/app/admin/health-review-guide'
@@ -337,6 +348,7 @@ export interface FileRouteTypes {
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
+    | '/api/public/calendly-booking'
     | '/api/public/file-download'
     | '/app/admin/awaiting-review'
     | '/app/admin/health-review-guide'
@@ -368,6 +380,7 @@ export interface FileRouteTypes {
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
+    | '/api/public/calendly-booking'
     | '/api/public/file-download'
     | '/app/admin_/awaiting-review'
     | '/app/admin_/health-review-guide'
@@ -389,6 +402,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   SetPasswordRoute: typeof SetPasswordRoute
+  ApiPublicCalendlyBookingRoute: typeof ApiPublicCalendlyBookingRoute
   ApiPublicFileDownloadRoute: typeof ApiPublicFileDownloadRoute
   ApiPublicHooksAutoArchiveRoute: typeof ApiPublicHooksAutoArchiveRoute
   ApiPublicHooksProfileRemindersRoute: typeof ApiPublicHooksProfileRemindersRoute
@@ -502,6 +516,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/vault-overview'
       preLoaderRoute: typeof AppVaultOverviewRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/api/public/calendly-booking': {
+      id: '/api/public/calendly-booking'
+      path: '/api/public/calendly-booking'
+      fullPath: '/api/public/calendly-booking'
+      preLoaderRoute: typeof ApiPublicCalendlyBookingRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/file-download': {
       id: '/api/public/file-download'
@@ -667,6 +688,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   SetPasswordRoute: SetPasswordRoute,
+  ApiPublicCalendlyBookingRoute: ApiPublicCalendlyBookingRoute,
   ApiPublicFileDownloadRoute: ApiPublicFileDownloadRoute,
   ApiPublicHooksAutoArchiveRoute: ApiPublicHooksAutoArchiveRoute,
   ApiPublicHooksProfileRemindersRoute: ApiPublicHooksProfileRemindersRoute,
