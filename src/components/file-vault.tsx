@@ -206,6 +206,17 @@ export function FileVault({
   const { user, isAdmin } = useAuth();
   const qc = useQueryClient();
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const { data: finalPermission } = useQuery({
+    queryKey: ['peer-final-permission', teamId, user?.id],
+    enabled: !!user && !isAdmin,
+    refetchInterval: 5000,
+    queryFn: async () => {
+      if (!user) return null;
+      const { data, error } = await supabase.from('peer_review_final_uploads').select('consumed_at').eq('student_id', user.id).eq('team_id', teamId).maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const { data, isLoading } = useQuery({
     // Separate the enriched result from pre-update cached lists in open previews.
@@ -358,6 +369,8 @@ export function FileVault({
           />
         )}
       </div>
+
+      {finalPermission && <p role="status" className="mb-4 border-l-4 border-primary bg-primary/10 p-3 text-sm">{finalPermission.consumed_at ? 'Your final peer review has been uploaded. Its score and feedback appear beside the file once assessment finishes.' : 'Your instructor has allowed one final peer-review submission. Upload it in Peer Reviews and select your name as the review owner. The required score is 8/10 or higher.'}</p>}
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading vault…</p>

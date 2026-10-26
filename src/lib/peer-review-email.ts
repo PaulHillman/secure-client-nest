@@ -14,12 +14,13 @@ export function peerEmailAction(score: number, attempt: number) {
 
 export type PeerEmailVerdict = { strengths: string[]; concerns: string[]; changes: string[] };
 
-export function revisionEmailBody(name: string, attempt: number, score: number, v: PeerEmailVerdict) {
+export function revisionEmailBody(name: string, attempt: number, score: number, v: PeerEmailVerdict, finalSubmission = false) {
   const action = peerEmailAction(score, attempt);
-  const revision = attempt > 1;
-  const label = revision ? `${attempt === 2 ? 'first' : 'second'} revision (submission ${attempt} of 3)` : 'original';
+  const revision = finalSubmission || attempt > 1;
+  const label = finalSubmission ? 'instructor-authorized final submission' : revision ? `${attempt === 2 ? 'first' : 'second'} revision (submission ${attempt} of 3)` : 'original';
   let next: string;
-  if (action.complete) next = revision ? 'Your peer review has reached the required 8/10 target. No further action is required.' : 'No further action is required.';
+  if (finalSubmission) next = score >= 8 ? 'Your final peer review has reached the required 8/10 target. No further action is required.' : 'Your final peer review has not reached the required 8/10 target. Your instructor will determine the next step. Do not upload another submission unless your instructor authorizes it.';
+  else if (action.complete) next = revision ? 'Your peer review has reached the required 8/10 target. No further action is required.' : 'No further action is required.';
   else if (action.meetingRequired) next = `You have used all three submissions and have not yet delivered an 8/10 peer review. A meeting with me is now required. Book it by Sunday, November 1, 2026 at 11:59 p.m. Eastern and hold it by Sunday, November 8, 2026 at 11:59 p.m. Eastern. Bring this latest submission. Do not upload further revisions before the meeting.\nSchedule: ${PEER_MEETING_LINK}\n\nUnless you want to spend more time on this, follow the abundant suggestions already provided and fix the specific issues above before our meeting. Use truthful observations; do not invent examples.\n\nExample of how changes should look: ${PEER_REVISION_EXAMPLE_LINK}\n\nYou MUST be prepared to show me the changes you have made and the changes you expect will get your peer review to 8/10 or higher. Do not come to our meeting unprepared; I have dozens of these meetings. Failure to demonstrate that you have prepared will likely result in the meeting being cancelled and points deducted from your final score for failing to use our time efficiently.`;
   else next = revision
     ? `You have not yet delivered an 8/10 peer review. Your next submission—submission 3 of 3—is your last chance to reach 8/10 before a meeting with me is required. Unless you want to spend more time on this, follow the abundant suggestions already provided and fix the specific issues above. Submit by Sunday, November 1, 2026 at 11:59 p.m. Eastern.`

@@ -155,6 +155,34 @@
       "when": 1793033723849,
       "tag": "0021_peer_review_meetings",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793034756652,
+      "tag": "0022_peer_review_final_upload_workspace",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793034797483,
+      "tag": "0023_peer_final_upload_policy_and_assessment",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793034982369,
+      "tag": "0024_protect_peer_upload_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793035008766,
+      "tag": "0025_retain_peer_review_versions",
+      "breakpoints": true
     }
   ]
 }

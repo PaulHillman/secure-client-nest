@@ -1528,6 +1528,7 @@ export type Database = {
           criteria_snapshot: string
           email_body: string
           file_id: string | null
+          final_submission: boolean
           id: string
           instructor_email_status: string
           pm_email_status: string
@@ -1550,6 +1551,7 @@ export type Database = {
           criteria_snapshot: string
           email_body: string
           file_id?: string | null
+          final_submission?: boolean
           id?: string
           instructor_email_status?: string
           pm_email_status?: string
@@ -1572,6 +1574,7 @@ export type Database = {
           criteria_snapshot?: string
           email_body?: string
           file_id?: string | null
+          final_submission?: boolean
           id?: string
           instructor_email_status?: string
           pm_email_status?: string
@@ -1646,12 +1649,73 @@ export type Database = {
         }
         Relationships: []
       }
+      peer_review_final_uploads: {
+        Row: {
+          authorized_at: string
+          authorized_by: string
+          consumed_at: string | null
+          id: string
+          student_id: string
+          team_id: string
+          version_id: string | null
+        }
+        Insert: {
+          authorized_at?: string
+          authorized_by: string
+          consumed_at?: string | null
+          id?: string
+          student_id: string
+          team_id: string
+          version_id?: string | null
+        }
+        Update: {
+          authorized_at?: string
+          authorized_by?: string
+          consumed_at?: string | null
+          id?: string
+          student_id?: string
+          team_id?: string
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "peer_review_final_uploads_authorized_by_fkey"
+            columns: ["authorized_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peer_review_final_uploads_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peer_review_final_uploads_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peer_review_final_uploads_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "file_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       peer_review_meetings: {
         Row: {
           attempt: number | null
+          booking_topic: string | null
           calendly_event_uri: string
           created_at: string
           id: string
+          identity_match: string
           scheduled_at: string
           score: number | null
           student_id: string
@@ -1660,9 +1724,11 @@ export type Database = {
         }
         Insert: {
           attempt?: number | null
+          booking_topic?: string | null
           calendly_event_uri: string
           created_at?: string
           id?: string
+          identity_match?: string
           scheduled_at: string
           score?: number | null
           student_id: string
@@ -1671,9 +1737,11 @@ export type Database = {
         }
         Update: {
           attempt?: number | null
+          booking_topic?: string | null
           calendly_event_uri?: string
           created_at?: string
           id?: string
+          identity_match?: string
           scheduled_at?: string
           score?: number | null
           student_id?: string
