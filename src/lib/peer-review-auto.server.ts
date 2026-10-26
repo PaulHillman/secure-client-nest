@@ -40,7 +40,7 @@ async function extractText(blob: Blob, name: string): Promise<string | null> {
   return null;
 }
 
-type Media = { type: "input_file"; filename: string; file_url: string } | { type: "input_image"; image_url: string };
+type Media = { type: "input_file"; file_url: string } | { type: "input_image"; image_url: string };
 
 async function scoreWithAi(input: { criteria: string; text: string; media?: Media | null; studentName: string; teamName: string; attempt: number; previous: any | null }): Promise<Verdict> {
   const apiKey = process.env["LOVABLE_API_KEY"];
@@ -127,7 +127,7 @@ export async function autoAssessPeerUpload(versionId: string) {
   const isImage = /\.(png|jpe?g|webp|gif|heic)$/i.test(version.storage_path);
   if (!text && blob && (isPdf || isImage) && (version.file_size ?? 0) < 50_000_000) {
     const { data: signed } = await db.storage.from("vault").createSignedUrl(version.storage_path, 3600);
-    if (signed?.signedUrl) media = isPdf ? { type: "input_file", filename: "peer-review.pdf", file_url: signed.signedUrl } : { type: "input_image", image_url: signed.signedUrl };
+    if (signed?.signedUrl) media = isPdf ? { type: "input_file", file_url: signed.signedUrl } : { type: "input_image", image_url: signed.signedUrl };
   }
   const { data: instructor } = await db.from("profiles").select("id").ilike("email", INSTRUCTOR_EMAIL).limit(1).single();
 
