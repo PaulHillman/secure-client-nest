@@ -30,6 +30,7 @@ import { Route as AppAdminAwaitingReviewRouteImport } from './routes/app.admin_.
 import { Route as AppAdminHealthReviewGuideRouteImport } from './routes/app.admin_.health-review-guide'
 import { Route as AppAdminPeerReviewAssessmentsRouteImport } from './routes/app.admin_.peer-review-assessments'
 import { Route as AppAdminPeerReviewCriteriaRouteImport } from './routes/app.admin_.peer-review-criteria'
+import { Route as AppAdminPeerReviewMeetingsRouteImport } from './routes/app.admin_.peer-review-meetings'
 import { Route as AppAdminUsageRouteImport } from './routes/app.admin_.usage'
 import { Route as AppHealthReportFileIdRouteImport } from './routes/app.health-report.$fileId'
 import { Route as AppTeamsTeamIdRouteImport } from './routes/app.teams.$teamId'
@@ -149,6 +150,12 @@ const AppAdminPeerReviewCriteriaRoute =
     path: '/admin/peer-review-criteria',
     getParentRoute: () => AppRoute,
   } as any)
+const AppAdminPeerReviewMeetingsRoute =
+  AppAdminPeerReviewMeetingsRouteImport.update({
+    id: '/admin_/peer-review-meetings',
+    path: '/admin/peer-review-meetings',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppAdminUsageRoute = AppAdminUsageRouteImport.update({
   id: '/admin_/usage',
   path: '/admin/usage',
@@ -223,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/health-review-guide': typeof AppAdminHealthReviewGuideRoute
   '/app/admin/peer-review-assessments': typeof AppAdminPeerReviewAssessmentsRoute
   '/app/admin/peer-review-criteria': typeof AppAdminPeerReviewCriteriaRoute
+  '/app/admin/peer-review-meetings': typeof AppAdminPeerReviewMeetingsRoute
   '/app/admin/usage': typeof AppAdminUsageRoute
   '/app/health-report/$fileId': typeof AppHealthReportFileIdRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
@@ -255,6 +263,7 @@ export interface FileRoutesByTo {
   '/app/admin/health-review-guide': typeof AppAdminHealthReviewGuideRoute
   '/app/admin/peer-review-assessments': typeof AppAdminPeerReviewAssessmentsRoute
   '/app/admin/peer-review-criteria': typeof AppAdminPeerReviewCriteriaRoute
+  '/app/admin/peer-review-meetings': typeof AppAdminPeerReviewMeetingsRoute
   '/app/admin/usage': typeof AppAdminUsageRoute
   '/app/health-report/$fileId': typeof AppHealthReportFileIdRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
@@ -288,6 +297,7 @@ export interface FileRoutesById {
   '/app/admin_/health-review-guide': typeof AppAdminHealthReviewGuideRoute
   '/app/admin_/peer-review-assessments': typeof AppAdminPeerReviewAssessmentsRoute
   '/app/admin_/peer-review-criteria': typeof AppAdminPeerReviewCriteriaRoute
+  '/app/admin_/peer-review-meetings': typeof AppAdminPeerReviewMeetingsRoute
   '/app/admin_/usage': typeof AppAdminUsageRoute
   '/app/health-report/$fileId': typeof AppHealthReportFileIdRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
@@ -322,6 +332,7 @@ export interface FileRouteTypes {
     | '/app/admin/health-review-guide'
     | '/app/admin/peer-review-assessments'
     | '/app/admin/peer-review-criteria'
+    | '/app/admin/peer-review-meetings'
     | '/app/admin/usage'
     | '/app/health-report/$fileId'
     | '/app/teams/$teamId'
@@ -354,6 +365,7 @@ export interface FileRouteTypes {
     | '/app/admin/health-review-guide'
     | '/app/admin/peer-review-assessments'
     | '/app/admin/peer-review-criteria'
+    | '/app/admin/peer-review-meetings'
     | '/app/admin/usage'
     | '/app/health-report/$fileId'
     | '/app/teams/$teamId'
@@ -386,6 +398,7 @@ export interface FileRouteTypes {
     | '/app/admin_/health-review-guide'
     | '/app/admin_/peer-review-assessments'
     | '/app/admin_/peer-review-criteria'
+    | '/app/admin_/peer-review-meetings'
     | '/app/admin_/usage'
     | '/app/health-report/$fileId'
     | '/app/teams/$teamId'
@@ -559,6 +572,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminPeerReviewCriteriaRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin_/peer-review-meetings': {
+      id: '/app/admin_/peer-review-meetings'
+      path: '/admin/peer-review-meetings'
+      fullPath: '/app/admin/peer-review-meetings'
+      preLoaderRoute: typeof AppAdminPeerReviewMeetingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/admin_/usage': {
       id: '/app/admin_/usage'
       path: '/admin/usage'
@@ -653,6 +673,7 @@ interface AppRouteChildren {
   AppAdminHealthReviewGuideRoute: typeof AppAdminHealthReviewGuideRoute
   AppAdminPeerReviewAssessmentsRoute: typeof AppAdminPeerReviewAssessmentsRoute
   AppAdminPeerReviewCriteriaRoute: typeof AppAdminPeerReviewCriteriaRoute
+  AppAdminPeerReviewMeetingsRoute: typeof AppAdminPeerReviewMeetingsRoute
   AppAdminUsageRoute: typeof AppAdminUsageRoute
   AppHealthReportFileIdRoute: typeof AppHealthReportFileIdRoute
   AppAdminTeamReadinessTeamIdRoute: typeof AppAdminTeamReadinessTeamIdRoute
@@ -675,6 +696,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminHealthReviewGuideRoute: AppAdminHealthReviewGuideRoute,
   AppAdminPeerReviewAssessmentsRoute: AppAdminPeerReviewAssessmentsRoute,
   AppAdminPeerReviewCriteriaRoute: AppAdminPeerReviewCriteriaRoute,
+  AppAdminPeerReviewMeetingsRoute: AppAdminPeerReviewMeetingsRoute,
   AppAdminUsageRoute: AppAdminUsageRoute,
   AppHealthReportFileIdRoute: AppHealthReportFileIdRoute,
   AppAdminTeamReadinessTeamIdRoute: AppAdminTeamReadinessTeamIdRoute,

@@ -1646,6 +1646,57 @@ export type Database = {
         }
         Relationships: []
       }
+      peer_review_meetings: {
+        Row: {
+          attempt: number | null
+          calendly_event_uri: string
+          created_at: string
+          id: string
+          scheduled_at: string
+          score: number | null
+          student_id: string
+          team_id: string | null
+          zoom_url: string | null
+        }
+        Insert: {
+          attempt?: number | null
+          calendly_event_uri: string
+          created_at?: string
+          id?: string
+          scheduled_at: string
+          score?: number | null
+          student_id: string
+          team_id?: string | null
+          zoom_url?: string | null
+        }
+        Update: {
+          attempt?: number | null
+          calendly_event_uri?: string
+          created_at?: string
+          id?: string
+          scheduled_at?: string
+          score?: number | null
+          student_id?: string
+          team_id?: string | null
+          zoom_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "peer_review_meetings_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "peer_review_meetings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pm_duties: {
         Row: {
           active: boolean
