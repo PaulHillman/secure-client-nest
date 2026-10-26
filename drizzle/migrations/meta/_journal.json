@@ -176,6 +176,13 @@
       "when": 1793034982369,
       "tag": "0024_protect_peer_upload_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793035008766,
+      "tag": "0025_retain_peer_review_versions",
+      "breakpoints": true
     }
   ]
 }
