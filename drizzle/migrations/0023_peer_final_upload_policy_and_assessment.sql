@@ -1,0 +1,2 @@
+ALTER POLICY "Admin authorizes one final upload" ON public.peer_review_final_uploads WITH CHECK (public.has_role(auth.uid(), 'admin') AND authorized_by = auth.uid() AND version_id IS NULL AND consumed_at IS NULL AND EXISTS (SELECT 1 FROM public.team_members m JOIN public.teams t ON t.id=m.team_id WHERE m.team_id=peer_review_final_uploads.team_id AND m.user_id=peer_review_final_uploads.student_id AND NOT t.is_test));
+ALTER TABLE public.peer_review_assessments ADD COLUMN IF NOT EXISTS final_submission boolean NOT NULL DEFAULT false;

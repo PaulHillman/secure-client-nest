@@ -162,6 +162,13 @@
       "when": 1793034756652,
       "tag": "0022_peer_review_final_upload_workspace",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793034797483,
+      "tag": "0023_peer_final_upload_policy_and_assessment",
+      "breakpoints": true
     }
   ]
 }

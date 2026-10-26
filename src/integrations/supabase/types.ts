@@ -1528,6 +1528,7 @@ export type Database = {
           criteria_snapshot: string
           email_body: string
           file_id: string | null
+          final_submission: boolean
           id: string
           instructor_email_status: string
           pm_email_status: string
@@ -1550,6 +1551,7 @@ export type Database = {
           criteria_snapshot: string
           email_body: string
           file_id?: string | null
+          final_submission?: boolean
           id?: string
           instructor_email_status?: string
           pm_email_status?: string
@@ -1572,6 +1574,7 @@ export type Database = {
           criteria_snapshot?: string
           email_body?: string
           file_id?: string | null
+          final_submission?: boolean
           id?: string
           instructor_email_status?: string
           pm_email_status?: string
