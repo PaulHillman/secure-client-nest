@@ -18,7 +18,7 @@ const payloadSchema = z.object({
 
 async function hmacHex(key: string, message: string): Promise<string> {
   const cryptoKey = await crypto.subtle.importKey(
-    'HMAC',
+    'raw',
     new TextEncoder().encode(key),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
