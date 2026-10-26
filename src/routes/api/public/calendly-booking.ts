@@ -63,6 +63,7 @@ export const Route = createFileRoute('/api/public/calendly-booking')({
           return Response.json({ ignored: true })
         }
         if (event.event !== 'invitee.created') return Response.json({ ignored: true })
+        if (!event.payload.scheduled_event) return Response.json({ ignored: true })
 
         const inviteeEmail = event.payload.email.toLowerCase()
         const eventUri = event.payload.scheduled_event.uri

@@ -85,7 +85,7 @@ function Page() {
             {row.score === null ? '—' : `${row.score}/10`} {row.attempt ? <span className="text-xs text-muted-foreground">(attempt {row.attempt})</span> : null}
           </td>
           <td className="p-2">
-            <Link to="/app/vault" search={{ team: row.team_id ?? undefined }} className="text-primary underline text-sm">
+            <Link to="/app/vault" search={{ team: row.team_id ?? undefined, file: undefined }} className="text-primary underline text-sm">
               Latest submission
             </Link>
           </td>
