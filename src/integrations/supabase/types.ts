@@ -1526,6 +1526,7 @@ export type Database = {
           concerns: Json
           created_at: string
           criteria_snapshot: string
+          detailed_regrade: Json | null
           email_body: string
           file_id: string | null
           final_submission: boolean
@@ -1549,6 +1550,7 @@ export type Database = {
           concerns?: Json
           created_at?: string
           criteria_snapshot: string
+          detailed_regrade?: Json | null
           email_body: string
           file_id?: string | null
           final_submission?: boolean
@@ -1572,6 +1574,7 @@ export type Database = {
           concerns?: Json
           created_at?: string
           criteria_snapshot?: string
+          detailed_regrade?: Json | null
           email_body?: string
           file_id?: string | null
           final_submission?: boolean

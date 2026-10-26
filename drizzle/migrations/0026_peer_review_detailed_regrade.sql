@@ -1,0 +1,2 @@
+ALTER TABLE public.peer_review_assessments ADD COLUMN IF NOT EXISTS detailed_regrade jsonb;
+COMMENT ON COLUMN public.peer_review_assessments.detailed_regrade IS 'Instructor-requested decimal re-grade after discussion; informational, never replaces score';

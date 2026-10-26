@@ -37,6 +37,16 @@ export const syncPeerMeetings = createServerFn({ method: 'POST' }).middleware([r
   return syncCalendlyPeerMeetings(context.supabase);
 });
 
+export const regradePeerAfterDiscussion = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ assessmentId: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const { data: admin, error: roleError } = await context.supabase.rpc('has_role', { _user_id: context.userId, _role: 'admin' });
+    if (roleError || !admin) throw new Error('Admin access required');
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { regradePeerAssessment } = await import('./peer-review-regrade.server');
+    return regradePeerAssessment(supabaseAdmin, data.assessmentId);
+  });
+
 export const comparePeerVersions = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
   .inputValidator(z.object({ before: z.string().uuid(), after: z.string().uuid() }))
   .handler(async ({ context, data }) => {
