@@ -1,10 +1,10 @@
 # ClientVault roadmap
 
 ## Peer-review meeting workspace
-- [ ] Verify named student bookings in Calendly and import verified meetings.
-- [ ] Add student histories, exact-version documents, highlighted text comparisons and saved remaining fixes.
-- [ ] Securely authorize one final upload during the meeting and score it against 8/10, preserving prior attempts.
-- [ ] Verify authorization rules, calendar sync and the live instructor workspace.
+- [x] Verify all four named students in Calendly and import verified meetings; retain Edwin's actual non-peer-review topic and Sky's email mismatch label.
+- [x] Add student histories, exact-version documents, highlighted text comparisons and saved remaining fixes; verified Branden's typed changes and Sky's scan fallback.
+- [x] Add one-use final-upload authorization and assessment eligibility against 8/10, preserving prior attempts; no real student was unlocked or given a new score.
+- [x] Verify calendar sync, instructor workspace, 29 tests and live rejection of Sky's unapproved fourth upload. A real instructor-authorized final upload and resulting assessment remain unverified until a student's meeting.
 
 ## Concise revision emails
 - [x] Focus revision feedback on 8/10, three fixes, remaining chance and one meeting instruction; preserve original pass policy.
