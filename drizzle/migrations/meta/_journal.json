@@ -183,6 +183,13 @@
       "when": 1793035008766,
       "tag": "0025_retain_peer_review_versions",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793035976309,
+      "tag": "0026_peer_review_detailed_regrade",
+      "breakpoints": true
     }
   ]
 }
