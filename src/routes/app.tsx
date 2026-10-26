@@ -41,6 +41,21 @@ function AppLayout() {
   });
   const awaitingCount = awaiting?.total ?? 0;
 
+  const { data: upcomingMeetings } = useQuery({
+    queryKey: ["upcoming-peer-meetings"],
+    enabled: !!user && isAdmin,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("peer_review_meetings")
+        .select("id", { count: "exact", head: true })
+        .gte("scheduled_at", new Date().toISOString());
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+  const upcomingMeetingsCount = upcomingMeetings ?? 0;
+
   if (loading) return null;
   if (!user) {
     if (typeof window !== "undefined") rememberReturnPath(window.location.pathname + window.location.search);
@@ -57,6 +72,7 @@ function AppLayout() {
     ...(isAdmin
       ? [
           { to: "/app/admin/awaiting-review", label: "Awaiting Review", icon: Inbox, badge: awaitingCount },
+          { to: "/app/admin/peer-review-meetings", label: "Peer-review Meetings", icon: CalendarClock, badge: upcomingMeetingsCount },
           { to: "/app/health-review", label: "Team Health Review", icon: HeartPulse },
           { to: "/app/admin/team-readiness", label: "Team Readiness Assessment", icon: GaugeCircle },
           { to: "/app/admin/usage", label: "Student Usage", icon: BarChart3 },
