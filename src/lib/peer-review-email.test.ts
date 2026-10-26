@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { peerEmailAction, revisionEmailBody, PEER_MEETING_LINK } from './peer-review-email';
+import { peerEmailAction, revisionEmailBody, meetingConfirmedEmailBody, PEER_MEETING_LINK, PEER_REVISION_EXAMPLE_LINK } from './peer-review-email';
 
 describe('revision email next-step rules', () => {
   test('first revision below 8 has exactly one submission remaining', () => {
