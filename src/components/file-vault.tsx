@@ -105,7 +105,7 @@ type FileRow = {
   meeting_date: string | null;
 };
 
-type PeerScore = { score: number | null; status: string; attempt: number; changes: unknown };
+type PeerScore = { score: number | null; status: string; attempt: number; changes: unknown; accepted_at?: string | null };
 
 const VAULT_FOLDERS = [
   { key: "agendas", label: "Agendas", icon: Calendar, entries: [["Team Documents", "Agendas"]] },

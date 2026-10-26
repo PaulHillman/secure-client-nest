@@ -74,7 +74,7 @@ type Member = {
   >;
 };
 
-type PeerScore = { score: number | null; status: string; attempt: number };
+type PeerScore = { score: number | null; status: string; attempt: number; accepted_at?: string | null };
 
 function initials(name: string) {
   return name
