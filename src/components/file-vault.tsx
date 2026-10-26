@@ -236,7 +236,7 @@ export function FileVault({
           // Peer-review scores per file; RLS limits students to their own rows.
           supabase
             .from("peer_review_assessments")
-            .select("file_id, version_id, user_id, score, status, attempt, changes")
+            .select("file_id, version_id, user_id, score, status, attempt, changes, accepted_at")
             .eq("team_id", teamId),
         ]);
       if (fErr) throw fErr;
@@ -1030,7 +1030,7 @@ function FileLine({
               return (
                 <Badge
                   variant="outline"
-                  className={`text-[10px] ${peerBadgeTone(assessment.score, undefined, assessment.attempt)}`}
+                  className={`text-[10px] ${peerBadgeTone(assessment.score, undefined, assessment.attempt, assessment.accepted_at)}`}
                 >
                   {peerBadgeLabel(assessment)}
                 </Badge>

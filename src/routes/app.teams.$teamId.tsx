@@ -108,7 +108,7 @@ function TeamDetail() {
         // Latest peer-review attempt per member; RLS limits students to their own rows.
         supabase
           .from("peer_review_assessments")
-          .select("user_id, score, status, attempt")
+          .select("user_id, score, status, attempt, accepted_at")
           .eq("team_id", teamId)
           .order("attempt", { ascending: false })
           .order("created_at", { ascending: false }),
@@ -522,7 +522,7 @@ function MemberCard({
           )}
           {peer && (
             <div className="mt-1">
-              <Badge variant="outline" className={`text-[10px] ${peerBadgeTone(peer.score, undefined, peer.attempt)}`}>
+              <Badge variant="outline" className={`text-[10px] ${peerBadgeTone(peer.score, undefined, peer.attempt, peer.accepted_at)}`}>
                 {peerBadgeLabel(peer)}
               </Badge>
             </div>

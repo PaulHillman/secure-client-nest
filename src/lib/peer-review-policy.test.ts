@@ -69,3 +69,12 @@ describe("peerBadgeTone", () => {
     assert.match(peerBadgeTone(null, after), /muted/);
   });
 });
+
+import { test as t2 } from 'node:test';
+import { strict as a2 } from 'node:assert';
+import { peerBadgeTone as tone2, peerBadgeLabel as label2 } from './peer-review-policy';
+t2('a 7/10 revision accepted after discussion shows green and says accepted, even after 11/8', () => {
+  a2.match(tone2(7, new Date('2026-11-20'), 3, '2026-10-26T18:00:00Z'), /success/);
+  a2.equal(label2({ score: 7, status: 'assessed', attempt: 3, accepted_at: '2026-10-26T18:00:00Z' }), 'Accepted after discussion 7/10');
+  a2.doesNotMatch(tone2(7, new Date('2026-10-27'), 3), /success/);
+});

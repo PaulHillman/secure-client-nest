@@ -37,6 +37,22 @@ export const syncPeerMeetings = createServerFn({ method: 'POST' }).middleware([r
   return syncCalendlyPeerMeetings(context.supabase);
 });
 
+export const acceptPeerAfterDiscussion = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ assessmentId: z.string().uuid(), accept: z.boolean(), note: z.string().max(500).optional() }))
+  .handler(async ({ context, data }) => {
+    const { data: admin, error: roleError } = await context.supabase.rpc('has_role', { _user_id: context.userId, _role: 'admin' });
+    if (roleError || !admin) throw new Error('Admin access required');
+    const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+    const { data: a, error } = await supabaseAdmin.from('peer_review_assessments').select('id,status,user_id,team_id,attempt').eq('id', data.assessmentId).single();
+    if (error || !a || a.status !== 'assessed') throw new Error('Only a scored submission can be accepted');
+    const { data: newer } = await supabaseAdmin.from('peer_review_assessments').select('id').eq('user_id', a.user_id).eq('team_id', a.team_id).eq('status', 'assessed').gt('attempt', a.attempt).limit(1);
+    if (data.accept && newer?.length) throw new Error('Only the latest submission can be accepted');
+    const patch = data.accept ? { accepted_at: new Date().toISOString(), accepted_by: context.userId, accepted_note: data.note ?? null } : { accepted_at: null, accepted_by: null, accepted_note: null };
+    const { error: upErr } = await supabaseAdmin.from('peer_review_assessments').update(patch).eq('id', a.id);
+    if (upErr) throw upErr;
+    return { ok: true };
+  });
+
 export const regradePeerAfterDiscussion = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
   .inputValidator(z.object({ assessmentId: z.string().uuid() }))
   .handler(async ({ context, data }) => {
