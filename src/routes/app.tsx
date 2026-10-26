@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, Link, Navigate, useRouterState } from "@tansta
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, Users, FolderLock, LogOut, FolderOpen, ClipboardList, ListTodo, CalendarCheck, Trophy, GaugeCircle, BarChart3, HeartPulse, Inbox } from "lucide-react";
+import { LayoutDashboard, Users, FolderLock, LogOut, FolderOpen, ClipboardList, ListTodo, CalendarCheck, CalendarClock, Trophy, GaugeCircle, BarChart3, HeartPulse, Inbox } from "lucide-react";
 import { fetchAwaitingReview } from "@/lib/awaiting-review";
 import { Button } from "@/components/ui/button";
 import { NotificationsBell } from "@/components/notifications-bell";
