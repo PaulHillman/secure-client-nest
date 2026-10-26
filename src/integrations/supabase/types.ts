@@ -1520,6 +1520,9 @@ export type Database = {
       }
       peer_review_assessments: {
         Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          accepted_note: string | null
           assessed_by: string
           attempt: number
           changes: Json
@@ -1544,6 +1547,9 @@ export type Database = {
           version_id: string | null
         }
         Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          accepted_note?: string | null
           assessed_by: string
           attempt?: number
           changes?: Json
@@ -1568,6 +1574,9 @@ export type Database = {
           version_id?: string | null
         }
         Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          accepted_note?: string | null
           assessed_by?: string
           attempt?: number
           changes?: Json
