@@ -105,7 +105,7 @@ type FileRow = {
   meeting_date: string | null;
 };
 
-type PeerScore = { score: number | null; status: string; attempt: number; changes: unknown };
+type PeerScore = { score: number | null; status: string; attempt: number; changes: unknown; accepted_at?: string | null };
 
 const VAULT_FOLDERS = [
   { key: "agendas", label: "Agendas", icon: Calendar, entries: [["Team Documents", "Agendas"]] },
@@ -236,7 +236,7 @@ export function FileVault({
           // Peer-review scores per file; RLS limits students to their own rows.
           supabase
             .from("peer_review_assessments")
-            .select("file_id, version_id, user_id, score, status, attempt, changes")
+            .select("file_id, version_id, user_id, score, status, attempt, changes, accepted_at")
             .eq("team_id", teamId),
         ]);
       if (fErr) throw fErr;
@@ -249,7 +249,7 @@ export function FileVault({
       });
       const peerMap = new Map<string, PeerScore>();
       (assessments ?? []).forEach((a) => {
-        if (a.version_id) peerMap.set(a.version_id, { score: a.score, status: a.status, attempt: a.attempt, changes: a.changes });
+        if (a.version_id) peerMap.set(a.version_id, { score: a.score, status: a.status, attempt: a.attempt, changes: a.changes, accepted_at: a.accepted_at });
       });
       const uploaderIds = Array.from(new Set([
         ...(files ?? []).map((f) => f.uploaded_by),
@@ -1030,7 +1030,7 @@ function FileLine({
               return (
                 <Badge
                   variant="outline"
-                  className={`text-[10px] ${peerBadgeTone(assessment.score, undefined, assessment.attempt)}`}
+                  className={`text-[10px] ${peerBadgeTone(assessment.score, undefined, assessment.attempt, assessment.accepted_at)}`}
                 >
                   {peerBadgeLabel(assessment)}
                 </Badge>

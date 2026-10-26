@@ -1,0 +1,2 @@
+ALTER TABLE public.peer_review_assessments ADD COLUMN IF NOT EXISTS accepted_at timestamptz, ADD COLUMN IF NOT EXISTS accepted_by uuid, ADD COLUMN IF NOT EXISTS accepted_note text;
+COMMENT ON COLUMN public.peer_review_assessments.accepted_at IS 'Instructor override: submission accepted after discussion; no further revision required. Official score unchanged.';
