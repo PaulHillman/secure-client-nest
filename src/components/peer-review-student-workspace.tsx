@@ -52,7 +52,7 @@ export function PeerReviewStudentWorkspace({ data, studentId, teamId }: { data: 
   </section>;
 }
 function RegradeDetail({ r }: { r: any }) {
-  const tone = (x: string) => x === 'met' ? 'text-success' : x === 'partial' ? 'text-warning' : 'text-destructive';
+  const tone = (x: string) => x === 'met' ? 'text-success' : x === 'partial' ? 'text-foreground' : 'text-destructive';
   return <div className="rounded-md bg-muted p-3 space-y-2 text-sm">
     <p className="font-medium">Detailed re-grade: {Number(r.precise_score).toFixed(1)}/10 · {r.gap_to_8 > 0 ? `${Number(r.gap_to_8).toFixed(1)} short of 8/10` : 'meets 8/10'}</p>
     <p className="text-xs text-muted-foreground">Official score stays {r.official_score}/10. Re-graded {new Date(r.regraded_at).toLocaleString()}.</p>
