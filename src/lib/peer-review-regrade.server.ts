@@ -69,5 +69,6 @@ export async function regradePeerAssessment(db: any, assessmentId: string, actor
   const decision = newer?.length ? {} : finalRegradeDecision(a, precise, actorId, result.regraded_at);
   const { error: upErr } = await db.from("peer_review_assessments").update({ detailed_regrade: result, ...decision }).eq("id", a.id);
   if (upErr) throw upErr;
+  if ('accepted_at' in decision && decision.accepted_at) { const { onPeerAccepted } = await import('./peer-review-accept.server'); await onPeerAccepted(db as never, a.id); }
   return result;
 }

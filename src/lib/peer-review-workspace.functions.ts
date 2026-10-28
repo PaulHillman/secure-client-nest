@@ -52,6 +52,7 @@ export const acceptPeerAfterDiscussion = createServerFn({ method: 'POST' }).midd
     const patch = data.accept ? { accepted_at: new Date().toISOString(), accepted_by: context.userId, accepted_note: data.note ?? null } : { accepted_at: null, accepted_by: null, accepted_note: null };
     const { error: upErr } = await supabaseAdmin.from('peer_review_assessments').update(patch).eq('id', a.id);
     if (upErr) throw upErr;
+    if (data.accept) { const { onPeerAccepted } = await import('./peer-review-accept.server'); return { ok: true, followUp: await onPeerAccepted(supabaseAdmin, a.id) }; }
     return { ok: true };
   });
 
@@ -79,6 +80,11 @@ export const savePeerDiscussion = createServerFn({ method: 'POST' }).middleware(
       ...(data.decision === 'reopen' ? { accepted_at: null, accepted_by: null, accepted_note: null, discussion_resolved_at: null, final_points_adjustment: 0 } : {}) };
     const { error: updateError } = await db.from('peer_review_assessments').update(patch).eq('id', a.id);
     if (updateError) throw updateError;
+    if (data.decision === 'accept') {
+      const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+      const { onPeerAccepted } = await import('./peer-review-accept.server');
+      return { ok: true, followUp: await onPeerAccepted(supabaseAdmin, a.id) };
+    }
     return { ok: true };
   });
 
