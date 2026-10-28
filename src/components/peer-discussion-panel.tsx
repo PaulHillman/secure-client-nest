@@ -33,9 +33,9 @@ export function PeerDiscussionPanel({ assessment, meetings, notesOnly = false }:
     {meetings.filter(m => m.student_id === assessment.user_id && m.team_id === assessment.team_id).map(m => <p key={m.id} className="text-sm text-muted-foreground">Calendar: {new Date(m.scheduled_at).toLocaleString('en-US', { timeZone: 'America/Detroit' })} Eastern{m.booking_topic ? ` · ${m.booking_topic}` : ''}</p>)}
     <label className="flex items-center gap-2 text-sm"><Checkbox checked={held} onCheckedChange={v => setHeld(v === true)} />We have met</label>
     {assessment.discussion_held_at && <p className="text-sm text-success">Meeting held · {new Date(assessment.discussion_held_at).toLocaleDateString('en-US', { timeZone: 'America/Detroit' })}</p>}
-    {assessment.discussion_deduction < 0 && <p className="text-sm">Final acceptance threshold: {assessment.discussion_min_score}/10. Below that: {assessment.discussion_deduction} points against final totals, after your decision.</p>}
+    {assessment.discussion_deduction < 0 && <p className="text-sm">Final acceptance threshold: {assessment.discussion_min_score}/10. Below that: {assessment.discussion_deduction} points against the student’s personal project total. The final fourth-submission re-grade saves this decision automatically.</p>}
     <p className="text-sm">Official score: {assessment.score ?? 'Not scored'}/10{score !== assessment.score ? ` · Detailed re-grade: ${score}/10` : ''}</p>
-    {resolved && <p className={assessment.accepted_at ? 'text-success font-medium' : 'text-destructive font-medium'}>{assessment.accepted_at ? 'Accepted after discussion — no further revision needed.' : `Resolved · ${assessment.final_points_adjustment} points recorded against final totals.`}</p>}
+    {resolved && <p className={assessment.accepted_at ? 'text-success font-medium' : 'text-destructive font-medium'}>{assessment.accepted_at ? 'Accepted after discussion — no further revision needed.' : `Resolved · ${assessment.final_points_adjustment} points recorded against the student’s personal project total.`}</p>}
     <label htmlFor={`discussion-${assessment.id}`} className="block text-sm font-medium">Instructor comment</label>
     <Textarea id={`discussion-${assessment.id}`} value={note} maxLength={2000} onChange={e => setNote(e.target.value)} />
     <div className="flex flex-wrap gap-2">

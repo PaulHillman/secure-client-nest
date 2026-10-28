@@ -1,5 +1,5 @@
 import { recordHealthReportView } from "@/lib/health-report-views";
-import { peerBadgeLabel, peerBadgeTone } from "@/lib/peer-review-policy";
+import { peerBadgeLabel, peerBadgeScore, peerBadgeTone } from "@/lib/peer-review-policy";
 import { openVaultFileInNewTab } from "@/lib/file-download";
 import { deleteVaultRecord } from "@/lib/vault-delete";
 import { useMemo, useRef, useState } from "react";
@@ -105,7 +105,7 @@ type FileRow = {
   meeting_date: string | null;
 };
 
-type PeerScore = { score: number | null; status: string; attempt: number; changes: unknown; accepted_at?: string | null };
+type PeerScore = { score: number | null; status: string; attempt: number; changes: unknown; accepted_at?: string | null; detailed_regrade?: unknown };
 
 const VAULT_FOLDERS = [
   { key: "agendas", label: "Agendas", icon: Calendar, entries: [["Team Documents", "Agendas"]] },
@@ -221,7 +221,7 @@ export function FileVault({
   const { data, isLoading } = useQuery({
     // Separate the enriched result from pre-update cached lists in open previews.
     // Keep the prefix so existing upload/status invalidations still refresh it.
-    queryKey: ["vault", teamId, "peer-feedback-owner-v4"],
+    queryKey: ["vault", teamId, "peer-feedback-final-v5"],
     queryFn: async () => {
       const [{ data: files, error: fErr }, { data: versions, error: vErr }, members, { data: assessments }] =
         await Promise.all([
@@ -236,7 +236,7 @@ export function FileVault({
           // Peer-review scores per file; RLS limits students to their own rows.
           supabase
             .from("peer_review_assessments")
-            .select("file_id, version_id, user_id, score, status, attempt, changes, accepted_at")
+            .select("file_id, version_id, user_id, score, status, attempt, changes, accepted_at, detailed_regrade")
             .eq("team_id", teamId),
         ]);
       if (fErr) throw fErr;
@@ -249,7 +249,7 @@ export function FileVault({
       });
       const peerMap = new Map<string, PeerScore>();
       (assessments ?? []).forEach((a) => {
-        if (a.version_id) peerMap.set(a.version_id, { score: a.score, status: a.status, attempt: a.attempt, changes: a.changes, accepted_at: a.accepted_at });
+        if (a.version_id) peerMap.set(a.version_id, { score: a.score, status: a.status, attempt: a.attempt, changes: a.changes, accepted_at: a.accepted_at, detailed_regrade: a.detailed_regrade });
       });
       const uploaderIds = Array.from(new Set([
         ...(files ?? []).map((f) => f.uploaded_by),
@@ -952,7 +952,7 @@ function FileLine({
   const isPeerReview = file.subsection === "Mid-Semester Peer Reviews";
   const uploadNumber = current ? peerSequence.get(current.id) : undefined;
   const assessment = current ? peerMap.get(current.id) : undefined;
-  const fixes = peerPriorityFixes(assessment?.score, assessment?.changes);
+  const fixes = assessment?.accepted_at ? [] : peerPriorityFixes(assessment?.score, assessment?.changes);
   const handleCalculateScore = async () => {
     if (!current || calculating) return;
     setCalculating(true);
@@ -1030,7 +1030,7 @@ function FileLine({
               return (
                 <Badge
                   variant="outline"
-                  className={`text-[10px] ${peerBadgeTone(assessment.score, undefined, assessment.attempt, assessment.accepted_at)}`}
+                  className={`text-[10px] ${peerBadgeTone(peerBadgeScore(assessment), undefined, assessment.attempt, assessment.accepted_at)}`}
                 >
                   {peerBadgeLabel(assessment)}
                 </Badge>
