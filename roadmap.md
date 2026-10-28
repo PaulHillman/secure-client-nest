@@ -1,5 +1,9 @@
 # ClientVault roadmap
 
+## Competition grading references
+- [ ] Add an Admin menu choice with separate Competition 1, 2 and 3 references; retain Competition 2 as historical only and leave unsupplied references empty.
+- [ ] Verify the Admin link and all three reference selections in the signed-in app.
+
 ## Peer-review meeting workspace
 - [x] Verify all four named students in Calendly and import verified meetings; retain Edwin's actual non-peer-review topic and Sky's email mismatch label.
 - [x] Add student histories, exact-version documents, highlighted text comparisons and saved remaining fixes; verified Branden's typed changes and Sky's scan fallback.

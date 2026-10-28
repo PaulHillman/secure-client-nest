@@ -72,6 +72,7 @@ function Admin() {
       <Button asChild variant="outline" className="mb-6"><Link to="/app/admin/peer-review-criteria"><FileStack className="h-4 w-4 mr-2" />Peer Review Evaluation Criteria</Link></Button>
       <Button asChild variant="outline" className="mb-6 ml-2"><Link to="/app/admin/peer-review-assessments"><FileStack className="h-4 w-4 mr-2" />Individual Peer Review Results</Link></Button>
       <Button asChild variant="outline" className="mb-6 ml-2"><Link to="/app/admin/health-review-guide"><FileStack className="h-4 w-4 mr-2" />Weekly Health Check Review</Link></Button>
+      <Button asChild variant="outline" className="mb-6 ml-2"><Link to="/app/admin/competition-grading"><FileStack className="h-4 w-4 mr-2" />Competition Grading References</Link></Button>
 
       <Tabs defaultValue="users">
         <TabsList>
