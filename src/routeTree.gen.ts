@@ -27,6 +27,7 @@ import { Route as AppVaultOverviewRouteImport } from './routes/app.vault-overvie
 import { Route as ApiPublicCalendlyBookingRouteImport } from './routes/api/public/calendly-booking'
 import { Route as ApiPublicFileDownloadRouteImport } from './routes/api/public/file-download'
 import { Route as AppAdminAwaitingReviewRouteImport } from './routes/app.admin_.awaiting-review'
+import { Route as AppAdminCompetitionGradingRouteImport } from './routes/app.admin_.competition-grading'
 import { Route as AppAdminHealthReviewGuideRouteImport } from './routes/app.admin_.health-review-guide'
 import { Route as AppAdminPeerReviewAssessmentsRouteImport } from './routes/app.admin_.peer-review-assessments'
 import { Route as AppAdminPeerReviewCriteriaRouteImport } from './routes/app.admin_.peer-review-criteria'
@@ -132,6 +133,12 @@ const AppAdminAwaitingReviewRoute = AppAdminAwaitingReviewRouteImport.update({
   path: '/admin/awaiting-review',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminCompetitionGradingRoute =
+  AppAdminCompetitionGradingRouteImport.update({
+    id: '/admin_/competition-grading',
+    path: '/admin/competition-grading',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppAdminHealthReviewGuideRoute =
   AppAdminHealthReviewGuideRouteImport.update({
     id: '/admin_/health-review-guide',
@@ -227,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/api/public/calendly-booking': typeof ApiPublicCalendlyBookingRoute
   '/api/public/file-download': typeof ApiPublicFileDownloadRoute
   '/app/admin/awaiting-review': typeof AppAdminAwaitingReviewRoute
+  '/app/admin/competition-grading': typeof AppAdminCompetitionGradingRoute
   '/app/admin/health-review-guide': typeof AppAdminHealthReviewGuideRoute
   '/app/admin/peer-review-assessments': typeof AppAdminPeerReviewAssessmentsRoute
   '/app/admin/peer-review-criteria': typeof AppAdminPeerReviewCriteriaRoute
@@ -260,6 +268,7 @@ export interface FileRoutesByTo {
   '/api/public/calendly-booking': typeof ApiPublicCalendlyBookingRoute
   '/api/public/file-download': typeof ApiPublicFileDownloadRoute
   '/app/admin/awaiting-review': typeof AppAdminAwaitingReviewRoute
+  '/app/admin/competition-grading': typeof AppAdminCompetitionGradingRoute
   '/app/admin/health-review-guide': typeof AppAdminHealthReviewGuideRoute
   '/app/admin/peer-review-assessments': typeof AppAdminPeerReviewAssessmentsRoute
   '/app/admin/peer-review-criteria': typeof AppAdminPeerReviewCriteriaRoute
@@ -294,6 +303,7 @@ export interface FileRoutesById {
   '/api/public/calendly-booking': typeof ApiPublicCalendlyBookingRoute
   '/api/public/file-download': typeof ApiPublicFileDownloadRoute
   '/app/admin_/awaiting-review': typeof AppAdminAwaitingReviewRoute
+  '/app/admin_/competition-grading': typeof AppAdminCompetitionGradingRoute
   '/app/admin_/health-review-guide': typeof AppAdminHealthReviewGuideRoute
   '/app/admin_/peer-review-assessments': typeof AppAdminPeerReviewAssessmentsRoute
   '/app/admin_/peer-review-criteria': typeof AppAdminPeerReviewCriteriaRoute
@@ -329,6 +339,7 @@ export interface FileRouteTypes {
     | '/api/public/calendly-booking'
     | '/api/public/file-download'
     | '/app/admin/awaiting-review'
+    | '/app/admin/competition-grading'
     | '/app/admin/health-review-guide'
     | '/app/admin/peer-review-assessments'
     | '/app/admin/peer-review-criteria'
@@ -362,6 +373,7 @@ export interface FileRouteTypes {
     | '/api/public/calendly-booking'
     | '/api/public/file-download'
     | '/app/admin/awaiting-review'
+    | '/app/admin/competition-grading'
     | '/app/admin/health-review-guide'
     | '/app/admin/peer-review-assessments'
     | '/app/admin/peer-review-criteria'
@@ -395,6 +407,7 @@ export interface FileRouteTypes {
     | '/api/public/calendly-booking'
     | '/api/public/file-download'
     | '/app/admin_/awaiting-review'
+    | '/app/admin_/competition-grading'
     | '/app/admin_/health-review-guide'
     | '/app/admin_/peer-review-assessments'
     | '/app/admin_/peer-review-criteria'
@@ -551,6 +564,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminAwaitingReviewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin_/competition-grading': {
+      id: '/app/admin_/competition-grading'
+      path: '/admin/competition-grading'
+      fullPath: '/app/admin/competition-grading'
+      preLoaderRoute: typeof AppAdminCompetitionGradingRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/admin_/health-review-guide': {
       id: '/app/admin_/health-review-guide'
       path: '/admin/health-review-guide'
@@ -670,6 +690,7 @@ interface AppRouteChildren {
   AppVaultRoute: typeof AppVaultRoute
   AppVaultOverviewRoute: typeof AppVaultOverviewRoute
   AppAdminAwaitingReviewRoute: typeof AppAdminAwaitingReviewRoute
+  AppAdminCompetitionGradingRoute: typeof AppAdminCompetitionGradingRoute
   AppAdminHealthReviewGuideRoute: typeof AppAdminHealthReviewGuideRoute
   AppAdminPeerReviewAssessmentsRoute: typeof AppAdminPeerReviewAssessmentsRoute
   AppAdminPeerReviewCriteriaRoute: typeof AppAdminPeerReviewCriteriaRoute
@@ -693,6 +714,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppVaultRoute: AppVaultRoute,
   AppVaultOverviewRoute: AppVaultOverviewRoute,
   AppAdminAwaitingReviewRoute: AppAdminAwaitingReviewRoute,
+  AppAdminCompetitionGradingRoute: AppAdminCompetitionGradingRoute,
   AppAdminHealthReviewGuideRoute: AppAdminHealthReviewGuideRoute,
   AppAdminPeerReviewAssessmentsRoute: AppAdminPeerReviewAssessmentsRoute,
   AppAdminPeerReviewCriteriaRoute: AppAdminPeerReviewCriteriaRoute,
