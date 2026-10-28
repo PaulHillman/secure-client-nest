@@ -1,5 +1,6 @@
 // Server-only: instructor "re-grade after discussion" — a decimal, criterion-by-criterion
 // analysis of how close a saved submission is to 8/10. Never replaces the official score.
+import { finalRegradeDecision } from './peer-review-discussion';
 const MODEL = "openai/gpt-6-astra";
 
 const schema = {
@@ -16,9 +17,11 @@ const schema = {
 
 export type DetailedRegrade = { precise_score: number; verdict: string; criteria: { criterion: string; rating: string; evidence: string }[]; closest_strengths: string[]; to_reach_8: string[]; gap_to_8: number; regraded_at: string; official_score: number | null };
 
-export async function regradePeerAssessment(db: any, assessmentId: string): Promise<DetailedRegrade> {
-  const { data: a, error } = await db.from("peer_review_assessments").select("id, score, attempt, criteria_snapshot, version_id, status").eq("id", assessmentId).single();
+export async function regradePeerAssessment(db: any, assessmentId: string, actorId: string): Promise<DetailedRegrade> {
+  const { data: a, error } = await db.from("peer_review_assessments").select("id, user_id, team_id, score, attempt, final_submission, criteria_snapshot, version_id, status").eq("id", assessmentId).single();
   if (error || !a || a.status !== "assessed" || !a.version_id) throw new Error("Only a saved, scored submission can be re-graded.");
+  const { data: newer, error: latestError } = await db.from('peer_review_assessments').select('id').eq('user_id', a.user_id).eq('team_id', a.team_id).neq('status', 'ownership_invalid').gt('attempt', a.attempt).limit(1);
+  if (latestError) throw latestError;
   const { data: v } = await db.from("file_versions").select("storage_path, file_size").eq("id", a.version_id).single();
   if (!v) throw new Error("The submitted file is no longer available.");
   const { data: blob } = await db.storage.from("vault").download(v.storage_path);
@@ -40,7 +43,7 @@ export async function regradePeerAssessment(db: any, assessmentId: string): Prom
     body: JSON.stringify({
       model: MODEL, stream: true, store: false, reasoning: { effort: "high" },
       instructions: `The instructor discussed this student's mid-semester peer review and wants a precise, detailed re-grade using ONLY the criteria below. Give precise_score to ONE decimal place (e.g. 7.6) on the same harsh 0-10 scale; the official saved score was ${a.score}/10 and is kept regardless. Rate every criterion met/partial/missing, citing or naming the specific answers as evidence. verdict: one or two sentences on how close this is to 8/10. closest_strengths: what already meets the 8/10 bar. to_reach_8: the specific remaining gaps, highest impact first. Discuss document evidence only — no deadlines, policies or meeting instructions. Do not inflate.\n\nCRITERIA:\n${a.criteria_snapshot}`,
-      input: [{ role: "user", content: [{ type: "input_text", text: media ? "The submitted document is attached; read it carefully." : `SUBMITTED DOCUMENT TEXT:\n${text!.slice(0, 40_000)}` }, ...(media ? [media] : [])] }],
+      input: [{ role: "user", content: [{ type: "input_text", text: media ? "The submitted document is attached; read it carefully." : `SUBMITTED DOCUMENT TEXT:\n${text?.slice(0, 40_000) ?? ''}` }, ...(media ? [media] : [])] }],
       text: { format: { type: "json_schema", name: "peer_review_regrade", strict: true, schema } },
     }),
   });
@@ -61,8 +64,10 @@ export async function regradePeerAssessment(db: any, assessmentId: string): Prom
   }
   const r = JSON.parse(out);
   const precise = Math.round(Math.max(0, Math.min(10, r.precise_score)) * 10) / 10;
+  if (!Number.isFinite(precise)) throw new Error('The re-grade did not return a valid score. No decision was saved.');
   const result: DetailedRegrade = { ...r, precise_score: precise, gap_to_8: Math.max(0, Math.round((8 - precise) * 10) / 10), regraded_at: new Date().toISOString(), official_score: a.score };
-  const { error: upErr } = await db.from("peer_review_assessments").update({ detailed_regrade: result }).eq("id", a.id);
+  const decision = newer?.length ? {} : finalRegradeDecision(a, precise, actorId, result.regraded_at);
+  const { error: upErr } = await db.from("peer_review_assessments").update({ detailed_regrade: result, ...decision }).eq("id", a.id);
   if (upErr) throw upErr;
   return result;
 }

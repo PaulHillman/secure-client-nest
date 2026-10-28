@@ -6,12 +6,14 @@ export function peerOriginalFiled(status: string, fileId: string | null) {
   return fileId !== null && status !== 'missing' && status !== 'incomplete';
 }
 
-export type PeerBadgeInfo = { score: number | null; status: string; attempt: number; accepted_at?: string | null };
+import { discussionScore } from './peer-review-discussion';
+export type PeerBadgeInfo = { score: number | null; status: string; attempt: number; accepted_at?: string | null; detailed_regrade?: unknown };
+export function peerBadgeScore(a: PeerBadgeInfo) { return a.accepted_at ? discussionScore(a) : a.score; }
 
 // After Sunday 11/8 11:59 p.m. ET any latest score below 8 shows red.
 export function peerBadgeLabel(a: PeerBadgeInfo) {
   if (a.score === null) return a.status === 'missing' ? 'Not submitted' : a.status;
-  if (a.accepted_at) return `Accepted after discussion ${a.score}/10`;
+  if (a.accepted_at) return `Accepted after discussion ${peerBadgeScore(a)}/10`;
   return `${a.attempt <= 1 ? 'Original' : 'Updated'} Peer Review ${a.score}/10`;
 }
 

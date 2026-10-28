@@ -1,9 +1,14 @@
 import { describe, test } from "node:test";
 import { strict as assert } from "node:assert";
-import { peerBadgeLabel, peerBadgeTone, peerReviewPass, MEETING_PEER_DUE } from "./peer-review-policy";
+import { peerBadgeLabel, peerBadgeScore, peerBadgeTone, peerReviewPass, MEETING_PEER_DUE } from "./peer-review-policy";
 
 const before = new Date("2026-11-01T12:00:00Z");
 const after = new Date("2026-11-10T12:00:00Z");
+test('Sky accepted final badge uses saved 7.6 and stays green', () => {
+  const sky = { score: 7, status: 'assessed', attempt: 4, accepted_at: '2026-10-28', detailed_regrade: { precise_score: 7.6 } };
+  assert.equal(peerBadgeScore(sky), 7.6);
+  assert.match(peerBadgeTone(peerBadgeScore(sky), after, sky.attempt, sky.accepted_at), /success/);
+});
 
 describe("peerBadgeLabel", () => {
   test("labels attempt 1 as Original Peer Review with the score", () => {
