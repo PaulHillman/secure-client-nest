@@ -1,6 +1,7 @@
 # ClientVault roadmap
 
 ## Discussion decisions
+- [x] Automatically resolve final fourth-submission re-grades at 7.6+, show the decimal green badge, and retain a separate -10 personal-project adjustment below 7.6; 25 tests passed, Sky accepted at saved 7.6 with zero deduction, green badge and queue removal verified in the signed-in app; build OK.
 - [x] Re-grade Sky's actual final submission 4: saved 7.6/10; retained meeting comments on submission 3 and original scores.
 - [x] Add meeting confirmation, comments and accept/deduction decisions directly from Awaiting Review using latest submissions only.
 - [x] Record Sky and Branden's completed meetings and Sky's individual 7.6 threshold; retain original scores and Branden's existing acceptance.

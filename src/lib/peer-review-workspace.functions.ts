@@ -89,7 +89,7 @@ export const regradePeerAfterDiscussion = createServerFn({ method: 'POST' }).mid
     if (roleError || !admin) throw new Error('Admin access required');
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const { regradePeerAssessment } = await import('./peer-review-regrade.server');
-    return regradePeerAssessment(supabaseAdmin, data.assessmentId);
+    return regradePeerAssessment(supabaseAdmin, data.assessmentId, context.userId);
   });
 
 export const comparePeerVersions = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
