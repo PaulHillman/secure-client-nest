@@ -1,5 +1,10 @@
 # ClientVault roadmap
 
+## Discussion decisions
+- [ ] Add meeting confirmation, comments and accept/deduction decisions directly from Awaiting Review using latest submissions only.
+- [ ] Record Sky and Branden's completed meetings and individual 7.6 threshold; retain original scores.
+- [ ] Verify saved decisions leave the queue and test the 7.6 / -10 rule.
+
 ## Competition grading references
 - [x] Add an Admin menu choice with separate Competition 1, 2 and 3 references; retain Competition 2 as historical only and leave unsupplied references empty.
 - [x] Verify the Admin link and all three reference selections in the signed-in app; build OK and no browser page errors.
