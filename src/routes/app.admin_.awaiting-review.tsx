@@ -216,7 +216,7 @@ function Page() {
                 <span className="font-medium">{p.studentName}</span>
                 <span className="text-muted-foreground">
                   {" "}
-                  · {p.teamName} · attempt {p.attempt}, scored {p.score ?? "—"}/10 — meeting
+                  · {p.teamName} · attempt {p.attempt}, scored {p.score ?? "—"}/10 — meeting {" "}
                   {p.meetingHeld ? 'held — final decision pending' : 'decision pending'}
                 </span>
               </div>

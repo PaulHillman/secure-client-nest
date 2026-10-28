@@ -6,7 +6,7 @@ import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileViewerDialog } from '@/components/file-viewer-dialog';
-import { authorizeFinalPeerUpload, comparePeerVersions, getPeerWorkspace, regradePeerAfterDiscussion, acceptPeerAfterDiscussion } from '@/lib/peer-review-workspace.functions';
+import { authorizeFinalPeerUpload, comparePeerVersions, getPeerWorkspace, regradePeerAfterDiscussion } from '@/lib/peer-review-workspace.functions';
 import { finalUploadState } from '@/lib/peer-review-workspace';
 import { peerBadgeTone } from '@/lib/peer-review-policy';
 import { peerPriorityFixes } from '@/lib/peer-review-feedback';
@@ -26,14 +26,6 @@ export function PeerReviewStudentWorkspace({ data, studentId, teamId }: { data: 
   const qc = useQueryClient();
   const regrade = useServerFn(regradePeerAfterDiscussion);
   const [regrading, setRegrading] = useState<string | null>(null);
-  const acceptFn = useServerFn(acceptPeerAfterDiscussion);
-  const setAccepted = async (id: string, accept: boolean, precise?: number) => {
-    if (accept && !window.confirm(`Accept this submission as OK after discussion? No further revision will be required. The official score stays ${latest?.score}/10.`)) return;
-    setRegrading(id);
-    try { await acceptFn({ data: { assessmentId: id, accept, note: precise != null ? `Re-graded ${precise.toFixed(1)}/10 after discussion` : undefined } }); toast.success(accept ? 'Accepted — no further revision needed.' : 'Acceptance removed.'); await qc.invalidateQueries({ queryKey: ['peer-workspace'] }); }
-    catch (e) { toast.error(e instanceof Error ? e.message : 'Could not update'); }
-    finally { setRegrading(null); }
-  };
   const runRegrade = async (id: string) => {
     setRegrading(id);
     try { await regrade({ data: { assessmentId: id } }); toast.success('Detailed re-grade saved. The official score is unchanged.'); await qc.invalidateQueries({ queryKey: ['peer-workspace'] }); }
