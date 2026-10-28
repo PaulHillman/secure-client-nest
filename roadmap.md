@@ -1,6 +1,7 @@
 # ClientVault roadmap
 
 ## Discussion decisions
+- [ ] Re-grade Sky's actual final submission 4 and retain meeting comments on submission 3 without changing its score.
 - [ ] Add meeting confirmation, comments and accept/deduction decisions directly from Awaiting Review using latest submissions only.
 - [ ] Record Sky and Branden's completed meetings and individual 7.6 threshold; retain original scores.
 - [ ] Verify saved decisions leave the queue and test the 7.6 / -10 rule.

@@ -9,7 +9,7 @@ import { discussionOutcome, discussionScore } from '@/lib/peer-review-discussion
 import { toast } from 'sonner';
 
 type Assessment = Awaited<ReturnType<typeof getPeerWorkspace>>['assessments'][number];
-export function PeerDiscussionPanel({ assessment, meetings }: { assessment: Assessment; meetings: Awaited<ReturnType<typeof getPeerWorkspace>>['meetings'] }) {
+export function PeerDiscussionPanel({ assessment, meetings, notesOnly = false }: { assessment: Assessment; meetings: Awaited<ReturnType<typeof getPeerWorkspace>>['meetings']; notesOnly?: boolean }) {
   const [held, setHeld] = useState(!!assessment.discussion_held_at);
   const [note, setNote] = useState(assessment.discussion_note ?? assessment.accepted_note ?? '');
   const [busy, setBusy] = useState(false);
@@ -40,9 +40,9 @@ export function PeerDiscussionPanel({ assessment, meetings }: { assessment: Asse
     <Textarea id={`discussion-${assessment.id}`} value={note} maxLength={2000} onChange={e => setNote(e.target.value)} />
     <div className="flex flex-wrap gap-2">
       <Button variant="outline" disabled={busy} onClick={() => act('note')}>Save meeting &amp; comment</Button>
-      {!resolved && <Button disabled={busy || !held || !note.trim() || assessment.status !== 'assessed' || (assessment.discussion_deduction < 0 && !outcome.canAccept)} onClick={() => act('accept')}>Accept as OK — move on</Button>}
-      {!resolved && outcome.canDeduct && <Button variant="destructive" disabled={busy || !held || !note.trim() || !assessment.detailed_regrade} onClick={() => act('deduct')}>Record {assessment.discussion_deduction} points &amp; close</Button>}
-      {resolved && <Button variant="outline" disabled={busy} onClick={() => act('reopen')}>Reopen decision</Button>}
+      {!notesOnly && !resolved && <Button disabled={busy || !held || !note.trim() || assessment.status !== 'assessed' || (assessment.discussion_deduction < 0 && !outcome.canAccept)} onClick={() => act('accept')}>Accept as OK — move on</Button>}
+      {!notesOnly && !resolved && outcome.canDeduct && <Button variant="destructive" disabled={busy || !held || !note.trim() || !assessment.detailed_regrade} onClick={() => act('deduct')}>Record {assessment.discussion_deduction} points &amp; close</Button>}
+      {!notesOnly && resolved && <Button variant="outline" disabled={busy} onClick={() => act('reopen')}>Reopen decision</Button>}
     </div>
   </section>;
 }

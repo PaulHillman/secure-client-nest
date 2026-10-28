@@ -65,11 +65,12 @@ export const savePeerDiscussion = createServerFn({ method: 'POST' }).middleware(
     if (error || !a) throw new Error('Submission not found');
     const { data: newer, error: newerError } = await db.from('peer_review_assessments').select('id').eq('user_id', a.user_id).eq('team_id', a.team_id).neq('status', 'ownership_invalid').gt('attempt', a.attempt).limit(1);
     if (newerError) throw newerError;
-    if (newer?.length) throw new Error('Review the latest submission before saving a decision');
+    if (newer?.length && data.decision !== 'note') throw new Error('Review the latest submission before saving a decision');
     if (data.decision !== 'note' && data.decision !== 'reopen' && (!data.held || a.status !== 'assessed')) throw new Error('Confirm the meeting and review a scored submission first');
     const outcome = discussionOutcome(discussionScore(a), a.discussion_min_score, a.discussion_deduction);
     if (data.decision === 'accept' && a.discussion_deduction < 0 && !outcome.canAccept) throw new Error('The final submission is below the instructor-set acceptance threshold');
     if (data.decision === 'deduct' && !outcome.canDeduct) throw new Error('A deduction is not permitted for this score');
+    if (data.decision === 'deduct' && !a.detailed_regrade) throw new Error('Run the detailed re-grade before recording the final deduction');
     if ((data.decision === 'deduct' || data.decision === 'accept') && !data.note.trim()) throw new Error('Enter a decision comment');
     const now = new Date().toISOString();
     const patch = { discussion_held_at: data.held ? a.discussion_held_at ?? now : null, discussion_note: data.note.trim(),
