@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { decideRequirement } from "@/lib/readiness.functions";
 import type { ReadinessStatus } from "@/lib/readiness";
-import type { AwaitingManager } from "@/lib/awaiting-review";
+import type { AwaitingManager, AwaitingPeerDecision } from "@/lib/awaiting-review";
+import { PeerDecisionReviewDialog } from '@/components/peer-decision-review-dialog';
 import { SubmissionReviewDialog } from "@/components/submission-review-dialog";
 import { ManagerReviewDialog } from "@/components/manager-review-dialog";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,7 @@ function Page() {
     null,
   );
   const [reviewingManager, setReviewingManager] = useState<AwaitingManager | null>(null);
+  const [reviewingPeer, setReviewingPeer] = useState<AwaitingPeerDecision | null>(null);
   const query = useQuery({
     queryKey: ["awaiting-review"],
     queryFn: fetchAwaitingReview,
@@ -105,6 +107,7 @@ function Page() {
         </p>
       </header>
       {query.error && <p role="alert">{query.error.message}</p>}
+      {reviewingPeer && <PeerDecisionReviewDialog item={reviewingPeer} onClose={() => setReviewingPeer(null)} />}
       {reviewing && (
         <SubmissionReviewDialog
           open
@@ -214,19 +217,14 @@ function Page() {
                 <span className="text-muted-foreground">
                   {" "}
                   · {p.teamName} · attempt {p.attempt}, scored {p.score ?? "—"}/10 — meeting
-                  required
+                  {p.meetingHeld ? 'held — final decision pending' : 'decision pending'}
                 </span>
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <span className="text-xs text-muted-foreground">
                   waiting {fmtWaiting(p.createdAt)}
                 </span>
-                <Link
-                  to="/app/admin/peer-review-assessments"
-                  className="text-primary underline text-xs"
-                >
-                  Review
-                </Link>
+                <Button size="sm" onClick={() => setReviewingPeer(p)}>Review &amp; decide</Button>
               </div>
             </div>
           ))}

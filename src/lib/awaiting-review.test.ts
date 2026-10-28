@@ -82,6 +82,18 @@ function build() {
 }
 
 describe("awaiting review queue", () => {
+  test('latest final upload replaces earlier unresolved attempts; accepted Branden leaves queue', () => {
+    const base = { team_id: REAL_TEAM.id, user_id: 'sky', score: 7, created_at: '2026-10-27T12:00:00Z' };
+    const q = assembleAwaitingReview({ reqStatuses: [], managerSubmissions: [], teams: [REAL_TEAM], requirementDefs: [], profiles: [], peerAssessments: [
+      { ...base, id: 'sky-3', attempt: 3 }, { ...base, id: 'sky-4', attempt: 4 },
+      { ...base, id: 'branden-3', user_id: 'branden', attempt: 3, accepted_at: '2026-10-26T18:32:00Z' },
+    ] });
+    assert.deepEqual(q.peerDecisions.map(p => p.id), ['sky-4']);
+  });
+  test('recorded final deduction removes the student from the queue', () => {
+    const q = assembleAwaitingReview({ reqStatuses: [], managerSubmissions: [], teams: [REAL_TEAM], requirementDefs: [], profiles: [], peerAssessments: [{ id: 'sky-4', team_id: REAL_TEAM.id, user_id: 'sky', attempt: 4, score: 7, created_at: '2026-10-27T12:00:00Z', discussion_resolved_at: '2026-10-28T01:00:00Z' }] });
+    assert.equal(q.total, 0);
+  });
   test("drops requirement submissions from a test team", () => {
     const q = build();
     assert.deepEqual(
