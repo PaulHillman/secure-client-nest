@@ -1530,8 +1530,14 @@ export type Database = {
           created_at: string
           criteria_snapshot: string
           detailed_regrade: Json | null
+          discussion_deduction: number
+          discussion_held_at: string | null
+          discussion_min_score: number
+          discussion_note: string | null
+          discussion_resolved_at: string | null
           email_body: string
           file_id: string | null
+          final_points_adjustment: number
           final_submission: boolean
           id: string
           instructor_email_status: string
@@ -1557,8 +1563,14 @@ export type Database = {
           created_at?: string
           criteria_snapshot: string
           detailed_regrade?: Json | null
+          discussion_deduction?: number
+          discussion_held_at?: string | null
+          discussion_min_score?: number
+          discussion_note?: string | null
+          discussion_resolved_at?: string | null
           email_body: string
           file_id?: string | null
+          final_points_adjustment?: number
           final_submission?: boolean
           id?: string
           instructor_email_status?: string
@@ -1584,8 +1596,14 @@ export type Database = {
           created_at?: string
           criteria_snapshot?: string
           detailed_regrade?: Json | null
+          discussion_deduction?: number
+          discussion_held_at?: string | null
+          discussion_min_score?: number
+          discussion_note?: string | null
+          discussion_resolved_at?: string | null
           email_body?: string
           file_id?: string | null
+          final_points_adjustment?: number
           final_submission?: boolean
           id?: string
           instructor_email_status?: string
