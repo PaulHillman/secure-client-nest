@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { z } from 'zod';
+import { discussionOutcome, discussionScore } from './peer-review-discussion';
 
 export const getPeerWorkspace = createServerFn({ method: 'GET' }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const { data: admin, error: roleError } = await context.supabase.rpc('has_role', { _user_id: context.userId, _role: 'admin' });
@@ -43,13 +44,41 @@ export const acceptPeerAfterDiscussion = createServerFn({ method: 'POST' }).midd
     const { data: admin, error: roleError } = await context.supabase.rpc('has_role', { _user_id: context.userId, _role: 'admin' });
     if (roleError || !admin) throw new Error('Admin access required');
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
-    const { data: a, error } = await supabaseAdmin.from('peer_review_assessments').select('id,status,user_id,team_id,attempt').eq('id', data.assessmentId).single();
+    const { data: a, error } = await supabaseAdmin.from('peer_review_assessments').select('*').eq('id', data.assessmentId).single();
     if (error || !a || a.status !== 'assessed') throw new Error('Only a scored submission can be accepted');
     const { data: newer } = await supabaseAdmin.from('peer_review_assessments').select('id').eq('user_id', a.user_id).eq('team_id', a.team_id).eq('status', 'assessed').gt('attempt', a.attempt).limit(1);
     if (data.accept && newer?.length) throw new Error('Only the latest submission can be accepted');
+    if (data.accept && a.discussion_deduction < 0 && !discussionOutcome(discussionScore(a), a.discussion_min_score, a.discussion_deduction).canAccept) throw new Error('This final submission must meet the instructor-set threshold before acceptance');
     const patch = data.accept ? { accepted_at: new Date().toISOString(), accepted_by: context.userId, accepted_note: data.note ?? null } : { accepted_at: null, accepted_by: null, accepted_note: null };
     const { error: upErr } = await supabaseAdmin.from('peer_review_assessments').update(patch).eq('id', a.id);
     if (upErr) throw upErr;
+    return { ok: true };
+  });
+
+export const savePeerDiscussion = createServerFn({ method: 'POST' }).middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ assessmentId: z.string().uuid(), held: z.boolean(), note: z.string().max(2000), decision: z.enum(['note', 'accept', 'deduct', 'reopen']) }))
+  .handler(async ({ context, data }) => {
+    const { data: admin, error: roleError } = await context.supabase.rpc('has_role', { _user_id: context.userId, _role: 'admin' });
+    if (roleError || !admin) throw new Error('Admin access required');
+    const db = context.supabase;
+    const { data: a, error } = await db.from('peer_review_assessments').select('*').eq('id', data.assessmentId).single();
+    if (error || !a) throw new Error('Submission not found');
+    const { data: newer, error: newerError } = await db.from('peer_review_assessments').select('id').eq('user_id', a.user_id).eq('team_id', a.team_id).neq('status', 'ownership_invalid').gt('attempt', a.attempt).limit(1);
+    if (newerError) throw newerError;
+    if (newer?.length && data.decision !== 'note') throw new Error('Review the latest submission before saving a decision');
+    if (data.decision !== 'note' && data.decision !== 'reopen' && (!data.held || a.status !== 'assessed')) throw new Error('Confirm the meeting and review a scored submission first');
+    const outcome = discussionOutcome(discussionScore(a), a.discussion_min_score, a.discussion_deduction);
+    if (data.decision === 'accept' && a.discussion_deduction < 0 && !outcome.canAccept) throw new Error('The final submission is below the instructor-set acceptance threshold');
+    if (data.decision === 'deduct' && !outcome.canDeduct) throw new Error('A deduction is not permitted for this score');
+    if (data.decision === 'deduct' && !a.detailed_regrade) throw new Error('Run the detailed re-grade before recording the final deduction');
+    if ((data.decision === 'deduct' || data.decision === 'accept') && !data.note.trim()) throw new Error('Enter a decision comment');
+    const now = new Date().toISOString();
+    const patch = { discussion_held_at: data.held ? a.discussion_held_at ?? now : null, discussion_note: data.note.trim(),
+      ...(data.decision === 'accept' ? { accepted_at: now, accepted_by: context.userId, accepted_note: data.note.trim(), discussion_resolved_at: now, final_points_adjustment: 0 } : {}),
+      ...(data.decision === 'deduct' ? { accepted_at: null, accepted_by: null, accepted_note: null, discussion_resolved_at: now, final_points_adjustment: outcome.adjustment } : {}),
+      ...(data.decision === 'reopen' ? { accepted_at: null, accepted_by: null, accepted_note: null, discussion_resolved_at: null, final_points_adjustment: 0 } : {}) };
+    const { error: updateError } = await db.from('peer_review_assessments').update(patch).eq('id', a.id);
+    if (updateError) throw updateError;
     return { ok: true };
   });
 

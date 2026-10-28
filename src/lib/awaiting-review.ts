@@ -24,6 +24,8 @@ export type AwaitingManager = {
 
 export type AwaitingPeerDecision = {
   id: string;
+  studentId: string;
+  meetingHeld: boolean;
   teamId: string;
   teamName: string;
   studentName: string;
@@ -73,6 +75,10 @@ type PeerRow = {
   attempt: number;
   score: number | null;
   created_at: string;
+  accepted_at?: string | null;
+  discussion_resolved_at?: string | null;
+  discussion_held_at?: string | null;
+  status?: string;
 };
 
 type ProfileRow = {
@@ -130,10 +136,20 @@ export function assembleAwaitingReview(input: {
       numEmployees: m.num_employees ?? null,
       createdAt: m.created_at,
     }));
-  const peerDecisions: AwaitingPeerDecision[] = peerAssessments
-    .filter((p) => !testTeamIds.has(p.team_id))
+  const latestPeers = new Map<string, PeerRow>();
+  for (const p of peerAssessments) {
+    if (p.status === 'ownership_invalid') continue;
+    const key = `${p.team_id}:${p.user_id}`;
+    const previous = latestPeers.get(key);
+    if (!previous || p.attempt > previous.attempt || (p.attempt === previous.attempt && p.created_at > previous.created_at)) latestPeers.set(key, p);
+  }
+  const peerDecisions: AwaitingPeerDecision[] = [...latestPeers.values()]
+    .filter((p) => !testTeamIds.has(p.team_id) && !/parfunkel/i.test(personName.get(p.user_id) ?? '') && p.attempt >= 3 && (p.score == null || p.score < 8) && !p.accepted_at && !p.discussion_resolved_at)
+    .sort((a, b) => a.created_at.localeCompare(b.created_at))
     .map((p) => ({
       id: p.id,
+      studentId: p.user_id,
+      meetingHeld: !!p.discussion_held_at,
       teamId: p.team_id,
       teamName: teamName.get(p.team_id) ?? "Unknown team",
       studentName: personName.get(p.user_id) ?? "Unknown student",
@@ -168,9 +184,7 @@ export async function fetchAwaitingReview(): Promise<AwaitingReview> {
     // Third attempt still below 8 — requires the instructor meeting decision.
     supabase
       .from("peer_review_assessments")
-      .select("id, team_id, user_id, attempt, score, created_at")
-      .gte("attempt", 3)
-      .lt("score", 8)
+      .select("id, team_id, user_id, attempt, score, created_at, status, accepted_at, discussion_resolved_at, discussion_held_at")
       .order("created_at", { ascending: true }),
     supabase.from("teams").select("id, name, display_name, section, is_test"),
     supabase.from("project_requirements").select("key, title"),

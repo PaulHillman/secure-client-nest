@@ -1,4 +1,5 @@
 # Architecture rules
+- Discussion decisions and final-point adjustments are retained separately from official peer scores; Awaiting Review uses only each student's latest unresolved assessment and shares the meeting/comment controls with Peer Reviews.
 - Competition grading references are instructor-only, read-only reference content independent of grading engines; unsupplied competitions remain empty rather than inheriting another competition’s rubric.
 - Peer-review meeting workspaces read exact assessment versions; deterministic text diffs never imply rubric fixes, and final uploads consume one durable instructor grant through a database version-insert trigger before assessment.
 - Calendly reconciliation matches email first or one unique full name with an explicit mismatch label; booked topics are retained without treating unrelated meetings as required peer-review meetings.

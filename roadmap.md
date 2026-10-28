@@ -1,5 +1,11 @@
 # ClientVault roadmap
 
+## Discussion decisions
+- [x] Re-grade Sky's actual final submission 4: saved 7.6/10; retained meeting comments on submission 3 and original scores.
+- [x] Add meeting confirmation, comments and accept/deduction decisions directly from Awaiting Review using latest submissions only.
+- [x] Record Sky and Branden's completed meetings and Sky's individual 7.6 threshold; retain original scores and Branden's existing acceptance.
+- [x] Verified Branden is absent from the queue, Sky's final 7.6 enables acceptance with no deduction option, saved third-attempt comment reads back, and 24 tests pass. Sky's acceptance is left to Paul; no deduction or email sent.
+
 ## Competition grading references
 - [x] Add an Admin menu choice with separate Competition 1, 2 and 3 references; retain Competition 2 as historical only and leave unsupplied references empty.
 - [x] Verify the Admin link and all three reference selections in the signed-in app; build OK and no browser page errors.
