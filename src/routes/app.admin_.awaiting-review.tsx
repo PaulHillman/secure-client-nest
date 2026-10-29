@@ -11,7 +11,6 @@ import { PeerDecisionReviewDialog } from '@/components/peer-decision-review-dial
 import { SubmissionReviewDialog } from "@/components/submission-review-dialog";
 import { ManagerReviewDialog } from "@/components/manager-review-dialog";
 import { Button } from "@/components/ui/button";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { teamLineLabel } from "@/lib/team-label";
 import { useAuth } from "@/lib/auth-context";
 import { fetchAwaitingReview } from "@/lib/awaiting-review";
