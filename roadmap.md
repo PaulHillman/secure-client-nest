@@ -1,5 +1,9 @@
 # ClientVault roadmap
 
+## Existing meeting attachments
+- [ ] Add existing Agenda/Minutes selection to Edit meeting, preserving existing connections and file history.
+- [ ] Verify saved connections in the signed-in app and run attachment tests.
+
 ## Peer-review appendix warnings
 - [x] Count affected real teams and exclude peer-review appendix/index supplements from standalone minutes-template checks; preserve normal minutes checks and label historical errors as reporting corrections.
 - [x] Correct affected teams' current vault PDFs without emailing or advancing their shared baselines; nine files refreshed across Core Consulting, ClearPath Management and Oak & Iron with no skipped files; all three October 24 report links opened and downloaded, erroneous warnings absent, all 18 PDF pages inspected.
