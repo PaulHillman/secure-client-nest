@@ -20,6 +20,8 @@ export const Route = createFileRoute("/app/meetings")({
       { name: "description", content: "Log weekly team meetings, post minutes, and manage team files." },
       { property: "og:title", content: "Weekly Meetings — ClientVault" },
       { property: "og:description", content: "Log weekly team meetings, post minutes, and manage team files." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: WeeklyMeetings,
