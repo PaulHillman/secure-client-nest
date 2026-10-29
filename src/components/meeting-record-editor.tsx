@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { readMeetingAttendance, validateMeetingAttendance } from "@/lib/meeting-record";
 import { meetingAttachmentState } from "@/lib/meeting-attachment-selection";
+import { isStandaloneMinutesSubmission } from "@/lib/minutes-template";
 import { toast } from "sonner";
 
 type Meeting = Database["public"]["Tables"]["meeting_logs"]["Row"];
@@ -55,7 +56,7 @@ export function MeetingRecordEditor({ meeting, members, names, proposal, onClose
       const asAgreed = detailsChanged ? !!proposal && time === proposal.meeting_time.slice(0, 5) && location.trim().toLowerCase() === (proposal.location ?? "").trim().toLowerCase() && meeting.meeting_mode === proposal.meeting_mode : meeting.as_agreed;
       const { error } = await supabase.from("meeting_logs").update({
         meeting_date: date, meeting_time: time, location: location.trim(), attendance: corrected,
-        minutes_posted: minutes || newlySelected.some((file) => file.subsection === "Minutes" && file.category.toLowerCase() !== "other" && !/peer[\s_-]*review.*(?:appendix|index)/i.test(file.file_name)), deviation_reason: reason.trim() || null, as_agreed: asAgreed,
+        minutes_posted: minutes || newlySelected.some(isStandaloneMinutesSubmission), deviation_reason: reason.trim() || null, as_agreed: asAgreed,
       }).eq("id", meeting.id).eq("team_id", meeting.team_id).select("id").single();
       if (error) throw error;
       for (const file of newlySelected) {

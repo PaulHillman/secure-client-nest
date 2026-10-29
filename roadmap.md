@@ -1,8 +1,8 @@
 # ClientVault roadmap
 
 ## Existing meeting attachments
-- [ ] Add existing Agenda/Minutes selection to Edit meeting, preserving existing connections and file history.
-- [ ] Verify saved connections in the signed-in app and run attachment tests.
+- [x] Add existing Agenda/Minutes selection to Edit meeting, preserving existing connections and file history.
+- [x] Verified Oak & Iron's real document choices without changing its records; a fixture agenda connection saved and persisted after reload, temporary records removed; 10 tests passed and build OK.
 
 ## Peer-review appendix warnings
 - [x] Count affected real teams and exclude peer-review appendix/index supplements from standalone minutes-template checks; preserve normal minutes checks and label historical errors as reporting corrections.
