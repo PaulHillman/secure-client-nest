@@ -604,7 +604,7 @@ function SubsectionBlock({
   }
 
   const commonProps = {
-    verMap, peerMap, uploaderNames, peerSequence, isAdmin, userId,
+    verMap, peerMap, uploaderNames, peerSequence, members, isAdmin, userId,
     onDownload, onDelete, onSetStatus, onOpenComments, onRefresh,
   };
 
@@ -830,6 +830,7 @@ type RowCommonProps = {
   peerMap: Map<string, PeerScore>;
   uploaderNames: Map<string, string>;
   peerSequence: Map<string, number>;
+  members: MemberRow[];
   isAdmin: boolean;
   userId?: string;
   onDownload: (versionId: string | null, fileName: string) => void;
@@ -846,6 +847,7 @@ function SlotRow({
   peerMap,
   uploaderNames,
   peerSequence,
+  members,
   isAdmin,
   userId,
   onDownload,
@@ -871,6 +873,7 @@ function SlotRow({
               peerMap={peerMap}
                 uploaderNames={uploaderNames}
                 peerSequence={peerSequence}
+              members={members}
               isAdmin={isAdmin}
               userId={userId}
               onDownload={onDownload}
@@ -932,6 +935,7 @@ function FileLine({
   peerMap,
   uploaderNames,
   peerSequence,
+  members,
   showMeetingDate,
   onDownload,
   onDelete,
@@ -1121,7 +1125,7 @@ function FileLine({
             <NewVersionButton file={file} userId={userId} versions={versions} onDone={onRefresh} />
           )}
           {canManage && !file.is_locked && !file.is_template && (
-            <FileDetailsEditor file={file} onDone={onRefresh} />
+            <FileDetailsEditor file={file} members={members} onDone={onRefresh} />
           )}
           {canManage && (
             <Button
@@ -1147,25 +1151,33 @@ function FileLine({
   );
 }
 
-function FileDetailsEditor({ file, onDone }: { file: FileRow; onDone: () => void }) {
+function FileDetailsEditor({ file, members, onDone }: { file: FileRow; members: MemberRow[]; onDone: () => void }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(file.file_name);
   const [section, setSection] = useState(file.section);
   const [subsection, setSubsection] = useState(file.subsection);
   const [final, setFinal] = useState(isFinalCompiled(file));
+  const [owner, setOwner] = useState(file.assigned_to ?? "");
   const [busy, setBusy] = useState(false);
   const definition = VAULT_STRUCTURE.find((s) => s.name === section);
   const expectsCompiled = !!definition?.subsections.find((s) => s.name === subsection)?.expectsCompiled;
+  const isPeerReview = subsection === "Mid-Semester Peer Reviews";
 
   const save = async () => {
     if (!name.trim()) return;
+    if (isPeerReview && !members.some((m) => m.user_id === owner)) {
+      toast.error("Select whose peer review this is.");
+      return;
+    }
     setBusy(true);
     try {
       const { data, error } = await supabase.from("files").update({
         file_name: expectsCompiled && final ? finalCompiledName(name) : name.trim(),
         section,
         subsection,
-        assigned_to: expectsCompiled && final ? null : (section === file.section && subsection === file.subsection ? file.assigned_to : null),
+        assigned_to: isPeerReview
+          ? owner
+          : expectsCompiled && final ? null : (section === file.section && subsection === file.subsection ? file.assigned_to : null),
       }).eq("id", file.id).select("id").single();
       if (error) throw error;
       if (!data) throw new Error("You do not have permission to change this file.");
@@ -1182,7 +1194,7 @@ function FileDetailsEditor({ file, onDone }: { file: FileRow; onDone: () => void
   return (
     <Dialog open={open} onOpenChange={(value) => {
       setOpen(value);
-      if (value) { setName(file.file_name); setSection(file.section); setSubsection(file.subsection); setFinal(isFinalCompiled(file)); }
+      if (value) { setName(file.file_name); setSection(file.section); setSubsection(file.subsection); setFinal(isFinalCompiled(file)); setOwner(file.assigned_to ?? ""); }
     }}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon" aria-label="Rename or move file" title="Rename or move file">
@@ -1200,6 +1212,20 @@ function FileDetailsEditor({ file, onDone }: { file: FileRow; onDone: () => void
             setSection(value); setSubsection(VAULT_STRUCTURE.find((s) => s.name === value)?.subsections[0]?.name ?? ""); setFinal(false);
           }}><SelectTrigger aria-label="File section"><SelectValue /></SelectTrigger><SelectContent>{VAULT_STRUCTURE.map((s) => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select></div>
           <div><Label>Folder</Label><Select value={subsection} onValueChange={(value) => { setSubsection(value); setFinal(false); }}><SelectTrigger aria-label="File folder"><SelectValue /></SelectTrigger><SelectContent>{definition?.subsections.map((s) => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select></div>
+          {isPeerReview && (
+            <div>
+              <Label>Whose peer review is this?</Label>
+              <Select value={owner} onValueChange={setOwner}>
+                <SelectTrigger aria-label="Peer review student"><SelectValue placeholder="Choose the student who wrote this review" /></SelectTrigger>
+                <SelectContent>
+                  {members.map((m) => (
+                    <SelectItem key={m.user_id} value={m.user_id}>{m.name || m.email || "Member"}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">Required before the score can be calculated — this sets the attempt order.</p>
+            </div>
+          )}
           {expectsCompiled && <div className="space-y-1"><div className="flex items-center gap-2"><Checkbox id={`compiled-${file.id}`} checked={final} onCheckedChange={(value) => {
             setFinal(value === true);
             if (value !== true) setName((previous) => previous.replace(/^Final Compiled\s*-\s*/i, ""));
