@@ -231,12 +231,12 @@ function Page() {
               <thead>
                 <tr className="border-b border-border/60 text-left align-bottom text-xs leading-tight text-muted-foreground">
                   <th scope="col" className="py-1.5 pr-2 font-medium">Student<br />Team</th>
-                  <th scope="col" className="w-14 py-1.5 pr-2 font-medium">Sub.<br />#</th>
-                  <th scope="col" className="w-14 py-1.5 pr-2 font-medium">Score</th>
+                  <th scope="col" className="w-10 py-1.5 pr-2 font-medium">Sub.<br />#</th>
+                  <th scope="col" className="w-12 py-1.5 pr-2 font-medium">Score</th>
                   <th scope="col" className="w-20 py-1.5 pr-2 font-medium">Meeting<br />scheduled?</th>
                   <th scope="col" className="w-24 py-1.5 pr-2 font-medium">Meeting<br />date</th>
-                  <th scope="col" className="w-16 py-1.5 pr-2 font-medium">Waiting</th>
-                  <th scope="col" className="w-32 py-1.5 font-medium"><span className="sr-only">Action</span></th>
+                  <th scope="col" className="w-14 py-1.5 pr-2 font-medium">Waiting</th>
+                  <th scope="col" className="w-20 py-1.5 font-medium"><span className="sr-only">Action</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -262,13 +262,13 @@ function Page() {
                     <td className="py-1.5 pr-2 tabular-nums">{p.score == null ? "—" : `${p.score}/10`}</td>
                     <td className="py-1.5 pr-2">{meetingStatus}{p.meetingHeld && meeting && <span className="block text-xs text-muted-foreground">Held</span>}</td>
                     <td className="py-1.5 pr-2">
-                      {when ? (
-                        <time dateTime={meeting!.scheduled_at}>{meetingDay}<span className="block text-xs text-muted-foreground">{meetingTime}</span></time>
+                      {meeting && when ? (
+                        <time dateTime={meeting.scheduled_at}>{meetingDay}<span className="block text-xs text-muted-foreground">{meetingTime}</span></time>
                       ) : meetingDay}
                     </td>
                     <td className="py-1.5 pr-2 text-muted-foreground">{fmtWaiting(p.createdAt)}</td>
                     <td className="py-1.5 text-right">
-                      <Button size="sm" onClick={() => setReviewingPeer(p)} aria-label={`Review & decide for ${p.studentName}`}>Review &amp; decide</Button>
+                      <Button size="sm" className="h-auto w-full whitespace-normal px-2 py-1 text-xs leading-tight" onClick={() => setReviewingPeer(p)} aria-label={`Review & decide for ${p.studentName}`}>Review &amp;<br />decide</Button>
                     </td>
                   </tr>
                 );
