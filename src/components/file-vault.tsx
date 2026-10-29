@@ -604,7 +604,7 @@ function SubsectionBlock({
   }
 
   const commonProps = {
-    verMap, peerMap, uploaderNames, peerSequence, isAdmin, userId,
+    verMap, peerMap, uploaderNames, peerSequence, members, isAdmin, userId,
     onDownload, onDelete, onSetStatus, onOpenComments, onRefresh,
   };
 
@@ -830,6 +830,7 @@ type RowCommonProps = {
   peerMap: Map<string, PeerScore>;
   uploaderNames: Map<string, string>;
   peerSequence: Map<string, number>;
+  members: MemberRow[];
   isAdmin: boolean;
   userId?: string;
   onDownload: (versionId: string | null, fileName: string) => void;
