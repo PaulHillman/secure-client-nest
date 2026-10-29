@@ -1210,6 +1210,20 @@ function FileDetailsEditor({ file, members, onDone }: { file: FileRow; members: 
             setSection(value); setSubsection(VAULT_STRUCTURE.find((s) => s.name === value)?.subsections[0]?.name ?? ""); setFinal(false);
           }}><SelectTrigger aria-label="File section"><SelectValue /></SelectTrigger><SelectContent>{VAULT_STRUCTURE.map((s) => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select></div>
           <div><Label>Folder</Label><Select value={subsection} onValueChange={(value) => { setSubsection(value); setFinal(false); }}><SelectTrigger aria-label="File folder"><SelectValue /></SelectTrigger><SelectContent>{definition?.subsections.map((s) => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}</SelectContent></Select></div>
+          {isPeerReview && (
+            <div>
+              <Label>Whose peer review is this?</Label>
+              <Select value={owner} onValueChange={setOwner}>
+                <SelectTrigger aria-label="Peer review student"><SelectValue placeholder="Choose the student who wrote this review" /></SelectTrigger>
+                <SelectContent>
+                  {members.map((m) => (
+                    <SelectItem key={m.user_id} value={m.user_id}>{m.name || m.email || "Member"}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">Required before the score can be calculated — this sets the attempt order.</p>
+            </div>
+          )}
           {expectsCompiled && <div className="space-y-1"><div className="flex items-center gap-2"><Checkbox id={`compiled-${file.id}`} checked={final} onCheckedChange={(value) => {
             setFinal(value === true);
             if (value !== true) setName((previous) => previous.replace(/^Final Compiled\s*-\s*/i, ""));
