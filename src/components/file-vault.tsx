@@ -847,6 +847,7 @@ function SlotRow({
   peerMap,
   uploaderNames,
   peerSequence,
+  members,
   isAdmin,
   userId,
   onDownload,
@@ -872,6 +873,7 @@ function SlotRow({
               peerMap={peerMap}
                 uploaderNames={uploaderNames}
                 peerSequence={peerSequence}
+              members={members}
               isAdmin={isAdmin}
               userId={userId}
               onDownload={onDownload}
