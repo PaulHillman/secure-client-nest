@@ -255,8 +255,8 @@ function Page() {
                 return (
                   <tr key={p.id} className="border-b border-border/40 align-top last:border-0">
                     <td className="py-1.5 pr-2">
-                      <p className="truncate font-medium">{p.studentName}</p>
-                      <p className="truncate text-xs text-muted-foreground">{team ? teamLineLabel(team) : p.teamName}</p>
+                      <p className="truncate font-medium" title={p.studentName}>{p.studentName}</p>
+                      <p className="truncate text-xs text-muted-foreground" title={team ? teamLineLabel(team) : p.teamName}>{team ? teamLineLabel(team) : p.teamName}</p>
                     </td>
                     <td className="py-1.5 pr-2 tabular-nums">{p.attempt}</td>
                     <td className="py-1.5 pr-2 tabular-nums">{p.score == null ? "—" : `${p.score}/10`}</td>
