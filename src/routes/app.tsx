@@ -49,7 +49,7 @@ function AppLayout() {
       const { count, error } = await supabase
         .from("peer_review_meetings")
         .select("id", { count: "exact", head: true })
-        .gte("scheduled_at", new Date().toISOString());
+        .gte("scheduled_at", new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString());
       if (error) throw error;
       return count ?? 0;
     },
