@@ -11,7 +11,6 @@ import { PeerDecisionReviewDialog } from '@/components/peer-decision-review-dial
 import { SubmissionReviewDialog } from "@/components/submission-review-dialog";
 import { ManagerReviewDialog } from "@/components/manager-review-dialog";
 import { Button } from "@/components/ui/button";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { teamLineLabel } from "@/lib/team-label";
 import { useAuth } from "@/lib/auth-context";
 import { fetchAwaitingReview } from "@/lib/awaiting-review";
@@ -227,33 +226,43 @@ function Page() {
             </p>
           )}
           {peerDetails.error && <p role="alert" className="text-sm text-destructive">Meeting details could not be loaded: {peerDetails.error.message}</p>}
-          {!!data?.peerDecisions.length && <Table aria-label="Peer review decisions" className="min-w-[960px]">
-            <TableHeader><TableRow>
-              <TableHead scope="col">Student</TableHead>
-              <TableHead scope="col">Team name / number</TableHead>
-              <TableHead scope="col">Submission #</TableHead>
-              <TableHead scope="col">Score</TableHead>
-              <TableHead scope="col">Meeting Scheduled?</TableHead>
-              <TableHead scope="col">Date of Meeting</TableHead>
-              <TableHead scope="col">Waiting</TableHead>
-              <TableHead scope="col">Action</TableHead>
-            </TableRow></TableHeader>
-            <TableBody>{data.peerDecisions.map(p => {
-              const bookings = peerDetails.data?.meetings.filter(m => m.student_id === p.studentId && m.team_id === p.teamId) ?? [];
-              const meeting = bookings.find(m => new Date(m.scheduled_at).getTime() >= Date.now()) ?? bookings.at(-1);
-              const team = peerDetails.data?.teams.find(t => t.id === p.teamId);
-              return <TableRow key={p.id}>
-                <TableCell className="font-medium">{p.studentName}</TableCell>
-                <TableCell>{team ? teamLineLabel(team) : p.teamName}</TableCell>
-                <TableCell className="tabular-nums">{p.attempt}</TableCell>
-                <TableCell className="whitespace-nowrap tabular-nums">{p.score == null ? "Not scored" : `${p.score}/10`}</TableCell>
-                <TableCell>{peerDetails.isPending ? "Loading…" : peerDetails.error ? "Unavailable" : meeting ? "Yes" : p.meetingHeld ? "Held" : "No"}{p.meetingHeld && meeting && <span className="block text-xs text-muted-foreground">Meeting held</span>}</TableCell>
-                <TableCell className="whitespace-nowrap">{meeting ? <time dateTime={meeting.scheduled_at}>{new Intl.DateTimeFormat("en-US", { timeZone: "America/Detroit", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(new Date(meeting.scheduled_at))}</time> : peerDetails.isPending ? "Loading…" : peerDetails.error ? "Unavailable" : "—"}</TableCell>
-                <TableCell className="whitespace-nowrap text-muted-foreground">{fmtWaiting(p.createdAt)}</TableCell>
-                <TableCell><Button size="sm" onClick={() => setReviewingPeer(p)} aria-label={`Review & decide for ${p.studentName}`}>Review &amp; decide</Button></TableCell>
-              </TableRow>;
-            })}</TableBody>
-          </Table>}
+          {!!data?.peerDecisions.length && (
+            <ul className="space-y-3" aria-label="Peer review decisions">
+              {data.peerDecisions.map(p => {
+                const bookings = peerDetails.data?.meetings.filter(m => m.student_id === p.studentId && m.team_id === p.teamId) ?? [];
+                const meeting = bookings.find(m => new Date(m.scheduled_at).getTime() >= Date.now()) ?? bookings.at(-1);
+                const team = peerDetails.data?.teams.find(t => t.id === p.teamId);
+                const meetingStatus = peerDetails.isPending ? "Loading…" : peerDetails.error ? "Unavailable" : meeting ? "Yes" : p.meetingHeld ? "Held" : "No";
+                const meetingDate = meeting
+                  ? new Intl.DateTimeFormat("en-US", { timeZone: "America/Detroit", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(new Date(meeting.scheduled_at))
+                  : peerDetails.isPending ? "Loading…" : peerDetails.error ? "Unavailable" : "—";
+                return (
+                  <li key={p.id} className="rounded-lg border border-border/60 p-3">
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">{p.studentName}</p>
+                        <p className="truncate text-xs text-muted-foreground">{team ? teamLineLabel(team) : p.teamName}</p>
+                      </div>
+                      <Button size="sm" className="shrink-0" onClick={() => setReviewingPeer(p)} aria-label={`Review & decide for ${p.studentName}`}>Review &amp; decide</Button>
+                    </div>
+                    <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-3">
+                      <div><dt className="text-xs text-muted-foreground">Submission #</dt><dd className="tabular-nums">{p.attempt}</dd></div>
+                      <div><dt className="text-xs text-muted-foreground">Score</dt><dd className="tabular-nums">{p.score == null ? "Not scored" : `${p.score}/10`}</dd></div>
+                      <div><dt className="text-xs text-muted-foreground">Waiting</dt><dd className="text-muted-foreground">{fmtWaiting(p.createdAt)}</dd></div>
+                      <div>
+                        <dt className="text-xs text-muted-foreground">Meeting scheduled?</dt>
+                        <dd>{meetingStatus}{p.meetingHeld && meeting && <span className="block text-xs text-muted-foreground">Meeting held</span>}</dd>
+                      </div>
+                      <div className="col-span-2 sm:col-span-1">
+                        <dt className="text-xs text-muted-foreground">Date of meeting</dt>
+                        <dd>{meeting ? <time dateTime={meeting.scheduled_at}>{meetingDate}</time> : meetingDate}</dd>
+                      </div>
+                    </dl>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </CardContent>
       </Card>
     </main>
