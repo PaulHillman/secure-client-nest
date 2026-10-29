@@ -11,6 +11,8 @@ import { PeerDecisionReviewDialog } from '@/components/peer-decision-review-dial
 import { SubmissionReviewDialog } from "@/components/submission-review-dialog";
 import { ManagerReviewDialog } from "@/components/manager-review-dialog";
 import { Button } from "@/components/ui/button";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { teamLineLabel } from "@/lib/team-label";
 import { useAuth } from "@/lib/auth-context";
 import { fetchAwaitingReview } from "@/lib/awaiting-review";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +60,20 @@ function Page() {
     queryFn: fetchAwaitingReview,
     enabled: isAdmin,
   });
+  const peerDetails = useQuery({
+    queryKey: ["awaiting-review-peer-details"],
+    enabled: isAdmin,
+    refetchInterval: 30000,
+    queryFn: async () => {
+      const [meetings, teams] = await Promise.all([
+        supabase.from("peer_review_meetings").select("student_id, team_id, scheduled_at").order("scheduled_at"),
+        supabase.from("teams").select("id, name, display_name, section"),
+      ]);
+      if (meetings.error) throw meetings.error;
+      if (teams.error) throw teams.error;
+      return { meetings: meetings.data, teams: teams.data };
+    },
+  });
   const decide = useMutation({
     mutationFn: (v: { teamId: string; key: string; status: ReadinessStatus; note?: string }) =>
       decideFn({ data: v }),
@@ -97,7 +113,7 @@ function Page() {
   const data = query.data;
 
   return (
-    <main className="p-4 sm:p-8 max-w-4xl mx-auto space-y-6">
+    <main className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6">
       <header>
         <h1 className="font-display text-3xl">Awaiting Review</h1>
         <p className="text-muted-foreground mt-1">
@@ -210,24 +226,34 @@ function Page() {
               No third attempts below 8 waiting on a meeting decision.
             </p>
           )}
-          {data?.peerDecisions.map((p) => (
-            <div key={p.id} className="flex items-center justify-between gap-3 text-sm">
-              <div className="min-w-0">
-                <span className="font-medium">{p.studentName}</span>
-                <span className="text-muted-foreground">
-                  {" "}
-                  · {p.teamName} · attempt {p.attempt}, scored {p.score ?? "—"}/10 — meeting {" "}
-                  {p.meetingHeld ? 'held — final decision pending' : 'decision pending'}
-                </span>
-              </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <span className="text-xs text-muted-foreground">
-                  waiting {fmtWaiting(p.createdAt)}
-                </span>
-                <Button size="sm" onClick={() => setReviewingPeer(p)}>Review &amp; decide</Button>
-              </div>
-            </div>
-          ))}
+          {peerDetails.error && <p role="alert" className="text-sm text-destructive">Meeting details could not be loaded: {peerDetails.error.message}</p>}
+          {!!data?.peerDecisions.length && <Table aria-label="Peer review decisions" className="min-w-[960px]">
+            <TableHeader><TableRow>
+              <TableHead scope="col">Student</TableHead>
+              <TableHead scope="col">Team name / number</TableHead>
+              <TableHead scope="col">Submission #</TableHead>
+              <TableHead scope="col">Score</TableHead>
+              <TableHead scope="col">Meeting Scheduled?</TableHead>
+              <TableHead scope="col">Date of Meeting</TableHead>
+              <TableHead scope="col">Waiting</TableHead>
+              <TableHead scope="col">Action</TableHead>
+            </TableRow></TableHeader>
+            <TableBody>{data.peerDecisions.map(p => {
+              const bookings = peerDetails.data?.meetings.filter(m => m.student_id === p.studentId && m.team_id === p.teamId) ?? [];
+              const meeting = bookings.find(m => new Date(m.scheduled_at).getTime() >= Date.now()) ?? bookings.at(-1);
+              const team = peerDetails.data?.teams.find(t => t.id === p.teamId);
+              return <TableRow key={p.id}>
+                <TableCell className="font-medium">{p.studentName}</TableCell>
+                <TableCell>{team ? teamLineLabel(team) : p.teamName}</TableCell>
+                <TableCell className="tabular-nums">{p.attempt}</TableCell>
+                <TableCell className="whitespace-nowrap tabular-nums">{p.score == null ? "Not scored" : `${p.score}/10`}</TableCell>
+                <TableCell>{peerDetails.isPending ? "Loading…" : peerDetails.error ? "Unavailable" : meeting ? "Yes" : p.meetingHeld ? "Held" : "No"}{p.meetingHeld && meeting && <span className="block text-xs text-muted-foreground">Meeting held</span>}</TableCell>
+                <TableCell className="whitespace-nowrap">{meeting ? <time dateTime={meeting.scheduled_at}>{new Intl.DateTimeFormat("en-US", { timeZone: "America/Detroit", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(new Date(meeting.scheduled_at))}</time> : peerDetails.isPending ? "Loading…" : peerDetails.error ? "Unavailable" : "—"}</TableCell>
+                <TableCell className="whitespace-nowrap text-muted-foreground">{fmtWaiting(p.createdAt)}</TableCell>
+                <TableCell><Button size="sm" onClick={() => setReviewingPeer(p)} aria-label={`Review & decide for ${p.studentName}`}>Review &amp; decide</Button></TableCell>
+              </TableRow>;
+            })}</TableBody>
+          </Table>}
         </CardContent>
       </Card>
     </main>
