@@ -17,6 +17,14 @@ describe("weekly shared-report concern comparisons", () => {
   test("disappearing concern without evidence is unverified", () => {
     assert.equal(compareConcerns([old], [], [])[0].status, "Unable to verify");
   });
+  test("appendix template warning is a reporting correction, never resolved credit or unverified", () => {
+    const appendix = { check: "meetings", level: "yellow" as const, reason: "1 of 6 minutes files do not follow the shared Meeting Minutes Template (Peer Review Appendix.pdf).", ruleId: "meetings:minutes_template" };
+    assert.equal(compareConcerns([appendix], [], [])[0].status, "Reporting correction");
+    const normal = { ...appendix, reason: "1 of 5 minutes files do not follow the shared Meeting Minutes Template (Meeting 6 Minutes.docx)." };
+    const changes = compareConcerns([appendix], [normal], []);
+    assert.equal(changes[0].status, "Reporting correction");
+    assert.equal(changes[1].status, "New concern");
+  });
   test("nonzero remaining cannot receive resolved credit", () => {
     assert.equal(compareConcerns([old], [], [{ ruleId: "readiness:no_norms", evidence: "Still missing", remaining: 1, verified: true }])[0].status, "Unable to verify");
   });

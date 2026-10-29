@@ -1,4 +1,4 @@
-import { minutesExemptFromTemplate } from "./minutes-template";
+import { minutesExemptFromTemplate, isPeerReviewMinutesSupplement } from "./minutes-template";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildAssessments } from "@/lib/team-readiness-assessment.functions";
@@ -297,7 +297,7 @@ export async function computeHealthReview(
         // (e) minutes follow the shared Meeting Minutes Template.
         // Minutes for meetings held before 2026-09-27 are exempt (by meeting date, not upload date): the template requirement was only
         // communicated that week, so earlier minutes are not checked for compliance.
-        const allMinutesFiles = teamFiles.filter((f) => f.section === "Team Documents" && subsectionMatches(f.subsection, "Minutes"));
+        const allMinutesFiles = teamFiles.filter((f) => f.section === "Team Documents" && subsectionMatches(f.subsection, "Minutes") && !isPeerReviewMinutesSupplement(f.file_name));
         const exemptMinutes = allMinutesFiles.filter((f) => minutesExemptFromTemplate(f, teamLogs, rules.minutes_template_from));
         const minutesFiles = allMinutesFiles.filter((f) => !exemptMinutes.includes(f));
         if (exemptMinutes.length)

@@ -22,6 +22,12 @@ export const MINUTES_TEMPLATE_MARKERS = [
 /** Number of markers a file must show to be judged as following the template. */
 export const MINUTES_TEMPLATE_MIN_MARKERS = 6;
 
+/** A separate peer-review appendix/index is a minutes supplement, not standalone minutes. */
+export function isPeerReviewMinutesSupplement(name: string): boolean {
+  const normalized = normalizeMinutesText(name);
+  return /\bpeer review\b/.test(normalized) && /\b(appendix|index)\b/.test(normalized);
+}
+
 export function normalizeMinutesText(text: string): string {
   return text
     .toLowerCase()

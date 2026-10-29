@@ -1,5 +1,9 @@
 # ClientVault roadmap
 
+## Peer-review appendix warnings
+- [x] Count affected real teams and exclude peer-review appendix/index supplements from standalone minutes-template checks; preserve normal minutes checks and label historical errors as reporting corrections.
+- [ ] Correct affected teams' current vault PDFs without emailing or advancing their shared baselines; verify saved results and tests.
+
 ## Peer-review decision table
 - [x] Restore a condensed table with stacked headings, two-line entries and shortened Detroit dates above meeting times; signed-in 702px view verified with four entries, no horizontal overflow and working review dialog; build OK.
 - [x] Replace the peer-review decision list with student, team name and number, submission number, score, scheduled status and Detroit meeting date columns; verified Anthony and Lea's saved bookings, review dialog, no narrow-screen page overflow, seven queue tests, and build OK.
