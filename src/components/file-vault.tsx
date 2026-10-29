@@ -933,6 +933,7 @@ function FileLine({
   peerMap,
   uploaderNames,
   peerSequence,
+  members,
   showMeetingDate,
   onDownload,
   onDelete,
@@ -1122,7 +1123,7 @@ function FileLine({
             <NewVersionButton file={file} userId={userId} versions={versions} onDone={onRefresh} />
           )}
           {canManage && !file.is_locked && !file.is_template && (
-            <FileDetailsEditor file={file} onDone={onRefresh} />
+            <FileDetailsEditor file={file} members={members} onDone={onRefresh} />
           )}
           {canManage && (
             <Button
