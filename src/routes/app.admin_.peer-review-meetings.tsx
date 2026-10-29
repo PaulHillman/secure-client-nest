@@ -42,7 +42,9 @@ function Page() {
     catch (e) { toast.error(e instanceof Error ? e.message : 'Calendar sync failed'); }
     finally { setBusy(false); }
   };
-  const meetings = (query.data?.meetings ?? []).filter(m => tab === 'past' ? new Date(m.scheduled_at).getTime() < Date.now() : new Date(m.scheduled_at).getTime() >= Date.now());
+  // A meeting stays "upcoming" until 2 hours after its start, so it remains visible during and just after the call.
+  const twoHours = 2 * 60 * 60 * 1000;
+  const meetings = (query.data?.meetings ?? []).filter(m => tab === 'past' ? new Date(m.scheduled_at).getTime() + twoHours < Date.now() : new Date(m.scheduled_at).getTime() + twoHours >= Date.now());
   const students = Array.from(new Map((query.data?.assessments ?? []).filter(a => a.status === 'assessed').map(a => [`${a.team_id}:${a.user_id}`, a])).values()).filter(a => a.profiles?.name.toLowerCase().includes(search.toLowerCase())).sort((a,b) => (a.profiles?.name ?? '').localeCompare(b.profiles?.name ?? ''));
   return <main className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6">
     <header className="flex flex-wrap items-center justify-between gap-3"><h1 className="font-display text-3xl flex items-center gap-2"><CalendarClock className="h-6 w-6 text-gold" />Peer Reviews</h1><Button variant="outline" disabled={busy} onClick={refresh}><RefreshCw className="h-4 w-4 mr-2" />{busy ? 'Checking calendar…' : 'Sync Calendly'}</Button></header>
