@@ -28,6 +28,12 @@ export function isPeerReviewMinutesSupplement(name: string): boolean {
   return /\bpeer review\b/.test(normalized) && /\b(appendix|index)\b/.test(normalized);
 }
 
+/** Storage in another folder never turns a supplementary file into submitted minutes. */
+export function isStandaloneMinutesSubmission(file: { section: string; subsection: string; file_name: string; category?: string | null; is_template?: boolean }): boolean {
+  return file.section === "Team Documents" && file.subsection === "Minutes" && !file.is_template
+    && file.category?.toLowerCase() !== "other" && !isPeerReviewMinutesSupplement(file.file_name);
+}
+
 export function normalizeMinutesText(text: string): string {
   return text
     .toLowerCase()

@@ -1,4 +1,4 @@
-import { minutesExemptFromTemplate, isPeerReviewMinutesSupplement } from "./minutes-template";
+import { minutesExemptFromTemplate, isStandaloneMinutesSubmission } from "./minutes-template";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildAssessments } from "@/lib/team-readiness-assessment.functions";
@@ -108,7 +108,7 @@ export async function computeHealthReview(
     const [{ data: members }, { data: logs }, { data: files }, { data: norms }, { data: profiles }, { data: reportViews }, { data: minutesTemplateRows }] = await Promise.all([
       db.from("team_members").select("team_id, user_id, job_title").in("team_id", ids),
       db.from("meeting_logs").select("id, team_id, meeting_date, attendance, minutes_posted, minutes_file_id").in("team_id", ids),
-      db.from("files").select("id, current_version_id, created_at, team_id, section, subsection, file_name, uploaded_by, is_template, is_locked, meeting_log_id").in("team_id", ids),
+      db.from("files").select("id, current_version_id, created_at, team_id, section, subsection, category, file_name, uploaded_by, is_template, is_locked, meeting_log_id").in("team_id", ids),
       db.from("group_norms").select("team_id, version, group_norms_signatures(user_id, version)").in("team_id", ids),
       db.from("profiles").select("id, name, first_name, last_name, email"),
       db.from("health_report_views").select("user_id, file_id, last_version_id, team_id, view_count, clicked_at, last_viewed_at").in("team_id", ids),
@@ -297,7 +297,7 @@ export async function computeHealthReview(
         // (e) minutes follow the shared Meeting Minutes Template.
         // Minutes for meetings held before 2026-09-27 are exempt (by meeting date, not upload date): the template requirement was only
         // communicated that week, so earlier minutes are not checked for compliance.
-        const allMinutesFiles = teamFiles.filter((f) => f.section === "Team Documents" && subsectionMatches(f.subsection, "Minutes") && !isPeerReviewMinutesSupplement(f.file_name));
+        const allMinutesFiles = teamFiles.filter(isStandaloneMinutesSubmission);
         const exemptMinutes = allMinutesFiles.filter((f) => minutesExemptFromTemplate(f, teamLogs, rules.minutes_template_from));
         const minutesFiles = allMinutesFiles.filter((f) => !exemptMinutes.includes(f));
         if (exemptMinutes.length)

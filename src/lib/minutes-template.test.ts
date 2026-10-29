@@ -1,8 +1,18 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { MINUTES_TEMPLATE_MIN_MARKERS, countMinutesTemplateMarkers, minutesFollowTemplate, normalizeMinutesText, isPeerReviewMinutesSupplement } from "./minutes-template";
+import { MINUTES_TEMPLATE_MIN_MARKERS, countMinutesTemplateMarkers, minutesFollowTemplate, normalizeMinutesText, isPeerReviewMinutesSupplement, isStandaloneMinutesSubmission } from "./minutes-template";
 
 // Real submitted minutes, extracted text (calibration samples).
+test("template eligibility requires actual standalone minutes, not supplementary uploads or other folders", () => {
+  const file = { section: "Team Documents", subsection: "Minutes", file_name: "Meeting 6 Minutes.docx", category: "Minutes" };
+  assert.equal(isStandaloneMinutesSubmission(file), true);
+  assert.equal(isStandaloneMinutesSubmission({ ...file, subsection: "Client Communications" }), false);
+  assert.equal(isStandaloneMinutesSubmission({ ...file, subsection: "Mid-Semester Peer Reviews" }), false);
+  assert.equal(isStandaloneMinutesSubmission({ ...file, section: "Semester Long Project" }), false);
+  assert.equal(isStandaloneMinutesSubmission({ ...file, category: "Other" }), false);
+  assert.equal(isStandaloneMinutesSubmission({ ...file, file_name: "Peer Review Appendix.docx" }), false);
+  assert.equal(isStandaloneMinutesSubmission({ ...file, is_template: true }), false);
+});
 test("peer review appendix/index remains a minutes supplement, while normal minutes still require the template", () => {
   assert.equal(isPeerReviewMinutesSupplement("Peer Review Appendix.docx"), true);
   assert.equal(isPeerReviewMinutesSupplement("Core Consulting Peer Review Appendix.pdf"), true);
