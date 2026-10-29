@@ -227,41 +227,54 @@ function Page() {
           )}
           {peerDetails.error && <p role="alert" className="text-sm text-destructive">Meeting details could not be loaded: {peerDetails.error.message}</p>}
           {!!data?.peerDecisions.length && (
-            <ul className="space-y-3" aria-label="Peer review decisions">
+            <table className="w-full table-fixed text-sm" aria-label="Peer review decisions">
+              <thead>
+                <tr className="border-b border-border/60 text-left align-bottom text-xs leading-tight text-muted-foreground">
+                  <th scope="col" className="py-1.5 pr-2 font-medium">Student<br />Team</th>
+                  <th scope="col" className="w-10 py-1.5 pr-2 font-medium">Sub.<br />#</th>
+                  <th scope="col" className="w-12 py-1.5 pr-2 font-medium">Score</th>
+                  <th scope="col" className="w-20 py-1.5 pr-2 font-medium">Meeting<br />scheduled?</th>
+                  <th scope="col" className="w-24 py-1.5 pr-2 font-medium">Meeting<br />date</th>
+                  <th scope="col" className="w-14 py-1.5 pr-2 font-medium">Waiting</th>
+                  <th scope="col" className="w-20 py-1.5 font-medium"><span className="sr-only">Action</span></th>
+                </tr>
+              </thead>
+              <tbody>
               {data.peerDecisions.map(p => {
                 const bookings = peerDetails.data?.meetings.filter(m => m.student_id === p.studentId && m.team_id === p.teamId) ?? [];
                 const meeting = bookings.find(m => new Date(m.scheduled_at).getTime() >= Date.now()) ?? bookings.at(-1);
                 const team = peerDetails.data?.teams.find(t => t.id === p.teamId);
                 const meetingStatus = peerDetails.isPending ? "Loading…" : peerDetails.error ? "Unavailable" : meeting ? "Yes" : p.meetingHeld ? "Held" : "No";
-                const meetingDate = meeting
-                  ? new Intl.DateTimeFormat("en-US", { timeZone: "America/Detroit", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(new Date(meeting.scheduled_at))
+                const when = meeting ? new Date(meeting.scheduled_at) : null;
+                const meetingDay = when
+                  ? new Intl.DateTimeFormat("en-US", { timeZone: "America/Detroit", weekday: "short", month: "numeric", day: "numeric" }).format(when)
                   : peerDetails.isPending ? "Loading…" : peerDetails.error ? "Unavailable" : "—";
+                const meetingTime = when
+                  ? new Intl.DateTimeFormat("en-US", { timeZone: "America/Detroit", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(when)
+                  : null;
                 return (
-                  <li key={p.id} className="rounded-lg border border-border/60 p-3">
-                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate font-medium">{p.studentName}</p>
-                        <p className="truncate text-xs text-muted-foreground">{team ? teamLineLabel(team) : p.teamName}</p>
-                      </div>
-                      <Button size="sm" className="shrink-0" onClick={() => setReviewingPeer(p)} aria-label={`Review & decide for ${p.studentName}`}>Review &amp; decide</Button>
-                    </div>
-                    <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-3">
-                      <div><dt className="text-xs text-muted-foreground">Submission #</dt><dd className="tabular-nums">{p.attempt}</dd></div>
-                      <div><dt className="text-xs text-muted-foreground">Score</dt><dd className="tabular-nums">{p.score == null ? "Not scored" : `${p.score}/10`}</dd></div>
-                      <div><dt className="text-xs text-muted-foreground">Waiting</dt><dd className="text-muted-foreground">{fmtWaiting(p.createdAt)}</dd></div>
-                      <div>
-                        <dt className="text-xs text-muted-foreground">Meeting scheduled?</dt>
-                        <dd>{meetingStatus}{p.meetingHeld && meeting && <span className="block text-xs text-muted-foreground">Meeting held</span>}</dd>
-                      </div>
-                      <div className="col-span-2 sm:col-span-1">
-                        <dt className="text-xs text-muted-foreground">Date of meeting</dt>
-                        <dd>{meeting ? <time dateTime={meeting.scheduled_at}>{meetingDate}</time> : meetingDate}</dd>
-                      </div>
-                    </dl>
-                  </li>
+                  <tr key={p.id} className="border-b border-border/40 align-top last:border-0">
+                    <td className="py-1.5 pr-2">
+                      <p className="truncate font-medium" title={p.studentName}>{p.studentName}</p>
+                      <p className="truncate text-xs text-muted-foreground" title={team ? teamLineLabel(team) : p.teamName}>{team ? teamLineLabel(team) : p.teamName}</p>
+                    </td>
+                    <td className="py-1.5 pr-2 tabular-nums">{p.attempt}</td>
+                    <td className="py-1.5 pr-2 tabular-nums">{p.score == null ? "—" : `${p.score}/10`}</td>
+                    <td className="py-1.5 pr-2">{meetingStatus}{p.meetingHeld && meeting && <span className="block text-xs text-muted-foreground">Held</span>}</td>
+                    <td className="py-1.5 pr-2">
+                      {meeting && when ? (
+                        <time dateTime={meeting.scheduled_at}>{meetingDay}<span className="block text-xs text-muted-foreground">{meetingTime}</span></time>
+                      ) : meetingDay}
+                    </td>
+                    <td className="py-1.5 pr-2 text-muted-foreground">{fmtWaiting(p.createdAt)}</td>
+                    <td className="py-1.5 text-right">
+                      <Button size="sm" className="h-auto w-full whitespace-normal px-2 py-1 text-xs leading-tight" onClick={() => setReviewingPeer(p)} aria-label={`Review & decide for ${p.studentName}`}>Review &amp;<br />decide</Button>
+                    </td>
+                  </tr>
                 );
               })}
-            </ul>
+              </tbody>
+            </table>
           )}
         </CardContent>
       </Card>

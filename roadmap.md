@@ -1,6 +1,7 @@
 # ClientVault roadmap
 
 ## Peer-review decision table
+- [x] Restore a condensed table with stacked headings, two-line entries and shortened Detroit dates above meeting times; signed-in 702px view verified with four entries, no horizontal overflow and working review dialog; build OK.
 - [x] Replace the peer-review decision list with student, team name and number, submission number, score, scheduled status and Detroit meeting date columns; verified Anthony and Lea's saved bookings, review dialog, no narrow-screen page overflow, seven queue tests, and build OK.
 
 ## Discussion decisions
