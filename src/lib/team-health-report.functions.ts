@@ -135,7 +135,11 @@ export const saveOrSendHealthReport = createServerFn({ method: "POST" })
 /** Admin-only: regenerate the Health Reports PDF in each team's vault with current rules. No emails, no saved-report rows. */
 export const refreshVaultHealthReports = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: { teamIds?: string[] } | undefined) => {
+    if (input?.teamIds && (!Array.isArray(input.teamIds) || !input.teamIds.length || input.teamIds.some(id => typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id)))) throw new Error("Choose valid teams.");
+    return input;
+  })
+  .handler(async ({ context, data }) => {
     const { data: ok } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
     if (ok !== true) throw new Error("Forbidden");
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
@@ -155,6 +159,7 @@ export const refreshVaultHealthReports = createServerFn({ method: "POST" })
     const stamp = Date.now();
     for (const f of vaultFiles ?? []) {
       if ((f.teams as { is_test: boolean } | null)?.is_test) continue;
+      if (data?.teamIds && !data.teamIds.includes(f.team_id ?? "")) continue;
       const t = review.teamResults.find((r) => r.teamId === f.team_id);
       if (!t) { skipped.push(f.file_name); continue; }
       const concerns = review.exceptions

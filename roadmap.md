@@ -1,5 +1,10 @@
 # ClientVault roadmap
 
+## Peer-review appendix warnings
+- [x] Count affected real teams and exclude peer-review appendix/index supplements from standalone minutes-template checks; preserve normal minutes checks and label historical errors as reporting corrections.
+- [x] Correct affected teams' current vault PDFs without emailing or advancing their shared baselines; nine files refreshed across Core Consulting, ClearPath Management and Oak & Iron with no skipped files; all three October 24 report links opened and downloaded, erroneous warnings absent, all 18 PDF pages inspected.
+- [x] Explicitly test that only standalone documents submitted under Minutes are template-eligible; supplementary documents elsewhere and Other attachments are excluded; 27 tests passed and build OK.
+
 ## Peer-review decision table
 - [x] Restore a condensed table with stacked headings, two-line entries and shortened Detroit dates above meeting times; signed-in 702px view verified with four entries, no horizontal overflow and working review dialog; build OK.
 - [x] Replace the peer-review decision list with student, team name and number, submission number, score, scheduled status and Detroit meeting date columns; verified Anthony and Lea's saved bookings, review dialog, no narrow-screen page overflow, seven queue tests, and build OK.

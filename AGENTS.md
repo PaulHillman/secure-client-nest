@@ -1,4 +1,5 @@
 # Architecture rules
+- Minutes-template eligibility uses a shared supplement classifier; historical appendix template findings are reporting corrections, never student-earned progress, and shared snapshots remain immutable.
 - Discussion decisions and final-point adjustments are retained separately from official peer scores; final re-grades save their deterministic decision with the analysis, and accepted badges display the saved decimal result. Awaiting Review uses only each student's latest unresolved assessment and shares meeting/comment controls with Peer Reviews, preserving audit scores while showing the actual outcome.
 - Competition grading references are instructor-only, read-only reference content independent of grading engines; unsupplied competitions remain empty rather than inheriting another competition’s rubric.
 - Peer-review meeting workspaces read exact assessment versions; deterministic text diffs never imply rubric fixes, and final uploads consume one durable instructor grant through a database version-insert trigger before assessment.

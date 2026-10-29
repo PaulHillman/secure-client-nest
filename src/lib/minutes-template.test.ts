@@ -1,8 +1,26 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { MINUTES_TEMPLATE_MIN_MARKERS, countMinutesTemplateMarkers, minutesFollowTemplate, normalizeMinutesText } from "./minutes-template";
+import { MINUTES_TEMPLATE_MIN_MARKERS, countMinutesTemplateMarkers, minutesFollowTemplate, normalizeMinutesText, isPeerReviewMinutesSupplement, isStandaloneMinutesSubmission } from "./minutes-template";
 
 // Real submitted minutes, extracted text (calibration samples).
+test("template eligibility requires actual standalone minutes, not supplementary uploads or other folders", () => {
+  const file = { section: "Team Documents", subsection: "Minutes", file_name: "Meeting 6 Minutes.docx", category: "Minutes" };
+  assert.equal(isStandaloneMinutesSubmission(file), true);
+  assert.equal(isStandaloneMinutesSubmission({ ...file, subsection: "Client Communications" }), false);
+  assert.equal(isStandaloneMinutesSubmission({ ...file, subsection: "Mid-Semester Peer Reviews" }), false);
+  assert.equal(isStandaloneMinutesSubmission({ ...file, section: "Semester Long Project" }), false);
+  assert.equal(isStandaloneMinutesSubmission({ ...file, category: "Other" }), false);
+  assert.equal(isStandaloneMinutesSubmission({ ...file, file_name: "Peer Review Appendix.docx" }), false);
+  assert.equal(isStandaloneMinutesSubmission({ ...file, is_template: true }), false);
+});
+test("peer review appendix/index remains a minutes supplement, while normal minutes still require the template", () => {
+  assert.equal(isPeerReviewMinutesSupplement("Peer Review Appendix.docx"), true);
+  assert.equal(isPeerReviewMinutesSupplement("Core Consulting Peer Review Appendix.pdf"), true);
+  assert.equal(isPeerReviewMinutesSupplement("Peer-Review Index.pdf"), true);
+  assert.equal(isPeerReviewMinutesSupplement("Oak and Iron Meeting 6 Minutes.docx"), false);
+  assert.equal(isPeerReviewMinutesSupplement("Peer Review.docx"), false);
+  assert.equal(isPeerReviewMinutesSupplement("Research Appendix.docx"), false);
+});
 const templateDocx = "Theory Y | Minutes | October 14, 2026 | 1:00 Pm | SCB 2001 | project manager | Eli Grogeel | Notetaker | Addy Warmbein | attendees | Sam, Danny, Eli, Rebeca, Addy | missing attendees | None | attendees arriving late | Danny | Agenda topics | LAST WEEKS MEETING MINUTES | Discussion | Reviewed the team health report | Conclusions | Resolved key issues.";
 const templatePdf = "[Core Consulting] | MINUTES OCTOBER 14, 2026 2:45PM UPSTAIRS TEAM ROOM #2 | PROJECT MANAGER Anthony | NOTETAKER Nora | ATTENDEES Nora, Ellen, Charlie, Anthony, Lea | MISSING ATTENDEES | ATTENDEES ARRIVING | LATE | Agenda topics | TEAM HEALTH REVIEW | DISCUSSION Review our team's health score. | CONCLUSIONS 2 missing client rearch.";
 const unfilledTemplateDocx = "[ENTER YOUR FIRM NAME] | Minutes | [Click to Select Date] | 1:00 PM – 1:30 PM | [Meeting Location] | project manager | [Name] | Notetaker | [Name] | attendees | All group members | missing attendees | None | attendees arriving late | None – everyone arrived on time or early | Agenda topics | Discussion | Conclusions";
