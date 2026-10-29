@@ -3,6 +3,7 @@
 ## Peer-review appendix warnings
 - [x] Count affected real teams and exclude peer-review appendix/index supplements from standalone minutes-template checks; preserve normal minutes checks and label historical errors as reporting corrections.
 - [ ] Correct affected teams' current vault PDFs without emailing or advancing their shared baselines; verify saved results and tests.
+- [ ] Explicitly test that only standalone documents submitted under Minutes are template-eligible; supplementary documents elsewhere are excluded.
 
 ## Peer-review decision table
 - [x] Restore a condensed table with stacked headings, two-line entries and shortened Detroit dates above meeting times; signed-in 702px view verified with four entries, no horizontal overflow and working review dialog; build OK.
