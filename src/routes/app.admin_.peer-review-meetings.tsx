@@ -26,9 +26,13 @@ function easternDateTime(iso: string) {
   return new Intl.DateTimeFormat('en-US', { timeZone: 'America/Detroit', weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).format(new Date(iso));
 }
 function calendarChangeDescription(details: unknown) {
-  const d = details as { change?: string; before?: { scheduled_at?: string }; after?: { scheduled_at?: string }; message?: string } | null;
+  const d = details as { change?: string; before?: { scheduled_at?: string; zoom_url?: string; booking_topic?: string }; after?: { scheduled_at?: string; zoom_url?: string; booking_topic?: string }; message?: string } | null;
   const before = d?.before?.scheduled_at;
   const after = d?.after?.scheduled_at;
+  if (before && after && new Date(before).getTime() === new Date(after).getTime()) {
+    const fields = [d?.before?.zoom_url !== d?.after?.zoom_url ? 'Zoom link updated' : '', d?.before?.booking_topic !== d?.after?.booking_topic ? `Topic: ${d?.after?.booking_topic || 'Not specified'}` : ''].filter(Boolean);
+    return `${d?.change || 'Booking changed'} · ${fields.join(' · ')}`;
+  }
   return `${d?.change || d?.message || 'Calendar checked'}${before ? ` · ${easternDateTime(before)}` : ''}${after ? ` → ${easternDateTime(after)}` : ''}`;
 }
 function Page() {
