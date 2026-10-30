@@ -8,6 +8,7 @@ import {
   type HealthReviewRules,
 } from "./health-review-rules";
 import { cleanCheckKeys } from "./health-check-switches";
+import { resolveOperationalRules } from './review-rulebook';
 
 async function requireAdmin(context: { supabase: any; userId: string }) {
   const { data: ok } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
@@ -51,7 +52,7 @@ export const saveHealthReviewRules = createServerFn({ method: "POST" })
     await requireAdmin(context);
     const { data: current, error: readError } = await context.supabase
       .from("health_review_rules")
-      .select("updated_at")
+      .select("*")
       .eq("id", RULES_ROW_ID)
       .maybeSingle();
     if (readError) throw readError;
@@ -60,6 +61,7 @@ export const saveHealthReviewRules = createServerFn({ method: "POST" })
       throw new Error("These settings changed elsewhere since you opened them. Reload before saving so those edits are not lost.");
     }
     const patch = resolveHealthReviewRules({ ...resolveHealthReviewRules(current), ...data.values });
+    if (patch.minutes_min_markers > resolveOperationalRules(current.operational_rules).minutes_markers.length) throw new Error('Required minutes-section count exceeds the available labels.');
     const { data: saved, error } = await context.supabase
       .from("health_review_rules")
       .update({ ...patch, updated_by: context.userId })
@@ -75,11 +77,12 @@ export const saveHealthReviewRules = createServerFn({ method: "POST" })
 /** Admin-only: which checks are switched off on every run. */
 export const saveDisabledChecks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ keys: z.array(z.string()) }))
+  .inputValidator(z.object({ keys: z.array(z.string()), expectedUpdatedAt: z.string() }))
   .handler(async ({ context, data }) => {
     await requireAdmin(context);
     const keys = cleanCheckKeys(data.keys);
-    const { error } = await context.supabase.from("health_review_rules").update({ disabled_checks: keys, updated_by: context.userId }).eq("id", RULES_ROW_ID);
+    const { data: row, error } = await context.supabase.from("health_review_rules").update({ disabled_checks: keys, updated_by: context.userId }).eq("id", RULES_ROW_ID).eq('updated_at', data.expectedUpdatedAt).select('id').maybeSingle();
     if (error) throw error;
+    if (!row) throw new Error('Rules changed elsewhere. Reload before saving switches.');
     return { disabled_checks: keys };
   });

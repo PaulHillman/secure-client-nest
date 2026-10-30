@@ -2,6 +2,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { z } from 'zod';
 import { discussionOutcome, discussionScore } from './peer-review-discussion';
+import { resolveOperationalRules } from './review-rulebook';
 
 export const getPeerWorkspace = createServerFn({ method: 'GET' }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   const { data: admin, error: roleError } = await context.supabase.rpc('has_role', { _user_id: context.userId, _role: 'admin' });
@@ -22,8 +23,9 @@ export const authorizeFinalPeerUpload = createServerFn({ method: 'POST' }).middl
   .handler(async ({ context, data }) => {
     const { data: admin, error: roleError } = await context.supabase.rpc('has_role', { _user_id: context.userId, _role: 'admin' });
     if (roleError || !admin) throw new Error('Admin access required');
-    const { data: latest, error: latestError } = await context.supabase.from('peer_review_assessments').select('score').eq('user_id', data.studentId).eq('team_id', data.teamId).eq('status', 'assessed').order('attempt', { ascending: false }).limit(1).maybeSingle();
-    if (latestError || latest?.score == null || latest.score >= 8) throw new Error('A saved peer review below 8/10 is required');
+    const { data: latest, error: latestError } = await context.supabase.from('peer_review_assessments').select('score,policy_snapshot').eq('user_id', data.studentId).eq('team_id', data.teamId).eq('status', 'assessed').order('attempt', { ascending: false }).limit(1).maybeSingle();
+    const target = resolveOperationalRules(latest?.policy_snapshot).revision_pass;
+    if (latestError || latest?.score == null || latest.score >= target) throw new Error(`A saved peer review below ${target}/10 is required`);
     const { data: existing, error: readError } = await context.supabase.from('peer_review_final_uploads').select('*').eq('student_id', data.studentId).eq('team_id', data.teamId).maybeSingle();
     if (readError) throw readError;
     if (existing) { if (existing.consumed_at) throw new Error('The final upload has already been used'); return existing; }

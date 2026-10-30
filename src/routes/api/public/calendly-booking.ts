@@ -77,14 +77,14 @@ export const Route = createFileRoute('/api/public/calendly-booking')({
         // Only students whose latest assessed peer review requires a meeting (attempt 3+, below 8/10).
         const { data: latest } = await db
           .from('peer_review_assessments')
-          .select('attempt, score, team_id')
+          .select('attempt, score, team_id, policy_snapshot')
           .eq('user_id', student.id)
           .eq('status', 'assessed')
           .order('attempt', { ascending: false })
           .limit(1)
           .maybeSingle()
         const { peerEmailAction } = await import('@/lib/peer-review-email')
-        if (!latest || latest.score == null || !peerEmailAction(latest.score, latest.attempt).meetingRequired) {
+        if (!latest || latest.score == null || !peerEmailAction(latest.score, latest.attempt, latest.policy_snapshot).meetingRequired) {
           return Response.json({ ignored: true })
         }
         const { data: team } = await db.from('teams').select('is_test').eq('id', latest.team_id).single()
@@ -109,7 +109,7 @@ export const Route = createFileRoute('/api/public/calendly-booking')({
         }).format(new Date(startTime))
 
         const { meetingConfirmedEmailBody } = await import('@/lib/peer-review-email')
-        const body = meetingConfirmedEmailBody(student.name, latest.score, meetingTime, zoomLink)
+        const body = meetingConfirmedEmailBody(student.name, latest.score, meetingTime, zoomLink, latest.policy_snapshot)
         const subject = `Peer-review meeting confirmed — ${student.name} — ${meetingTime}`
 
         const { sendTemplateEmail } = await import('@/lib/email-templates/send-email')

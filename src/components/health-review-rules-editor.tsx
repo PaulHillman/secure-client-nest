@@ -40,12 +40,14 @@ export function HealthReviewRulesEditor() {
 
 function RulesForm({ loaded }: { loaded: Loaded }) {
   const [draft, setDraft] = useState<Draft>(() => toDraft(loaded.rules));
+  const [reviewing, setReviewing] = useState(false);
   const save = useServerFn(saveHealthReviewRules);
   const qc = useQueryClient();
   const mutation = useMutation({
     mutationFn: () => save({ data: { values: { ...draft }, expected_updated_at: loaded.updated_at } }),
     onSuccess: (saved) => {
       qc.setQueryData(HEALTH_RULES_KEY, { ...loaded, rules: saved.rules, updated_at: saved.updated_at, saved: true });
+      void qc.invalidateQueries({ queryKey: ['review-rulebook'] });
       toast.success("Rule settings saved — the next report you run uses them.");
     },
   });
@@ -76,9 +78,9 @@ function RulesForm({ loaded }: { loaded: Loaded }) {
         ))}
 
         <div className="flex flex-wrap items-center gap-3 pt-1">
-          <Button disabled={mutation.isPending || !changed.length} onClick={() => mutation.mutate()}>
+          <Button disabled={mutation.isPending || !changed.length} onClick={() => setReviewing(true)}>
             <Save className="mr-2 h-4 w-4" />
-            Save changes
+            Review threshold changes
           </Button>
           <Button
             type="button"
@@ -97,6 +99,7 @@ function RulesForm({ loaded }: { loaded: Loaded }) {
               : `${changed.length} change${changed.length === 1 ? "" : "s"}: ${changed.map((f) => `${f.label} → ${ruleValueLabel(f, draft[f.key])}`).join("; ")}`}
           </p>
         </div>
+        {reviewing && <div className="border-l-4 border-primary pl-4 space-y-3 text-sm"><h3 className="font-semibold">Effect of threshold changes</h3><ul className="list-disc pl-5">{changed.map(f => <li key={f.key}>{f.label}: {String(loaded.rules[f.key])} → {draft[f.key]}</li>)}</ul><p>Future reports may raise or clear concerns under these new limits. A changed rule is not proof that a student fixed something. Saved reports and prior scores remain unchanged.</p><Button disabled={mutation.isPending} onClick={() => mutation.mutate()}>Apply threshold changes</Button></div>}
         {mutation.error && <p role="alert" className="text-destructive text-sm">{mutation.error.message}</p>}
       </CardContent>
     </Card>

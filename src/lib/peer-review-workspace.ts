@@ -2,8 +2,8 @@ export function finalUploadState(permission: { consumed_at: string | null } | nu
   return !permission ? 'locked' : permission.consumed_at ? 'used' : 'allowed';
 }
 
-export function canAssessPeerAttempt(attempt: number, authorizedVersion: boolean) {
-  return attempt <= 3 || authorizedVersion;
+export function canAssessPeerAttempt(attempt: number, authorizedVersion: boolean, maximum = 3) {
+  return attempt <= maximum || authorizedVersion;
 }
 
 export function bookingIdentity<T extends { id: string; name: string; email: string | null }>(people: T[], email: string, name: string) {

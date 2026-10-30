@@ -74,7 +74,7 @@ type Member = {
   >;
 };
 
-type PeerScore = { score: number | null; status: string; attempt: number; accepted_at?: string | null; detailed_regrade?: unknown };
+type PeerScore = { score: number | null; status: string; attempt: number; accepted_at?: string | null; detailed_regrade?: unknown; policy_snapshot?: unknown };
 
 function initials(name: string) {
   return name
@@ -108,7 +108,7 @@ function TeamDetail() {
         // Latest peer-review attempt per member; RLS limits students to their own rows.
         supabase
           .from("peer_review_assessments")
-          .select("user_id, score, status, attempt, accepted_at, detailed_regrade")
+          .select("user_id, score, status, attempt, accepted_at, detailed_regrade, policy_snapshot")
           .eq("team_id", teamId)
           .order("attempt", { ascending: false })
           .order("created_at", { ascending: false }),
@@ -134,7 +134,7 @@ function TeamDetail() {
       const peerMap = new Map<string, PeerScore>();
       (peerRows ?? []).forEach((a) => {
         if (!peerMap.has(a.user_id))
-          peerMap.set(a.user_id, { score: a.score, status: a.status, attempt: a.attempt, accepted_at: a.accepted_at, detailed_regrade: a.detailed_regrade });
+          peerMap.set(a.user_id, { score: a.score, status: a.status, attempt: a.attempt, accepted_at: a.accepted_at, detailed_regrade: a.detailed_regrade, policy_snapshot: a.policy_snapshot });
       });
       const members = (tm ?? []).map((m) => ({ ...m, profiles: profileMap.get(m.user_id) }));
       return { team, companyFocus: cf, members, peerMap };
@@ -522,7 +522,7 @@ function MemberCard({
           )}
           {peer && (
             <div className="mt-1">
-              <Badge variant="outline" className={`text-[10px] ${peerBadgeTone(peerBadgeScore(peer), undefined, peer.attempt, peer.accepted_at)}`}>
+              <Badge variant="outline" className={`text-[10px] ${peerBadgeTone(peerBadgeScore(peer), undefined, peer.attempt, peer.accepted_at, peer.policy_snapshot)}`}>
                 {peerBadgeLabel(peer)}
               </Badge>
             </div>

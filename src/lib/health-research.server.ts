@@ -1,5 +1,6 @@
 import { researchCoverage } from "./health-review-comparison";
 import { MINUTES_TEMPLATE_MIN_MARKERS, minutesFollowTemplate } from "./minutes-template";
+import { OPERATIONAL_DEFAULTS } from './review-rulebook';
 
 /** Downloads one vault file version and extracts its text (null when unreadable). */
 async function readVaultText(db: any, file: { file_name: string; current_version_id: string | null }): Promise<string | null> {
@@ -23,12 +24,12 @@ async function readVaultText(db: any, file: { file_name: string; current_version
   return text;
 }
 
-export async function inspectResearch(db: any, files: { file_name: string; current_version_id: string | null }[]) {
+export async function inspectResearch(db: any, files: { file_name: string; current_version_id: string | null }[], topics = OPERATIONAL_DEFAULTS.research_topics) {
  const documents: { fileName: string; text: string | null }[] = [];
  for (const file of files) {
   documents.push({ fileName: file.file_name, text: await readVaultText(db, file) });
  }
- return { topics: researchCoverage(documents), unreadable: documents.filter(d => !d.text).map(d => d.fileName), inspected: documents.filter(d => d.text).map(d => d.fileName) };
+ return { topics: researchCoverage(documents, topics), unreadable: documents.filter(d => !d.text).map(d => d.fileName), inspected: documents.filter(d => d.text).map(d => d.fileName) };
 }
 
 /**
@@ -41,22 +42,23 @@ export async function inspectMinutesTemplate(
   template: { file_name: string; current_version_id: string | null } | null,
   textCache?: Map<string, string | null>,
   minMarkers: number = MINUTES_TEMPLATE_MIN_MARKERS,
+  markers: readonly string[] = OPERATIONAL_DEFAULTS.minutes_markers,
 ) {
   const cache = textCache ?? new Map<string, string | null>();
   const textOf = async (file: { file_name: string; current_version_id: string | null }) => {
     const key = file.current_version_id ?? file.file_name;
     if (!cache.has(key)) cache.set(key, await readVaultText(db, file));
-    return cache.get(key)!;
+    return cache.get(key) ?? null;
   };
   const templateText = template ? await textOf(template) : null;
   const results: { fileName: string; follows: boolean | null }[] = [];
   for (const file of files) {
     const text = await textOf(file);
     // The template itself, or unreadable files, stay unverified rather than violations.
-    if (!text || (templateText && minutesFollowTemplate(templateText, minMarkers) === false)) {
+    if (!text || (templateText && minutesFollowTemplate(templateText, minMarkers, markers) === false)) {
       results.push({ fileName: file.file_name, follows: null });
     } else {
-      results.push({ fileName: file.file_name, follows: minutesFollowTemplate(text, minMarkers) });
+      results.push({ fileName: file.file_name, follows: minutesFollowTemplate(text, minMarkers, markers) });
     }
   }
   return {

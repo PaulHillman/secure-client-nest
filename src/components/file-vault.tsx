@@ -84,6 +84,7 @@ function runPeerAssessment(versionId: string, onDone: () => void) {
 import { compareTeamRoles } from "@/lib/team-roles";
 import { finalCompiledName, isFinalCompiled } from "@/lib/vault-file-label";
 import { peerUploadSequence, groupPeerUploads } from "@/lib/vault-upload-identity";
+import { resolveOperationalRules } from '@/lib/review-rulebook';
 import { peerPriorityFixes } from "@/lib/peer-review-feedback";
 import { Calculator, LoaderCircle } from "lucide-react";
 
@@ -105,7 +106,7 @@ type FileRow = {
   meeting_date: string | null;
 };
 
-type PeerScore = { score: number | null; status: string; attempt: number; changes: unknown; accepted_at?: string | null; detailed_regrade?: unknown };
+type PeerScore = { score: number | null; status: string; attempt: number; changes: unknown; accepted_at?: string | null; detailed_regrade?: unknown; policy_snapshot?: unknown };
 
 const VAULT_FOLDERS = [
   { key: "agendas", label: "Agendas", icon: Calendar, entries: [["Team Documents", "Agendas"]] },
@@ -221,7 +222,7 @@ export function FileVault({
   const { data, isLoading } = useQuery({
     // Separate the enriched result from pre-update cached lists in open previews.
     // Keep the prefix so existing upload/status invalidations still refresh it.
-    queryKey: ["vault", teamId, "peer-feedback-final-v5"],
+    queryKey: ["vault", teamId, "peer-policy-v6"],
     queryFn: async () => {
       const [{ data: files, error: fErr }, { data: versions, error: vErr }, members, { data: assessments }] =
         await Promise.all([
@@ -236,7 +237,7 @@ export function FileVault({
           // Peer-review scores per file; RLS limits students to their own rows.
           supabase
             .from("peer_review_assessments")
-            .select("file_id, version_id, user_id, score, status, attempt, changes, accepted_at, detailed_regrade")
+            .select("file_id, version_id, user_id, score, status, attempt, changes, accepted_at, detailed_regrade, policy_snapshot")
             .eq("team_id", teamId),
         ]);
       if (fErr) throw fErr;
@@ -249,7 +250,7 @@ export function FileVault({
       });
       const peerMap = new Map<string, PeerScore>();
       (assessments ?? []).forEach((a) => {
-        if (a.version_id) peerMap.set(a.version_id, { score: a.score, status: a.status, attempt: a.attempt, changes: a.changes, accepted_at: a.accepted_at, detailed_regrade: a.detailed_regrade });
+        if (a.version_id) peerMap.set(a.version_id, { score: a.score, status: a.status, attempt: a.attempt, changes: a.changes, accepted_at: a.accepted_at, detailed_regrade: a.detailed_regrade, policy_snapshot: a.policy_snapshot });
       });
       const uploaderIds = Array.from(new Set([
         ...(files ?? []).map((f) => f.uploaded_by),
@@ -956,7 +957,8 @@ function FileLine({
   const isPeerReview = file.subsection === "Mid-Semester Peer Reviews";
   const uploadNumber = current ? peerSequence.get(current.id) : undefined;
   const assessment = current ? peerMap.get(current.id) : undefined;
-  const fixes = assessment?.accepted_at ? [] : peerPriorityFixes(assessment?.score, assessment?.changes);
+  const target = resolveOperationalRules(assessment?.policy_snapshot).revision_pass;
+  const fixes = assessment?.accepted_at ? [] : peerPriorityFixes(assessment?.score, assessment?.changes, target);
   const handleCalculateScore = async () => {
     if (!current || calculating) return;
     setCalculating(true);
@@ -1034,7 +1036,7 @@ function FileLine({
               return (
                 <Badge
                   variant="outline"
-                  className={`text-[10px] ${peerBadgeTone(peerBadgeScore(assessment), undefined, assessment.attempt, assessment.accepted_at)}`}
+                  className={`text-[10px] ${peerBadgeTone(peerBadgeScore(assessment), undefined, assessment.attempt, assessment.accepted_at, assessment.policy_snapshot)}`}
                 >
                   {peerBadgeLabel(assessment)}
                 </Badge>
@@ -1064,8 +1066,8 @@ function FileLine({
           {isPeerReview && fixes.length > 0 && (
             <div className="mt-2 text-xs" aria-live="polite">
               <p className="font-semibold">{assessment?.attempt === 1 && assessment.score === 7
-                ? "Optional improvements toward 8/10 — your original passes"
-                : "Priority fixes to reach 8/10"}</p>
+                ? `Optional improvements toward ${target}/10 — your original passes`
+                : `Priority fixes to reach ${target}/10`}</p>
               <ol className="mt-1 list-decimal space-y-1 pl-5 break-words">
                 {fixes.map((fix, index) => <li key={index}>{fix}</li>)}
               </ol>

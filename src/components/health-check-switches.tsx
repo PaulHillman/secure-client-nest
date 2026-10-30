@@ -41,8 +41,8 @@ export function HealthCheckSwitchesEditor() {
   const saved = new Set(data?.disabled_checks ?? []);
   const off = draft ?? saved;
   const m = useMutation({
-    mutationFn: () => save({ data: { keys: [...off] } }),
-    onSuccess: () => { setDraft(null); qc.invalidateQueries({ queryKey: HEALTH_RULES_KEY }); toast.success("Saved — every future run uses these switches."); },
+    mutationFn: () => { if (!data?.updated_at) throw new Error('Reload settings before saving.'); return save({ data: { keys: [...off], expectedUpdatedAt: data.updated_at } }); },
+    onSuccess: () => { setDraft(null); qc.invalidateQueries({ queryKey: HEALTH_RULES_KEY }); qc.invalidateQueries({ queryKey: ['review-rulebook'] }); toast.success("Saved — every future run uses these switches."); },
   });
   if (!data) return null;
   const changed = [...off].sort().join() !== [...saved].sort().join();
