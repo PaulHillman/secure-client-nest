@@ -1,5 +1,9 @@
 # ClientVault roadmap
 
+## Actionable Health Review warnings
+- [x] Repeat each category's actual concerns beside its flagged status in future PDFs and the review screen; preserve detailed concerns, grading and historical shared reports.
+- [x] Verified PDF text and page preview plus the signed-in October 24 saved-report warning row; seven existing tests passed and build OK. No review run, records changed, or emails sent.
+
 ## Existing meeting attachments
 - [x] Add existing Agenda/Minutes selection to Edit meeting, preserving existing connections and file history.
 - [x] Verified Oak & Iron's real document choices without changing its records; a fixture agenda connection saved and persisted after reload, temporary records removed; 10 tests passed and build OK.

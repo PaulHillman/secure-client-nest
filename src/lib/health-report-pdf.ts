@@ -86,6 +86,14 @@ export async function buildHealthReportPdf(opts: {
     const color = rating === "Good" ? green : rating === "Fair" ? gold : rating === "Bad" ? red : grey;
     page.drawCircle({ x: M + 4, y: y - 6, size: 4, color });
     text(`${c.label}: ${rating}`, font, 10, navy, M + 14);
+    if (c.status === "flagged") {
+      const concerns = opts.concerns.filter((concern) => concern.check === c.label)
+        .sort((a, b) => Number(b.level === "red") - Number(a.level === "red"));
+      for (const concern of concerns) {
+        const who = concern.person ? ` - ${concern.person}${concern.role ? ` (${concern.role})` : ""}` : "";
+        text(`${concern.level === "red" ? "Bad" : "Fair"}${who}: ${concern.reason}`, font, 9, concern.level === "red" ? red : gold, M + 14, W - 2 * M - 14);
+      }
+    }
     const labels: Record<string, string> = { gaps: "Dashboard Gaps", readiness: "Team Readiness", meetings: "Weekly Meetings", activity: "Login / upload activity", vault: "File Vault requirements", reports: "Health Report follow-up" };
     for (const [key, notes] of Object.entries(opts.passNotes ?? {})) if (labels[key] === c.label) for (const note of notes) text(note, font, 9, grey, M + 14, W - 2 * M - 14);
   }
