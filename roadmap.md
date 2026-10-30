@@ -1,5 +1,9 @@
 # ClientVault roadmap
 
+## Concise weekly peer-review summaries
+- [ ] Replace repeated analysis narratives with latest-assessment next steps, revision and meeting deadlines, and an explicit missing-booking warning after submission 3.
+- [ ] Verify deterministic summaries without running, saving or sending a real weekly review; explain that guide edits alone do not change active checks.
+
 ## Daily peer-review calendar validation
 - [x] Remove Avery's canceled booking from the active meeting list, retaining a change note and November 8 deadline.
 - [x] Configure one daily 1:00 a.m. Detroit dispatcher with a private single-use nonce, daylight saving adjustment, and retained date/time/cancellation changes.
