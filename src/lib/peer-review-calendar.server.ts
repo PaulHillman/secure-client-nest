@@ -32,6 +32,7 @@ export async function syncCalendlyPeerMeetings(db: SupabaseClient<Database>) {
   if (pe) throw pe;
   let imported = 0;
   const unmatched: string[] = [];
+  const activeKeys = new Set<string>();
   for (const event of events) {
     const id = event.uri.split('/').pop();
     if (!id) continue;
@@ -47,6 +48,7 @@ export async function syncCalendlyPeerMeetings(db: SupabaseClient<Database>) {
       const { data: latest, error: ae } = await db.from('peer_review_assessments').select('team_id,score,attempt,teams!inner(is_test)').eq('user_id', identity.person.id).eq('status', 'assessed').eq('teams.is_test', false).order('attempt', { ascending: false }).limit(1).maybeSingle();
       if (ae) throw ae;
       if (!latest) continue;
+      activeKeys.add(`${event.uri}:${identity.person.id}`);
       const topic = invitee.questions_and_answers?.find(q => /discuss/i.test(q.question))?.answer ?? 'Topic not specified';
       const { error } = await db.from('peer_review_meetings').upsert({ calendly_event_uri: event.uri, student_id: identity.person.id, team_id: latest.team_id, scheduled_at: event.start_time, zoom_url: event.location?.join_url ?? null, attempt: latest.attempt, score: latest.score, booking_topic: topic, identity_match: identity.match }, { onConflict: 'calendly_event_uri' });
       if (error) throw error;
@@ -54,10 +56,9 @@ export async function syncCalendlyPeerMeetings(db: SupabaseClient<Database>) {
     }
   }
   // Reconcile only this fetched date window; do not discard records outside it.
-  const { data: existing, error: ee } = await db.from('peer_review_meetings').select('id,calendly_event_uri').gte('scheduled_at', min).lte('scheduled_at', max);
+  const { data: existing, error: ee } = await db.from('peer_review_meetings').select('id,calendly_event_uri,student_id').gte('scheduled_at', min).lte('scheduled_at', max);
   if (ee) throw ee;
-  const activeUris = new Set(events.map(e => e.uri));
-  const canceled = (existing ?? []).filter(e => !activeUris.has(e.calendly_event_uri)).map(e => e.id);
+  const canceled = (existing ?? []).filter(e => !activeKeys.has(`${e.calendly_event_uri}:${e.student_id}`)).map(e => e.id);
   if (canceled.length) { const { error } = await db.from('peer_review_meetings').delete().in('id', canceled); if (error) throw error; }
   return { imported, unmatched: unmatched.filter(n => !/parfunkel/i.test(n)) };
 }
