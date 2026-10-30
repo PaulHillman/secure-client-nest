@@ -1,5 +1,9 @@
 # ClientVault roadmap
 
+## Missing booking topics
+- [x] Recognize student/team-matched future bookings without a topic; preserve exclusion of explicit unrelated topics and past appointments.
+- [x] Verified signed-in fresh Managers of the Future review recognizes Izzy’s November 5 11:45 a.m. booking; 13 tests pass, build OK, no reports saved or sent.
+
 ## Editable review rulebook
 - [x] Expose peer policy, weekly-summary wording, research topics and minutes sections with validated saves and retained change history.
 - [x] Turn narrative edits into explicit reviewable proposals, with Apply changes or wording-only choices and a read-only trial review.

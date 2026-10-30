@@ -12,6 +12,19 @@ test('a real future peer meeting satisfies booking, unrelated appointments do no
   assert.equal(healthPeerSummary(a, [{ scheduled_at: '2026-11-06T15:00:00Z', booking_topic: 'Peer review' }], now).action, 'booked');
   assert.equal(healthPeerSummary(a, [{ scheduled_at: '2026-11-06T15:00:00Z', booking_topic: 'Course registration' }], now).action, 'book_meeting');
 });
+test('Izzy’s November 5 11:45 EST booking counts with a null topic', () => {
+  const summary = healthPeerSummary({ ...row, attempt: 3, score: 7 }, [{ scheduled_at: '2026-11-05T16:45:00Z', booking_topic: null }], now);
+  assert.equal(summary.action, 'booked');
+});
+test('an empty topic does not hide an existing future booking', () => {
+  assert.equal(healthPeerSummary({ ...row, attempt: 3, score: 7 }, [{ scheduled_at: '2026-11-05T16:45:00Z', booking_topic: '  ' }], now).action, 'booked');
+});
+test('Calendly’s unspecified-topic placeholder does not hide an existing booking', () => {
+  assert.equal(healthPeerSummary({ ...row, attempt: 3, score: 7 }, [{ scheduled_at: '2026-11-05T16:45:00Z', booking_topic: 'Topic not specified' }], now).action, 'booked');
+});
+test('a past booking with no topic does not satisfy an upcoming meeting requirement', () => {
+  assert.equal(healthPeerSummary({ ...row, attempt: 3, score: 7 }, [{ scheduled_at: '2026-10-29T16:45:00Z', booking_topic: null }], now).action, 'book_meeting');
+});
 test('accepted decimal discussion result does not require another revision', () => assert.equal(healthPeerSummary({ ...row, attempt: 4, accepted_at: '2026-10-30T12:00:00Z' }, [], now).action, 'resolved'));
 test('unreadable assessment is not scored or given revision instructions', () => assert.equal(healthPeerSummary({ ...row, score: null }, [], now).action, 'unverified'));
 test('uses latest valid source, not original, invalid proxy, or deleted source', () => {

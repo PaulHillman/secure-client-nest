@@ -27,7 +27,13 @@ export function healthPeerSummary(a: HealthPeerAssessment, meetings: HealthPeerM
   const view = presentation ?? p;
   const revisionDue = detroitDeadline(p.revision_due);
   const meetingDue = detroitDeadline(p.meeting_due);
-  const booked = meetings.filter(m => Date.parse(m.scheduled_at) > now && /peer[\s-]*review|peer[\s-]*evaluation/i.test(m.booking_topic ?? '')).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
+  // Already scoped to this student and team by the caller. Legacy/webhook
+  // bookings can omit the topic; an absent answer must not erase a booking.
+  // Explicit unrelated topics remain excluded.
+  const booked = meetings.filter(m => {
+    const topic = m.booking_topic?.trim() ?? '';
+    return Date.parse(m.scheduled_at) > now && (!topic || /^topic not specified$/i.test(topic) || /peer[\s-]*review|peer[\s-]*evaluation/i.test(topic));
+  }).sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
   const prefix = `Peer review · submission ${a.attempt}${a.score === null ? ' · awaiting assessment' : ` · ${a.score}/10`}.`;
   if (a.accepted_at || a.discussion_resolved_at) return { action: 'resolved', level: null, reason: `${prefix} Instructor decision recorded; no resubmission or booking required.`, revisionDue, meetingDue } as const;
   if (a.score === null) return { action: 'unverified', level: null, reason: `${prefix} Instructor review needed; no score assumed.`, revisionDue, meetingDue } as const;
