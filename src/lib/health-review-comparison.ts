@@ -2,7 +2,7 @@ import { isPeerReviewMinutesSupplement } from "./minutes-template";
 import { OPERATIONAL_DEFAULTS } from './review-rulebook';
 
 export type Concern = { check: string; level: "red" | "yellow"; reason: string; person?: string | null; userId?: string | null; ruleId?: string; escalationExempt?: boolean };
-export type Observation = { ruleId: string; evidence: string; remaining?: number; verified: boolean };
+export type Observation = { ruleId: string; evidence: string; remaining?: number; verified: boolean; correctedFiles?: string[] };
 export type Change = { status: "Resolved" | "Partially improved" | "Still outstanding" | "Unable to verify" | "New concern" | "Reporting correction"; previous: string | null; current: string; person: string | null };
 export type Comparison = { sharedAt: string | null; source: string; changes: Change[]; streaks?: Record<string, number> };
 // Varied but deterministic: the same concern always earns the same phrase, so re-running a report never rewords a compliment.
@@ -63,6 +63,14 @@ export function compareConcerns(previous: Concern[], current: Concern[], observa
    changes.push({ status: "Reporting correction", previous: old.reason, current: old.check === "activity" ? "The earlier activity finding predates the authoritative sign-in tracking correction. It cannot establish student-earned progress; current activity is assessed separately." : "The older report relied on a lock flag rather than current-version signatures. This is a reporting correction, not student-earned progress.", person: old.person ?? null }); continue;
   }
   const key = concernKey(old);
+  if (old.check === 'meetings' && /do not follow the shared Meeting Minutes Template/i.test(old.reason)) {
+   const correction = observations.find(o => o.ruleId === 'meetings:minutes_template' && o.verified && o.correctedFiles?.length);
+   const listed = /\(([^)]+)\)/.exec(old.reason)?.[1]?.split(/(?<=\.pdf|\.docx|\.doc|\.odt)\s*,\s*/i) ?? [];
+   const normalize = (name: string) => name.replace(/\bWednesday\b/gi, '').replace(/[^a-z0-9]/gi, '').toLowerCase();
+   if (correction && listed.length && listed.every(name => correction.correctedFiles?.some(file => normalize(file) === normalize(name)))) {
+    changes.push({ status: 'Reporting correction', previous: old.reason, current: correction.evidence, person: old.person ?? null }); continue;
+   }
+  }
   if (old.check === "meetings" && /do not follow the shared Meeting Minutes Template/i.test(old.reason) && isPeerReviewMinutesSupplement(old.reason)) {
    changes.push({ status: "Reporting correction", previous: old.reason, current: "The previous template finding included a peer-review appendix/index, which correctly belongs with Minutes and is not standalone minutes. Normal minutes are checked separately; this correction is not student-earned progress.", person: old.person ?? null }); continue;
   }

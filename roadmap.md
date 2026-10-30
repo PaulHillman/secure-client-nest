@@ -1,5 +1,9 @@
 # ClientVault roadmap
 
+## Instructor minutes confirmation
+- [x] Honor scoped instructor template confirmations and match historical names as reporting corrections, not improvement credit.
+- [x] Saved three instructor confirmations; fresh signed-in report shows Reporting correction instead of Unable to verify, 20 tests pass, no report saved or sent.
+
 ## Booked meeting compliance
 - [x] Keep on-time booked peer meetings yellow with completion instructions and no prior-score escalation; preserve other warnings and history.
 - [x] Verified Izzy’s fresh signed-in report is yellow/Fair with meeting-completion instructions and no red escalation; 42 tests pass, build OK, no reports saved or sent.

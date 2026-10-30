@@ -127,11 +127,11 @@ export async function computeHealthReview(
     const { data: peerMeetings, error: peerMeetingError } = await db.from('peer_review_meetings').select('student_id, team_id, scheduled_at, booking_topic').in('team_id', ids);
     if (peerMeetingError) throw new Error('Unable to verify peer-review meeting bookings.');
     const { data: companyFocus } = await db.from("company_focus").select("team_id, company_name, confirmed_at").in("team_id", ids);
-    const { data: fileVerifications } = await db.from("instructor_file_verifications").select("team_id, file_name").in("team_id", ids);
+    const { data: fileVerifications } = await db.from("instructor_file_verifications").select("team_id, file_name, note").in("team_id", ids);
     const verifiedFiles = new Map<string, Set<string>>();
     for (const v of fileVerifications ?? []) {
       if (!verifiedFiles.has(v.team_id)) verifiedFiles.set(v.team_id, new Set());
-      verifiedFiles.get(v.team_id)!.add(v.file_name);
+      verifiedFiles.get(v.team_id)?.add(v.file_name);
     }
     const { data: shares, error: sharesError } = await db.from("health_review_shares").select("team_id, shared_at, generated_at, payload, source, vault_file_id, vault_version_id, recipient_ids").in("team_id", ids).order("shared_at", { ascending: false });
     if (sharesError) throw new Error("Unable to load prior shared reports; comparison cannot be verified.");
@@ -309,11 +309,19 @@ export async function computeHealthReview(
         const allMinutesFiles = teamFiles.filter(isStandaloneMinutesSubmission);
         const exemptMinutes = allMinutesFiles.filter((f) => minutesExemptFromTemplate(f, teamLogs, rules.minutes_template_from));
         const minutesFiles = allMinutesFiles.filter((f) => !exemptMinutes.includes(f));
+        const confirmed = (fileVerifications ?? []).filter(v => v.team_id === t.teamId && v.note?.startsWith('minutes_template:')).map(v => v.file_name);
+        if (confirmed.length) {
+          notes.meetings.push(`Instructor verified use of the minutes template: ${confirmed.join('; ')}.`);
+          if (!checksOff.has('meetings:minutes_template')) observations.push({ ruleId: 'meetings:minutes_template', evidence: 'The instructor verified these minutes already used the template. Earlier warnings were reporting errors, not student-earned improvements.', verified: true, correctedFiles: confirmed });
+        }
         if (exemptMinutes.length)
           notes.meetings.push(`Minutes template: ${exemptMinutes.length} minutes file${exemptMinutes.length === 1 ? "" : "s"} for meetings before ${rules.minutes_template_from} are exempt — the template requirement was announced that week (${exemptMinutes.map((f) => f.file_name).join(", ")}).`);
         if (minutesFiles.length && minutesTemplate) {
           const { inspectMinutesTemplate } = await import("./health-research.server");
           const minutesCheck = await inspectMinutesTemplate(db, minutesFiles, minutesTemplate, minutesTextCache, rules.minutes_min_markers, operational.minutes_markers);
+          minutesCheck.violations = minutesCheck.violations.filter(name => !confirmed.includes(name));
+          minutesCheck.unverified = minutesCheck.unverified.filter(name => !confirmed.includes(name));
+          minutesCheck.compliant = [...new Set([...minutesCheck.compliant, ...confirmed])];
           const readableCount = minutesCheck.compliant.length + minutesCheck.violations.length;
           observe("meetings:minutes_template:team", `Minutes template: ${minutesCheck.compliant.length} of ${readableCount} readable minutes files follow the shared Meeting Minutes Template.`, minutesCheck.violations.length, minutesCheck.unverified.length < minutesFiles.length);
           if (minutesCheck.violations.length) {
