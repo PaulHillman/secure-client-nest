@@ -309,7 +309,7 @@ export async function computeHealthReview(
         const allMinutesFiles = teamFiles.filter(isStandaloneMinutesSubmission);
         const exemptMinutes = allMinutesFiles.filter((f) => minutesExemptFromTemplate(f, teamLogs, rules.minutes_template_from));
         const minutesFiles = allMinutesFiles.filter((f) => !exemptMinutes.includes(f));
-        const confirmed = (fileVerifications ?? []).filter(v => v.team_id === t.teamId && v.note?.startsWith('minutes_template:')).map(v => v.file_name).filter(name => allMinutesFiles.some(f => f.file_name === name));
+        const confirmed = (fileVerifications ?? []).filter(v => v.team_id === t.teamId && v.note?.startsWith('minutes_template:')).map(v => v.file_name);
         if (confirmed.length) {
           notes.meetings.push(`Instructor verified use of the minutes template: ${confirmed.join('; ')}.`);
           if (!checksOff.has('meetings:minutes_template')) observations.push({ ruleId: 'meetings:minutes_template', evidence: 'The instructor verified these minutes already used the template. Earlier warnings were reporting errors, not student-earned improvements.', verified: true, correctedFiles: confirmed });
