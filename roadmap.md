@@ -2,7 +2,7 @@
 
 ## Booked meeting compliance
 - [x] Keep on-time booked peer meetings yellow with completion instructions and no prior-score escalation; preserve other warnings and history.
-- [ ] Verify Izzy’s fresh report color and regression tests without saving or sending.
+- [x] Verified Izzy’s fresh signed-in report is yellow/Fair with meeting-completion instructions and no red escalation; 42 tests pass, build OK, no reports saved or sent.
 
 ## Missing booking topics
 - [x] Recognize student/team-matched future bookings without a topic; preserve exclusion of explicit unrelated topics and past appointments.
