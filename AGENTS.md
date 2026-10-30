@@ -1,4 +1,5 @@
 # Architecture rules
+- Weekly peer-review summaries use a deterministic latest-valid-assessment and verified booking helper; individual detailed feedback and immutable shared history stay separate to avoid stale resubmission instructions.
 - Health Review category displays repeat matching saved concerns at the flagged status before pass notes; PDF and screen presentation never recalculate findings or change shared baselines.
 - Minutes-template eligibility uses a shared supplement classifier; historical appendix template findings are reporting corrections, never student-earned progress, and shared snapshots remain immutable.
 - Discussion decisions and final-point adjustments are retained separately from official peer scores; final re-grades save their deterministic decision with the analysis, and accepted badges display the saved decimal result. Awaiting Review uses only each student's latest unresolved assessment and shares meeting/comment controls with Peer Reviews, preserving audit scores while showing the actual outcome.

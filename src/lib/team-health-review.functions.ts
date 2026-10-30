@@ -10,6 +10,7 @@ import { meetingDocumentLinks } from "@/lib/meeting-document-links";
 import { ORIGINAL_PEER_DUE, peerOriginalFiled } from './peer-review-policy';
 import { RULES_ROW_ID, resolveHealthReviewRules, lowEngagementStartMs } from './health-review-rules';
 import { effectiveDisabled, checkLabel } from './health-check-switches';
+import { healthPeerSummary, latestHealthPeerAssessments } from './health-peer-summary';
 
 export type HealthScope = "team" | "section" | "all" | "role";
 
@@ -115,8 +116,10 @@ export async function computeHealthReview(
       db.from("files").select("id, current_version_id, file_name").eq("is_template", true).ilike("file_name", "Meeting Minutes Template%").limit(1),
     ]);
     const minutesTemplate = minutesTemplateRows?.[0] ?? null;
-    const { data: peerAssessments, error: peerError } = await db.from('peer_review_assessments').select('user_id, team_id, file_id, score, status, summary, strengths, concerns, changes').eq('attempt', 1).in('team_id', ids).order('created_at', { ascending: false });
+    const { data: peerAssessments, error: peerError } = await db.from('peer_review_assessments').select('user_id, team_id, file_id, attempt, score, status, created_at, accepted_at, discussion_resolved_at, discussion_held_at').neq('status', 'ownership_invalid').in('team_id', ids).order('created_at', { ascending: false });
     if (peerError) throw new Error('Unable to load retained peer-review analyses.');
+    const { data: peerMeetings, error: peerMeetingError } = await db.from('peer_review_meetings').select('student_id, team_id, scheduled_at, booking_topic').in('team_id', ids);
+    if (peerMeetingError) throw new Error('Unable to verify peer-review meeting bookings.');
     const { data: companyFocus } = await db.from("company_focus").select("team_id, company_name, confirmed_at").in("team_id", ids);
     const { data: fileVerifications } = await db.from("instructor_file_verifications").select("team_id, file_name").in("team_id", ids);
     const verifiedFiles = new Map<string, Set<string>>();
@@ -398,15 +401,15 @@ export async function computeHealthReview(
             observe("vault:peer_review:team", `Peer reviews on file for ${tm.length - missing.length} of ${tm.length} members.`, missing.length);
           else notes.vault.push(`Peer reviews: all ${tm.length} members have filed (due Sunday 10/25 at 11:59 p.m. Eastern).`);
         }
-        const seenPeerUsers = new Set<string>();
-        for (const a of peerAssessments ?? []) {
-          if (a.team_id !== t.teamId || seenPeerUsers.has(a.user_id) || a.status === 'missing' || !tm.some(m => m.user_id === a.user_id)) continue;
-          seenPeerUsers.add(a.user_id);
-          const narrative = `${nameOf(a.user_id)}: first peer-review analysis ${a.score === null ? 'unverified' : `${a.score}/10`}. ${a.summary} Strengths: ${(a.strengths as string[]).join('; ')}. Concerns: ${(a.concerns as string[]).join('; ')}. ${a.score !== null && a.score < 7 ? `Required changes: ${(a.changes as string[]).join('; ')}.` : ''}`;
-          if (a.score !== null && a.score < 7) {
+        for (const a of latestHealthPeerAssessments(peerAssessments ?? [])) {
+          if (a.team_id !== t.teamId || !tm.some(m => m.user_id === a.user_id)) continue;
+          const summary = healthPeerSummary(a, (peerMeetings ?? []).filter(m => m.team_id === t.teamId && m.student_id === a.user_id), now);
+          const narrative = `${nameOf(a.user_id)}: ${summary.reason}`;
+          if (summary.level) {
             const member = tm.find(m => m.user_id === a.user_id);
-            push('vault', a.score < 4 ? 'red' : 'yellow', narrative, nameOf(a.user_id), member?.job_title ?? null, a.user_id, `vault:peer_quality:${a.user_id}`);
+            push('vault', summary.level, narrative, nameOf(a.user_id), member?.job_title ?? null, a.user_id, `vault:peer_quality:${a.user_id}`);
           } else notes.vault.push(narrative);
+          observe(`vault:peer_quality:${a.user_id}`, narrative, summary.level ? 1 : 0, summary.action !== 'unverified');
         }
       }
       // Interview questions, video files and the final video are expected once the semester
