@@ -1,5 +1,10 @@
 # ClientVault roadmap
 
+## Daily peer-review calendar validation
+- [ ] Remove Avery's canceled booking from the active meeting list, retaining a change note.
+- [ ] Validate Calendly daily at 1:00 a.m. Detroit time and retain date/time/cancellation changes in ClientVault.
+- [ ] Verify the signed-in meeting list, schedule, and deterministic daily timing tests.
+
 ## Actionable Health Review warnings
 - [x] Repeat each category's actual concerns beside its flagged status in future PDFs and the review screen; preserve detailed concerns, grading and historical shared reports.
 - [x] Verified PDF text and page preview plus the signed-in October 24 saved-report warning row; seven existing tests passed and build OK. No review run, records changed, or emails sent.
