@@ -36,6 +36,7 @@ import { Route as AppAdminUsageRouteImport } from './routes/app.admin_.usage'
 import { Route as AppHealthReportFileIdRouteImport } from './routes/app.health-report.$fileId'
 import { Route as AppTeamsTeamIdRouteImport } from './routes/app.teams.$teamId'
 import { Route as ApiPublicHooksAutoArchiveRouteImport } from './routes/api/public/hooks/auto-archive'
+import { Route as ApiPublicHooksPeerCalendarValidationRouteImport } from './routes/api/public/hooks/peer-calendar-validation'
 import { Route as ApiPublicHooksProfileRemindersRouteImport } from './routes/api/public/hooks/profile-reminders'
 import { Route as ApiPublicHooksWeeklyDigestRouteImport } from './routes/api/public/hooks/weekly-digest'
 import { Route as AppAdminTeamReadinessIndexRouteImport } from './routes/app.admin_.team-readiness.index'
@@ -184,6 +185,12 @@ const ApiPublicHooksAutoArchiveRoute =
     path: '/api/public/hooks/auto-archive',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksPeerCalendarValidationRoute =
+  ApiPublicHooksPeerCalendarValidationRouteImport.update({
+    id: '/api/public/hooks/peer-calendar-validation',
+    path: '/api/public/hooks/peer-calendar-validation',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksProfileRemindersRoute =
   ApiPublicHooksProfileRemindersRouteImport.update({
     id: '/api/public/hooks/profile-reminders',
@@ -243,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/app/health-report/$fileId': typeof AppHealthReportFileIdRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
+  '/api/public/hooks/peer-calendar-validation': typeof ApiPublicHooksPeerCalendarValidationRoute
   '/api/public/hooks/profile-reminders': typeof ApiPublicHooksProfileRemindersRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/app/admin/team-readiness/$teamId': typeof AppAdminTeamReadinessTeamIdRoute
@@ -277,6 +285,7 @@ export interface FileRoutesByTo {
   '/app/health-report/$fileId': typeof AppHealthReportFileIdRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
+  '/api/public/hooks/peer-calendar-validation': typeof ApiPublicHooksPeerCalendarValidationRoute
   '/api/public/hooks/profile-reminders': typeof ApiPublicHooksProfileRemindersRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/app/admin/team-readiness/$teamId': typeof AppAdminTeamReadinessTeamIdRoute
@@ -312,6 +321,7 @@ export interface FileRoutesById {
   '/app/health-report/$fileId': typeof AppHealthReportFileIdRoute
   '/app/teams/$teamId': typeof AppTeamsTeamIdRoute
   '/api/public/hooks/auto-archive': typeof ApiPublicHooksAutoArchiveRoute
+  '/api/public/hooks/peer-calendar-validation': typeof ApiPublicHooksPeerCalendarValidationRoute
   '/api/public/hooks/profile-reminders': typeof ApiPublicHooksProfileRemindersRoute
   '/api/public/hooks/weekly-digest': typeof ApiPublicHooksWeeklyDigestRoute
   '/app/admin_/team-readiness/$teamId': typeof AppAdminTeamReadinessTeamIdRoute
@@ -348,6 +358,7 @@ export interface FileRouteTypes {
     | '/app/health-report/$fileId'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
+    | '/api/public/hooks/peer-calendar-validation'
     | '/api/public/hooks/profile-reminders'
     | '/api/public/hooks/weekly-digest'
     | '/app/admin/team-readiness/$teamId'
@@ -382,6 +393,7 @@ export interface FileRouteTypes {
     | '/app/health-report/$fileId'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
+    | '/api/public/hooks/peer-calendar-validation'
     | '/api/public/hooks/profile-reminders'
     | '/api/public/hooks/weekly-digest'
     | '/app/admin/team-readiness/$teamId'
@@ -416,6 +428,7 @@ export interface FileRouteTypes {
     | '/app/health-report/$fileId'
     | '/app/teams/$teamId'
     | '/api/public/hooks/auto-archive'
+    | '/api/public/hooks/peer-calendar-validation'
     | '/api/public/hooks/profile-reminders'
     | '/api/public/hooks/weekly-digest'
     | '/app/admin_/team-readiness/$teamId'
@@ -431,6 +444,7 @@ export interface RootRouteChildren {
   ApiPublicCalendlyBookingRoute: typeof ApiPublicCalendlyBookingRoute
   ApiPublicFileDownloadRoute: typeof ApiPublicFileDownloadRoute
   ApiPublicHooksAutoArchiveRoute: typeof ApiPublicHooksAutoArchiveRoute
+  ApiPublicHooksPeerCalendarValidationRoute: typeof ApiPublicHooksPeerCalendarValidationRoute
   ApiPublicHooksProfileRemindersRoute: typeof ApiPublicHooksProfileRemindersRoute
   ApiPublicHooksWeeklyDigestRoute: typeof ApiPublicHooksWeeklyDigestRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
@@ -627,6 +641,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksAutoArchiveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/peer-calendar-validation': {
+      id: '/api/public/hooks/peer-calendar-validation'
+      path: '/api/public/hooks/peer-calendar-validation'
+      fullPath: '/api/public/hooks/peer-calendar-validation'
+      preLoaderRoute: typeof ApiPublicHooksPeerCalendarValidationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/profile-reminders': {
       id: '/api/public/hooks/profile-reminders'
       path: '/api/public/hooks/profile-reminders'
@@ -735,6 +756,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCalendlyBookingRoute: ApiPublicCalendlyBookingRoute,
   ApiPublicFileDownloadRoute: ApiPublicFileDownloadRoute,
   ApiPublicHooksAutoArchiveRoute: ApiPublicHooksAutoArchiveRoute,
+  ApiPublicHooksPeerCalendarValidationRoute:
+    ApiPublicHooksPeerCalendarValidationRoute,
   ApiPublicHooksProfileRemindersRoute: ApiPublicHooksProfileRemindersRoute,
   ApiPublicHooksWeeklyDigestRoute: ApiPublicHooksWeeklyDigestRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
