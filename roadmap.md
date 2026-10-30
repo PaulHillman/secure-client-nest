@@ -2,7 +2,7 @@
 
 ## Missing booking topics
 - [x] Recognize student/team-matched future bookings without a topic; preserve exclusion of explicit unrelated topics and past appointments.
-- [ ] Verify Izzy’s booking in a fresh Managers of the Future review without saving or sending.
+- [x] Verified signed-in fresh Managers of the Future review recognizes Izzy’s November 5 11:45 a.m. booking; 13 tests pass, build OK, no reports saved or sent.
 
 ## Editable review rulebook
 - [x] Expose peer policy, weekly-summary wording, research topics and minutes sections with validated saves and retained change history.
