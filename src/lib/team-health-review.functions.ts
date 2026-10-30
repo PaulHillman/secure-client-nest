@@ -12,6 +12,7 @@ import { RULES_ROW_ID, resolveHealthReviewRules, lowEngagementStartMs } from './
 import { effectiveDisabled, checkLabel } from './health-check-switches';
 import { healthPeerSummary, latestHealthPeerAssessments } from './health-peer-summary';
 import { resolveOperationalRules, detroitDeadline, deadlineLabel, operationalSchema, type OperationalRules } from './review-rulebook';
+import { changedEvidenceRules } from './review-rule-comparison';
 
 export type HealthScope = "team" | "section" | "all" | "role";
 

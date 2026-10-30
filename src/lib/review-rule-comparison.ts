@@ -9,5 +9,6 @@ export function changedEvidenceRules(previous: { thresholds?: unknown; operation
   const different = (keys: string[], a: Record<string, unknown>, b: Record<string, unknown>) => keys.some(k => JSON.stringify(a[k]) !== JSON.stringify(b[k]));
   const changed = new Set<string>();
   if (different(['research_topics'], p, n) || different(['research_required_early', 'research_required_late', 'research_due'], before, after)) changed.add('vault:research');
+  if (different(['minutes_markers'], p, n) || different(['minutes_min_markers', 'minutes_template_from'], before, after)) changed.add('meetings:minutes_template');
   return changed;
 }

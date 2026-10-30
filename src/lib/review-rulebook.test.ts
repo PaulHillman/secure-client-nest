@@ -8,6 +8,8 @@ import { healthPeerSummary } from './health-peer-summary';
 import { finalRegradeDecision } from './peer-review-discussion';
 import { researchCoverage } from './health-review-comparison';
 import { minutesFollowTemplate } from './minutes-template';
+import { changedEvidenceRules } from './review-rule-comparison';
+import { HEALTH_REVIEW_RULE_DEFAULTS } from './health-review-rules';
 const a = { user_id: 'student', team_id: 'team', file_id: 'file', attempt: 2, score: 8, status: 'assessed', created_at: '2026-10-30' };
 test('new revision target drives passing, badge, email action and weekly decision consistently', () => {
   const p = { ...defaults, revision_pass: 9 };
@@ -56,4 +58,10 @@ test('custom research topic requires actual text evidence, not a matching filena
 test('custom minutes labels drive section eligibility', () => {
   assert.equal(minutesFollowTemplate('Decisions and next steps', 2, ['decisions', 'next steps']), true);
   assert.equal(minutesFollowTemplate('Attendees only', 2, ['decisions', 'next steps']), false);
+});
+test('changed research or minutes rules are reporting corrections, not earned fixes', () => {
+  const changed = changedEvidenceRules(undefined, { thresholds: HEALTH_REVIEW_RULE_DEFAULTS, operational: { ...defaults, research_topics: [{ topic: 'New topic', keywords: ['new evidence'] }], minutes_markers: ['decisions'] } });
+  assert.equal(changed.has('vault:research'), true);
+  assert.equal(changed.has('meetings:minutes_template'), true);
+  assert.equal(changedEvidenceRules(undefined, { thresholds: HEALTH_REVIEW_RULE_DEFAULTS, operational: defaults }).size, 0);
 });
