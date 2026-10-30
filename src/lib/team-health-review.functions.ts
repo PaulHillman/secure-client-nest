@@ -11,6 +11,7 @@ import { ORIGINAL_PEER_DUE, peerOriginalFiled } from './peer-review-policy';
 import { RULES_ROW_ID, resolveHealthReviewRules, lowEngagementStartMs } from './health-review-rules';
 import { effectiveDisabled, checkLabel } from './health-check-switches';
 import { healthPeerSummary, latestHealthPeerAssessments } from './health-peer-summary';
+import { resolveOperationalRules, detroitDeadline, deadlineLabel, operationalSchema, type OperationalRules } from './review-rulebook';
 
 export type HealthScope = "team" | "section" | "all" | "role";
 
@@ -60,7 +61,7 @@ const PARFUNKEL = /parfunkel/i;
 /** Read-only: runs the five Team Health checks and returns exceptions only. */
 export const runTeamHealthReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: { scope: HealthScope; teamId?: string; section?: string; role?: string; skipChecks?: string[] }) => {
+  .inputValidator((i: { scope: HealthScope; teamId?: string; section?: string; role?: string; skipChecks?: string[]; trialRules?: { operational: OperationalRules; thresholds: Record<string, unknown> } }) => {
     if (!["team", "section", "all", "role"].includes(i?.scope)) throw new Error("Bad scope");
     if (i.scope === "team" && !i.teamId) throw new Error("Choose a team.");
     if (i.scope === "section" && !i.section) throw new Error("Choose a section.");
@@ -68,6 +69,7 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
       if (!i.role) throw new Error("Choose a role.");
       if (!(ROLE_SCOPES as readonly string[]).includes(i.role)) throw new Error("Unknown role.");
     }
+    if (i.trialRules) operationalSchema.parse(i.trialRules.operational);
     return i;
   })
   .handler(async ({ data, context }) => {
@@ -78,14 +80,15 @@ export const runTeamHealthReview = createServerFn({ method: "POST" })
 
 /** Shared review logic; also used when regenerating vault report PDFs. */
 export async function computeHealthReview(
-  data: { scope: HealthScope; teamId?: string; section?: string; role?: string; skipChecks?: string[] },
+  data: { scope: HealthScope; teamId?: string; section?: string; role?: string; skipChecks?: string[]; trialRules?: { operational: OperationalRules; thresholds: Record<string, unknown> } },
   context: { supabase: any; userId: string },
 ) {
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     // Saved thresholds: the admin can change what the review checks without a code change.
     // A missing or half-filled row falls back to the documented defaults, never to a looser check.
     const { data: rulesRow } = await db.from("health_review_rules").select("*").eq("id", RULES_ROW_ID).maybeSingle();
-    const rules = resolveHealthReviewRules(rulesRow);
+    const rules = resolveHealthReviewRules(data.trialRules?.thresholds ?? rulesRow);
+    const operational = data.trialRules?.operational ?? resolveOperationalRules(rulesRow?.operational_rules);
     // Checks switched off in settings (every run) or just for this run.
     const checksOff = effectiveDisabled((rulesRow as { disabled_checks?: unknown } | null)?.disabled_checks, data.skipChecks);
 
@@ -116,7 +119,7 @@ export async function computeHealthReview(
       db.from("files").select("id, current_version_id, file_name").eq("is_template", true).ilike("file_name", "Meeting Minutes Template%").limit(1),
     ]);
     const minutesTemplate = minutesTemplateRows?.[0] ?? null;
-    const { data: peerAssessments, error: peerError } = await db.from('peer_review_assessments').select('user_id, team_id, file_id, attempt, score, status, created_at, accepted_at, discussion_resolved_at, discussion_held_at').neq('status', 'ownership_invalid').in('team_id', ids).order('created_at', { ascending: false });
+    const { data: peerAssessments, error: peerError } = await db.from('peer_review_assessments').select('user_id, team_id, file_id, attempt, score, status, created_at, accepted_at, discussion_resolved_at, discussion_held_at, policy_snapshot, changes').neq('status', 'ownership_invalid').in('team_id', ids).order('created_at', { ascending: false });
     if (peerError) throw new Error('Unable to load retained peer-review analyses.');
     const { data: peerMeetings, error: peerMeetingError } = await db.from('peer_review_meetings').select('student_id, team_id, scheduled_at, booking_topic').in('team_id', ids);
     if (peerMeetingError) throw new Error('Unable to verify peer-review meeting bookings.');
@@ -307,7 +310,7 @@ export async function computeHealthReview(
           notes.meetings.push(`Minutes template: ${exemptMinutes.length} minutes file${exemptMinutes.length === 1 ? "" : "s"} for meetings before ${rules.minutes_template_from} are exempt — the template requirement was announced that week (${exemptMinutes.map((f) => f.file_name).join(", ")}).`);
         if (minutesFiles.length && minutesTemplate) {
           const { inspectMinutesTemplate } = await import("./health-research.server");
-          const minutesCheck = await inspectMinutesTemplate(db, minutesFiles, minutesTemplate, minutesTextCache, rules.minutes_min_markers);
+          const minutesCheck = await inspectMinutesTemplate(db, minutesFiles, minutesTemplate, minutesTextCache, rules.minutes_min_markers, operational.minutes_markers);
           const readableCount = minutesCheck.compliant.length + minutesCheck.violations.length;
           observe("meetings:minutes_template:team", `Minutes template: ${minutesCheck.compliant.length} of ${readableCount} readable minutes files follow the shared Meeting Minutes Template.`, minutesCheck.violations.length, minutesCheck.unverified.length < minutesFiles.length);
           if (minutesCheck.violations.length) {
@@ -380,7 +383,7 @@ export async function computeHealthReview(
       // Before the deadline: no warnings — early filers get a compliment only.
       // After the deadline: each student without a review on file is flagged.
       if (isTeamLevel) {
-        const peerDue = Date.parse(ORIGINAL_PEER_DUE);
+        const peerDue = Date.parse(detroitDeadline(operational.original_due));
         const reviews = teamFiles.filter((f) => subsectionMatches(f.subsection, "Mid-Semester Peer Reviews"));
         // Retained authorship takes precedence over upload ownership for shared uploads.
         const attributedFiles = new Set((peerAssessments ?? []).filter(a => a.team_id === t.teamId && a.file_id).map(a => a.file_id));
@@ -392,18 +395,18 @@ export async function computeHealthReview(
           const early = tm.filter((m) => reviewedBy.has(m.user_id));
           for (const m of early)
             notes.vault.push(`${nameOf(m.user_id)}: peer review already filed — this week's submission requirement completed. Nice early follow-through!`);
-          if (!early.length) notes.vault.push(`Peer reviews: originals due Sunday 10/25 at 11:59 p.m. Eastern — none filed yet; no missing-submission warning before the deadline.`);
+          if (!early.length) notes.vault.push(`Peer reviews: originals due ${deadlineLabel(operational.original_due)} Detroit time — none filed yet; no warning before the deadline.`);
         } else {
           const missing = tm.filter((m) => !reviewedBy.has(m.user_id));
           for (const m of missing)
-            push("vault", "red", "Peer review not filed (due Sunday 10/25 at 11:59 p.m. Eastern).", nameOf(m.user_id), m.job_title, m.user_id, "vault:peer_review");
+            push("vault", "red", `Peer review not filed (due ${deadlineLabel(operational.original_due)} Detroit time).`, nameOf(m.user_id), m.job_title, m.user_id, "vault:peer_review");
           if (missing.length)
             observe("vault:peer_review:team", `Peer reviews on file for ${tm.length - missing.length} of ${tm.length} members.`, missing.length);
-          else notes.vault.push(`Peer reviews: all ${tm.length} members have filed (due Sunday 10/25 at 11:59 p.m. Eastern).`);
+          else notes.vault.push(`Peer reviews: all ${tm.length} members have filed (due ${deadlineLabel(operational.original_due)} Detroit time).`);
         }
         for (const a of latestHealthPeerAssessments(peerAssessments ?? [])) {
           if (a.team_id !== t.teamId || !tm.some(m => m.user_id === a.user_id)) continue;
-          const summary = healthPeerSummary(a, (peerMeetings ?? []).filter(m => m.team_id === t.teamId && m.student_id === a.user_id), now);
+          const summary = healthPeerSummary(data.trialRules ? { ...a, policy_snapshot: operational } : a, (peerMeetings ?? []).filter(m => m.team_id === t.teamId && m.student_id === a.user_id), now, operational);
           const narrative = `${nameOf(a.user_id)}: ${summary.reason}`;
           if (summary.level) {
             const member = tm.find(m => m.user_id === a.user_id);
@@ -439,7 +442,7 @@ export async function computeHealthReview(
         notes.vault.push(RESEARCH_NOTE);
         if (total < required) {
           const { inspectResearch } = await import("./health-research.server");
-          const research = await inspectResearch(db, [...inResearch, ...misfiled]);
+          const research = await inspectResearch(db, [...inResearch, ...misfiled], operational.research_topics);
           researchByTeam.set(t.teamId, research);
           // Files the instructor has opened and verified by hand count as covering the remaining topics;
           // the team is only asked to re-upload them in a readable format (separate, non-escalating reminder).
@@ -452,14 +455,14 @@ export async function computeHealthReview(
           }
           const missing = verifiedUnreadable.length ? [] : research.topics.filter(topic => !topic.evidence.length).map(topic => topic.topic);
           if (!missing.length) {
-            notes.vault.push(`All four research topics have text evidence across ${total} file(s). Combined documents accepted; content quality is not graded automatically.`);
-            observe("vault:research", "All four required research topics have supporting text excerpts in the uploaded documents.");
+            notes.vault.push(`All ${operational.research_topics.length} research topics have text evidence across ${total} file(s). Combined documents accepted; content quality is not graded automatically.`);
+            observe("vault:research", "All required research topics have supporting text excerpts in the uploaded documents.");
           } else if (research.unreadable.length) {
             notes.vault.push(`Research coverage unverified: ${research.unreadable.join(", ")} could not be read. Do not infer missing research from file count.`);
             push("vault", "yellow", `Research file unreadable: ${research.unreadable.join(", ")} appears blank or in a format that cannot be read. Please re-upload it as a visible DOCX or PDF file so its contents can be verified.`, null, null, null, "vault:research");
             observe("vault:research", "Research coverage requires instructor review because some documents could not be read.", missing.length, false);
           } else {
-            push("vault", pastDue ? "red" : "yellow", `Client research: ${total} file(s); no text evidence found for ${missing.join(", ")}. Expected ${required} files or combined coverage of all four topics. Please add the content or identify where it appears.`, null, null, null, "vault:research");
+            push("vault", pastDue ? "red" : "yellow", `Client research: ${total} file(s); no text evidence found for ${missing.join(", ")}. Expected ${required} files or combined coverage of all ${operational.research_topics.length} topics. Please add the content or identify where it appears.`, null, null, null, "vault:research");
             observe("vault:research", "Research topics without supporting text evidence.", missing.length);
           }
         } else {
@@ -650,6 +653,7 @@ export async function computeHealthReview(
       exceptions: out,
       ranking,
       reportId: null as string | null,
+      rulesSnapshot: { thresholds: rules, operational },
     };
 
     return result;

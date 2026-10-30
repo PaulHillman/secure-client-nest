@@ -1,4 +1,5 @@
 import { isPeerReviewMinutesSupplement } from "./minutes-template";
+import { OPERATIONAL_DEFAULTS } from './review-rulebook';
 
 export type Concern = { check: string; level: "red" | "yellow"; reason: string; person?: string | null; userId?: string | null; ruleId?: string };
 export type Observation = { ruleId: string; evidence: string; remaining?: number; verified: boolean };
@@ -86,10 +87,11 @@ export function compareConcerns(previous: Concern[], current: Concern[], observa
 export const RESEARCH_NOTE = "The four-file expectation represents company history/information, industry information, competitors, and the client's job description. These topics may be combined in one document; file count alone does not establish missing research.";
 export const RESEARCH_TOPICS = ["Company history/information", "Industry information", "Competitors", "Client job description"] as const;
 const patterns = [/\b(company history|history of|founded|established|company overview|company profile)\b/i, /\b(industry|sector|market trends)\b/i, /\b(competitors?|competition|competitive landscape)\b/i, /\b(job description|job responsibilities|duties|responsibilities of|client role)\b/i];
-export function researchCoverage(documents: { fileName: string; text: string | null }[]) {
- return RESEARCH_TOPICS.map((topic, i) => ({ topic, evidence: documents.flatMap(d => {
+export function researchCoverage(documents: { fileName: string; text: string | null }[], topics = OPERATIONAL_DEFAULTS.research_topics) {
+ return topics.map(({ topic, keywords }) => ({ topic, evidence: documents.flatMap(d => {
   if (!d.text) return [];
-  const match = patterns[i].exec(d.text); if (!match) return [];
+  const escaped = keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const match = new RegExp(`\\b(?:${escaped.join('|')})\\b`, 'i').exec(d.text); if (!match) return [];
   return [{ fileName: d.fileName, excerpt: d.text.slice(Math.max(0, match.index - 80), match.index + 220).replace(/\s+/g, " ") }];
  }) }));
 }

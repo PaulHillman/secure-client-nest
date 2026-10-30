@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { teamPrimaryName } from "@/lib/team-label";
+import { resolveOperationalRules } from './review-rulebook';
 
 export type AwaitingRequirement = {
   id: string;
@@ -79,6 +80,7 @@ type PeerRow = {
   discussion_resolved_at?: string | null;
   discussion_held_at?: string | null;
   status?: string;
+  policy_snapshot?: unknown;
 };
 
 type ProfileRow = {
@@ -144,7 +146,7 @@ export function assembleAwaitingReview(input: {
     if (!previous || p.attempt > previous.attempt || (p.attempt === previous.attempt && p.created_at > previous.created_at)) latestPeers.set(key, p);
   }
   const peerDecisions: AwaitingPeerDecision[] = [...latestPeers.values()]
-    .filter((p) => !testTeamIds.has(p.team_id) && !/parfunkel/i.test(personName.get(p.user_id) ?? '') && p.attempt >= 3 && (p.score == null || p.score < 8) && !p.accepted_at && !p.discussion_resolved_at)
+    .filter((p) => { const rules = resolveOperationalRules(p.policy_snapshot); return !testTeamIds.has(p.team_id) && !/parfunkel/i.test(personName.get(p.user_id) ?? '') && p.attempt >= rules.max_submissions && (p.score == null || p.score < rules.revision_pass) && !p.accepted_at && !p.discussion_resolved_at; })
     .sort((a, b) => a.created_at.localeCompare(b.created_at))
     .map((p) => ({
       id: p.id,
@@ -184,7 +186,7 @@ export async function fetchAwaitingReview(): Promise<AwaitingReview> {
     // Third attempt still below 8 — requires the instructor meeting decision.
     supabase
       .from("peer_review_assessments")
-      .select("id, team_id, user_id, attempt, score, created_at, status, accepted_at, discussion_resolved_at, discussion_held_at")
+      .select("id, team_id, user_id, attempt, score, created_at, status, accepted_at, discussion_resolved_at, discussion_held_at, policy_snapshot")
       .order("created_at", { ascending: true }),
     supabase.from("teams").select("id, name, display_name, section, is_test"),
     supabase.from("project_requirements").select("key, title"),

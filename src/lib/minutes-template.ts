@@ -42,18 +42,18 @@ export function normalizeMinutesText(text: string): string {
     .trim();
 }
 
-export function countMinutesTemplateMarkers(text: string): number {
+export function countMinutesTemplateMarkers(text: string, markers: readonly string[] = MINUTES_TEMPLATE_MARKERS): number {
   const norm = normalizeMinutesText(text);
   let n = 0;
-  for (const marker of MINUTES_TEMPLATE_MARKERS) {
-    if (norm.includes(marker)) n++;
+  for (const marker of markers) {
+    if (norm.includes(normalizeMinutesText(marker))) n++;
   }
   return n;
 }
 
 /** True when the extracted minutes text follows the shared template structure. */
-export function minutesFollowTemplate(text: string, minMarkers: number = MINUTES_TEMPLATE_MIN_MARKERS): boolean {
-  return countMinutesTemplateMarkers(text) >= minMarkers;
+export function minutesFollowTemplate(text: string, minMarkers: number = MINUTES_TEMPLATE_MIN_MARKERS, markers?: readonly string[]): boolean {
+  return countMinutesTemplateMarkers(text, markers) >= minMarkers;
 }
 
 /** Minutes for meetings held before this date are exempt from the template requirement. */
