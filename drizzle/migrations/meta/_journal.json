@@ -211,6 +211,13 @@
       "when": 1793362278715,
       "tag": "0029_daily_peer_calendar_validation",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793401849766,
+      "tag": "0030_editable_review_rulebook",
+      "breakpoints": true
     }
   ]
 }

@@ -794,6 +794,7 @@ export type Database = {
           file_size: number | null
           id: string
           mime_type: string | null
+          peer_policy_snapshot: Json | null
           storage_path: string
           uploaded_at: string
           uploaded_by: string
@@ -804,6 +805,7 @@ export type Database = {
           file_size?: number | null
           id?: string
           mime_type?: string | null
+          peer_policy_snapshot?: Json | null
           storage_path: string
           uploaded_at?: string
           uploaded_by: string
@@ -814,6 +816,7 @@ export type Database = {
           file_size?: number | null
           id?: string
           mime_type?: string | null
+          peer_policy_snapshot?: Json | null
           storage_path?: string
           uploaded_at?: string
           uploaded_by?: string
@@ -1148,6 +1151,7 @@ export type Database = {
           meetings_start_week: number
           minutes_min_markers: number
           minutes_template_from: string
+          operational_rules: Json
           research_due: string
           research_required_early: number
           research_required_late: number
@@ -1172,6 +1176,7 @@ export type Database = {
           meetings_start_week?: number
           minutes_min_markers?: number
           minutes_template_from?: string
+          operational_rules?: Json
           research_due?: string
           research_required_early?: number
           research_required_late?: number
@@ -1196,6 +1201,7 @@ export type Database = {
           meetings_start_week?: number
           minutes_min_markers?: number
           minutes_template_from?: string
+          operational_rules?: Json
           research_due?: string
           research_required_early?: number
           research_required_late?: number
@@ -1560,6 +1566,7 @@ export type Database = {
           id: string
           instructor_email_status: string
           pm_email_status: string
+          policy_snapshot: Json | null
           score: number | null
           source_snapshot: Json | null
           status: string
@@ -1593,6 +1600,7 @@ export type Database = {
           id?: string
           instructor_email_status?: string
           pm_email_status?: string
+          policy_snapshot?: Json | null
           score?: number | null
           source_snapshot?: Json | null
           status?: string
@@ -1626,6 +1634,7 @@ export type Database = {
           id?: string
           instructor_email_status?: string
           pm_email_status?: string
+          policy_snapshot?: Json | null
           score?: number | null
           source_snapshot?: Json | null
           status?: string
@@ -2274,6 +2283,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      review_rule_history: {
+        Row: {
+          actor_id: string | null
+          after_rules: Json
+          before_rules: Json | null
+          effective_at: string
+          id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          after_rules: Json
+          before_rules?: Json | null
+          effective_at?: string
+          id?: string
+        }
+        Update: {
+          actor_id?: string | null
+          after_rules?: Json
+          before_rules?: Json | null
+          effective_at?: string
+          id?: string
+        }
+        Relationships: []
       }
       role_study_progress: {
         Row: {
