@@ -311,21 +311,23 @@ function HealthReviewPage() {
                               ) : (
                                 <span className={`inline-block h-2.5 w-2.5 rounded-full ${t.results[k] === "pass" ? "bg-success" : levelFor(t.teamId, k) === "red" ? "bg-destructive" : "bg-gold"}`} aria-label={t.results[k] === "pass" ? "Good" : levelFor(t.teamId, k) === "red" ? "Bad" : "Fair"} />
                               )}
-                              {t.results[k] === "flagged" && (
-                                <ul className="mt-1 min-w-40 space-y-2 text-xs">
-                                  {d.exceptions.filter((e) => e.teamId === t.teamId && e.check === k)
-                                    .sort((a, b) => Number(b.level === "red") - Number(a.level === "red"))
-                                    .map((e, i) => (
-                                      <li key={i}>
-                                        <strong className={e.level === "red" ? "text-destructive" : "text-gold"}>{e.level === "red" ? "Bad" : "Fair"}{e.person ? ` · ${e.person}${e.role ? ` (${e.role})` : ""}` : ""}</strong>
-                                        <p className="mt-0.5 text-foreground">{e.reason}</p>
-                                      </li>
-                                    ))}
-                                </ul>
-                              )}
                             </td>
                           ))}
                         </tr>
+                        {d.exceptions.some((e) => e.teamId === t.teamId && t.results[e.check] === "flagged") && (
+                          <tr className="border-t border-border/20">
+                            <td colSpan={CHECK_KEYS.length + 1} className="py-2 pr-3">
+                              <ul className="space-y-2 text-xs">
+                                {d.exceptions.filter((e) => e.teamId === t.teamId && t.results[e.check] === "flagged")
+                                  .sort((a, b) => Number(b.level === "red") - Number(a.level === "red"))
+                                  .map((e, i) => <li key={i}>
+                                    <strong className={e.level === "red" ? "text-destructive" : "text-gold"}>{CHECKS[e.check]}: {e.level === "red" ? "Bad" : "Fair"}{e.person ? ` · ${e.person}${e.role ? ` (${e.role})` : ""}` : ""}</strong>
+                                    <p className="mt-0.5 text-foreground">{e.reason}</p>
+                                  </li>)}
+                              </ul>
+                            </td>
+                          </tr>
+                        )}
                         {noteCount > 0 && (
                           <tr className="border-t border-border/20">
                             <td colSpan={CHECK_KEYS.length + 1} className="py-1.5 pr-3">
