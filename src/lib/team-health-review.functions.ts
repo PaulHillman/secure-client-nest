@@ -309,19 +309,19 @@ export async function computeHealthReview(
         const allMinutesFiles = teamFiles.filter(isStandaloneMinutesSubmission);
         const exemptMinutes = allMinutesFiles.filter((f) => minutesExemptFromTemplate(f, teamLogs, rules.minutes_template_from));
         const minutesFiles = allMinutesFiles.filter((f) => !exemptMinutes.includes(f));
+        const confirmed = (fileVerifications ?? []).filter(v => v.team_id === t.teamId && v.note?.startsWith('minutes_template:')).map(v => v.file_name).filter(name => allMinutesFiles.some(f => f.file_name === name));
+        if (confirmed.length) {
+          notes.meetings.push(`Instructor verified use of the minutes template: ${confirmed.join('; ')}.`);
+          if (!checksOff.has('meetings:minutes_template')) observations.push({ ruleId: 'meetings:minutes_template', evidence: 'The instructor verified these minutes already used the template. Earlier warnings were reporting errors, not student-earned improvements.', verified: true, correctedFiles: confirmed });
+        }
         if (exemptMinutes.length)
           notes.meetings.push(`Minutes template: ${exemptMinutes.length} minutes file${exemptMinutes.length === 1 ? "" : "s"} for meetings before ${rules.minutes_template_from} are exempt — the template requirement was announced that week (${exemptMinutes.map((f) => f.file_name).join(", ")}).`);
         if (minutesFiles.length && minutesTemplate) {
           const { inspectMinutesTemplate } = await import("./health-research.server");
           const minutesCheck = await inspectMinutesTemplate(db, minutesFiles, minutesTemplate, minutesTextCache, rules.minutes_min_markers, operational.minutes_markers);
-          const confirmed = (fileVerifications ?? []).filter(v => v.team_id === t.teamId && v.note?.startsWith('minutes_template:')).map(v => v.file_name).filter(name => minutesFiles.some(f => f.file_name === name));
           minutesCheck.violations = minutesCheck.violations.filter(name => !confirmed.includes(name));
           minutesCheck.unverified = minutesCheck.unverified.filter(name => !confirmed.includes(name));
           minutesCheck.compliant = [...new Set([...minutesCheck.compliant, ...confirmed])];
-          if (confirmed.length) {
-            notes.meetings.push(`Instructor verified use of the minutes template: ${confirmed.join('; ')}.`);
-            if (!checksOff.has('meetings:minutes_template')) observations.push({ ruleId: 'meetings:minutes_template', evidence: 'The instructor verified these minutes already used the template. Earlier warnings were reporting errors, not student-earned improvements.', verified: true, correctedFiles: confirmed });
-          }
           const readableCount = minutesCheck.compliant.length + minutesCheck.violations.length;
           observe("meetings:minutes_template:team", `Minutes template: ${minutesCheck.compliant.length} of ${readableCount} readable minutes files follow the shared Meeting Minutes Template.`, minutesCheck.violations.length, minutesCheck.unverified.length < minutesFiles.length);
           if (minutesCheck.violations.length) {
