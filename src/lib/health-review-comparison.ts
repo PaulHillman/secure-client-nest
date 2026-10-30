@@ -1,7 +1,7 @@
 import { isPeerReviewMinutesSupplement } from "./minutes-template";
 import { OPERATIONAL_DEFAULTS } from './review-rulebook';
 
-export type Concern = { check: string; level: "red" | "yellow"; reason: string; person?: string | null; userId?: string | null; ruleId?: string };
+export type Concern = { check: string; level: "red" | "yellow"; reason: string; person?: string | null; userId?: string | null; ruleId?: string; escalationExempt?: boolean };
 export type Observation = { ruleId: string; evidence: string; remaining?: number; verified: boolean };
 export type Change = { status: "Resolved" | "Partially improved" | "Still outstanding" | "Unable to verify" | "New concern" | "Reporting correction"; previous: string | null; current: string; person: string | null };
 export type Comparison = { sharedAt: string | null; source: string; changes: Change[]; streaks?: Record<string, number> };

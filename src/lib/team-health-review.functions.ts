@@ -29,6 +29,7 @@ export type HealthException = {
   role: string | null;
   userId?: string | null;
   ruleId?: string;
+  escalationExempt?: boolean;
   reason: string;
 };
 
@@ -185,14 +186,14 @@ export async function computeHealthReview(
 
     for (const t of sorted) {
       const label = teamLineLabel({ name: t.teamRecordName, display_name: t.teamName !== t.teamRecordName ? t.teamName : null, section: t.section });
-      const push = (check: HealthCheck, level: "red" | "yellow", reason: string, person: string | null = null, role: string | null = null, userId: string | null = null, ruleId?: string) => {
+      const push = (check: HealthCheck, level: "red" | "yellow", reason: string, person: string | null = null, role: string | null = null, userId: string | null = null, ruleId?: string, escalationExempt?: boolean) => {
         if (ruleId && checksOff.has(ruleId)) return;
         const inferred = concernKey({ check, level, reason, person, userId });
         const rulePattern = check === "vault" ? /^(Minutes|Agendas|Mid-Semester Peer Reviews|Peer review|No Interview Questions|No Video files|Video Final Submission|Client Communications)/.exec(reason)?.[1]
           : check === "meetings" ? /^(Last meeting logged|\d+ of \d+ logged meeting|Missed \d{4}-\d{2}-\d{2} meeting)/.exec(reason)?.[0].replace(/^\d+ of \d+ logged meeting$/, "missing_minutes")
           : check === "activity" ? "relative_activity" : undefined;
         const generatedRule = rulePattern ? `${check}:${rulePattern}:${userId ?? "team"}` : undefined;
-        out.push({ check, level, teamId: t.teamId, teamLabel: label, section: t.section, person, role, userId, reason, ruleId: ruleId ?? inferred ?? generatedRule });
+        out.push({ check, level, teamId: t.teamId, teamLabel: label, section: t.section, person, role, userId, reason, ruleId: ruleId ?? inferred ?? generatedRule, escalationExempt });
       };
       const observations: Observation[] = [];
       observationsByTeam.set(t.teamId, observations);
@@ -412,7 +413,7 @@ export async function computeHealthReview(
           const narrative = `${nameOf(a.user_id)}: ${summary.reason}`;
           if (summary.level) {
             const member = tm.find(m => m.user_id === a.user_id);
-            push('vault', summary.level, narrative, nameOf(a.user_id), member?.job_title ?? null, a.user_id, `vault:peer_quality:${a.user_id}`);
+            push('vault', summary.level, narrative, nameOf(a.user_id), member?.job_title ?? null, a.user_id, `vault:peer_quality:${a.user_id}`, 'escalationExempt' in summary && summary.escalationExempt);
           } else notes.vault.push(narrative);
           observe(`vault:peer_quality:${a.user_id}`, narrative, summary.level ? 1 : 0, summary.action !== 'unverified');
         }
