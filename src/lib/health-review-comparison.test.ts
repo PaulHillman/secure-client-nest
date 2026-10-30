@@ -3,6 +3,12 @@ import { strict as assert } from "node:assert";
 import { compareConcerns, researchCoverage } from "./health-review-comparison";
 
 describe("weekly shared-report concern comparisons", () => {
+  test('instructor-confirmed unpaid interns minutes are a reporting correction despite renamed files', () => {
+    const prior = { check: 'meetings', level: 'red' as const, reason: '3 of 5 minutes files do not follow the shared Meeting Minutes Template (MGT 331 MEETING Wednesday, 10_14.pdf, MGT 331 Meeting 09_30.pdf, MGT 331 MEETING Wednesday 10_07.pdf). Start each minutes document from the template.' };
+    const observation = { ruleId: 'meetings:minutes_template', verified: true, evidence: 'Instructor verified template use.', correctedFiles: ['MGT 331 MEETING Wednesday, 10_14.pdf', 'MGT 331 Meeting Wednesday, 09_30.pdf', 'MGT 331 MEETING Wednesday, 10_07.pdf'] };
+    assert.equal(compareConcerns([prior], [], [observation])[0]?.status, 'Reporting correction');
+    assert.equal(compareConcerns([{ ...prior, reason: prior.reason.replace('10_07', '10_21') }], [], [observation])[0]?.status, 'Unable to verify');
+  });
   const old = { check: "readiness", level: "yellow" as const, reason: "Group Norms are not posted" };
   test("specific fixed concern earns recognition only with verified zero remaining", () => {
     const [change] = compareConcerns([old], [], [{ ruleId: "readiness:no_norms", evidence: "Group Norms are now posted.", remaining: 0, verified: true }]);
