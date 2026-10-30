@@ -1,8 +1,8 @@
 # ClientVault roadmap
 
 ## Concise weekly peer-review summaries
-- [ ] Replace repeated analysis narratives with latest-assessment next steps, revision and meeting deadlines, and an explicit missing-booking warning after submission 3.
-- [ ] Verify deterministic summaries without running, saving or sending a real weekly review; explain that guide edits alone do not change active checks.
+- [x] Replace repeated analysis narratives with latest-assessment next steps, revision and meeting deadlines, and an explicit missing-booking warning after submission 3.
+- [x] Verify deterministic summaries: 39 tests pass, including valid latest sources, accepted decisions and unrelated bookings; no real weekly review run, saved or sent. Prose edits remain advisory, not active checks.
 
 ## Daily peer-review calendar validation
 - [x] Remove Avery's canceled booking from the active meeting list, retaining a change note and November 8 deadline.

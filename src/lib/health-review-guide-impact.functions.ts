@@ -34,7 +34,7 @@ export const reviewHealthGuideChange = createServerFn({ method: 'POST' })
     if (role.error || !role.data) throw new Error('Admin access required');
     const { data: row } = await context.supabase.from('health_review_rules').select('*').eq('id', RULES_ROW_ID).maybeSingle();
     const rules = resolveHealthReviewRules(row);
-    const settings = RULE_FIELDS.map((f) => `- ${f.label} [${f.key}] = ${(rules as Record<string, unknown>)[f.key]}`).join('\n');
+    const settings = RULE_FIELDS.map((f) => `- ${f.label} [${f.key}] = ${(rules as Record<string, unknown>)[f.key]}`).join('\n') + '\n- Fixed weekly peer-review presentation: short latest-valid-submission score and next step only; no repeated strengths, concerns or detailed fixes. Revisions need 8+, originals 7+ pass, instructor decisions are honored. Require revision or booking by Nov 1 at 11:59 p.m. Detroit, meeting by Nov 8 at 11:59 p.m.; identify missing required bookings after submission 3, and recognize verified peer-review bookings (not unrelated appointments). This presentation is already implemented and does not depend on prose edits.';
     const apiKey = process.env['LOVABLE_API_KEY'];
     if (!apiKey) throw new Error('AI key missing');
     const res = await fetch('https://ai.gateway.lovable.dev/v1/responses', {
