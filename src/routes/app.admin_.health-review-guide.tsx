@@ -12,6 +12,7 @@ import { reviewHealthGuideChange, type GuideImpact } from '@/lib/health-review-g
 import { HealthReviewRulesEditor } from '@/components/health-review-rules-editor';
 import { Save, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { ReviewRulebookEditor, ApplyGuideProposal } from '@/components/review-rulebook-editor';
 
 export const Route = createFileRoute('/app/admin_/health-review-guide')({
   head: () => ({ meta: [
@@ -35,9 +36,10 @@ function GuidePage() {
   if (!isAdmin) return <Navigate to="/app/dashboard" />;
   return <div className="p-4 sm:p-8 max-w-6xl mx-auto">
     <h1 className="font-display text-3xl mb-2">Weekly Health Check Review</h1>
-    <p className="text-sm text-muted-foreground mb-4">The settings below are the numbers the <Link to="/app/health-review" search={{ report: undefined }} className="text-primary underline">Team Health Review</Link> applies — saving one here changes what the next report checks. The document underneath records those rules in words and is not what the review reads.</p>
+    <p className="text-sm text-muted-foreground mb-4">Review rules for the <Link to="/app/health-review" search={{ report: undefined }} className="text-primary underline">Team Health Review</Link> and new peer-review submissions. Narrative edits produce suggestions for your approval; they never silently change rules.</p>
     {error && <p role="alert" className="text-destructive">{error.message}</p>}
     <HealthReviewRulesEditor />
+    <ReviewRulebookEditor />
       <HealthCheckSwitchesEditor />
     {data ? <GuideEditor key={data.id} document={data} /> : !error && <p>Loading…</p>}
   </div>;
@@ -79,7 +81,7 @@ function GuideEditor({ document }: { document: Awaited<ReturnType<typeof getHeal
 
 const VERDICT: Record<GuideImpact['verdict'], string> = {
   no_rule_change: 'No rule change needed — wording only, or already matches the settings',
-  settings_change: 'Can be done by changing settings above (not changed automatically)',
+  settings_change: 'Proposed rule changes — review the effects before applying',
   needs_code_change: 'Cannot be done with the settings — needs a new or changed check',
   conflict: 'Conflicts with current settings or other rules',
 };
@@ -96,6 +98,7 @@ function ImpactPanel({ impact, onRetry }: { impact: { isPending: boolean; error:
       {impact.data.positives.length > 0 && <div><p className="font-medium">Likely positive effects</p><ul className="list-disc pl-5">{impact.data.positives.map((s, i) => <li key={i}>{s}</li>)}</ul></div>}
       {impact.data.negatives.length > 0 && <div><p className="font-medium">Likely negative effects</p><ul className="list-disc pl-5">{impact.data.negatives.map((s, i) => <li key={i}>{s}</li>)}</ul></div>}
       {impact.data.other_checks_affected.length > 0 && <div><p className="font-medium">Other checks affected</p><ul className="list-disc pl-5">{impact.data.other_checks_affected.map((s, i) => <li key={i}>{s}</li>)}</ul></div>}
+      <ApplyGuideProposal key={JSON.stringify(impact.data.settings_to_change)} impact={impact.data} />
     </>}
   </section>;
 }
