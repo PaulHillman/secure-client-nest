@@ -2,6 +2,7 @@ import { describe, it } from "node:test";
 import { strict as assert } from "node:assert";
 import { escalateConcerns } from "./health-review-escalation";
 import type { Concern } from "./health-review-comparison";
+import { healthPeerSummary } from './health-peer-summary';
 
 const c = (reason: string, ruleId?: string, level: "red" | "yellow" = "yellow"): Concern => ({
   check: "readiness",
@@ -11,6 +12,26 @@ const c = (reason: string, ruleId?: string, level: "red" | "yellow" = "yellow"):
 });
 
 describe("escalateConcerns", () => {
+  it('keeps Izzy’s on-time booked meeting yellow despite two prior below-target warnings', () => {
+    const summary = healthPeerSummary({ user_id: 'izzy', team_id: 'team', file_id: 'file', attempt: 3, score: 7, status: 'assessed', created_at: '2026-10-30T16:22:57Z' }, [{ scheduled_at: '2026-11-05T16:45:00Z', booking_topic: null }], Date.parse('2026-10-30T23:44:00Z'));
+    assert.equal(summary.action, 'booked');
+    assert.equal(summary.level, 'yellow');
+    const current: Concern = { check: 'vault', level: 'yellow', reason: summary.reason, ruleId: 'vault:peer_quality:izzy', escalationExempt: 'escalationExempt' in summary && summary.escalationExempt };
+    const prior = { ...current, escalationExempt: false };
+    const result = escalateConcerns([current], [[prior], [prior]])[0];
+    assert.equal(result.concern.level, 'yellow');
+    assert.equal(result.streak, 0);
+  });
+  it('does not exempt a booked meeting beyond the November 8 deadline', () => {
+    const summary = healthPeerSummary({ user_id: 'izzy', team_id: 'team', file_id: 'file', attempt: 3, score: 7, status: 'assessed', created_at: '2026-10-30T16:22:57Z' }, [{ scheduled_at: '2026-11-10T16:45:00Z', booking_topic: null }], Date.parse('2026-10-30T23:44:00Z'));
+    assert.equal('escalationExempt' in summary && summary.escalationExempt, false);
+  });
+  it('a compliant pending meeting resets the unresolved-warning streak', () => {
+    const current = c('Meeting must be rescheduled', 'vault:peer_quality:izzy');
+    const result = escalateConcerns([current], [[{ ...current, escalationExempt: true }], [current]])[0];
+    assert.equal(result.streak, 1);
+    assert.equal(result.concern.level, 'yellow');
+  });
   it("leaves first appearances unchanged", () => {
     const [r] = escalateConcerns([c("No manager contact recorded for the client", "readiness:no_manager")], []);
     assert.equal(r.streak, 1);

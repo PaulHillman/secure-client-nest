@@ -44,12 +44,13 @@ export function escalateConcerns<T extends Concern>(
   const redAfter = Math.max(2, thresholds.redAfter);
   const gradeAfter = Math.max(redAfter + 1, thresholds.gradeAfter);
   return current.map((concern) => {
+    if (concern.escalationExempt) return { concern, streak: 0 };
     const key = keyFor(concern);
     if (!key) return { concern, streak: 1 };
 
     let streak = 1;
     for (const prior of priorPayloads) {
-      if (prior.some((p) => keyFor(p) === key)) streak++;
+      if (prior.some((p) => keyFor(p) === key && !p.escalationExempt)) streak++;
       else break; // consecutive only — a clean report in between resets the count
     }
 

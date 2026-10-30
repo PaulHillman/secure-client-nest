@@ -1,5 +1,9 @@
 # ClientVault roadmap
 
+## Booked meeting compliance
+- [x] Keep on-time booked peer meetings yellow with completion instructions and no prior-score escalation; preserve other warnings and history.
+- [x] Verified Izzy’s fresh signed-in report is yellow/Fair with meeting-completion instructions and no red escalation; 42 tests pass, build OK, no reports saved or sent.
+
 ## Missing booking topics
 - [x] Recognize student/team-matched future bookings without a topic; preserve exclusion of explicit unrelated topics and past appointments.
 - [x] Verified signed-in fresh Managers of the Future review recognizes Izzy’s November 5 11:45 a.m. booking; 13 tests pass, build OK, no reports saved or sent.

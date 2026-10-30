@@ -42,7 +42,8 @@ export function healthPeerSummary(a: HealthPeerAssessment, meetings: HealthPeerM
   if (a.discussion_held_at) return { action: 'meeting_held', level, reason: `${prefix} Meeting held; follow the instructor’s final-submission instructions.`, revisionDue, meetingDue } as const;
   if (booked) {
     const date = new Date(booked.scheduled_at).toLocaleString('en-US', { timeZone: 'America/Detroit', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-    return { action: 'booked', level, reason: `${prefix} Meeting booked ${date} Detroit time${Date.parse(booked.scheduled_at) > Date.parse(meetingDue) ? ` — reschedule by ${deadlineLabel(p.meeting_due)}` : `; prepare your changes toward ${p.revision_pass}/10+`}.`, revisionDue, meetingDue } as const;
+    const onTime = Date.parse(booked.scheduled_at) <= Date.parse(meetingDue);
+    return { action: 'booked', level: onTime ? 'yellow' : level, escalationExempt: onTime, reason: `${prefix} Meeting booked ${date} Detroit time${onTime ? '; booking requirement met for now. Must complete the meeting and bring your latest submission' : ` — reschedule by ${deadlineLabel(p.meeting_due)}`}.`, revisionDue, meetingDue } as const;
   }
   const needsMeeting = a.attempt >= p.max_submissions;
   const fixes = view.summary_mode === 'with_fixes' && Array.isArray(a.changes) ? a.changes.filter((s): s is string => typeof s === 'string').slice(0, view.summary_fixes).join('; ') : '';
