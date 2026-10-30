@@ -50,7 +50,7 @@ export function detroitDeadline(day: string): string {
     const local = Date.parse(`${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:${p.second}Z`);
     ms += target - local;
   }
-  return new Date(ms).toISOString();
+  return new Date(ms).toISOString().replace('.000Z', 'Z');
 }
 export function deadlineLabel(day: string, long = false) {
   return `${new Date(`${day}T12:00:00Z`).toLocaleDateString('en-US', { timeZone: 'America/Detroit', ...(long ? { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' } : { month: 'short', day: 'numeric' }) })}, 11:59 p.m.`;

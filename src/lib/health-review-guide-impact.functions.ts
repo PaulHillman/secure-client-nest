@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { z } from 'zod';
 import { RULES_ROW_ID, RULE_FIELDS, resolveHealthReviewRules } from './health-review-rules';
-import { operationalSchema, resolveOperationalRules } from './review-rulebook';
+import { OPERATIONAL_DEFAULTS, operationalSchema, resolveOperationalRules } from './review-rulebook';
 
 export type GuideImpact = {
   verdict: 'no_rule_change' | 'settings_change' | 'needs_code_change' | 'conflict';
@@ -57,7 +57,7 @@ export const reviewHealthGuideChange = createServerFn({ method: 'POST' })
     const result = JSON.parse(text) as GuideImpact;
     // Reject hallucinated keys and malformed typed suggestions before offering Apply.
     for (const change of result.settings_to_change) {
-      if (!RULE_FIELDS.some(f => f.key === change.key) && !(change.key in operationalSchema.shape)) {
+      if (!RULE_FIELDS.some(f => f.key === change.key) && !(change.key in OPERATIONAL_DEFAULTS)) {
         result.verdict = 'needs_code_change';
         continue;
       }

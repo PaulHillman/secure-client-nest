@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useServerFn } from '@tanstack/react-start';
 import { getReviewRulebook, saveReviewRulebook } from '@/lib/review-rulebook.functions';
-import { operationalSchema, rulebookEffects, type OperationalRules, resolveOperationalRules } from '@/lib/review-rulebook';
+import { OPERATIONAL_DEFAULTS, operationalSchema, rulebookEffects, type OperationalRules, resolveOperationalRules } from '@/lib/review-rulebook';
 import { runTeamHealthReview } from '@/lib/team-health-review.functions';
 import { type GuideImpact } from '@/lib/health-review-guide-impact.functions';
 import { Button } from '@/components/ui/button';
@@ -73,7 +73,7 @@ export function ApplyGuideProposal({ impact }: { impact: GuideImpact }) {
   const mutation = useMutation({ mutationFn: async () => {
     const current = query.data; if (!current) throw new Error('Wait for the current rules to load.');
     const operational: Record<string, unknown> = { ...current.operational }; const thresholds: Record<string, number | string> = { ...current.thresholds };
-    for (const c of impact.settings_to_change) { const value = JSON.parse(c.value_json); if (c.key in operationalSchema.shape) operational[c.key] = value; else if (c.key in thresholds && (typeof value === 'number' || typeof value === 'string')) thresholds[c.key] = value; else throw new Error('This suggestion cannot be applied safely.'); }
+    for (const c of impact.settings_to_change) { const value = JSON.parse(c.value_json); if (c.key in OPERATIONAL_DEFAULTS) operational[c.key] = value; else if (c.key in thresholds && (typeof value === 'number' || typeof value === 'string')) thresholds[c.key] = value; else throw new Error('This suggestion cannot be applied safely.'); }
     return save({ data: { operational: operationalSchema.parse(operational), thresholds, expectedUpdatedAt: current.updatedAt } });
   }, onSuccess: async () => { setApplied(true); toast.success('Proposed rules applied.'); await qc.invalidateQueries(); } });
   if (impact.verdict !== 'settings_change' || !impact.settings_to_change.length) return null;

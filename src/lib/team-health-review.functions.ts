@@ -439,7 +439,7 @@ export async function computeHealthReview(
         const taName = techAdmin ? nameOf(techAdmin.user_id) : null;
         const taId = techAdmin?.user_id ?? null;
         const required = pastDue ? rules.research_required_late : rules.research_required_early;
-        notes.vault.push(RESEARCH_NOTE);
+        notes.vault.push(`Required research topics: ${operational.research_topics.map(t => t.topic).join(", ")}. Topics may be combined in one document; file count alone does not establish missing research.`);
         if (total < required) {
           const { inspectResearch } = await import("./health-research.server");
           const research = await inspectResearch(db, [...inResearch, ...misfiled], operational.research_topics);
