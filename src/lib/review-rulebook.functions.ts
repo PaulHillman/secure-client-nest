@@ -22,12 +22,12 @@ export const getReviewRulebook = createServerFn({ method: 'GET' }).middleware([r
   if (role.error || !role.data) throw new Error('Admin access required');
   const [row, history, teams] = await Promise.all([
     context.supabase.from('health_review_rules').select('*').eq('id', RULES_ROW_ID).single(),
-    context.supabase.from('review_rule_history').select('*, profiles:profiles!review_rule_history_actor_id_fkey(name)').order('effective_at', { ascending: false }).limit(20),
+    context.supabase.from('review_rule_history').select('*').order('effective_at', { ascending: false }).limit(20),
     context.supabase.from('teams').select('id,name,display_name,section').eq('is_test', false).order('section'),
   ]);
   // Actor IDs are plain UUIDs; resolve names without assuming a foreign key.
   if (row.error) throw row.error;
-  const audit = history.error ? await context.supabase.from('review_rule_history').select('*').order('effective_at', { ascending: false }).limit(20) : history;
+  const audit = history;
   if (audit.error || teams.error) throw new Error('Could not load rule history or teams');
   const profiles = await context.supabase.from('profiles').select('id,name');
   if (profiles.error) throw profiles.error;
