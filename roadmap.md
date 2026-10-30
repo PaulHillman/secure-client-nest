@@ -1,10 +1,10 @@
 # ClientVault roadmap
 
 ## Editable review rulebook
-- [ ] Expose peer policy, weekly-summary wording, research topics and minutes sections with validated saves and retained change history.
-- [ ] Turn narrative edits into explicit reviewable proposals, with Apply changes or wording-only choices and a read-only trial review.
-- [ ] Connect future assessments, emails, badges, meeting eligibility and upload enforcement to shared saved rules; preserve historical assessments and reports.
-- [ ] Verify saved settings, proposal safeguards, trial review and historical policy stability in tests and the signed-in app.
+- [x] Expose peer policy, weekly-summary wording, research topics and minutes sections with validated saves and retained change history.
+- [x] Turn narrative edits into explicit reviewable proposals, with Apply changes or wording-only choices and a read-only trial review.
+- [x] Connect future assessments, emails, badges, meeting eligibility and upload enforcement to shared saved rules; preserve historical assessments and reports.
+- [x] Verify signed-in save/reload, narrative proposal and application, trial review, retained history and 105 tests; restore original rules and narrative after testing, no reports or emails sent.
 
 ## Concise weekly peer-review summaries
 - [x] Replace repeated analysis narratives with latest-assessment next steps, revision and meeting deadlines, and an explicit missing-booking warning after submission 3.
