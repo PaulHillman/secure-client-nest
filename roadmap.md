@@ -2,7 +2,7 @@
 
 ## Instructor minutes confirmation
 - [x] Honor scoped instructor template confirmations and match historical names as reporting corrections, not improvement credit.
-- [ ] Record the unpaid interns’ three confirmations and verify a fresh report without saving or sending.
+- [x] Saved three instructor confirmations; fresh signed-in report shows Reporting correction instead of Unable to verify, 20 tests pass, no report saved or sent.
 
 ## Booked meeting compliance
 - [x] Keep on-time booked peer meetings yellow with completion instructions and no prior-score escalation; preserve other warnings and history.
