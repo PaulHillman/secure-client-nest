@@ -1034,7 +1034,7 @@ function FileLine({
               return (
                 <Badge
                   variant="outline"
-                  className={`text-[10px] ${peerBadgeTone(peerBadgeScore(assessment), undefined, assessment.attempt, assessment.accepted_at)}`}
+                  className={`text-[10px] ${peerBadgeTone(peerBadgeScore(assessment), undefined, assessment.attempt, assessment.accepted_at, assessment.policy_snapshot)}`}
                 >
                   {peerBadgeLabel(assessment)}
                 </Badge>

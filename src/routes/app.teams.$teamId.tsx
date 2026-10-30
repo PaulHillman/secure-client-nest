@@ -522,7 +522,7 @@ function MemberCard({
           )}
           {peer && (
             <div className="mt-1">
-              <Badge variant="outline" className={`text-[10px] ${peerBadgeTone(peerBadgeScore(peer), undefined, peer.attempt, peer.accepted_at)}`}>
+              <Badge variant="outline" className={`text-[10px] ${peerBadgeTone(peerBadgeScore(peer), undefined, peer.attempt, peer.accepted_at, peer.policy_snapshot)}`}>
                 {peerBadgeLabel(peer)}
               </Badge>
             </div>
