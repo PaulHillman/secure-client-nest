@@ -1,6 +1,7 @@
 // Server-only: instructor "re-grade after discussion" — a decimal, criterion-by-criterion
 // analysis of how close a saved submission is to 8/10. Never replaces the official score.
 import { finalRegradeDecision } from './peer-review-discussion';
+import { resolveOperationalRules } from './review-rulebook';
 const MODEL = "openai/gpt-6-astra";
 
 const schema = {
@@ -18,8 +19,9 @@ const schema = {
 export type DetailedRegrade = { precise_score: number; verdict: string; criteria: { criterion: string; rating: string; evidence: string }[]; closest_strengths: string[]; to_reach_8: string[]; gap_to_8: number; regraded_at: string; official_score: number | null };
 
 export async function regradePeerAssessment(db: any, assessmentId: string, actorId: string): Promise<DetailedRegrade> {
-  const { data: a, error } = await db.from("peer_review_assessments").select("id, user_id, team_id, score, attempt, final_submission, criteria_snapshot, version_id, status").eq("id", assessmentId).single();
+  const { data: a, error } = await db.from("peer_review_assessments").select("id, user_id, team_id, score, attempt, final_submission, criteria_snapshot, version_id, status, policy_snapshot").eq("id", assessmentId).single();
   if (error || !a || a.status !== "assessed" || !a.version_id) throw new Error("Only a saved, scored submission can be re-graded.");
+  const policy = resolveOperationalRules(a.policy_snapshot);
   const { data: newer, error: latestError } = await db.from('peer_review_assessments').select('id').eq('user_id', a.user_id).eq('team_id', a.team_id).neq('status', 'ownership_invalid').gt('attempt', a.attempt).limit(1);
   if (latestError) throw latestError;
   const { data: v } = await db.from("file_versions").select("storage_path, file_size").eq("id", a.version_id).single();
@@ -65,7 +67,7 @@ export async function regradePeerAssessment(db: any, assessmentId: string, actor
   const r = JSON.parse(out);
   const precise = Math.round(Math.max(0, Math.min(10, r.precise_score)) * 10) / 10;
   if (!Number.isFinite(precise)) throw new Error('The re-grade did not return a valid score. No decision was saved.');
-  const result: DetailedRegrade = { ...r, precise_score: precise, gap_to_8: Math.max(0, Math.round((8 - precise) * 10) / 10), regraded_at: new Date().toISOString(), official_score: a.score };
+  const result: DetailedRegrade = { ...r, precise_score: precise, gap_to_8: Math.max(0, Math.round((policy.revision_pass - precise) * 10) / 10), regraded_at: new Date().toISOString(), official_score: a.score };
   const decision = newer?.length ? {} : finalRegradeDecision(a, precise, actorId, result.regraded_at);
   const { error: upErr } = await db.from("peer_review_assessments").update({ detailed_regrade: result, ...decision }).eq("id", a.id);
   if (upErr) throw upErr;
