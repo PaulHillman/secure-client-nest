@@ -86,7 +86,8 @@ export async function computeHealthReview(
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     // Saved thresholds: the admin can change what the review checks without a code change.
     // A missing or half-filled row falls back to the documented defaults, never to a looser check.
-    const { data: rulesRow } = await db.from("health_review_rules").select("*").eq("id", RULES_ROW_ID).maybeSingle();
+    const { data: rulesRow, error: rulesError } = await db.from("health_review_rules").select("*").eq("id", RULES_ROW_ID).maybeSingle();
+    if (rulesError) throw new Error('Unable to read the active review rules. No review was run.');
     const rules = resolveHealthReviewRules(data.trialRules?.thresholds ?? rulesRow);
     const operational = data.trialRules?.operational ?? resolveOperationalRules(rulesRow?.operational_rules);
     // Checks switched off in settings (every run) or just for this run.
@@ -618,8 +619,11 @@ export async function computeHealthReview(
         comparison: roleFilter ? undefined : (() => {
           const share = latestShare(t.teamId);
           if (!share) return { sharedAt: null, source: "No verified shared baseline", changes: [] };
-          const payload = share.payload as { exceptions?: HealthException[]; team?: TeamCheckResult };
-          return { sharedAt: share.shared_at, source: share.source, streaks: Object.fromEntries(streaksByTeam.get(t.teamId) ?? []), changes: compareConcerns((payload.exceptions ?? []).filter(e => !PARFUNKEL.test(e.person ?? "")), out.filter(e => e.teamId === t.teamId), observationsByTeam.get(t.teamId) ?? [], payload.team?.observations ?? [], checksOff) };
+          const payload = share.payload as { exceptions?: HealthException[]; team?: TeamCheckResult; rulesSnapshot?: { thresholds?: unknown; operational?: unknown } };
+          const changedRules = changedEvidenceRules(payload.rulesSnapshot, { thresholds: rules, operational });
+          const prior = (payload.exceptions ?? []).filter(e => !PARFUNKEL.test(e.person ?? ""));
+          const corrections = prior.filter(e => changedRules.has(concernKey(e) ?? '')).map(e => ({ status: 'Reporting correction' as const, previous: e.reason, current: 'The instructor changed this check since the previous report. Current findings use the new rules; no student-earned improvement is inferred.', person: e.person ?? null }));
+          return { sharedAt: share.shared_at, source: share.source, streaks: Object.fromEntries(streaksByTeam.get(t.teamId) ?? []), changes: [...compareConcerns(prior.filter(e => !changedRules.has(concernKey(e) ?? '')), out.filter(e => e.teamId === t.teamId), observationsByTeam.get(t.teamId) ?? [], payload.team?.observations ?? [], checksOff), ...corrections] };
         })(),
         peopleChecked: (roleFilter ? roster.filter((m) => m.job_title === roleFilter) : roster).length,
         results,

@@ -134,7 +134,7 @@ function TeamDetail() {
       const peerMap = new Map<string, PeerScore>();
       (peerRows ?? []).forEach((a) => {
         if (!peerMap.has(a.user_id))
-          peerMap.set(a.user_id, { score: a.score, status: a.status, attempt: a.attempt, accepted_at: a.accepted_at, detailed_regrade: a.detailed_regrade });
+          peerMap.set(a.user_id, { score: a.score, status: a.status, attempt: a.attempt, accepted_at: a.accepted_at, detailed_regrade: a.detailed_regrade, policy_snapshot: a.policy_snapshot });
       });
       const members = (tm ?? []).map((m) => ({ ...m, profiles: profileMap.get(m.user_id) }));
       return { team, companyFocus: cf, members, peerMap };

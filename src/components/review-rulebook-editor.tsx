@@ -72,6 +72,7 @@ export function ApplyGuideProposal({ impact }: { impact: GuideImpact }) {
   const [applied, setApplied] = useState(false);
   const mutation = useMutation({ mutationFn: async () => {
     const current = query.data; if (!current) throw new Error('Wait for the current rules to load.');
+    if (current.updatedAt !== impact.expectedUpdatedAt) throw new Error('Rules changed since this proposal was checked. Check the narrative again before applying.');
     const operational: Record<string, unknown> = { ...current.operational }; const thresholds: Record<string, number | string> = { ...current.thresholds };
     for (const c of impact.settings_to_change) { const value = JSON.parse(c.value_json); if (c.key in OPERATIONAL_DEFAULTS) operational[c.key] = value; else if (c.key in thresholds && (typeof value === 'number' || typeof value === 'string')) thresholds[c.key] = value; else throw new Error('This suggestion cannot be applied safely.'); }
     return save({ data: { operational: operationalSchema.parse(operational), thresholds, expectedUpdatedAt: current.updatedAt } });

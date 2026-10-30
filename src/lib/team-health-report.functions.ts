@@ -6,6 +6,7 @@ import type { HealthException, TeamCheckResult, HealthCheck } from "@/lib/team-h
 type Payload = {
   generatedAt: string; week: number; progress: number; teamsChecked: number; peopleChecked: number;
   teamResults: TeamCheckResult[]; exceptions: HealthException[]; ranking: unknown[];
+  rulesSnapshot?: unknown;
 };
 type Input = { action: "save" | "send" | "both"; scope: string; scopeLabel: string; payload: Payload };
 
@@ -115,7 +116,7 @@ export const saveOrSendHealthReport = createServerFn({ method: "POST" })
           } catch { emailsFailed++; }
         }
         if (accepted.length) {
-          const { error: shareError } = await db.from("health_review_shares").insert({ team_id: t.teamId, generated_at: p.generatedAt, shared_by: context.userId, payload: JSON.parse(JSON.stringify({ team: t, exceptions: p.exceptions.filter(e => e.teamId === t.teamId) })), recipient_ids: accepted, vault_file_id: fileId, vault_version_id: vaultVersion.id });
+          const { error: shareError } = await db.from("health_review_shares").insert({ team_id: t.teamId, generated_at: p.generatedAt, shared_by: context.userId, payload: JSON.parse(JSON.stringify({ team: t, exceptions: p.exceptions.filter(e => e.teamId === t.teamId), rulesSnapshot: p.rulesSnapshot })), recipient_ids: accepted, vault_file_id: fileId, vault_version_id: vaultVersion.id });
           if (shareError) throw new Error("Emails were accepted, but the shared baseline could not be recorded. Do not resend without checking the email log.");
           teamsSent++;
         }

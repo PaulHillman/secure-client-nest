@@ -250,7 +250,7 @@ export function FileVault({
       });
       const peerMap = new Map<string, PeerScore>();
       (assessments ?? []).forEach((a) => {
-        if (a.version_id) peerMap.set(a.version_id, { score: a.score, status: a.status, attempt: a.attempt, changes: a.changes, accepted_at: a.accepted_at, detailed_regrade: a.detailed_regrade });
+        if (a.version_id) peerMap.set(a.version_id, { score: a.score, status: a.status, attempt: a.attempt, changes: a.changes, accepted_at: a.accepted_at, detailed_regrade: a.detailed_regrade, policy_snapshot: a.policy_snapshot });
       });
       const uploaderIds = Array.from(new Set([
         ...(files ?? []).map((f) => f.uploaded_by),

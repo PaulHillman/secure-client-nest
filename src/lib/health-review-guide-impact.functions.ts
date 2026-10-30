@@ -11,6 +11,7 @@ export type GuideImpact = {
   positives: string[];
   negatives: string[];
   other_checks_affected: string[];
+  expectedUpdatedAt: string;
 };
 
 const schema = {
@@ -55,6 +56,8 @@ export const reviewHealthGuideChange = createServerFn({ method: 'POST' })
     const json = await res.json() as { output_text?: string; output?: { content?: { type: string; text?: string }[] }[] };
     const text = json.output_text ?? (json.output ?? []).flatMap((o) => o.content ?? []).filter((c) => c.type === 'output_text').map((c) => c.text).join('');
     const result = JSON.parse(text) as GuideImpact;
+    if (!row) throw new Error('Rule settings unavailable; no proposal can be safely applied.');
+    result.expectedUpdatedAt = row.updated_at;
     // Reject hallucinated keys and malformed typed suggestions before offering Apply.
     for (const change of result.settings_to_change) {
       if (!RULE_FIELDS.some(f => f.key === change.key) && !(change.key in OPERATIONAL_DEFAULTS)) {
