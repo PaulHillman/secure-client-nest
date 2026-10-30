@@ -1518,6 +1518,24 @@ export type Database = {
           },
         ]
       }
+      peer_calendar_dispatch: {
+        Row: {
+          expires_at: string | null
+          id: boolean
+          token: string | null
+        }
+        Insert: {
+          expires_at?: string | null
+          id?: boolean
+          token?: string | null
+        }
+        Update: {
+          expires_at?: string | null
+          id?: boolean
+          token?: string | null
+        }
+        Relationships: []
+      }
       peer_review_assessments: {
         Row: {
           accepted_at: string | null
@@ -2678,6 +2696,7 @@ export type Database = {
         }[]
       }
       delete_vault_file: { Args: { _file_id: string }; Returns: string[] }
+      dispatch_peer_calendar_validation: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

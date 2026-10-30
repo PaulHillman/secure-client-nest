@@ -11,6 +11,7 @@ import { CalendarClock, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { peerBadgeScore, peerBadgeTone } from '@/lib/peer-review-policy';
+import { nextDetroitCalendarCheck } from '@/lib/peer-calendar-policy';
 
 export const Route = createFileRoute('/app/admin_/peer-review-meetings')({
   head: () => ({ meta: [
@@ -23,6 +24,16 @@ export const Route = createFileRoute('/app/admin_/peer-review-meetings')({
 });
 function easternDateTime(iso: string) {
   return new Intl.DateTimeFormat('en-US', { timeZone: 'America/Detroit', weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).format(new Date(iso));
+}
+function calendarChangeDescription(details: unknown) {
+  const d = details as { change?: string; before?: { scheduled_at?: string; zoom_url?: string; booking_topic?: string }; after?: { scheduled_at?: string; zoom_url?: string; booking_topic?: string }; message?: string } | null;
+  const before = d?.before?.scheduled_at;
+  const after = d?.after?.scheduled_at;
+  if (before && after && new Date(before).getTime() === new Date(after).getTime()) {
+    const fields = [d?.before?.zoom_url !== d?.after?.zoom_url ? 'Zoom link updated' : '', d?.before?.booking_topic !== d?.after?.booking_topic ? `Topic: ${d?.after?.booking_topic || 'Not specified'}` : ''].filter(Boolean);
+    return `${d?.change || 'Booking changed'} · ${fields.join(' · ')}`;
+  }
+  return `${d?.change || d?.message || 'Calendar checked'}${before ? ` · ${easternDateTime(before)}` : ''}${after ? ` → ${easternDateTime(after)}` : ''}`;
 }
 function Page() {
   const { isAdmin, loading } = useAuth();
@@ -49,6 +60,11 @@ function Page() {
   return <main className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6">
     <header className="flex flex-wrap items-center justify-between gap-3"><h1 className="font-display text-3xl flex items-center gap-2"><CalendarClock className="h-6 w-6 text-gold" />Peer Reviews</h1><Button variant="outline" disabled={busy} onClick={refresh}><RefreshCw className="h-4 w-4 mr-2" />{busy ? 'Checking calendar…' : 'Sync Calendly'}</Button></header>
     {query.error && <p role="alert" className="text-destructive">{query.error.message}</p>}
+    <details className="border-y py-3">
+      <summary className="cursor-pointer text-sm font-medium">Calendar changes & daily checks</summary>
+      <p className="text-sm text-muted-foreground py-2">Daily check: 1:00 a.m. Detroit time · Next: {easternDateTime(nextDetroitCalendarCheck(new Date()).toISOString())}</p>
+      <div className="divide-y">{(query.data?.calendarLog ?? []).map(entry => <div key={entry.id} className="py-2 text-sm"><span className="font-medium">{entry.archive_name}</span><p>{calendarChangeDescription(entry.details)}</p><p className="text-xs text-muted-foreground">{easternDateTime(entry.created_at)}</p></div>)}</div>
+    </details>
     <div className="flex flex-wrap gap-2" role="group" aria-label="Peer review views">{(['upcoming', 'past', 'students'] as const).map(t => <Button key={t} size="sm" variant={tab === t ? 'default' : 'outline'} onClick={() => setTab(t)}>{t === 'upcoming' ? 'Upcoming meetings' : t === 'past' ? 'Past scheduled meetings' : 'All students'}</Button>)}</div>
     {tab === 'students' ? <><Input aria-label="Search students" placeholder="Search student name" value={search} onChange={e => setSearch(e.target.value)} /><div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">{students.map(a => <Button key={`${a.user_id}-${a.team_id}`} variant="outline" className="h-auto min-h-14 justify-between whitespace-normal text-left" onClick={() => setSelected({ studentId: a.user_id, teamId: a.team_id })}><span>{a.profiles?.name}<span className="block text-xs text-muted-foreground">{a.teams?.display_name || a.teams?.name} · Section {a.teams?.section}</span></span><Badge className={`shrink-0 ml-2 ${peerBadgeTone(peerBadgeScore(a), undefined, a.attempt, a.accepted_at)}`}>{peerBadgeScore(a)}/10</Badge></Button>)}</div></> : <div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Student</th><th className="p-2">Team</th><th className="p-2">When</th><th className="p-2">Booking topic</th><th className="p-2">Zoom</th></tr></thead><tbody>{meetings.map(m => <tr key={m.id} className="border-b align-top"><td className="p-2"><Button variant="link" className="p-0 h-auto text-left whitespace-normal" onClick={() => m.team_id && setSelected({ studentId: m.student_id, teamId: m.team_id })}>{m.profiles?.name}</Button>{m.identity_match !== 'email' && <p className="text-xs text-muted-foreground">Matched by full name; calendar email differs</p>}</td><td className="p-2">{m.teams?.display_name || m.teams?.name} · {m.teams?.section}</td><td className="p-2 whitespace-nowrap">{easternDateTime(m.scheduled_at)}</td><td className="p-2 max-w-sm">{m.booking_topic || 'Peer-review meeting'}</td><td className="p-2">{m.zoom_url ? <a href={m.zoom_url} target="_blank" rel="noreferrer" className="text-primary underline">Join Zoom</a> : 'In calendar invite'}</td></tr>)}</tbody></table>{meetings.length === 0 && <p className="py-4 text-sm text-muted-foreground">No meetings in this view.</p>}</div>}
     {selected && query.data && <PeerReviewStudentWorkspace key={`${selected.studentId}-${selected.teamId}`} data={query.data} {...selected} />}
