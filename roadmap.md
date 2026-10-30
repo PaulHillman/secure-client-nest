@@ -1,8 +1,8 @@
 # ClientVault roadmap
 
 ## Actionable Health Review warnings
-- [ ] Repeat each category's actual concerns beside its flagged status in future PDFs and the review screen; preserve detailed concerns, grading and historical shared reports.
-- [ ] Verify PDF output and the saved-report screen without running, saving or sending a new review.
+- [x] Repeat each category's actual concerns beside its flagged status in future PDFs and the review screen; preserve detailed concerns, grading and historical shared reports.
+- [x] Verified PDF text and page preview plus the signed-in October 24 saved-report warning row; seven existing tests passed and build OK. No review run, records changed, or emails sent.
 
 ## Existing meeting attachments
 - [x] Add existing Agenda/Minutes selection to Edit meeting, preserving existing connections and file history.
