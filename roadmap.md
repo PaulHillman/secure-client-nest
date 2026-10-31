@@ -1,8 +1,8 @@
 # ClientVault roadmap
 
 ## Instructor questions and readable PDF confirmations
-- [ ] Record correct interview questions after identifying the team (screenshot omits team).
-- [ ] Record Sobie Research PDF as instructor-readable and resolved; verify fresh report no longer requests re-upload.
+- [x] Recorded Oak & Iron's correct interview questions; verified the exact-version confirmation in a fresh signed-in review's checked-items list.
+- [x] Recorded Sobie Research PDF as instructor-readable; fresh report clears the historical warning as Reporting correction with no re-upload required. 28 tests pass, build OK; no report saved or sent.
 
 ## Instructor-confirmed minutes violation
 - [x] Recorded Managing the Globe's October 21 minutes as instructor-confirmed non-template, with the note already sent; fresh signed-in review shows Still outstanding with update instructions, 31 tests pass, no report saved or email sent.
