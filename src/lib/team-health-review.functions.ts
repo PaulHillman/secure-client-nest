@@ -1,5 +1,6 @@
 import { minutesExemptFromTemplate, isStandaloneMinutesSubmission } from "./minutes-template";
 import { rejectedMinutes, REJECTED_MINUTES_PREFIX } from './minutes-instructor-review';
+import { confirmedHealthFiles } from './health-instructor-confirmation';
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildAssessments } from "@/lib/team-readiness-assessment.functions";
@@ -436,8 +437,13 @@ export async function computeHealthReview(
       }
       // Interview questions, video files and the final video are expected once the semester
       // has progressed past the configured percentages (editable in Admin).
-      if (isTeamLevel && progress >= rules.interview_questions_percent / 100 && !teamFiles.some((f) => f.section === "Semester Long Project" && f.subsection === "Interview Questions"))
-        push("vault", "yellow", `No Interview Questions uploaded (expected by ${rules.interview_questions_percent}% of semester).`);
+      const confirmedQuestions = confirmedHealthFiles(t.teamId, 'interview_questions', teamFiles, fileVerifications ?? []);
+      if (confirmedQuestions.length) notes.vault.push(`Instructor verified the questions are present and correct (${confirmedQuestions.join(', ')}); no action required.`);
+      const hasQuestions = confirmedQuestions.length > 0 || teamFiles.some(f => f.section === 'Semester Long Project' && f.subsection === 'Interview Questions');
+      if (!confirmedQuestions.length) observe('vault:interview_questions', 'Interview questions are on file.', hasQuestions ? 0 : 1);
+      if (confirmedQuestions.length && !checksOff.has('vault:interview_questions')) observations.push({ ruleId: 'vault:interview_questions', evidence: `Instructor verified the questions are present and correct (${confirmedQuestions.join(', ')}); no action required. Earlier warnings are reporting errors.`, verified: true, remaining: 0, reportingCorrection: true });
+      if (isTeamLevel && progress >= rules.interview_questions_percent / 100 && !hasQuestions)
+        push("vault", "yellow", `No Interview Questions uploaded (expected by ${rules.interview_questions_percent}% of semester).`, null, null, null, 'vault:interview_questions');
       if ((isTeamLevel || vidScope) && progress >= rules.video_percent / 100 && !teamFiles.some((f) => f.section === "Video"))
         push("vault", vidScope ? "red" : "yellow", `No Video files uploaded (expected by ${rules.video_percent}% of semester).`, null, vidScope ? "Video Specialist" : null);
       if ((isTeamLevel || vidScope) && progress >= rules.video_final_percent / 100 && !teamFiles.some((f) => f.section === "Video" && f.subsection === "Final Submission"))
@@ -458,6 +464,8 @@ export async function computeHealthReview(
         const taName = techAdmin ? nameOf(techAdmin.user_id) : null;
         const taId = techAdmin?.user_id ?? null;
         const required = pastDue ? rules.research_required_late : rules.research_required_early;
+        const readableConfirmed = confirmedHealthFiles(t.teamId, 'research_readable', teamFiles, fileVerifications ?? []);
+        if (readableConfirmed.length && !checksOff.has('vault:research:format')) observations.push({ ruleId: 'vault:research:format', evidence: `Instructor verified that ${readableConfirmed.join(', ')} is an acceptable, readable PDF. This concern is cleared; no re-upload required. Automatic extraction limitations are not a student deficiency.`, verified: true, remaining: 0, reportingCorrection: true });
         notes.vault.push(`Required research topics: ${operational.research_topics.map(t => t.topic).join(", ")}. Topics may be combined in one document; file count alone does not establish missing research.`);
         if (total < required) {
           const { inspectResearch } = await import("./health-research.server");
@@ -469,8 +477,9 @@ export async function computeHealthReview(
           const verifiedUnreadable = research.unreadable.filter((n) => verifiedSet.has(n));
           research.unreadable = research.unreadable.filter((n) => !verifiedSet.has(n));
           if (verifiedUnreadable.length) {
-            notes.vault.push(`Instructor has verified the contents of: ${verifiedUnreadable.join(", ")}. Re-upload in a readable format is still requested.`);
-            push("vault", "yellow", `Content verified by the instructor: ${verifiedUnreadable.join(", ")} is confirmed acceptable, but it cannot be read automatically. Please re-upload it as a readable DOCX or PDF so future reports can verify it.`, null, null, null, "vault:research:format");
+            const needsConversion = verifiedUnreadable.filter(name => !readableConfirmed.includes(name));
+            notes.vault.push(`Instructor has verified the contents of: ${verifiedUnreadable.join(", ")}.${needsConversion.length ? ' Re-upload in a readable format is still requested.' : ' Readable PDF confirmed; no re-upload required.'}`);
+            if (needsConversion.length) push("vault", "yellow", `Content verified by the instructor: ${needsConversion.join(", ")} is confirmed acceptable, but it cannot be read automatically. Please re-upload it as a readable DOCX or PDF so future reports can verify it.`, null, null, null, "vault:research:format");
           }
           const missing = verifiedUnreadable.length ? [] : research.topics.filter(topic => !topic.evidence.length).map(topic => topic.topic);
           if (!missing.length) {
