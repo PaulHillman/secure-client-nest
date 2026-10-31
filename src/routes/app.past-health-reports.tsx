@@ -45,20 +45,22 @@ function PastHealthReports() {
       ) : !reports?.length ? <p className="text-sm text-muted-foreground">No Health Reports have been shared with your team yet.</p> : (
         <div className="divide-y divide-border border-y border-border">
           {reports.map(report => (
-            <article key={report.id} className="flex flex-wrap items-center justify-between gap-4 py-5">
-              <div className="min-w-0 basis-full sm:basis-auto sm:flex-1">
+            <article key={report.id} className="grid grid-cols-[minmax(0,1fr)_8rem] items-center gap-4 py-5 lg:grid-cols-[minmax(0,1fr)_10rem_9rem]">
+              <div className="col-span-2 min-w-0 lg:col-span-1">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <h2 className="font-semibold">{new Date(report.generated_at).toLocaleDateString("en-US", { timeZone: "America/Detroit", month: "long", day: "numeric", year: "numeric" })}</h2>
                   {isCurrentHealthWeek(report, now) && <span className="text-xs font-medium text-primary">This week</span>}
                 </div>
                 <p className="mt-1 break-words text-sm text-muted-foreground">{report.team_label}</p>
               </div>
-              <dl className="grid grid-cols-3 gap-5 text-center text-sm">
+              <dl className="grid grid-cols-3 gap-2 text-center text-sm">
                 <div><dt className="text-success">Good</dt><dd className="mt-1 text-lg font-semibold tabular-nums">{report.good}</dd></div>
                 <div><dt className="text-gold">Fair</dt><dd className="mt-1 text-lg font-semibold tabular-nums">{report.fair}</dd></div>
                 <div><dt className="text-destructive">Bad</dt><dd className="mt-1 text-lg font-semibold tabular-nums">{report.bad}</dd></div>
               </dl>
-              {report.vault_version_id ? <Button variant="outline" size="sm" onClick={() => setSelected(report)}><FileText className="mr-2 h-4 w-4" />Open report</Button> : <span className="text-xs text-muted-foreground">Historical PDF not retained</span>}
+              <div className="min-w-0 text-right">
+                {report.vault_version_id ? <Button variant="outline" size="sm" onClick={() => setSelected(report)}><FileText className="mr-2 h-4 w-4" />Open report</Button> : <span className="text-xs text-muted-foreground">Historical PDF not retained</span>}
+              </div>
             </article>
           ))}
         </div>
