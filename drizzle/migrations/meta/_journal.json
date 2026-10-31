@@ -225,6 +225,20 @@
       "when": 1793408913345,
       "tag": "0031_student_health_report_history",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793452243263,
+      "tag": "0032_admin_student_login_report",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793452383037,
+      "tag": "0033_student_logins_auth_events_only",
+      "breakpoints": true
     }
   ]
 }
