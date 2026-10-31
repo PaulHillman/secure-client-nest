@@ -2746,6 +2746,21 @@ export type Database = {
         Returns: boolean
       }
       shares_team: { Args: { _a: string; _b: string }; Returns: boolean }
+      student_health_report_history: {
+        Args: { _student_id?: string }
+        Returns: {
+          bad: number
+          fair: number
+          generated_at: string
+          good: number
+          id: string
+          shared_at: string
+          team_id: string
+          team_label: string
+          vault_file_id: string
+          vault_version_id: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "student"
