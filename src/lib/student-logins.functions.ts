@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const getStudentLogins = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase.rpc("admin_student_login_report");
+    const { data, error } = await context.supabase.rpc("admin_student_access_report");
     if (error) throw new Error(error.message);
     return { students: data ?? [], asOf: new Date().toISOString() };
   });
