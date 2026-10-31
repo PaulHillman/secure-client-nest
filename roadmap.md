@@ -1,8 +1,8 @@
 # Roadmap
 
-- [ ] Correct Larissa's duplicate peer-review attempt while retaining genuine submissions
-- [ ] Verify her team's company research warnings and correct supported false findings
-- [ ] Confirm remaining upload eligibility and explain any unresolved research issue
+- [x] Correct Larissa's duplicate peer-review attempt while retaining genuine submissions
+- [x] Verify her team's company research warnings and correct supported false findings
+- [x] Confirm one remaining regular upload; fresh review clears research as a reporting correction (email attachment not supplied here)
 
 - [x] Cross-check all student dates against sign-ins and authenticated visits
 - [x] Separate last visit from fresh sign-in and correct inactivity filters
