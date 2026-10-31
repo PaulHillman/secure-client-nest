@@ -487,10 +487,11 @@ export async function computeHealthReview(
             observe("vault:research", "All required research topics have supporting text excerpts in the uploaded documents.");
             // Same-version extensionless uploads were readable all along: never award earned progress.
             const prior = latestShare(t.teamId);
-            const priorResearch = prior?.payload?.exceptions?.find((e: any) => e.ruleId === 'vault:research' && /^Research file unreadable:/.test(e.reason));
+            const priorPayload = prior?.payload as { exceptions?: HealthException[] } | null | undefined;
+            const priorResearch = priorPayload?.exceptions?.find(e => e.ruleId === 'vault:research' && /^Research file unreadable:/.test(e.reason));
             const recovered = [...inResearch, ...misfiled].filter(f => research.inspected.includes(f.file_name) && !/\.[a-z0-9]+$/i.test(f.file_name));
-            if (priorResearch && recovered.length) {
-              const { data: recoveredVersions } = await db.from('file_versions').select('id,uploaded_at').in('id', recovered.map(f => f.current_version_id).filter(Boolean));
+            if (prior && priorResearch && recovered.length) {
+              const { data: recoveredVersions } = await db.from('file_versions').select('id,uploaded_at').in('id', recovered.map(f => f.current_version_id).filter((id): id is string => typeof id === 'string'));
               const unchanged = recovered.filter(f => recoveredVersions?.some(v => v.id === f.current_version_id && Date.parse(v.uploaded_at) <= Date.parse(prior.generated_at)));
               const oldFiles = [...inResearch, ...misfiled].filter(f => priorResearch.reason.includes(f.file_name));
               if (oldFiles.length && oldFiles.every(f => unchanged.some(u => u.id === f.id))) {
