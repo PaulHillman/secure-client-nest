@@ -4,6 +4,22 @@ import { PDFDocument, StandardFonts } from "pdf-lib";
 import { inspectResearch } from "./health-research.server";
 import { buildHealthReportPdf } from "./health-report-pdf";
 import { extractText } from "unpdf";
+import JSZip from "jszip";
+
+test("research DOCX remains readable when its vault display name has no extension", async () => {
+  const zip = new JSZip();
+  zip.file('[Content_Types].xml', '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>');
+  zip.file('word/document.xml', '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>Company founded in 2000. Industry: banking. Competitors: Acme. Client job description: manager duties.</w:t></w:r></w:p></w:body></w:document>');
+  const bytes = await zip.generateAsync({ type: 'uint8array' });
+  const db = {
+    from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { storage_path: 'teams/test/v3-research.docx', file_size: bytes.length }, error: null }) }) }) }),
+    storage: { from: () => ({ download: async () => ({ data: new Blob([Uint8Array.from(bytes)]), error: null }) }) },
+  };
+  const result = await inspectResearch(db, [{ file_name: 'Company History and Industry Analysis', current_version_id: 'v3' }]);
+  assert.equal(result.unreadable.length, 0);
+  assert.equal(result.inspected.length, 1);
+  assert.equal(result.topics.filter(t => t.evidence.length === 1).length, 4);
+});
 
 test("research inspection reads actual PDF bytes and accepts all four topics in one file", async () => {
   const doc = await PDFDocument.create();

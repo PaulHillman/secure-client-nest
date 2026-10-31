@@ -12,13 +12,15 @@ async function readVaultText(db: any, file: { file_name: string; current_version
     const { data: blob, error: downloadError } = await db.storage.from("vault").download(version.storage_path);
     if (downloadError || !blob) throw new Error("Unavailable");
     const bytes = await blob.arrayBuffer();
-    if (/\.pdf$/i.test(file.file_name)) {
+    // Vault display names can omit the extension; the retained upload path identifies the format.
+    const formatName = version.storage_path.split('/').pop() ?? file.file_name;
+    if (/\.pdf$/i.test(formatName)) {
       const { extractText } = await import("unpdf");
       const result = await extractText(new Uint8Array(bytes), { mergePages: true }); text = result.text;
-    } else if (/\.docx$/i.test(file.file_name)) {
+    } else if (/\.docx$/i.test(formatName)) {
       const mammoth = await import("mammoth/mammoth.browser");
       text = (await mammoth.extractRawText({ arrayBuffer: bytes })).value;
-    } else if (/\.(txt|md|csv)$/i.test(file.file_name)) text = new TextDecoder().decode(bytes);
+    } else if (/\.(txt|md|csv)$/i.test(formatName)) text = new TextDecoder().decode(bytes);
     if (!text?.trim()) text = null;
   } catch { text = null; }
   return text;
