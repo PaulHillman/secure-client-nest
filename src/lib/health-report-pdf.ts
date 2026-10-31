@@ -1,4 +1,5 @@
 import { RESEARCH_NOTE, type Comparison } from "./health-review-comparison";
+import { unreadableFileExplanation } from "./file-format-note";
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 
 export type PdfCheck = { label: string; status: "pass" | "flagged" | "skipped" };
