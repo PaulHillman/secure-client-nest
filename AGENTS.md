@@ -27,6 +27,7 @@
 - Shared baselines advance only after at least one student email is accepted, recording accepted recipients; instructor-only and suppressed sends do not qualify.
 - Concern comparisons use stable rule identifiers and verified item-level observations; unknown historical matches remain unverified rather than earning automatic credit.
 - Research document text is extracted server-side using edge-compatible readers and cited excerpts; unsupported, scanned or unreadable files remain unverified, not missing.
+- Unreadable-file messages use the shared src/lib/file-format-note.ts helper across assessments, reports and PDFs; .pages files get Apple Pages export guidance (PDF or DOCX), other formats get generic re-upload guidance.
 - Vault rename/refile actions update file metadata only, preserving storage paths and version history; explicit Final Compiled selections normalize the display name for compatibility with existing slot classification.
 - Vault uploader labels use version uploader profiles, separately from assigned ownership; peer-review upload order spans file rows for that owner, and score badges match the exact displayed version to avoid presenting an original score as revision feedback.
 - Peer-review uploads require an explicit team-member owner for assessment and attempt ordering; legacy uploads may use their retained valid assessment's student identity, but unknown ownership never falls back to the uploader, preventing proxy uploads from consuming the wrong student's attempts.

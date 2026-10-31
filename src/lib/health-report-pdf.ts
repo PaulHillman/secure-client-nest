@@ -1,4 +1,5 @@
 import { RESEARCH_NOTE, type Comparison } from "./health-review-comparison";
+import { unreadableFileExplanation } from "./file-format-note";
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 
 export type PdfCheck = { label: string; status: "pass" | "flagged" | "skipped" };
@@ -76,7 +77,7 @@ export async function buildHealthReportPdf(opts: {
       text(`${topic.topic}: ${topic.evidence.length ? "text evidence found" : opts.research.unreadable.length ? "unverified" : "no text evidence found"}`, bold, 10);
       for (const e of topic.evidence) text(`${e.fileName}: ${e.excerpt}`, font, 9, grey);
     }
-    if (opts.research.unreadable.length) text(`Unable to read: ${opts.research.unreadable.join(", ")}. Instructor review required.`, font, 10, grey);
+    if (opts.research.unreadable.length) text(`Unable to read: ${opts.research.unreadable.map(unreadableFileExplanation).join(" ")} Instructor review required.`, font, 10, grey);
   }
   y -= 10;
   text("What was checked", bold, 13);
