@@ -1,5 +1,9 @@
 # ClientVault roadmap
 
+## Student health report history
+- [x] Add Past Health Reports to every student's menu with all shared reports, newest first, and Good/Fair/Bad summaries.
+- [x] Verify Oak & Iron's four dated summaries and exact-version PDF in signed-in student view, desktop and mobile menus, ten passing tests, and build OK. Legacy reports without retained PDFs show their summaries only; no reports or emails sent.
+
 ## Instructor questions and readable PDF confirmations
 - [x] Recorded Oak & Iron's correct interview questions; verified the exact-version confirmation in a fresh signed-in review's checked-items list.
 - [x] Recorded Sobie Research PDF as instructor-readable; fresh report clears the historical warning as Reporting correction with no re-upload required. 28 tests pass, build OK; no report saved or sent.

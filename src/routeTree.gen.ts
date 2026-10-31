@@ -21,6 +21,7 @@ import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppHealthReviewRouteImport } from './routes/app.health-review'
 import { Route as AppMeetingsRouteImport } from './routes/app.meetings'
 import { Route as AppMilestonesRouteImport } from './routes/app.milestones'
+import { Route as AppPastHealthReportsRouteImport } from './routes/app.past-health-reports'
 import { Route as AppTeamsRouteImport } from './routes/app.teams'
 import { Route as AppVaultRouteImport } from './routes/app.vault'
 import { Route as AppVaultOverviewRouteImport } from './routes/app.vault-overview'
@@ -101,6 +102,11 @@ const AppMeetingsRoute = AppMeetingsRouteImport.update({
 const AppMilestonesRoute = AppMilestonesRouteImport.update({
   id: '/milestones',
   path: '/milestones',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPastHealthReportsRoute = AppPastHealthReportsRouteImport.update({
+  id: '/past-health-reports',
+  path: '/past-health-reports',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTeamsRoute = AppTeamsRouteImport.update({
@@ -235,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/app/health-review': typeof AppHealthReviewRoute
   '/app/meetings': typeof AppMeetingsRoute
   '/app/milestones': typeof AppMilestonesRoute
+  '/app/past-health-reports': typeof AppPastHealthReportsRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
@@ -270,6 +277,7 @@ export interface FileRoutesByTo {
   '/app/health-review': typeof AppHealthReviewRoute
   '/app/meetings': typeof AppMeetingsRoute
   '/app/milestones': typeof AppMilestonesRoute
+  '/app/past-health-reports': typeof AppPastHealthReportsRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
@@ -306,6 +314,7 @@ export interface FileRoutesById {
   '/app/health-review': typeof AppHealthReviewRoute
   '/app/meetings': typeof AppMeetingsRoute
   '/app/milestones': typeof AppMilestonesRoute
+  '/app/past-health-reports': typeof AppPastHealthReportsRoute
   '/app/teams': typeof AppTeamsRouteWithChildren
   '/app/vault': typeof AppVaultRoute
   '/app/vault-overview': typeof AppVaultOverviewRoute
@@ -343,6 +352,7 @@ export interface FileRouteTypes {
     | '/app/health-review'
     | '/app/meetings'
     | '/app/milestones'
+    | '/app/past-health-reports'
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
@@ -378,6 +388,7 @@ export interface FileRouteTypes {
     | '/app/health-review'
     | '/app/meetings'
     | '/app/milestones'
+    | '/app/past-health-reports'
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
@@ -413,6 +424,7 @@ export interface FileRouteTypes {
     | '/app/health-review'
     | '/app/meetings'
     | '/app/milestones'
+    | '/app/past-health-reports'
     | '/app/teams'
     | '/app/vault'
     | '/app/vault-overview'
@@ -534,6 +546,13 @@ declare module '@tanstack/react-router' {
       path: '/milestones'
       fullPath: '/app/milestones'
       preLoaderRoute: typeof AppMilestonesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/past-health-reports': {
+      id: '/app/past-health-reports'
+      path: '/past-health-reports'
+      fullPath: '/app/past-health-reports'
+      preLoaderRoute: typeof AppPastHealthReportsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/teams': {
@@ -707,6 +726,7 @@ interface AppRouteChildren {
   AppHealthReviewRoute: typeof AppHealthReviewRoute
   AppMeetingsRoute: typeof AppMeetingsRoute
   AppMilestonesRoute: typeof AppMilestonesRoute
+  AppPastHealthReportsRoute: typeof AppPastHealthReportsRoute
   AppTeamsRoute: typeof AppTeamsRouteWithChildren
   AppVaultRoute: typeof AppVaultRoute
   AppVaultOverviewRoute: typeof AppVaultOverviewRoute
@@ -731,6 +751,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppHealthReviewRoute: AppHealthReviewRoute,
   AppMeetingsRoute: AppMeetingsRoute,
   AppMilestonesRoute: AppMilestonesRoute,
+  AppPastHealthReportsRoute: AppPastHealthReportsRoute,
   AppTeamsRoute: AppTeamsRouteWithChildren,
   AppVaultRoute: AppVaultRoute,
   AppVaultOverviewRoute: AppVaultOverviewRoute,
