@@ -31,7 +31,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Trash2, Plus, UserCog, Briefcase, Check, X, ExternalLink, FileStack, ArrowUp, ArrowDown, ArrowUpDown, History, Archive, Upload } from "lucide-react";
+import { Trash2, Plus, UserCog, Briefcase, Check, X, ExternalLink, FileStack, ArrowUp, ArrowDown, ArrowUpDown, History, Archive, Upload, Activity } from "lucide-react";
 import { TemplatesPanel } from "@/components/templates-panel";
 import { AuditLogPanel } from "@/components/audit-log-panel";
 import { SemesterPanel } from "@/components/semester-panel";
@@ -69,10 +69,11 @@ function Admin() {
         </p>
       </header>
 
-      <Button asChild variant="outline" className="mb-6"><Link to="/app/admin/peer-review-criteria"><FileStack className="h-4 w-4 mr-2" />Peer Review Evaluation Criteria</Link></Button>
+      <Button asChild variant="outline" className="mb-6"><Link to="/app/admin/competition-grading"><FileStack className="h-4 w-4 mr-2" />Competition Grading References</Link></Button>
       <Button asChild variant="outline" className="mb-6 ml-2"><Link to="/app/admin/peer-review-assessments"><FileStack className="h-4 w-4 mr-2" />Individual Peer Review Results</Link></Button>
+      <Button asChild variant="outline" className="mb-6 ml-2"><Link to="/app/admin/peer-review-criteria"><FileStack className="h-4 w-4 mr-2" />Peer Review Evaluation Criteria</Link></Button>
+      <Button asChild variant="outline" className="mb-6 ml-2"><Link to="/app/admin/usage"><Activity className="h-4 w-4 mr-2" />Student Usage</Link></Button>
       <Button asChild variant="outline" className="mb-6 ml-2"><Link to="/app/admin/health-review-guide"><FileStack className="h-4 w-4 mr-2" />Weekly Health Check Review</Link></Button>
-      <Button asChild variant="outline" className="mb-6 ml-2"><Link to="/app/admin/competition-grading"><FileStack className="h-4 w-4 mr-2" />Competition Grading References</Link></Button>
 
       <Tabs defaultValue="users">
         <TabsList>
