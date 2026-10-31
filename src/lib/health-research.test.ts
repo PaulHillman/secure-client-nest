@@ -36,6 +36,20 @@ test("research inspection reads actual PDF bytes and accepts all four topics in 
   assert.equal(result.topics.filter(t => t.evidence.length === 1).length, 4);
 });
 
+test('cited research confirmation covers only its exact version and actual excerpt', async () => {
+  const text = 'Corporate lending, acquisition financing, cash flow management, and maintaining relationships with business clients.';
+  const db = {
+    from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: { storage_path: 'role.txt', file_size: text.length }, error: null }) }) }) }),
+    storage: { from: () => ({ download: async () => ({ data: new Blob([text]), error: null }) }) },
+  };
+  const files = [{ file_name: 'What does Diane do?', current_version_id: 'v3' }];
+  const record = (versionId: string, excerpt: string) => [{ file_name: files[0].file_name, note: 'health_research_evidence:' + JSON.stringify({ versionId, topics: [{ topic: 'Client job description', excerpt }] }) }];
+  const evidence = async (version: string, excerpt: string) => (await inspectResearch(db, files, undefined, record(version, excerpt))).topics.find(t => t.topic === 'Client job description')?.evidence.length;
+  assert.equal(await evidence('v3', text), 1);
+  assert.equal(await evidence('v2', text), 0);
+  assert.equal(await evidence('v3', 'This invented description is not present in the actual uploaded research document.'), 0);
+});
+
 test("generated PDF carries the same specific before and after evidence", async () => {
   const bytes = await buildHealthReportPdf({
     teamLabel: "Test team", runAt: "October 17, 2026", week: 7, checks: [], concerns: [],
