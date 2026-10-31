@@ -5,14 +5,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { StudentLoginReport } from "@/components/student-login-report";
 
 export const Route = createFileRoute("/app/admin_/usage")({
   head: () => ({
     meta: [
-      { title: "Student Usage by Role — ClientVault" },
-      { name: "description", content: "Which pages and buttons students use most, broken down by team role." },
-      { property: "og:title", content: "Student Usage by Role — ClientVault" },
-      { property: "og:description", content: "Which pages and buttons students use most, broken down by team role." },
+      { title: "Student Logins & Usage — ClientVault" },
+      { name: "description", content: "Recent student logins, inactivity filters, and usage by team role." },
+      { property: "og:title", content: "Student Logins & Usage — ClientVault" },
+      { property: "og:description", content: "Review student sign-ins today, yesterday and last week, plus students absent for a chosen number of days." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -81,11 +82,13 @@ function UsagePage() {
   return (
     <div className="p-6 space-y-6 max-w-5xl">
       <div>
-        <h1 className="font-display text-3xl">Student usage by role</h1>
+        <h1 className="font-display text-3xl">Student logins & usage</h1>
         <p className="text-sm text-muted-foreground">
           Students only — your own visits and "View as" are never counted.{first ? ` Collecting since ${first}.` : ""}
         </p>
       </div>
+      <StudentLoginReport />
+      <h2 className="font-display text-2xl border-t pt-6">Student usage by role</h2>
       <div className="flex flex-wrap gap-2">
         {["all", ...roles].map((r) => (
           <Button key={r} size="sm" variant={role === r ? "default" : "outline"} onClick={() => setRole(r)}>{r === "all" ? "All roles" : r}</Button>
