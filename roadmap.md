@@ -1,5 +1,9 @@
 # Roadmap
 
+- [ ] Cross-check all student dates against sign-ins and authenticated visits
+- [ ] Separate last visit from fresh sign-in and correct inactivity filters
+- [ ] Validate corrected dates, filters and report with real student records
+
 - [x] Add actual student login history and recent-period lists
 - [x] Add 7 / 14 / 21 / custom-day inactivity filters
 - [x] Verify login filters with tests and signed-in report checks
