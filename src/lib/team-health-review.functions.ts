@@ -438,6 +438,7 @@ export async function computeHealthReview(
       // Interview questions, video files and the final video are expected once the semester
       // has progressed past the configured percentages (editable in Admin).
       const confirmedQuestions = confirmedHealthFiles(t.teamId, 'interview_questions', teamFiles, fileVerifications ?? []);
+      if (confirmedQuestions.length) notes.vault.push(`Instructor verified the questions are present and correct (${confirmedQuestions.join(', ')}); no action required.`);
       const hasQuestions = confirmedQuestions.length > 0 || teamFiles.some(f => f.section === 'Semester Long Project' && f.subsection === 'Interview Questions');
       if (!confirmedQuestions.length) observe('vault:interview_questions', 'Interview questions are on file.', hasQuestions ? 0 : 1);
       if (confirmedQuestions.length && !checksOff.has('vault:interview_questions')) observations.push({ ruleId: 'vault:interview_questions', evidence: `Instructor verified the questions are present and correct (${confirmedQuestions.join(', ')}); no action required. Earlier warnings are reporting errors.`, verified: true, remaining: 0, reportingCorrection: true });
