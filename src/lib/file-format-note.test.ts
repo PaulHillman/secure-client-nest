@@ -1,24 +1,25 @@
-import { describe, expect, it } from "vitest";
+import { describe, test } from "node:test";
+import { strict as assert } from "node:assert";
 import { isApplePagesFile, unreadableFileExplanation } from "./file-format-note";
 
 describe("unreadableFileExplanation", () => {
-  it("explains that a .pages file is an Apple format and must be exported as PDF or DOCX", () => {
+  test("explains that a .pages file is an Apple format and must be exported as PDF or DOCX", () => {
     const msg = unreadableFileExplanation("Seth Peer Review.pages");
-    expect(msg).toContain("Apple Pages");
-    expect(msg).toContain(".pages");
-    expect(msg).toContain("PDF");
-    expect(msg).toContain("DOCX");
-    expect(msg).toContain("Seth Peer Review.pages");
+    assert.match(msg, /Apple Pages/);
+    assert.match(msg, /\.pages/);
+    assert.match(msg, /PDF/);
+    assert.match(msg, /DOCX/);
+    assert.match(msg, /Seth Peer Review\.pages/);
   });
 
-  it("matches the .pages extension case-insensitively", () => {
-    expect(isApplePagesFile("Review.PAGES")).toBe(true);
-    expect(isApplePagesFile("Review.pdf")).toBe(false);
+  test("matches the .pages extension case-insensitively", () => {
+    assert.equal(isApplePagesFile("Review.PAGES"), true);
+    assert.equal(isApplePagesFile("Review.pdf"), false);
   });
 
-  it("gives generic re-upload guidance for other unreadable files", () => {
+  test("gives generic re-upload guidance for other unreadable files", () => {
     const msg = unreadableFileExplanation("notes.xyz");
-    expect(msg).not.toContain("Apple Pages");
-    expect(msg).toContain("DOCX or PDF");
+    assert.doesNotMatch(msg, /Apple Pages/);
+    assert.match(msg, /DOCX or PDF/);
   });
 });
