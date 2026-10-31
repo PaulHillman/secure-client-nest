@@ -470,7 +470,8 @@ export async function computeHealthReview(
             observe("vault:research", "All required research topics have supporting text excerpts in the uploaded documents.");
           } else if (research.unreadable.length) {
             notes.vault.push(`Research coverage unverified: ${research.unreadable.join(", ")} could not be read. Do not infer missing research from file count.`);
-            push("vault", "yellow", `Research file unreadable: ${research.unreadable.join(", ")} appears blank or in a format that cannot be read. Please re-upload it as a visible DOCX or PDF file so its contents can be verified.`, null, null, null, "vault:research");
+            const { unreadableFileExplanation } = await import('./file-format-note');
+            push("vault", "yellow", `Research file unreadable: ${research.unreadable.map(unreadableFileExplanation).join(" ")}`, null, null, null, "vault:research");
             observe("vault:research", "Research coverage requires instructor review because some documents could not be read.", missing.length, false);
           } else {
             push("vault", pastDue ? "red" : "yellow", `Client research: ${total} file(s); no text evidence found for ${missing.join(", ")}. Expected ${required} files or combined coverage of all ${operational.research_topics.length} topics. Please add the content or identify where it appears.`, null, null, null, "vault:research");

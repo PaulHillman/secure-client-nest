@@ -138,7 +138,9 @@ export async function autoAssessPeerUpload(versionId: string) {
 
   const base = { user_id: ownerId, team_id: file.team_id, file_id: file.id, version_id: versionId, attempt, final_submission: finalSubmission, criteria_snapshot: criteria, policy_snapshot: policy, assessed_by: instructor?.id ?? ownerId };
   if (!text && !media) {
-    await db.from("peer_review_assessments").insert({ ...base, score: null, status: "unreadable", summary: "File could not be read automatically — instructor review needed.", email_body: "", student_email_status: "suppressed", instructor_email_status: "suppressed", pm_email_status: "suppressed" });
+    const { unreadableFileExplanation } = await import('./file-format-note');
+    const summary = `${unreadableFileExplanation(file.file_name ?? version.storage_path)} Instructor review needed.`;
+    await db.from("peer_review_assessments").insert({ ...base, score: null, status: "unreadable", summary, email_body: "", student_email_status: "suppressed", instructor_email_status: "suppressed", pm_email_status: "suppressed" });
     return { status: "unreadable" };
   }
   const verdict = await scoreWithAi({ criteria, text: text ?? "", media, studentName: student.name, teamName: team.display_name ?? team.name, attempt, finalSubmission, previous, policy });
