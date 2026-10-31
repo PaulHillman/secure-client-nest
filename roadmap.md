@@ -1,5 +1,8 @@
 # ClientVault roadmap
 
+## Instructor-confirmed minutes violation
+- [ ] Record Managing the Globe's October 21 minutes as instructor-confirmed non-template, with the note already sent; retain the warning for the exact reviewed version and verify a fresh report.
+
 ## Instructor minutes confirmation
 - [x] Honor scoped instructor template confirmations and match historical names as reporting corrections, not improvement credit.
 - [x] Saved three instructor confirmations; fresh signed-in report shows Reporting correction instead of Unable to verify, 20 tests pass, no report saved or sent.
