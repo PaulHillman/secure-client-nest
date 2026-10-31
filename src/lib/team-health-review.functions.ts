@@ -485,6 +485,22 @@ export async function computeHealthReview(
           if (!missing.length) {
             notes.vault.push(`All ${operational.research_topics.length} research topics have text evidence across ${total} file(s). Combined documents accepted; content quality is not graded automatically.`);
             observe("vault:research", "All required research topics have supporting text excerpts in the uploaded documents.");
+            // Same-version extensionless uploads were readable all along: never award earned progress.
+            const prior = latestShare(t.teamId);
+            const priorResearch = prior?.payload?.exceptions?.find((e: any) => e.ruleId === 'vault:research' && /^Research file unreadable:/.test(e.reason));
+            const recovered = [...inResearch, ...misfiled].filter(f => research.inspected.includes(f.file_name) && !/\.[a-z0-9]+$/i.test(f.file_name));
+            if (priorResearch && recovered.length) {
+              const { data: recoveredVersions } = await db.from('file_versions').select('id,uploaded_at').in('id', recovered.map(f => f.current_version_id).filter(Boolean));
+              const unchanged = recovered.filter(f => recoveredVersions?.some(v => v.id === f.current_version_id && Date.parse(v.uploaded_at) <= Date.parse(prior.generated_at)));
+              const oldFiles = [...inResearch, ...misfiled].filter(f => priorResearch.reason.includes(f.file_name));
+              if (oldFiles.length && oldFiles.every(f => unchanged.some(u => u.id === f.id))) {
+                const observation = observations.find(o => o.ruleId === 'vault:research');
+                if (observation) {
+                  observation.reportingCorrection = true;
+                  observation.evidence = `The same uploaded research versions now read correctly using their retained file formats (${oldFiles.map(f => f.file_name).join(', ')}). All required topics have supporting excerpts. The earlier unreadable warning was a reporting error, not student-earned progress; no re-upload required.`;
+                }
+              }
+            }
           } else if (research.unreadable.length) {
             notes.vault.push(`Research coverage unverified: ${research.unreadable.join(", ")} could not be read. Do not infer missing research from file count.`);
             const { unreadableFileExplanation } = await import('./file-format-note');
