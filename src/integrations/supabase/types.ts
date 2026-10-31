@@ -2721,6 +2721,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_student_access_report: {
+        Args: never
+        Returns: {
+          email: string
+          last_login_at: string
+          last_visit_at: string
+          recent_logins: string[]
+          recent_visits: string[]
+          roles: string[]
+          section: string
+          student_name: string
+          teams: string
+          user_id: string
+        }[]
+      }
       admin_student_login_report: {
         Args: never
         Returns: {

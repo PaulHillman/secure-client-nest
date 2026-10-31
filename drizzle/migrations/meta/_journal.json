@@ -239,6 +239,13 @@
       "when": 1793452383037,
       "tag": "0033_student_logins_auth_events_only",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793452880057,
+      "tag": "0034_admin_student_access_report",
+      "breakpoints": true
     }
   ]
 }
