@@ -1,4 +1,5 @@
 # Architecture rules
+- Admin-only login summaries use session creation and actual sign-ins, never refreshes or page activity.
 - Student health history projects only received shared-snapshot summaries through a membership-authorized database function; exact shared PDF versions use the existing tracked viewer, and private payloads and unsent saves remain instructor-only.
 - Weekly peer-review summaries use a deterministic latest-valid-assessment and student/team-scoped future booking helper; missing topics do not erase bookings, explicit unrelated topics remain excluded, and on-time pending meetings carry a typed escalation exemption to keep compliance yellow without score changes. Individual feedback and immutable shared history stay separate.
 - Health Review category displays repeat matching saved concerns at the flagged status before pass notes; PDF and screen presentation never recalculate findings or change shared baselines.
