@@ -2,6 +2,7 @@ export type LoginPeriod = "all" | "last_week" | "today" | "yesterday";
 export type StudentLogin = {
   user_id: string; student_name: string; email: string | null; section: string | null;
   teams: string; roles: string[]; last_login_at: string | null; recent_logins: string[];
+  last_visit_at?: string | null; recent_visits?: string[];
 };
 
 export function detroitDate(value: string) {
@@ -25,19 +26,25 @@ export function loginPeriodRange(period: LoginPeriod, now: string) {
   return { start: shiftDate(monday, -7), end: shiftDate(monday, -1) };
 }
 
-export function filterStudentLogins(students: StudentLogin[], mode: "recent" | "inactive", period: LoginPeriod, days: number, now: string) {
+export function filterStudentLogins(students: StudentLogin[], mode: "recent" | "inactive", period: LoginPeriod, days: number, now: string, basis: "signin" | "visit" = "signin") {
   const range = loginPeriodRange(period, now);
   const cutoff = Date.parse(now) - days * 86400000;
   return students.filter(student => {
-    if (mode === "inactive") return student.last_login_at === null || Date.parse(student.last_login_at) <= cutoff;
-    if (period === "all") return student.last_login_at !== null;
-    return student.recent_logins.some(login => {
+    const latest = basis === "visit" ? student.last_visit_at ?? null : student.last_login_at;
+    if (mode === "inactive") return latest === null || Date.parse(latest) <= cutoff;
+    if (period === "all") return latest !== null;
+    return (basis === "visit" ? student.recent_visits ?? [] : student.recent_logins).some(login => {
       const day = detroitDate(login);
       return Date.parse(login) <= Date.parse(now) && day >= range.start && day <= range.end;
     });
-  }).sort((a, b) => (b.last_login_at ? Date.parse(b.last_login_at) : -Infinity) - (a.last_login_at ? Date.parse(a.last_login_at) : -Infinity) || a.student_name.localeCompare(b.student_name));
+  }).sort((a, b) => {
+    const aDate = basis === "visit" ? a.last_visit_at : a.last_login_at;
+    const bDate = basis === "visit" ? b.last_visit_at : b.last_login_at;
+    return (bDate ? Date.parse(bDate) : -Infinity) - (aDate ? Date.parse(aDate) : -Infinity) || a.student_name.localeCompare(b.student_name);
+  });
 }
 
-export function daysSinceLogin(student: StudentLogin, now: string) {
-  return student.last_login_at ? Math.max(0, Math.floor((Date.parse(now) - Date.parse(student.last_login_at)) / 86400000)) : null;
+export function daysSinceLogin(student: StudentLogin, now: string, basis: "signin" | "visit" = "signin") {
+  const date = basis === "visit" ? student.last_visit_at : student.last_login_at;
+  return date ? Math.max(0, Math.floor((Date.parse(now) - Date.parse(date)) / 86400000)) : null;
 }

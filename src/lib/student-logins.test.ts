@@ -27,3 +27,14 @@ for (const days of [7, 14, 21, 10]) {
 test("Detroit date boundaries remain correct after daylight saving ends", () => {
   assert.deepEqual(loginPeriodRange("today", "2026-11-02T04:59:00Z"), { start: "2026-11-01", end: "2026-11-01" });
 });
+test("returning while still signed in is not 21-day inactivity", () => {
+  const student = { ...row("Anthony", "2026-10-09T14:47:52Z"), last_visit_at: "2026-10-31T01:59:18Z", recent_visits: ["2026-10-31T01:59:18Z"] };
+  assert.equal(filterStudentLogins([student], "inactive", "all", 21, now, "visit").length, 0);
+  assert.equal(filterStudentLogins([student], "inactive", "all", 21, now, "signin").length, 1);
+  assert.equal(filterStudentLogins([student], "recent", "yesterday", 21, now, "visit").length, 1);
+});
+test("a missing observed visit stays unknown rather than inheriting a fabricated date", () => {
+  const student = { ...row("Unknown", null), last_visit_at: null, recent_visits: [] };
+  assert.equal(filterStudentLogins([student], "recent", "today", 7, now, "visit").length, 0);
+  assert.equal(filterStudentLogins([student], "inactive", "today", 7, now, "visit").length, 1);
+});
