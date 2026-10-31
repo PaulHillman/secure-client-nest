@@ -2,7 +2,7 @@ import { isPeerReviewMinutesSupplement } from "./minutes-template";
 import { OPERATIONAL_DEFAULTS } from './review-rulebook';
 
 export type Concern = { check: string; level: "red" | "yellow"; reason: string; person?: string | null; userId?: string | null; ruleId?: string; escalationExempt?: boolean };
-export type Observation = { ruleId: string; evidence: string; remaining?: number; verified: boolean; correctedFiles?: string[] };
+export type Observation = { ruleId: string; evidence: string; remaining?: number; verified: boolean; correctedFiles?: string[]; reportingCorrection?: boolean };
 export type Change = { status: "Resolved" | "Partially improved" | "Still outstanding" | "Unable to verify" | "New concern" | "Reporting correction"; previous: string | null; current: string; person: string | null };
 export type Comparison = { sharedAt: string | null; source: string; changes: Change[]; streaks?: Record<string, number> };
 // Varied but deterministic: the same concern always earns the same phrase, so re-running a report never rewords a compliment.
@@ -49,6 +49,8 @@ export function concernKey(c: Concern): string | undefined {
  if (c.check === "vault" && /^(Minutes|Agendas): \d+ posted, \d+ expected by week \d+\.$/.test(c.reason)) return `vault:${c.reason.split(":")[0]}:team`;
  // Legacy research findings (pre-ruleId reports) used varying wording; map them to the stable research key.
  if (c.check === "vault" && /^(Client research:|Research coverage unable to verify)/.test(c.reason)) return "vault:research";
+ if (c.check === 'vault' && /^No Interview Questions uploaded/.test(c.reason)) return 'vault:interview_questions';
+ if (c.check === 'vault' && /^Content verified by the instructor:/.test(c.reason)) return 'vault:research:format';
  if (c.check === "gaps" && c.reason === "No weekly meeting consensus yet.") return "gaps:meeting";
  if (c.check === "meetings" && c.reason === "No weekly meetings logged this semester.") return "meetings:logged";
  return undefined;
@@ -86,7 +88,7 @@ export function compareConcerns(previous: Concern[], current: Concern[], observa
    const improved = fact?.verified && (old.level === "red" && next.level === "yellow" || typeof fact.remaining === "number" && typeof before?.remaining === "number" && fact.remaining < before.remaining);
    changes.push({ status: improved ? "Partially improved" : "Still outstanding", previous: old.reason, current: next.reason + (improved ? " Progress is evident; please finish the remaining work." : ""), person: next.person ?? old.person ?? null });
   } else if (fact?.verified && fact.remaining === 0) {
-   changes.push({ status: "Resolved", previous: old.reason, current: `${fact.evidence} ${pickCompliment(key ?? `${old.check}:${old.reason}:${old.person ?? ""}`)}`, person: old.person ?? null });
+   changes.push({ status: fact.reportingCorrection ? "Reporting correction" : "Resolved", previous: old.reason, current: fact.reportingCorrection ? fact.evidence : `${fact.evidence} ${pickCompliment(key ?? `${old.check}:${old.reason}:${old.person ?? ""}`)}`, person: old.person ?? null });
   } else changes.push({ status: "Unable to verify", previous: old.reason, current: "The previous concern is not reproduced, but a reliable item-level match or supporting evidence is unavailable. Instructor review required; no improvement credited.", person: old.person ?? null });
  }
  for (const c of current) if (!matched.has(c)) changes.push({ status: concernKey(c) ? "New concern" : "Unable to verify", previous: null, current: c.reason, person: c.person ?? null });

@@ -3,6 +3,15 @@ import { strict as assert } from "node:assert";
 import { compareConcerns, researchCoverage } from "./health-review-comparison";
 
 describe("weekly shared-report concern comparisons", () => {
+  test('Oak & Iron instructor-readable PDF clears the legacy format warning without invented progress', () => {
+    const prior = { check: 'vault', level: 'red' as const, reason: 'Content verified by the instructor: Sobie Research is confirmed acceptable, but it cannot be read automatically. Please re-upload it as a readable DOCX or PDF.' };
+    const [change] = compareConcerns([prior], [], [{ ruleId: 'vault:research:format', evidence: 'Instructor verified readable PDF; no re-upload required.', verified: true, remaining: 0, reportingCorrection: true }]);
+    assert.equal(change.status, 'Reporting correction');
+  });
+  test('Oak & Iron verified questions clear the legacy missing-question warning', () => {
+    const prior = { check: 'vault', level: 'yellow' as const, reason: 'No Interview Questions uploaded (expected by 47% of semester).' };
+    assert.equal(compareConcerns([prior], [], [{ ruleId: 'vault:interview_questions', evidence: 'Instructor verified correct questions.', verified: true, remaining: 0, reportingCorrection: true }])[0]?.status, 'Reporting correction');
+  });
   test('instructor-confirmed unpaid interns minutes are a reporting correction despite renamed files', () => {
     const prior = { check: 'meetings', level: 'red' as const, reason: '3 of 5 minutes files do not follow the shared Meeting Minutes Template (MGT 331 MEETING Wednesday, 10_14.pdf, MGT 331 Meeting 09_30.pdf, MGT 331 MEETING Wednesday 10_07.pdf). Start each minutes document from the template.' };
     const observation = { ruleId: 'meetings:minutes_template', verified: true, evidence: 'Instructor verified template use.', correctedFiles: ['MGT 331 MEETING Wednesday, 10_14.pdf', 'MGT 331 Meeting Wednesday, 09_30.pdf', 'MGT 331 MEETING Wednesday, 10_07.pdf'] };
