@@ -3,6 +3,11 @@ import { strict as assert } from "node:assert";
 import { compareConcerns, researchCoverage } from "./health-review-comparison";
 
 describe("weekly shared-report concern comparisons", () => {
+  test('same-version research reading correction clears a false warning without earned credit', () => {
+    const prior = { check: 'vault', level: 'red' as const, reason: 'Research file unreadable: Company History and Industry Analysis', ruleId: 'vault:research' };
+    const [change] = compareConcerns([prior], [], [{ ruleId: 'vault:research', evidence: 'Same uploaded versions read correctly.', verified: true, remaining: 0, reportingCorrection: true }]);
+    assert.equal(change.status, 'Reporting correction');
+  });
   test('Oak & Iron instructor-readable PDF clears the legacy format warning without invented progress', () => {
     const prior = { check: 'vault', level: 'red' as const, reason: 'Content verified by the instructor: Sobie Research is confirmed acceptable, but it cannot be read automatically. Please re-upload it as a readable DOCX or PDF.' };
     const [change] = compareConcerns([prior], [], [{ ruleId: 'vault:research:format', evidence: 'Instructor verified readable PDF; no re-upload required.', verified: true, remaining: 0, reportingCorrection: true }]);
