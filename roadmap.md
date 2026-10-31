@@ -1,5 +1,9 @@
 # ClientVault roadmap
 
+## Student health report history
+- [ ] Add Past Health Reports to every student's menu with all shared reports, newest first, and Good/Fair/Bad summaries.
+- [ ] Verify team-scoped access, retained PDF versions, and the signed-in report-opening flow.
+
 ## Instructor questions and readable PDF confirmations
 - [x] Recorded Oak & Iron's correct interview questions; verified the exact-version confirmation in a fresh signed-in review's checked-items list.
 - [x] Recorded Sobie Research PDF as instructor-readable; fresh report clears the historical warning as Reporting correction with no re-upload required. 28 tests pass, build OK; no report saved or sent.
