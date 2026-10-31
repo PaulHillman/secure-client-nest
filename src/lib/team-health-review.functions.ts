@@ -439,7 +439,7 @@ export async function computeHealthReview(
       // has progressed past the configured percentages (editable in Admin).
       const confirmedQuestions = confirmedHealthFiles(t.teamId, 'interview_questions', teamFiles, fileVerifications ?? []);
       const hasQuestions = confirmedQuestions.length > 0 || teamFiles.some(f => f.section === 'Semester Long Project' && f.subsection === 'Interview Questions');
-      observe('vault:interview_questions', confirmedQuestions.length ? `Instructor verified that the interview questions are present and correct: ${confirmedQuestions.join(', ')}. Earlier missing-question warnings are reporting errors, not student-earned improvements.` : 'Interview questions are on file.', hasQuestions ? 0 : 1);
+      if (!confirmedQuestions.length) observe('vault:interview_questions', 'Interview questions are on file.', hasQuestions ? 0 : 1);
       if (confirmedQuestions.length && !checksOff.has('vault:interview_questions')) observations.push({ ruleId: 'vault:interview_questions', evidence: `Instructor verified the questions are present and correct (${confirmedQuestions.join(', ')}); no action required. Earlier warnings are reporting errors.`, verified: true, remaining: 0, reportingCorrection: true });
       if (isTeamLevel && progress >= rules.interview_questions_percent / 100 && !hasQuestions)
         push("vault", "yellow", `No Interview Questions uploaded (expected by ${rules.interview_questions_percent}% of semester).`, null, null, null, 'vault:interview_questions');
