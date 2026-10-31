@@ -469,7 +469,7 @@ export async function computeHealthReview(
         notes.vault.push(`Required research topics: ${operational.research_topics.map(t => t.topic).join(", ")}. Topics may be combined in one document; file count alone does not establish missing research.`);
         if (total < required) {
           const { inspectResearch } = await import("./health-research.server");
-          const research = await inspectResearch(db, [...inResearch, ...misfiled], operational.research_topics);
+          const research = await inspectResearch(db, [...inResearch, ...misfiled], operational.research_topics, (fileVerifications ?? []).filter(v => v.team_id === t.teamId));
           researchByTeam.set(t.teamId, research);
           // Files the instructor has opened and verified by hand count as covering the remaining topics;
           // the team is only asked to re-upload them in a readable format (separate, non-escalating reminder).

@@ -26,12 +26,28 @@ async function readVaultText(db: any, file: { file_name: string; current_version
   return text;
 }
 
-export async function inspectResearch(db: any, files: { file_name: string; current_version_id: string | null }[], topics = OPERATIONAL_DEFAULTS.research_topics) {
+export async function inspectResearch(db: any, files: { file_name: string; current_version_id: string | null }[], topics = OPERATIONAL_DEFAULTS.research_topics, confirmations: { file_name: string; note: string | null }[] = []) {
  const documents: { fileName: string; text: string | null }[] = [];
  for (const file of files) {
   documents.push({ fileName: file.file_name, text: await readVaultText(db, file) });
  }
- return { topics: researchCoverage(documents, topics), unreadable: documents.filter(d => !d.text).map(d => d.fileName), inspected: documents.filter(d => d.text).map(d => d.fileName) };
+ const coverage = researchCoverage(documents, topics);
+ for (const record of confirmations) {
+  if (!record.note?.startsWith('health_research_evidence:')) continue;
+  try {
+   const decision = JSON.parse(record.note.slice('health_research_evidence:'.length));
+   const file = files.find(f => f.file_name === record.file_name && f.current_version_id === decision.versionId);
+   const text = file ? documents.find(d => d.fileName === file.file_name)?.text : null;
+   if (!text || !Array.isArray(decision.topics)) continue;
+   for (const item of decision.topics) {
+    const topic = coverage.find(t => t.topic === item.topic);
+    if (topic && typeof item.excerpt === 'string' && item.excerpt.trim().length >= 30 && text.replace(/\s+/g, ' ').includes(item.excerpt) && !topic.evidence.some(e => e.fileName === record.file_name)) {
+     topic.evidence.push({ fileName: record.file_name, excerpt: item.excerpt });
+    }
+   }
+  } catch { /* Invalid or outdated evidence never establishes coverage. */ }
+ }
+ return { topics: coverage, unreadable: documents.filter(d => !d.text).map(d => d.fileName), inspected: documents.filter(d => d.text).map(d => d.fileName) };
 }
 
 /**

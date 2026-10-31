@@ -30,7 +30,7 @@
 - Weekly health comparisons use immutable per-team shared snapshots, not saved-history totals; Save and vault refresh never advance the shared baseline.
 - Shared baselines advance only after at least one student email is accepted, recording accepted recipients; instructor-only and suppressed sends do not qualify.
 - Concern comparisons use stable rule identifiers and verified item-level observations; unknown historical matches remain unverified rather than earning automatic credit.
-- Research/minutes extraction uses exact-version storage extensions, not editable labels; edge-compatible readers retain excerpts and unreadable content stays unverified.
+- Research/minutes use storage extensions and version-scoped cited topic confirmations; unreadable content stays unverified, and reader fixes are reporting corrections.
 - Unreadable-file messages use the shared src/lib/file-format-note.ts helper across assessments, reports and PDFs; .pages files get Apple Pages export guidance (PDF or DOCX), other formats get generic re-upload guidance.
 - Vault rename/refile actions update file metadata only, preserving storage paths and version history; explicit Final Compiled selections normalize the display name for compatibility with existing slot classification.
 - Vault uploader labels use version uploader profiles, separately from assigned ownership; peer-review upload order spans file rows for that owner, and score badges match the exact displayed version to avoid presenting an original score as revision feedback.
