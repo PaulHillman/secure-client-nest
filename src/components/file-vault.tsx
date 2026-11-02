@@ -1,5 +1,6 @@
 import { recordHealthReportView } from "@/lib/health-report-views";
 import { peerBadgeLabel, peerBadgeScore, peerBadgeTone } from "@/lib/peer-review-policy";
+import { regularPeerRevisionAllowed } from "@/lib/peer-deadline";
 import { openVaultFileInNewTab } from "@/lib/file-download";
 import { deleteVaultRecord } from "@/lib/vault-delete";
 import { useMemo, useRef, useState } from "react";
@@ -1301,6 +1302,11 @@ function NewVersionButton({
     if (!f) return;
     setBusy(true);
     try {
+      if (file.subsection === "Mid-Semester Peer Reviews") {
+        const { data: permission, error } = await supabase.from('peer_review_final_uploads').select('consumed_at').eq('student_id', file.assigned_to ?? '').eq('team_id', file.team_id).maybeSingle();
+        if (error) throw error;
+        if (!regularPeerRevisionAllowed(Date.now(), Boolean(permission && !permission.consumed_at))) throw new Error('Peer-review revisions closed November 1 at 11:59 p.m. Detroit time. Contact Professor Hillman.');
+      }
       const nextVer = (versions[0]?.version_number ?? 0) + 1;
       const path = `teams/${file.team_id}/${file.id}/v${nextVer}-${safeStorageFileName(f.name)}`;
       const { error: upErr } = await supabase.storage
@@ -1455,6 +1461,11 @@ function UploadDialog({
     const storedSubsection = isCompetitions ? compPlacement : subsection;
     setBusy(true);
     try {
+      if (isPeerReview) {
+        const { data: permission, error } = await supabase.from('peer_review_final_uploads').select('consumed_at').eq('student_id', assignedTo).eq('team_id', teamId).maybeSingle();
+        if (error) throw error;
+        if (!regularPeerRevisionAllowed(Date.now(), Boolean(permission && !permission.consumed_at))) throw new Error('Peer-review revisions closed November 1 at 11:59 p.m. Detroit time. Contact Professor Hillman.');
+      }
       const { data: created, error: cErr } = await supabase
         .from("files")
         .insert({
