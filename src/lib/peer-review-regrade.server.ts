@@ -2,6 +2,7 @@
 // analysis of how close a saved submission is to 8/10. Never replaces the official score.
 import { finalRegradeDecision } from './peer-review-discussion';
 import { resolveOperationalRules } from './review-rulebook';
+import { activePeerReviewCriteria } from './peer-review-criteria';
 const MODEL = "openai/gpt-6-astra";
 
 const schema = {
@@ -21,6 +22,9 @@ export type DetailedRegrade = { precise_score: number; verdict: string; criteria
 export async function regradePeerAssessment(db: any, assessmentId: string, actorId: string): Promise<DetailedRegrade> {
   const { data: a, error } = await db.from("peer_review_assessments").select("id, user_id, team_id, score, attempt, final_submission, criteria_snapshot, version_id, status, policy_snapshot").eq("id", assessmentId).single();
   if (error || !a || a.status !== "assessed" || !a.version_id) throw new Error("Only a saved, scored submission can be re-graded.");
+  // Filter a copy; the original assessment's historical snapshot remains untouched.
+  a.criteria_snapshot = activePeerReviewCriteria(a.criteria_snapshot);
+  if (!a.criteria_snapshot) throw new Error('No active peer-review criteria remain after excluding comments.');
   const policy = resolveOperationalRules(a.policy_snapshot);
   const { data: newer, error: latestError } = await db.from('peer_review_assessments').select('id').eq('user_id', a.user_id).eq('team_id', a.team_id).neq('status', 'ownership_invalid').gt('attempt', a.attempt).limit(1);
   if (latestError) throw latestError;

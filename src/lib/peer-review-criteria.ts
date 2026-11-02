@@ -1,3 +1,8 @@
+/** Derive scoring instructions without modifying the saved historical document. */
+export function activePeerReviewCriteria(content: string): string {
+  return content.split(/\r?\n/).filter(line => !/^\s*#/.test(line)).join('\n').trim();
+}
+
 export function criteriaReminderDue(now: Date, monthDay: string, reviewedYear: number | null) {
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Detroit', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
   const year = Number(today.slice(0, 4));

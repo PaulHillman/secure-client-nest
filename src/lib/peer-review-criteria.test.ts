@@ -1,6 +1,23 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { criteriaReminderDue, validReminderMonthDay } from './peer-review-criteria';
+import { activePeerReviewCriteria, criteriaReminderDue, validReminderMonthDay } from './peer-review-criteria';
+
+describe('comment-only rubric lines', () => {
+  it('excludes lines beginning with # from new scoring criteria', () => {
+    assert.equal(activePeerReviewCriteria('Require accurate totals.\n# Historical penalty\nKeep rankings unique.'), 'Require accurate totals.\nKeep rankings unique.');
+  });
+  it('excludes ## lines including the former below-seven rule', () => {
+    assert.equal(activePeerReviewCriteria('Three positives per teammate.\n## Missing the required number places it immediately below a 7'), 'Three positives per teammate.');
+  });
+  it('handles indented comments and Windows line endings, preserving inline hashes', () => {
+    assert.equal(activePeerReviewCriteria('  ## Old SMART requirement\r\nUse Competition #2 evidence.\r\n\t# Old rule'), 'Use Competition #2 evidence.');
+  });
+  it('retains the historical document unchanged', () => {
+    const saved = 'Accurate totals.\n## Prior rule';
+    assert.equal(activePeerReviewCriteria(saved), 'Accurate totals.');
+    assert.equal(saved, 'Accurate totals.\n## Prior rule');
+  });
+});
 
 describe('annual criteria review reminder', () => {
   it('reminds before submission/evaluation until reviewed this year', () => {

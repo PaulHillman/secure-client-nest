@@ -2,6 +2,7 @@
 import { revisionEmailBody } from './peer-review-email';
 import { canAssessPeerAttempt } from './peer-review-workspace';
 import { resolveOperationalRules, type OperationalRules } from './review-rulebook';
+import { activePeerReviewCriteria } from './peer-review-criteria';
 export { revisionEmailBody } from './peer-review-email';
 
 const SUBSECTION = "Mid-Semester Peer Reviews";
@@ -45,6 +46,8 @@ async function extractText(blob: Blob, name: string): Promise<string | null> {
 type Media = { type: "input_file"; file_url: string } | { type: "input_image"; image_url: string };
 
 async function scoreWithAi(input: { criteria: string; text: string; media?: Media | null; studentName: string; teamName: string; attempt: number; finalSubmission?: boolean; previous: any | null; policy: OperationalRules }): Promise<Verdict> {
+  input = { ...input, criteria: activePeerReviewCriteria(input.criteria) };
+  if (!input.criteria) throw new Error('No active peer-review criteria remain after excluding comments.');
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("AI key missing");
   const prev = input.previous
