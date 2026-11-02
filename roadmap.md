@@ -1,4 +1,7 @@
 # Roadmap
+- [x] Include saved instructor comments in peer-review acceptance emails
+- [x] Save score-specific acceptance comments for the three qualifying November 2 re-grades
+- [x] Verify comment persistence and acceptance-email behavior
 
 - [x] Correct Larissa's duplicate peer-review attempt while retaining genuine submissions
 - [x] Verify her team's company research warnings and correct supported false findings

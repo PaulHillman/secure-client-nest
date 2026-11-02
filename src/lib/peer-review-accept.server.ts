@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
+import { peerCloseoutBody, peerCloseoutComment } from './peer-review-closeout';
 
 const INSTRUCTOR_EMAIL = 'hillmanp@gvsu.edu';
 
@@ -9,7 +10,7 @@ const INSTRUCTOR_EMAIL = 'hillmanp@gvsu.edu';
  * that they are done. Idempotent per assessment and recipient.
  */
 export async function onPeerAccepted(db: SupabaseClient<Database>, assessmentId: string) {
-  const { data: a, error } = await db.from('peer_review_assessments').select('id,user_id,team_id,score,detailed_regrade,accepted_at').eq('id', assessmentId).single();
+  const { data: a, error } = await db.from('peer_review_assessments').select('id,user_id,team_id,score,detailed_regrade,accepted_at,accepted_note,discussion_note').eq('id', assessmentId).single();
   if (error || !a?.accepted_at) return { sent: 0, canceled: 0 };
   const { data: student } = await db.from('profiles').select('name,email').eq('id', a.user_id).single();
   if (!student || /parfunkel/i.test(student.name)) return { sent: 0, canceled: 0 };
@@ -42,13 +43,7 @@ export async function onPeerAccepted(db: SupabaseClient<Database>, assessmentId:
   const meetingLine = canceledTimes.length
     ? `Because you're done, your peer-review meeting on ${canceledTimes.map(fmt).join(' and ')} has been canceled — you do not need to attend.`
     : 'You do not need to schedule or attend a peer-review meeting.';
-  const body = [
-    `Hi ${first},`,
-    `Your mid-semester peer review has been accepted${shown != null ? ` (${shown}/10)` : ''}. You are done with this assignment — no further revisions are needed.`,
-    meetingLine,
-    'Thank you for the work you put into your revisions.',
-    'Prof. Hillman',
-  ].join('\n\n');
+  const body = peerCloseoutBody({ firstName: first, score: shown, meetingLine, comment: peerCloseoutComment(a) });
   const subject = `Peer review accepted — ${student.name} — no meeting needed`;
 
   const { sendTemplateEmail } = await import('@/lib/email-templates/send-email');
