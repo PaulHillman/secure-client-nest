@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Restore the three qualifying re-grades to Awaiting Review for instructor processing
+- [x] Audit the three approved peer-review compliance groups
 - [x] Include saved instructor comments in peer-review acceptance emails
 - [x] Save score-specific acceptance comments for the three qualifying November 2 re-grades
 - [x] Verify comment persistence and acceptance-email behavior
