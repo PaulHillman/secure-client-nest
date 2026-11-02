@@ -8,6 +8,7 @@ const payloadSchema = z.object({
   payload: z.object({
     email: z.string().email(),
     uri: z.string().max(500).optional(),
+    created_at: z.string().datetime({ offset: true }).optional(),
     scheduled_event: z.object({
       uri: z.string().max(500),
       start_time: z.string().max(100),
@@ -90,6 +91,17 @@ export const Route = createFileRoute('/api/public/calendly-booking')({
         const { data: team } = await db.from('teams').select('is_test').eq('id', latest.team_id).single()
         if (!team || team.is_test) return Response.json({ ignored: true })
 
+        const { data: retained } = await db.from('peer_review_meetings').select('id').eq('calendly_event_uri', eventUri).eq('student_id', student.id).maybeSingle()
+        const { data: closure } = await db.from('health_review_rules').select('peer_booking_closed_at').eq('id', 'global').single()
+        const { peerBookingAllowed } = await import('@/lib/peer-deadline')
+        if (!peerBookingAllowed(event.payload.created_at, Boolean(retained), closure?.peer_booking_closed_at)) {
+          if (!event.payload.created_at) return Response.json({ rejected: true, reason: 'Booking time unavailable; instructor review required' })
+          const { cancelClosedPeerBooking } = await import('@/lib/peer-review-calendar.server')
+          await cancelClosedPeerBooking(eventUri)
+          await db.from('admin_audit_log').insert({ actor_id: student.id, action: 'peer_booking_returned_late', details: { student_id: student.id, event_uri: eventUri, booking_created_at: event.payload.created_at } })
+          return Response.json({ rejected: true, reason: 'New meeting bookings are closed' })
+        }
+
         // Keep a record of the booking so the admin Meetings page can list it.
         const { error: saveError } = await db.from('peer_review_meetings').upsert({
           calendly_event_uri: eventUri,
@@ -99,8 +111,9 @@ export const Route = createFileRoute('/api/public/calendly-booking')({
           zoom_url: zoomLink,
           score: latest.score,
           attempt: latest.attempt,
+          booking_created_at: event.payload.created_at ?? null,
         }, { onConflict: 'calendly_event_uri' })
-        if (saveError) console.error('Failed to save peer-review meeting:', saveError)
+        if (saveError) return Response.json({ error: 'Meeting was not accepted' }, { status: 409 })
 
         const meetingTime = new Intl.DateTimeFormat('en-US', {
           timeZone: 'America/New_York',
