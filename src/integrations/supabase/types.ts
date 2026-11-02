@@ -1152,6 +1152,8 @@ export type Database = {
           minutes_min_markers: number
           minutes_template_from: string
           operational_rules: Json
+          peer_booking_closed_at: string
+          peer_revision_closed_at: string
           research_due: string
           research_required_early: number
           research_required_late: number
@@ -1177,6 +1179,8 @@ export type Database = {
           minutes_min_markers?: number
           minutes_template_from?: string
           operational_rules?: Json
+          peer_booking_closed_at?: string
+          peer_revision_closed_at?: string
           research_due?: string
           research_required_early?: number
           research_required_late?: number
@@ -1202,6 +1206,8 @@ export type Database = {
           minutes_min_markers?: number
           minutes_template_from?: string
           operational_rules?: Json
+          peer_booking_closed_at?: string
+          peer_revision_closed_at?: string
           research_due?: string
           research_required_early?: number
           research_required_late?: number
@@ -1768,6 +1774,7 @@ export type Database = {
       peer_review_meetings: {
         Row: {
           attempt: number | null
+          booking_created_at: string | null
           booking_topic: string | null
           calendly_event_uri: string
           created_at: string
@@ -1781,6 +1788,7 @@ export type Database = {
         }
         Insert: {
           attempt?: number | null
+          booking_created_at?: string | null
           booking_topic?: string | null
           calendly_event_uri: string
           created_at?: string
@@ -1794,6 +1802,7 @@ export type Database = {
         }
         Update: {
           attempt?: number | null
+          booking_created_at?: string | null
           booking_topic?: string | null
           calendly_event_uri?: string
           created_at?: string

@@ -246,6 +246,13 @@
       "when": 1793452880057,
       "tag": "0034_admin_student_access_report",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1793636999462,
+      "tag": "0035_close_regular_peer_revisions_and_new_bookings",
+      "breakpoints": true
     }
   ]
 }
