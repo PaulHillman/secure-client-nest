@@ -1,9 +1,22 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 import { bookingIdentity } from './peer-review-workspace';
+import { peerBookingAllowed } from './peer-deadline';
 
 type Event = { uri: string; start_time: string; location?: { join_url?: string }; };
-type Invitee = { email: string; name: string; status: string; questions_and_answers?: { question: string; answer: string }[] };
+type Invitee = { email: string; name: string; status: string; created_at?: string; questions_and_answers?: { question: string; answer: string }[] };
+
+export async function cancelClosedPeerBooking(eventUri: string) {
+  const key = process.env['LOVABLE_API_KEY'];
+  const connection = process.env['CALENDLY_API_KEY'];
+  const id = eventUri.split('/').pop();
+  if (!key || !connection || !id) throw new Error('Cannot return the closed meeting booking; calendar connection unavailable.');
+  const response = await fetch(`https://connector-gateway.lovable.dev/calendly/scheduled_events/${encodeURIComponent(id)}/cancellation`, {
+    method: 'POST', headers: { Authorization: `Bearer ${key}`, 'X-Connection-Api-Key': connection, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reason: 'New peer-review meeting bookings closed November 2, 2026 at 11:27 a.m. Detroit time. Contact Professor Hillman.' }),
+  });
+  if (!response.ok) throw new Error(`Calendly could not return the late booking (${response.status}). Instructor action required.`);
+}
 export async function syncCalendlyPeerMeetings(db: SupabaseClient<Database>) {
   const key = process.env['LOVABLE_API_KEY'];
   const connection = process.env['CALENDLY_API_KEY'];
@@ -33,6 +46,7 @@ export async function syncCalendlyPeerMeetings(db: SupabaseClient<Database>) {
   let imported = 0;
   const unmatched: string[] = [];
   const activeKeys = new Set<string>();
+  const { data: closure } = await db.from('health_review_rules').select('peer_booking_closed_at').eq('id', 'global').single();
   for (const event of events) {
     const id = event.uri.split('/').pop();
     if (!id) continue;
@@ -49,8 +63,16 @@ export async function syncCalendlyPeerMeetings(db: SupabaseClient<Database>) {
       if (ae) throw ae;
       if (!latest) continue;
       activeKeys.add(`${event.uri}:${identity.person.id}`);
+      const { data: retained } = await db.from('peer_review_meetings').select('id').eq('calendly_event_uri', event.uri).eq('student_id', identity.person.id).maybeSingle();
+      if (!peerBookingAllowed(invitee.created_at, Boolean(retained), closure?.peer_booking_closed_at)) {
+        if (!invitee.created_at) { unmatched.push(`${invitee.name} — booking time unavailable; not accepted`); continue; }
+        await cancelClosedPeerBooking(event.uri);
+        await db.from('admin_audit_log').insert({ actor_id: identity.person.id, action: 'peer_booking_returned_late', details: { event_uri: event.uri, booking_created_at: invitee.created_at, student_id: identity.person.id } });
+        unmatched.push(`${invitee.name} — late booking returned`);
+        continue;
+      }
       const topic = invitee.questions_and_answers?.find(q => /discuss/i.test(q.question))?.answer ?? 'Topic not specified';
-      const { error } = await db.from('peer_review_meetings').upsert({ calendly_event_uri: event.uri, student_id: identity.person.id, team_id: latest.team_id, scheduled_at: event.start_time, zoom_url: event.location?.join_url ?? null, attempt: latest.attempt, score: latest.score, booking_topic: topic, identity_match: identity.match }, { onConflict: 'calendly_event_uri' });
+      const { error } = await db.from('peer_review_meetings').upsert({ calendly_event_uri: event.uri, student_id: identity.person.id, team_id: latest.team_id, scheduled_at: event.start_time, zoom_url: event.location?.join_url ?? null, attempt: latest.attempt, score: latest.score, booking_topic: topic, identity_match: identity.match, booking_created_at: invitee.created_at ?? null }, { onConflict: 'calendly_event_uri' });
       if (error) throw error;
       imported++;
     }

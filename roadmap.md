@@ -1,4 +1,9 @@
 # Roadmap
+- [x] Enforce the regular peer-review revision deadline and preserve instructor final-upload grants
+- [x] Close new peer-review bookings while retaining existing appointments
+- [x] Audit and return Edwin's November 2 late revision with retained evidence
+- [x] Verify deadline enforcement and report affected students
+- [ ] Send Edwin's late-return email — awaiting Paul's approval; copy Avery (PM) and instructor
 - [x] Restore the three qualifying re-grades to Awaiting Review for instructor processing
 - [x] Audit the three approved peer-review compliance groups
 - [x] Include saved instructor comments in peer-review acceptance emails

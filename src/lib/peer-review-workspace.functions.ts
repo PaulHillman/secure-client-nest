@@ -12,7 +12,7 @@ export const getPeerWorkspace = createServerFn({ method: 'GET' }).middleware([re
     db.from('peer_review_assessments').select('*, profiles!peer_review_assessments_user_id_fkey(name,email), teams!inner(name,display_name,section,is_test), file_versions(id,storage_path,mime_type,uploaded_at), files(file_name)').eq('teams.is_test', false).neq('status', 'ownership_invalid').order('attempt'),
     db.from('peer_review_meetings').select('*, profiles!peer_review_meetings_student_id_fkey(name,email), teams!inner(name,display_name,section,is_test)').eq('teams.is_test', false).order('scheduled_at'),
     db.from('peer_review_final_uploads').select('*'),
-    db.from('admin_audit_log').select('id,action,archive_name,details,created_at').in('action', ['peer_calendar_change', 'peer_calendar_validation', 'peer_calendar_validation_failed']).order('created_at', { ascending: false }).limit(30),
+    db.from('admin_audit_log').select('id,action,archive_name,details,created_at').in('action', ['peer_calendar_change', 'peer_calendar_validation', 'peer_calendar_validation_failed', 'peer_booking_returned_late']).order('created_at', { ascending: false }).limit(30),
   ]);
   for (const result of [assessments, meetings, permissions, calendarLog]) if (result.error) throw result.error;
   return { assessments: (assessments.data ?? []).filter(a => !/parfunkel/i.test(a.profiles?.name ?? '')), meetings: (meetings.data ?? []).filter(m => !/parfunkel/i.test(m.profiles?.name ?? '')), permissions: permissions.data ?? [], calendarLog: calendarLog.data ?? [] };

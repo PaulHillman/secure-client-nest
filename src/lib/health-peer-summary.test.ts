@@ -3,6 +3,10 @@ import { strict as assert } from 'node:assert';
 import { healthPeerSummary, latestHealthPeerAssessments, type HealthPeerAssessment } from './health-peer-summary';
 const row: HealthPeerAssessment = { user_id: 'student', team_id: 'team', file_id: 'file', attempt: 1, score: 6, status: 'assessed', created_at: '2026-10-23T12:00:00Z' };
 const now = Date.parse('2026-10-30T22:53:00Z');
+test('unresolved students cannot be told to revise or book after closure', () => {
+  assert.equal(healthPeerSummary(row, [], Date.parse('2026-11-02T16:28:00Z')).action, 'closed');
+  assert.equal(healthPeerSummary(row, [{ scheduled_at: '2026-11-05T16:45:00Z' }], Date.parse('2026-11-02T16:28:00Z')).action, 'booked');
+});
 test('original 7 passes without revisions', () => assert.equal(healthPeerSummary({ ...row, score: 7 }, [], now).action, 'complete'));
 test('revision 7 still needs 8 or a booked meeting', () => assert.equal(healthPeerSummary({ ...row, attempt: 2, score: 7 }, [], now).action, 'revise_or_book'));
 test('revision 8 is complete', () => assert.equal(healthPeerSummary({ ...row, attempt: 2, score: 8 }, [], now).action, 'complete'));

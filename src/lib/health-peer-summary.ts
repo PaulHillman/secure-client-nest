@@ -1,5 +1,6 @@
 import { peerReviewPass, REVISION_PEER_DUE, MEETING_PEER_DUE } from './peer-review-policy';
 import { resolveOperationalRules, deadlineLabel, detroitDeadline, type OperationalRules } from './review-rulebook';
+import { PEER_BOOKING_CLOSED_AT } from './peer-deadline';
 
 export type HealthPeerAssessment = {
   user_id: string; team_id: string; file_id: string | null; attempt: number;
@@ -46,6 +47,7 @@ export function healthPeerSummary(a: HealthPeerAssessment, meetings: HealthPeerM
     return { action: 'booked', level: onTime ? 'yellow' : level, escalationExempt: onTime, reason: `${prefix} Meeting booked ${date} Detroit time${onTime ? '; booking requirement met for now. Must complete the meeting and bring your latest submission' : ` — reschedule by ${deadlineLabel(p.meeting_due)}`}.`, revisionDue, meetingDue } as const;
   }
   const needsMeeting = a.attempt >= p.max_submissions;
+  if (now > Date.parse(PEER_BOOKING_CLOSED_AT)) return { action: 'closed', level, reason: `${prefix} Regular revisions and new meeting bookings are closed. Contact Professor Hillman; no further submission is authorized unless he explicitly permits a final upload.`, revisionDue, meetingDue } as const;
   const fixes = view.summary_mode === 'with_fixes' && Array.isArray(a.changes) ? a.changes.filter((s): s is string => typeof s === 'string').slice(0, view.summary_fixes).join('; ') : '';
   return { action: needsMeeting ? 'book_meeting' : 'revise_or_book', level, reason: `${prefix} ${needsMeeting ? `${view.missing_meeting_warning ? `Required meeting not scheduled after ${p.max_submissions === 3 ? 'three' : p.max_submissions} submissions. ` : 'Meeting required. '}Book by ${deadlineLabel(p.revision_due)}; meet by ${deadlineLabel(p.meeting_due)}.` : `Resubmit to reach ${p.revision_pass}/10+ or book a meeting by ${deadlineLabel(p.revision_due)}; meet by ${deadlineLabel(p.meeting_due)}.`} Detroit time.${fixes ? ` Priority fixes: ${fixes}` : ''}`, revisionDue, meetingDue } as const;
 }
