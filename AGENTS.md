@@ -25,7 +25,7 @@
 
 - Individual peer-review assessments retain the source version, rubric snapshot and exact email separately from team health reports; each authorized assessment delivery handles one derived recipient and has its own idempotency key.
 
-- Peer-review criteria persist separately from semester team data in an admin-only document; annual review acknowledgement and optimistic edit checks prevent stale evaluation criteria and overwritten changes.
+- Peer criteria are admin-only, annual-reviewed and optimistic-lock saved; both scoring paths strip hash-prefixed comments from request text, preserving full historical snapshots.
 
 - Weekly health comparisons use immutable per-team shared snapshots, not saved-history totals; Save and vault refresh never advance the shared baseline.
 - Shared baselines advance only after at least one student email is accepted, recording accepted recipients; instructor-only and suppressed sends do not qualify.
