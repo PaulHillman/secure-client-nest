@@ -102,13 +102,6 @@ function Dashboard() {
       <PeerReviewCriteriaReminder />
       <DashboardReadinessNotice />
 
-      {isAdmin && Date.now() >= new Date("2026-10-16T12:00:00Z").getTime() && (
-        <div className="mb-6 rounded-lg border border-gold/60 bg-card p-4 text-sm">
-          <strong>Reminder:</strong> it's been a few weeks of student usage data — time to review the UI and workflow.{" "}
-          <Link to="/app/admin/usage" className="underline text-primary">Open Student Usage</Link>
-        </div>
-      )}
-
       {isAdmin && (
         <div className="mb-6">
           <AwaitingReviewCard />
