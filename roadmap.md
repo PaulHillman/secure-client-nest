@@ -1,4 +1,6 @@
 # Roadmap
+- [ ] Re-grade the eleven pending peer reviews with the current rubric and retain manual close-out
+- [ ] Verify all updated scores and retained instructor queue entries
 - [x] Enforce the regular peer-review revision deadline and preserve instructor final-upload grants
 - [x] Close new peer-review bookings while retaining existing appointments
 - [x] Audit and return Edwin's November 2 late revision with retained evidence

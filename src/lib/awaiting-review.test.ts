@@ -82,6 +82,14 @@ function build() {
 }
 
 describe("awaiting review queue", () => {
+  test('instructor-requested passing re-grades remain pending until manually closed out', () => {
+    const row = { id: 'regraded', team_id: REAL_TEAM.id, user_id: 'student', attempt: 3, score: 8, created_at: '2026-11-03T11:32:00Z', detailed_regrade: { pending_instructor_closeout: true } };
+    const input = { reqStatuses: [], managerSubmissions: [], teams: [REAL_TEAM], requirementDefs: [], profiles: [] };
+    assert.deepEqual(assembleAwaitingReview({ ...input, peerAssessments: [row] }).peerDecisions.map(p => p.id), ['regraded']);
+    assert.equal(assembleAwaitingReview({ ...input, peerAssessments: [{ ...row, accepted_at: '2026-11-03T12:00:00Z' }] }).peerDecisions.length, 0);
+    assert.equal(assembleAwaitingReview({ ...input, peerAssessments: [{ ...row, discussion_resolved_at: '2026-11-03T12:00:00Z' }] }).peerDecisions.length, 0);
+    assert.equal(assembleAwaitingReview({ ...input, peerAssessments: [{ ...row, detailed_regrade: null }] }).peerDecisions.length, 0);
+  });
   test('latest final upload replaces earlier unresolved attempts; accepted Branden leaves queue', () => {
     const base = { team_id: REAL_TEAM.id, user_id: 'sky', score: 7, created_at: '2026-10-27T12:00:00Z' };
     const q = assembleAwaitingReview({ reqStatuses: [], managerSubmissions: [], teams: [REAL_TEAM], requirementDefs: [], profiles: [], peerAssessments: [
