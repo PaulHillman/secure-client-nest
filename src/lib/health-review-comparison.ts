@@ -101,7 +101,7 @@ export function researchCoverage(documents: { fileName: string; text: string | n
  return topics.map(({ topic, keywords }) => ({ topic, evidence: documents.flatMap(d => {
   if (!d.text) return [];
   const escaped = keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const match = new RegExp(`\\b(?:${escaped.join('|')})\\b`, 'i').exec(d.text); if (!match) return [];
+  const match = new RegExp(`\\b(?:${escaped.join('|')})(?:s|es)?\\b`, 'i').exec(d.text); if (!match) return [];
   return [{ fileName: d.fileName, excerpt: d.text.slice(Math.max(0, match.index - 80), match.index + 220).replace(/\s+/g, " ") }];
  }) }));
 }
