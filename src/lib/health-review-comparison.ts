@@ -96,7 +96,7 @@ export function compareConcerns(previous: Concern[], current: Concern[], observa
 }
 export const RESEARCH_NOTE = "The four-file expectation represents company history/information, industry information, competitors, and the client's job description. These topics may be combined in one document; file count alone does not establish missing research.";
 export const RESEARCH_TOPICS = ["Company history/information", "Industry information", "Competitors", "Client job description"] as const;
-const patterns = [/\b(company history|history of|founded|established|company overview|company profile)\b/i, /\b(industry|sector|market trends)\b/i, /\b(competitors?|competition|competitive landscape)\b/i, /\b(job description|job responsibilities|duties|responsibilities of|client role)\b/i];
+const patterns = [/\b(company history|history of|founded|established|company overview|company profile)\b/i, /\b(industry|sector|market trends)\b/i, /\b(competitors?|competition|competitive landscape)\b/i, /\b(job descriptions?|job responsibilities|duties|responsibilities of|client roles?)\b/i];
 export function researchCoverage(documents: { fileName: string; text: string | null }[], topics = OPERATIONAL_DEFAULTS.research_topics) {
  return topics.map(({ topic, keywords }) => ({ topic, evidence: documents.flatMap(d => {
   if (!d.text) return [];

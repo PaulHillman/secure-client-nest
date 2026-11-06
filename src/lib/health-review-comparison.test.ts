@@ -91,6 +91,11 @@ describe("weekly shared-report concern comparisons", () => {
 });
 
 describe("research accepts combined coverage", () => {
+  test("plural 'Job Descriptions' heading counts as client job description evidence", () => {
+    const topics = researchCoverage([{ fileName: "CPA overview.docx", text: "3. Job Descriptions & Organizational Structure" }]);
+    assert.equal(topics.find(t => t.topic === "Client job description")!.evidence.length, 1);
+  });
+
   test("one file can cover history, industry, competitors and client job description", () => {
     const topics = researchCoverage([{ fileName: "Combined research.pdf", text: "The company was founded in 1990. Industry information describes market trends. Competitors include Acme. The client job description includes duties." }]);
     assert.equal(topics.length, 4);
