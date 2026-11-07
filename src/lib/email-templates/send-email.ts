@@ -2,6 +2,7 @@ import * as React from 'react'
 import { render } from '@react-email/render'
 import { EmailAPIError, sendLovableEmail } from '@lovable.dev/email-js'
 import { TEMPLATES } from './registry'
+import { isWithdrawnRecipient } from '../student-withdrawal'
 
 // Server-only: reads LOVABLE_API_KEY. Never import from client components.
 
@@ -54,6 +55,16 @@ export async function sendTemplateEmail(
   const recipient = template.to || to
   if (!recipient) {
     throw new Error('Recipient is required (the template defines no fixed recipient)')
+  }
+
+  // Check the effective recipient on every send (student or copy); fail closed
+  // if eligibility cannot be read. Auth recovery emails remain separate.
+  const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
+  const { data: withdrawn, error: eligibilityError } = await supabaseAdmin
+    .from('profiles').select('id, email, is_withdrawn').eq('is_withdrawn', true)
+  if (eligibilityError) throw new Error('Unable to verify recipient eligibility; email was not sent')
+  if (isWithdrawnRecipient(recipient, withdrawn ?? [])) {
+    return { sent: false, reason: 'recipient_suppressed' }
   }
 
   const templateData = options.templateData ?? {}

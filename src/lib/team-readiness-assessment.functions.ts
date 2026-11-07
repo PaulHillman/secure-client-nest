@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assessTeam, type AssessmentInput, type TeamAssessment } from "@/lib/team-readiness-assessment";
+import { activeStudentMembers } from './student-withdrawal';
 
 type RoleChecker = {
   rpc: (
@@ -99,8 +100,8 @@ export async function buildAssessments(teamId?: string): Promise<{
   const submitterIds = (submissions ?? []).map((s) => s.submitted_by).filter(Boolean) as string[];
   const profileIds = [...new Set([...memberIds, ...submitterIds])];
   const { data: profiles } = profileIds.length
-    ? await supabaseAdmin.from("profiles").select("id, name, email").in("id", profileIds)
-    : { data: [] as { id: string; name: string | null; email: string | null }[] };
+    ? await supabaseAdmin.from("profiles").select("id, name, email, is_withdrawn").in("id", profileIds)
+    : { data: [] as { id: string; name: string | null; email: string | null; is_withdrawn: boolean }[] };
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, { name: p.name, email: p.email }]));
 
   const by = <T extends { team_id: string | null }>(rows: T[] | null) => {
@@ -112,7 +113,7 @@ export async function buildAssessments(teamId?: string): Promise<{
     }
     return m;
   };
-  const membersBy = by(members);
+  const membersBy = by(activeStudentMembers(members ?? [], profiles ?? []));
   const focusBy = new Map((focus ?? []).map((f) => [f.team_id, f]));
   const proposalBy = new Map((proposals ?? []).map((p) => [p.team_id, p]));
   const agreementsBy = by(agreements);

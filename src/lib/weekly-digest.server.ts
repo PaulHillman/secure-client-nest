@@ -1,5 +1,6 @@
 // Server-only helpers for the weekly vault digest (uploads + inactive members).
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { activeStudentMembers } from './student-withdrawal';
 
 export const VAULT_ADMIN_JOB = "Client Vault & Tech Administrator";
 
@@ -24,7 +25,7 @@ export async function buildWeeklyDigests(supabaseAdmin: SupabaseClient): Promise
   const [teamsRes, membersRes, profilesRes, uploadsRes, loginsRes] = await Promise.all([
     supabaseAdmin.from("teams").select("id, name, display_name, section").eq("is_test", false),
     supabaseAdmin.from("team_members").select("team_id, user_id, job_title"),
-    supabaseAdmin.from("profiles").select("id, name, email"),
+    supabaseAdmin.from("profiles").select("id, name, email, is_withdrawn"),
     supabaseAdmin
       .from("file_audit_log")
       .select("team_id, file_name, section, created_at, action")
@@ -37,7 +38,7 @@ export async function buildWeeklyDigests(supabaseAdmin: SupabaseClient): Promise
   }
 
   const teams = teamsRes.data ?? [];
-  const members = membersRes.data ?? [];
+  const members = activeStudentMembers(membersRes.data ?? [], profilesRes.data ?? []);
   const nameById = new Map((profilesRes.data ?? []).map((p: any) => [p.id, p.name || p.email || "A teammate"]));
   const activeUsers = new Set((loginsRes.data ?? []).map((l: any) => l.user_id));
 
