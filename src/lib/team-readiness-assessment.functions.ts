@@ -99,9 +99,10 @@ export async function buildAssessments(teamId?: string): Promise<{
   const memberIds = [...new Set((members ?? []).map((m) => m.user_id))];
   const submitterIds = (submissions ?? []).map((s) => s.submitted_by).filter(Boolean) as string[];
   const profileIds = [...new Set([...memberIds, ...submitterIds])];
-  const { data: profiles } = profileIds.length
+  const { data: profiles, error: profileError } = profileIds.length
     ? await supabaseAdmin.from("profiles").select("id, name, email, is_withdrawn").in("id", profileIds)
-    : { data: [] as { id: string; name: string | null; email: string | null; is_withdrawn: boolean }[] };
+    : { data: [] as { id: string; name: string | null; email: string | null; is_withdrawn: boolean }[], error: null };
+  if (profileError) throw new Error('Unable to verify current student eligibility.');
   const profileMap = new Map((profiles ?? []).map((p) => [p.id, { name: p.name, email: p.email }]));
 
   const by = <T extends { team_id: string | null }>(rows: T[] | null) => {

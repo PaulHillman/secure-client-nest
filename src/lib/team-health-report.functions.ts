@@ -66,7 +66,7 @@ export const saveOrSendHealthReport = createServerFn({ method: "POST" })
       const { data: members } = await db.from("team_members").select("team_id, user_id").in("team_id", ids);
       const uids = [...new Set((members ?? []).map((m) => m.user_id))];
       const { data: profs } = uids.length
-        ? await db.from("profiles").select("id, name, first_name, email").in("id", uids)
+        ? await db.from("profiles").select("id, name, first_name, email").in("id", uids).eq('is_withdrawn', false)
         : { data: [] as { id: string; name: string; first_name: string | null; email: string | null }[] };
       const runAt = new Date(p.generatedAt).toLocaleString("en-US", { timeZone: "America/New_York" });
       const stamp = Date.now();
