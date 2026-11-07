@@ -253,6 +253,13 @@
       "when": 1793636999462,
       "tag": "0035_close_regular_peer_revisions_and_new_bookings",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794020094820,
+      "tag": "0036_turn_off_peer_review_health_check",
+      "breakpoints": true
     }
   ]
 }
