@@ -5,6 +5,8 @@ import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteStudent } from "@/lib/students.functions";
+import { setStudentWithdrawal } from '@/lib/student-withdrawal.functions';
+import { Switch } from '@/components/ui/switch';
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,7 +142,7 @@ function StudentsPanel() {
     queryKey: ["admin", "students"],
     queryFn: async () => {
       const [{ data: profiles, error }, { data: roles, error: rErr }, { data: members, error: mErr }, { data: teams, error: tErr }] = await Promise.all([
-        supabase.from("profiles").select("id, name, email, section, avatar_url").order("name"),
+        supabase.from("profiles").select("id, name, email, section, avatar_url, is_withdrawn, withdrawal_changed_at").order("name"),
         supabase.from("user_roles").select("user_id, role"),
         supabase.from("team_members").select("user_id, team_id, job_title"),
         supabase.from("teams").select("id, name, section"),
@@ -186,6 +188,15 @@ function StudentsPanel() {
   });
 
   const deleteFn = useServerFn(deleteStudent);
+  const withdrawalFn = useServerFn(setStudentWithdrawal);
+  const withdrawal = useMutation({
+    mutationFn: (vars: { studentId: string; withdrawn: boolean }) => withdrawalFn({ data: vars }),
+    onSuccess: (result) => {
+      toast.success(result.withdrawn ? 'Student withdrawn; history preserved and app emails stopped.' : 'Student reinstated.');
+      qc.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const removeStudent = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { studentId: id } }),
     onSuccess: (r) => {
@@ -295,6 +306,7 @@ function StudentsPanel() {
                 <th className="py-2 pr-3 cursor-pointer select-none" onClick={() => toggleSort("section")}>Section<SortIcon k="section" /></th>
                 <th className="py-2 pr-3 cursor-pointer select-none" onClick={() => toggleSort("team")}>Team<SortIcon k="team" /></th>
                 <th className="py-2 pr-3 cursor-pointer select-none" onClick={() => toggleSort("role")}>Role on team<SortIcon k="role" /></th>
+                <th className="py-2 pr-3">Withdrawn</th>
                 <th className="py-2"></th>
               </tr>
             </thead>
@@ -308,6 +320,8 @@ function StudentsPanel() {
                   }
                   onDelete={() => removeStudent.mutate(s.id)}
                   deleting={removeStudent.isPending && removeStudent.variables === s.id}
+                  onWithdraw={(withdrawn) => withdrawal.mutate({ studentId: s.id, withdrawn })}
+                  withdrawing={withdrawal.isPending}
                 />
               ))}
             </tbody>
@@ -323,6 +337,8 @@ function StudentRow({
   onSave,
   onDelete,
   deleting,
+  onWithdraw,
+  withdrawing,
 }: {
   student: {
     id: string;
@@ -332,10 +348,14 @@ function StudentRow({
     avatar_url?: string | null;
     team_name: string | null;
     job_title: string | null;
+    is_withdrawn: boolean;
+    withdrawal_changed_at: string | null;
   };
   onSave: (name: string, section: string | null) => void;
   onDelete: () => void;
   deleting: boolean;
+  onWithdraw: (withdrawn: boolean) => void;
+  withdrawing: boolean;
 }) {
   const [name, setName] = useState(student.name);
   const [section, setSection] = useState(student.section ?? "");
@@ -347,7 +367,7 @@ function StudentRow({
       <td className="py-2 pr-3">
         <div className="flex items-center gap-2">
           <StudentAvatar name={student.name} email={student.email} avatarUrl={student.avatar_url} size={28} />
-          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8" />
+          <Input value={name} onChange={(e) => setName(e.target.value)} className={`h-8 ${student.is_withdrawn ? 'line-through text-muted-foreground' : ''}`} />
         </div>
       </td>
       <td className="py-2 pr-3 text-muted-foreground">{student.email}</td>
@@ -372,6 +392,11 @@ function StudentRow({
         ) : (
           <span className="text-xs text-muted-foreground italic">—</span>
         )}
+      </td>
+      <td className="py-2 pr-3">
+        <Switch aria-label={`Withdrawn: ${student.name}`} checked={student.is_withdrawn} onCheckedChange={onWithdraw} disabled={withdrawing} />
+        {student.is_withdrawn && <Badge variant="secondary" className="mt-1 block w-fit">Withdrawn</Badge>}
+        {student.withdrawal_changed_at && <span className="block text-xs text-muted-foreground">{new Date(student.withdrawal_changed_at).toLocaleDateString('en-US', { timeZone: 'America/Detroit' })}</span>}
       </td>
       <td className="py-2 text-right">
         <div className="flex items-center justify-end gap-1">
