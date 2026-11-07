@@ -13,6 +13,7 @@ export const CHECK_SWITCHES: CheckSwitch[] = [
   { key: "readiness:norms_deadlines", group: "Group Norms", label: "Internal deadline wording is measurable", hint: "Flags deadlines without a single exact time or number." },
   { key: "readiness:norms_accountability", group: "Group Norms", label: "Accountability wording is concrete", hint: "Flags consequences that are not specific and enforceable (\"try to\", \"reasonable\", \"etc.\")." },
   { key: "readiness:norms_not_agreed", group: "Group Norms", label: "All members agreed to the current version", hint: "Names members who have not agreed in Team Readiness." },
+  { key: "peer:all", group: "Peer Reviews", label: "Peer review status on Health Reports", hint: "Shows filing, scores, revisions and meeting requirements for each student. Turn off once peer reviews are handled in Peer Review Decisions." },
   { key: "gaps:norms_signatures", group: "Group Norms", label: "All members signed the current version", hint: "Dashboard Gaps: names members who have not signed." },
 ];
 

@@ -402,7 +402,7 @@ export async function computeHealthReview(
       // Mid-Semester Peer Reviews: originals due Sunday 10/25 at 11:59 Eastern.
       // Before the deadline: no warnings — early filers get a compliment only.
       // After the deadline: each student without a review on file is flagged.
-      if (isTeamLevel) {
+      if (isTeamLevel && !checksOff.has('peer:all')) {
         const peerDue = Date.parse(detroitDeadline(operational.original_due));
         const reviews = teamFiles.filter((f) => subsectionMatches(f.subsection, "Mid-Semester Peer Reviews"));
         // Retained authorship takes precedence over upload ownership for shared uploads.
