@@ -13,6 +13,7 @@ import { CalendarRange, ChevronDown } from "lucide-react";
 import { DAY_LABELS, SLOT_MINUTES, fmtSlot, memberColor, slotKey, slotRangeLabel } from "@/lib/availability";
 import { cn } from "@/lib/utils";
 import { compareTeamRoles } from "@/lib/team-roles";
+import { activeStudentMembers } from '@/lib/student-withdrawal';
 
 const PREVIEW_SLOTS = 4; // first 2 hours: 6:00am, 6:30am, 7:00am, 7:30am
 
@@ -31,7 +32,7 @@ export function TeamAvailabilityCard({ teamId }: { teamId: string }) {
       if (ids.length === 0) return { members: [], busyBy: new Map<string, string[]>() };
 
       const [{ data: profs, error: pErr }, { data: avail, error: aErr }] = await Promise.all([
-        supabase.from("profiles").select("id, name, email, avatar_url").in("id", ids),
+        supabase.from("profiles").select("id, name, email, avatar_url, is_withdrawn").in("id", ids),
         supabase.from("student_availability").select("user_id, busy_slots").in("user_id", ids),
       ]);
       if (pErr) throw pErr;
@@ -40,7 +41,7 @@ export function TeamAvailabilityCard({ teamId }: { teamId: string }) {
       const profMap = new Map((profs ?? []).map((p) => [p.id, p]));
       const availMap = new Map((avail ?? []).map((a) => [a.user_id, a.busy_slots ?? []]));
 
-      const members = (tm ?? [])
+      const members = activeStudentMembers(tm ?? [], profs ?? [])
         .map((membership, i) => ({
           id: membership.user_id,
           role: membership.job_title,

@@ -4,6 +4,7 @@ import { isPastDue, READINESS_STATUSES, TEAM_SETTABLE, type ReadinessStatus } fr
 import type { Database } from "@/integrations/supabase/types";
 import { compareTeamRoles } from "@/lib/team-roles";
 import { resolveReviewAnswers } from "@/lib/submission-review-answers";
+import { activeStudentMembers } from './student-withdrawal';
 
 type RoleChecker = {
   rpc: (
@@ -67,8 +68,8 @@ export const getTeamReadiness = createServerFn({ method: "GET" })
           .eq("section", section),
         supabase.from("team_requirement_status").select("*").eq("team_id", data.teamId),
         memberIds.length
-          ? supabase.from("profiles").select("id, name, avatar_url").in("id", memberIds)
-          : Promise.resolve({ data: [] as { id: string; name: string; avatar_url: string | null }[] }),
+          ? supabase.from("profiles").select("id, name, avatar_url, is_withdrawn").in("id", memberIds)
+          : Promise.resolve({ data: [] as { id: string; name: string; avatar_url: string | null; is_withdrawn: boolean }[] }),
       ]);
 
     const openByKey = new Map((openings ?? []).map((o) => [o.requirement_key, o]));
@@ -76,7 +77,8 @@ export const getTeamReadiness = createServerFn({ method: "GET" })
     const statusByKey = new Map((statuses ?? []).map((s) => [s.requirement_key, s]));
     const profileById = new Map((profiles ?? []).map((p) => [p.id, p]));
 
-    const needsRole = (members ?? [])
+    const currentMembers = activeStudentMembers(members ?? [], profiles ?? []);
+    const needsRole = currentMembers
       .filter((m) => !m.job_title || m.job_title === "Unassigned")
       .map((m) => ({
         userId: m.user_id,
@@ -118,7 +120,7 @@ export const getTeamReadiness = createServerFn({ method: "GET" })
       team,
       isAdmin: admin && targetUserId === userId,
       isPM: viewerMember?.job_title === "PM",
-      members: (members ?? [])
+      members: currentMembers
         .map((m) => ({
           userId: m.user_id,
           jobTitle: (m.job_title as string) ?? "Unassigned",

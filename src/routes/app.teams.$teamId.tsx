@@ -71,6 +71,7 @@ type Member = {
     | "skills_learn"
     | "top_skills"
     | "work_style"
+    | "is_withdrawn"
   >;
 };
 
@@ -124,7 +125,7 @@ function TeamDetail() {
         const { data: pData, error: pErr } = await supabase
           .from("profiles")
           .select(
-            "id, name, email, avatar_url, section, phone_number, phone_visible, skills_have, skills_learn, top_skills, work_style",
+            "id, name, email, avatar_url, section, phone_number, phone_visible, skills_have, skills_learn, top_skills, work_style, is_withdrawn",
           )
           .in("id", userIds);
         if (pErr) throw pErr;
@@ -514,7 +515,8 @@ function MemberCard({
           <AvatarFallback>{initials(displayName)}</AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <div className="font-medium truncate">{displayName}</div>
+          <div className={`font-medium truncate ${p?.is_withdrawn ? 'line-through text-muted-foreground' : ''}`}>{displayName}</div>
+          {p?.is_withdrawn && <Badge variant="secondary">Withdrawn</Badge>}
           {member.job_title === "Unassigned" ? (
             <div className="text-xs text-muted-foreground italic">Role not assigned</div>
           ) : (
@@ -527,7 +529,7 @@ function MemberCard({
               </Badge>
             </div>
           )}
-          {p?.email && (
+          {p?.email && !p.is_withdrawn && (
             <a
               href={`mailto:${p.email}`}
               className="text-xs text-muted-foreground truncate block hover:text-foreground"

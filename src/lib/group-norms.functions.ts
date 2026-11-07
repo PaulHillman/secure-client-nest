@@ -83,15 +83,15 @@ export const getTeamNorms = createServerFn({ method: "GET" })
     const memberIds = (members ?? []).map((m) => m.user_id);
     const ids = [...new Set([...memberIds, ...(norms?.updated_by ? [norms.updated_by] : [])])];
     const { data: profiles } = ids.length
-      ? await supabaseAdmin.from("profiles").select("id, name, email, avatar_url").in("id", ids)
-      : { data: [] as { id: string; name: string; email: string | null; avatar_url: string | null }[] };
+      ? await supabaseAdmin.from("profiles").select("id, name, email, avatar_url, is_withdrawn").in("id", ids)
+      : { data: [] as { id: string; name: string; email: string | null; avatar_url: string | null; is_withdrawn: boolean }[] };
     const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
 
     const version = norms?.version ?? 1;
     const current = (sigs ?? []).filter((s) => s.version === version);
     const approvedAtByUser = new Map(current.map((s) => [s.user_id, s.signed_at]));
 
-    const roster: NormsRoster[] = (members ?? []).map((m) => ({
+    const roster: NormsRoster[] = (members ?? []).filter(m => !byId.get(m.user_id)?.is_withdrawn).map((m) => ({
       userId: m.user_id,
       name: byId.get(m.user_id)?.name || byId.get(m.user_id)?.email || "Team member",
       avatarUrl: byId.get(m.user_id)?.avatar_url ?? null,

@@ -15,6 +15,7 @@ import { effectiveDisabled, checkLabel } from './health-check-switches';
 import { healthPeerSummary, latestHealthPeerAssessments } from './health-peer-summary';
 import { resolveOperationalRules, detroitDeadline, deadlineLabel, operationalSchema, type OperationalRules } from './review-rulebook';
 import { changedEvidenceRules } from './review-rule-comparison';
+import { activeStudentMembers, excludesWithdrawnConcern } from './student-withdrawal';
 
 export type HealthScope = "team" | "section" | "all" | "role";
 
@@ -114,15 +115,17 @@ export async function computeHealthReview(
     if (!ids.length) return { generatedAt, week, progress, teamsChecked: 0, peopleChecked: 0, teamResults: [] as TeamCheckResult[], exceptions: [] as HealthException[], ranking: [] as PersonRank[], reportId: null as string | null };
 
     const since = new Date(now - rules.activity_window_days * DAY).toISOString();
-    const [{ data: members }, { data: logs }, { data: files }, { data: norms }, { data: profiles }, { data: reportViews }, { data: minutesTemplateRows }] = await Promise.all([
+    const [{ data: retainedMembers }, { data: logs }, { data: files }, { data: norms }, { data: profiles, error: profileError }, { data: reportViews }, { data: minutesTemplateRows }] = await Promise.all([
       db.from("team_members").select("team_id, user_id, job_title").in("team_id", ids),
       db.from("meeting_logs").select("id, team_id, meeting_date, attendance, minutes_posted, minutes_file_id").in("team_id", ids),
       db.from("files").select("id, current_version_id, created_at, team_id, section, subsection, category, file_name, uploaded_by, is_template, is_locked, meeting_log_id").in("team_id", ids),
       db.from("group_norms").select("team_id, version, group_norms_signatures(user_id, version)").in("team_id", ids),
-      db.from("profiles").select("id, name, first_name, last_name, email"),
+      db.from("profiles").select("id, name, first_name, last_name, email, is_withdrawn"),
       db.from("health_report_views").select("user_id, file_id, last_version_id, team_id, view_count, clicked_at, last_viewed_at").in("team_id", ids),
       db.from("files").select("id, current_version_id, file_name").eq("is_template", true).ilike("file_name", "Meeting Minutes Template%").limit(1),
     ]);
+    if (profileError) throw new Error('Unable to verify current student eligibility. No review was run.');
+    const members = activeStudentMembers(retainedMembers ?? [], profiles ?? []);
     const minutesTemplate = minutesTemplateRows?.[0] ?? null;
     const { data: peerAssessments, error: peerError } = await db.from('peer_review_assessments').select('user_id, team_id, file_id, attempt, score, status, created_at, accepted_at, discussion_resolved_at, discussion_held_at, policy_snapshot, changes').neq('status', 'ownership_invalid').in('team_id', ids).order('created_at', { ascending: false });
     if (peerError) throw new Error('Unable to load retained peer-review analyses.');
@@ -616,7 +619,7 @@ export async function computeHealthReview(
         if (!mine.length) continue;
         const priors = (shares ?? [])
           .filter((s: any) => s.team_id === t.teamId)
-          .map((s: any) => ((s.payload as { exceptions?: HealthException[] })?.exceptions ?? []).filter((e) => !PARFUNKEL.test(e.person ?? "")));
+          .map((s: any) => ((s.payload as { exceptions?: HealthException[] })?.exceptions ?? []).filter((e) => !PARFUNKEL.test(e.person ?? "") && !excludesWithdrawnConcern(e, profiles ?? [])));
         const escalated = escalateConcerns(mine, priors, { redAfter: rules.escalate_red_after, gradeAfter: rules.escalate_grade_after });
         const streaks = new Map<string, number>();
         // Replace in place, preserving order.
@@ -666,7 +669,7 @@ export async function computeHealthReview(
           if (!share) return { sharedAt: null, source: "No verified shared baseline", changes: [] };
           const payload = share.payload as { exceptions?: HealthException[]; team?: TeamCheckResult; rulesSnapshot?: { thresholds?: unknown; operational?: unknown } };
           const changedRules = changedEvidenceRules(payload.rulesSnapshot, { thresholds: rules, operational });
-          const prior = (payload.exceptions ?? []).filter(e => !PARFUNKEL.test(e.person ?? ""));
+          const prior = (payload.exceptions ?? []).filter(e => !PARFUNKEL.test(e.person ?? "") && !excludesWithdrawnConcern(e, profiles ?? []));
           const corrections = prior.filter(e => changedRules.has(concernKey(e) ?? '')).map(e => ({ status: 'Reporting correction' as const, previous: e.reason, current: 'The instructor changed this check since the previous report. Current findings use the new rules; no student-earned improvement is inferred.', person: e.person ?? null }));
           return { sharedAt: share.shared_at, source: share.source, streaks: Object.fromEntries(streaksByTeam.get(t.teamId) ?? []), changes: [...compareConcerns(prior.filter(e => !changedRules.has(concernKey(e) ?? '')), out.filter(e => e.teamId === t.teamId), observationsByTeam.get(t.teamId) ?? [], payload.team?.observations ?? [], checksOff), ...corrections] };
         })(),

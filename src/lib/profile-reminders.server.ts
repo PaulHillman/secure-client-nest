@@ -21,7 +21,7 @@ export async function findIncompleteStudents(
   supabaseAdmin: SupabaseClient,
 ): Promise<ReminderTarget[]> {
   const [profilesRes, availRes, membersRes, rolesRes, testTeamsRes] = await Promise.all([
-    supabaseAdmin.from("profiles").select("id, name, email, avatar_url, skills_have, skills_learn"),
+    supabaseAdmin.from("profiles").select("id, name, email, avatar_url, skills_have, skills_learn").eq('is_withdrawn', false),
     supabaseAdmin.from("student_availability").select("user_id"),
     supabaseAdmin.from("team_members").select("user_id, team_id"),
     supabaseAdmin.from("user_roles").select("user_id, role").eq("role", "admin"),

@@ -34,7 +34,7 @@ export function TeamRosterCard() {
         supabase
           .from("profiles")
           .select(
-            "id, name, first_name, last_name, initials, email, avatar_url, student_id, section, phone_number, phone_visible, work_style, skills_have, skills_learn, top_skills, created_at, updated_at",
+            "id, name, first_name, last_name, initials, email, avatar_url, student_id, section, phone_number, phone_visible, work_style, skills_have, skills_learn, top_skills, created_at, updated_at, is_withdrawn",
           ),
 
       ]);
@@ -94,6 +94,7 @@ export function TeamRosterCard() {
           "Team name": t.display_name ?? "",
           Role: m.job_title ?? "",
           Name: m.name === "—" ? "" : m.name,
+          Status: p?.is_withdrawn ? 'Withdrawn' : 'Active',
           "First name": p?.first_name ?? "",
           "Last name": p?.last_name ?? "",
           Initials: p?.initials ?? "",
@@ -174,7 +175,7 @@ export function TeamRosterCard() {
                         <td className="py-2 pr-3 font-medium">
                           {idx === 0 ? t.name : ""}
                         </td>
-                        <td className="py-2 pr-3"><StudentName name={m.name} email={m.email} avatarUrl={m.avatar_url} /></td>
+                        <td className="py-2 pr-3"><span className={m.profile?.is_withdrawn ? 'line-through text-muted-foreground' : ''}><StudentName name={m.name} email={m.email} avatarUrl={m.avatar_url} /></span>{m.profile?.is_withdrawn && <Badge variant="secondary" className="ml-2">Withdrawn</Badge>}</td>
                         <td className="py-2 pr-3 text-muted-foreground">{m.email ?? "—"}</td>
                         <td className="py-2 pr-3">
                           {m.job_title ? (

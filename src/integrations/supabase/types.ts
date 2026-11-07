@@ -1956,6 +1956,7 @@ export type Database = {
           first_name: string | null
           id: string
           initials: string | null
+          is_withdrawn: boolean
           last_name: string | null
           name: string
           phone_number: string | null
@@ -1966,6 +1967,8 @@ export type Database = {
           student_id: string | null
           top_skills: string[]
           updated_at: string
+          withdrawal_changed_at: string | null
+          withdrawal_changed_by: string | null
           work_style: string | null
         }
         Insert: {
@@ -1975,6 +1978,7 @@ export type Database = {
           first_name?: string | null
           id: string
           initials?: string | null
+          is_withdrawn?: boolean
           last_name?: string | null
           name?: string
           phone_number?: string | null
@@ -1985,6 +1989,8 @@ export type Database = {
           student_id?: string | null
           top_skills?: string[]
           updated_at?: string
+          withdrawal_changed_at?: string | null
+          withdrawal_changed_by?: string | null
           work_style?: string | null
         }
         Update: {
@@ -1994,6 +2000,7 @@ export type Database = {
           first_name?: string | null
           id?: string
           initials?: string | null
+          is_withdrawn?: boolean
           last_name?: string | null
           name?: string
           phone_number?: string | null
@@ -2004,6 +2011,8 @@ export type Database = {
           student_id?: string | null
           top_skills?: string[]
           updated_at?: string
+          withdrawal_changed_at?: string | null
+          withdrawal_changed_by?: string | null
           work_style?: string | null
         }
         Relationships: []
@@ -2781,6 +2790,10 @@ export type Database = {
       is_team_pm: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
+      }
+      set_student_withdrawal: {
+        Args: { _student_id: string; _withdrawn: boolean }
+        Returns: undefined
       }
       shares_team: { Args: { _a: string; _b: string }; Returns: boolean }
       student_health_report_history: {

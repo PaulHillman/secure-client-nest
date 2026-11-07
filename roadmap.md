@@ -1,4 +1,7 @@
 # Roadmap
+- [x] Add audited reversible instructor withdrawal control and crossed-out team roster entries
+- [x] Stop withdrawn-student email delivery including copies
+- [x] Exclude withdrawals from current participation checks while retaining history and verify behavior
 - [x] Re-grade the eleven pending peer reviews with the current rubric and retain manual close-out
 - [x] Verify all updated scores and retained instructor queue entries
 - [x] Enforce the regular peer-review revision deadline and preserve instructor final-upload grants
