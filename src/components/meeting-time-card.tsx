@@ -20,6 +20,7 @@ import { CalendarClock, Check, X, CircleDashed, MapPin, Video } from "lucide-rea
 import { toast } from "sonner";
 import { FACE_TO_FACE } from "@/lib/meeting-agreement";
 import { notifyMeetingChange, respondMeetingAgreement } from "@/lib/meeting.functions";
+import { activeStudentMembers } from '@/lib/student-withdrawal';
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -55,7 +56,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
       if (userIds.length) {
         const { data: pData } = await supabase
           .from("profiles")
-          .select("id, name, initials, email, avatar_url")
+          .select("id, name, initials, email, avatar_url, is_withdrawn")
           .in("id", userIds);
         profiles = pData ?? [];
       }
@@ -72,7 +73,7 @@ export function MeetingTimeCard({ teamId }: { teamId: string }) {
       }
       const amap = new Map(agreements.map((a) => [a.user_id, a]));
 
-      const roster = (members ?? []).map((m) => ({
+      const roster = activeStudentMembers(members ?? [], profiles).map((m) => ({
         user_id: m.user_id,
         job_title: m.job_title,
         name: pmap.get(m.user_id)?.name ?? "Unknown",
