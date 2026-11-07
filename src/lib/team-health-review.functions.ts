@@ -598,7 +598,7 @@ export async function computeHealthReview(
             const opened = !!v && v.view_count > 0;
             const ruleId = `reports:opened:${m.user_id}`;
             if (opened) notes.reports.push(`${nm}: ${share.source === "legacy_email_matched" ? "historical team-vault opening after the shared date (exact report version unverified)" : "recorded opening of the report shared"} ${share.shared_at.slice(0, 10)}; last opened ${v.last_viewed_at}. Opening is not proof of reading or understanding.`);
-            else push("reports", "yellow", `No recorded opening of the report shared ${share.shared_at.slice(0, 10)}. Staying current with feedback is a team accountability concern, especially before peer review. Teammates should follow up. Emailed PDF reading is not independently tracked.`, nm, m.job_title, m.user_id, ruleId);
+            else push("reports", "yellow", `No recorded opening of the report shared ${share.shared_at.slice(0, 10)}. Staying current with feedback is a team accountability concern. Teammates should follow up. Emailed PDF reading is not independently tracked.`, nm, m.job_title, m.user_id, ruleId);
             observe(ruleId, `${nm} has now opened the latest shared report.`, opened ? 0 : 1, share.source !== "legacy_email_matched");
           }
         } else notes.reports.push("No verified prior shared report baseline is available; member follow-through cannot yet be assessed.");
