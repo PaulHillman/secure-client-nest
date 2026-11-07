@@ -1,6 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from '@tanstack/react-start';
+import { setStudentWithdrawal } from '@/lib/student-withdrawal.functions';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -467,6 +470,15 @@ function MemberCard({
 }) {
   const { user, isAdmin } = useAuth();
   const qc = useQueryClient();
+  const withdrawalFn = useServerFn(setStudentWithdrawal);
+  const withdrawal = useMutation({
+    mutationFn: (withdrawn: boolean) => withdrawalFn({ data: { studentId: member.user_id, withdrawn } }),
+    onSuccess: (result) => {
+      toast.success(result.withdrawn ? 'Student withdrawn; history preserved and app emails stopped.' : 'Student reinstated.');
+      qc.invalidateQueries();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const p = member.profiles;
   const displayName = p?.name ?? "Unlinked team member";
   const canEdit = !!p && (p.id === user?.id || isAdmin);
@@ -517,6 +529,17 @@ function MemberCard({
         <div className="min-w-0 flex-1">
           <div className={`font-medium truncate ${p?.is_withdrawn ? 'line-through text-muted-foreground' : ''}`}>{displayName}</div>
           {p?.is_withdrawn && <Badge variant="secondary">Withdrawn</Badge>}
+          {isAdmin && p && (
+            <label className="mt-2 flex items-center justify-between gap-3 text-xs">
+              Withdrawn
+              <Switch
+                aria-label={`Withdrawn: ${displayName}`}
+                checked={p.is_withdrawn}
+                disabled={withdrawal.isPending}
+                onCheckedChange={(value) => withdrawal.mutate(value)}
+              />
+            </label>
+          )}
           {member.job_title === "Unassigned" ? (
             <div className="text-xs text-muted-foreground italic">Role not assigned</div>
           ) : (
