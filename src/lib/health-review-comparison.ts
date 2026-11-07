@@ -61,6 +61,8 @@ export function compareConcerns(previous: Concern[], current: Concern[], observa
   // A check the instructor switched off is not shown at all — neither as progress nor as unverified.
   const offKey = concernKey(old);
   if (offKey && checksOff.has(offKey)) continue;
+  // "peer:all" drops every prior peer-review concern, whatever its stored key or wording.
+  if (checksOff.has('peer:all') && (/^vault:peer/.test(offKey ?? old.ruleId ?? '') || /peer[ -]?review/i.test(old.reason))) continue;
   if (/Group Norms.*not signed.*locked/i.test(old.reason) || old.check === "activity" && !old.ruleId) {
    changes.push({ status: "Reporting correction", previous: old.reason, current: old.check === "activity" ? "The earlier activity finding predates the authoritative sign-in tracking correction. It cannot establish student-earned progress; current activity is assessed separately." : "The older report relied on a lock flag rather than current-version signatures. This is a reporting correction, not student-earned progress.", person: old.person ?? null }); continue;
   }
