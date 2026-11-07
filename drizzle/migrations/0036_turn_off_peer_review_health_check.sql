@@ -1,0 +1,1 @@
+UPDATE public.health_review_rules SET disabled_checks = array_append(disabled_checks,'peer:all') WHERE id='global' AND NOT ('peer:all' = ANY(disabled_checks));
