@@ -16,6 +16,7 @@ import { healthPeerSummary, latestHealthPeerAssessments } from './health-peer-su
 import { resolveOperationalRules, detroitDeadline, deadlineLabel, operationalSchema, type OperationalRules } from './review-rulebook';
 import { changedEvidenceRules } from './review-rule-comparison';
 import { activeStudentMembers, excludesWithdrawnConcern } from './student-withdrawal';
+import { meetingExemption, expectedMeetingDocuments, isExcusedHistoricalShortfall } from './health-meeting-exemption';
 
 export type HealthScope = "team" | "section" | "all" | "role";
 
@@ -126,6 +127,8 @@ export async function computeHealthReview(
     ]);
     if (profileError) throw new Error('Unable to verify current student eligibility. No review was run.');
     const members = activeStudentMembers(retainedMembers ?? [], profiles ?? []);
+    const { data: meetingExemptions, error: exemptionsError } = await db.from('health_review_meeting_exemptions').select('team_id, semester_start, excused_count, reason').in('team_id', ids);
+    if (exemptionsError) throw new Error('Unable to verify instructor meeting exceptions. No review was run.');
     const minutesTemplate = minutesTemplateRows?.[0] ?? null;
     const { data: peerAssessments, error: peerError } = await db.from('peer_review_assessments').select('user_id, team_id, file_id, attempt, score, status, created_at, accepted_at, discussion_resolved_at, discussion_held_at, policy_snapshot, changes').neq('status', 'ownership_invalid').in('team_id', ids).order('created_at', { ascending: false });
     if (peerError) throw new Error('Unable to load retained peer-review analyses.');
@@ -391,14 +394,16 @@ export async function computeHealthReview(
       }
 
       // 5. Semester-aware File Vault requirements
-      const expectedMinutes = Math.max(0, week - rules.meetings_start_week);
+      const exemption = meetingExemption(t.teamId, sched?.start_date, meetingExemptions ?? []);
+      const expectedMinutes = expectedMeetingDocuments(week, rules.meetings_start_week, exemption?.excused_count);
+      if (exemption) notes.vault.push(`Instructor exception: ${exemption.excused_count} scheduled meeting excused — ${exemption.reason} No agenda or minutes are required for the excused meeting. This adjusts reporting expectations, not student-earned progress; actual meeting records remain unchanged.`);
       if ((isTeamLevel || pmScope) && expectedMinutes > 0) {
         const mins = count("Minutes");
         if (mins < expectedMinutes) push("vault", mins < expectedMinutes / 2 ? "red" : "yellow", `Minutes: ${mins} posted, ${expectedMinutes} expected by week ${week}.`);
         else notes.vault.push(`Minutes on file: ${mins} (${expectedMinutes} expected by week ${week}).`);
-        observe("vault:Minutes:team", `${mins} minutes files posted; ${expectedMinutes} expected in week ${week}.`, Math.max(0, expectedMinutes - mins));
+        if (!checksOff.has('vault:Minutes:team')) observations.push({ ruleId: 'vault:Minutes:team', evidence: `${mins} minutes files posted; ${expectedMinutes} expected in week ${week}.${exemption ? ` Instructor excused ${exemption.excused_count} meeting: ${exemption.reason} The earlier shortfall is a reporting correction, not student-earned improvement.` : ''}`, remaining: Math.max(0, expectedMinutes - mins), verified: true, reportingCorrection: !!exemption });
         const ag = count("Agendas");
-        observe("vault:Agendas:team", `${ag} agenda files posted; ${expectedMinutes} expected in week ${week}.`, Math.max(0, expectedMinutes - ag));
+        if (!checksOff.has('vault:Agendas:team')) observations.push({ ruleId: 'vault:Agendas:team', evidence: `${ag} agenda files posted; ${expectedMinutes} expected in week ${week}.${exemption ? ` Instructor excused ${exemption.excused_count} meeting: ${exemption.reason} The earlier shortfall is a reporting correction, not student-earned improvement.` : ''}`, remaining: Math.max(0, expectedMinutes - ag), verified: true, reportingCorrection: !!exemption });
         if (ag < expectedMinutes) push("vault", ag < expectedMinutes / 2 ? "red" : "yellow", `Agendas: ${ag} posted, ${expectedMinutes} expected by week ${week}.`);
         else notes.vault.push(`Agendas on file: ${ag} (${expectedMinutes} expected by week ${week}).`);
       }
@@ -623,7 +628,7 @@ export async function computeHealthReview(
         if (!mine.length) continue;
         const priors = (shares ?? [])
           .filter((s: any) => s.team_id === t.teamId)
-          .map((s: any) => ((s.payload as { exceptions?: HealthException[] })?.exceptions ?? []).filter((e) => !PARFUNKEL.test(e.person ?? "") && !excludesWithdrawnConcern(e, profiles ?? [])));
+          .map((s: any) => ((s.payload as { exceptions?: HealthException[] })?.exceptions ?? []).filter((e) => !PARFUNKEL.test(e.person ?? "") && !excludesWithdrawnConcern(e, profiles ?? []) && !isExcusedHistoricalShortfall(e, meetingExemption(t.teamId, sched?.start_date, meetingExemptions ?? [])?.excused_count ?? 0)));
         const escalated = escalateConcerns(mine, priors, { redAfter: rules.escalate_red_after, gradeAfter: rules.escalate_grade_after });
         const streaks = new Map<string, number>();
         // Replace in place, preserving order.

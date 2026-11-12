@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Excuse Upper Mismanagement's one fall-break meeting without crediting student progress or altering shared history
+- [x] Inspect last shared concerns and verify a fresh unsaved review for the next report
 - [x] Draft ClearPath student email and confirm exact-version readability with acknowledgment in the next unsaved report
 - [x] Add audited reversible instructor withdrawal control and crossed-out team roster entries
 - [x] Stop withdrawn-student email delivery including copies

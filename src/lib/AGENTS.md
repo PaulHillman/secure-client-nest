@@ -1,0 +1,2 @@
+# Health Review meeting exceptions
+- Load instructor-approved meeting exemptions by team ID and semester start; offset agenda/minutes expectations only, without creating meetings or changing shared history, so an excused shortfall cannot earn progress or carry escalation.

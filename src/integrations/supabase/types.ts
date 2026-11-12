@@ -1098,6 +1098,44 @@ export type Database = {
         }
         Relationships: []
       }
+      health_review_meeting_exemptions: {
+        Row: {
+          approved_at: string
+          approved_by: string
+          excused_count: number
+          id: string
+          reason: string
+          semester_start: string
+          team_id: string
+        }
+        Insert: {
+          approved_at?: string
+          approved_by: string
+          excused_count: number
+          id?: string
+          reason: string
+          semester_start: string
+          team_id: string
+        }
+        Update: {
+          approved_at?: string
+          approved_by?: string
+          excused_count?: number
+          id?: string
+          reason?: string
+          semester_start?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "health_review_meeting_exemptions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       health_review_reports: {
         Row: {
           bad_count: number
