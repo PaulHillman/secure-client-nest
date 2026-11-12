@@ -3,6 +3,15 @@ import { strict as assert } from "node:assert";
 import { compareConcerns, researchCoverage } from "./health-review-comparison";
 
 describe("weekly shared-report concern comparisons", () => {
+  test('ClearPath readability resolves separately while missing job-description content remains new', () => {
+    const prior = { check: 'vault', level: 'red' as const, reason: 'Research file unreadable: Company Research Clearpath', ruleId: 'vault:research' };
+    const current = { ...prior, reason: 'Client research: no text evidence found for Client job description.' };
+    const reading = { ruleId: 'vault:research:format', evidence: 'File-reading issue resolved.', correctedFiles: ['Company Research Clearpath'], verified: true, remaining: 0, reportingCorrection: true };
+    const changes = compareConcerns([prior], [current], [reading]);
+    assert.equal(changes[0]?.status, 'Reporting correction');
+    assert.equal(changes[1]?.status, 'New concern');
+    assert.equal(compareConcerns([{ ...prior, reason: 'Research file unreadable: Other document.pdf' }], [current], [reading])[0]?.status, 'Still outstanding');
+  });
   test('same-version research reading correction clears a false warning without earned credit', () => {
     const prior = { check: 'vault', level: 'red' as const, reason: 'Research file unreadable: Company History and Industry Analysis', ruleId: 'vault:research' };
     const [change] = compareConcerns([prior], [], [{ ruleId: 'vault:research', evidence: 'Same uploaded versions read correctly.', verified: true, remaining: 0, reportingCorrection: true }]);

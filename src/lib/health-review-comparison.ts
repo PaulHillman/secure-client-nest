@@ -67,6 +67,15 @@ export function compareConcerns(previous: Concern[], current: Concern[], observa
    changes.push({ status: "Reporting correction", previous: old.reason, current: old.check === "activity" ? "The earlier activity finding predates the authoritative sign-in tracking correction. It cannot establish student-earned progress; current activity is assessed separately." : "The older report relied on a lock flag rather than current-version signatures. This is a reporting correction, not student-earned progress.", person: old.person ?? null }); continue;
   }
   const key = concernKey(old);
+  // Clear the verified reading error independently of any remaining research-content concern.
+  if (old.check === 'vault' && /^Research file unreadable:/.test(old.reason)) {
+   const reading = observations.find(o => o.ruleId === 'vault:research:format' && o.verified && o.remaining === 0 && o.reportingCorrection && o.correctedFiles?.length);
+   const listed = old.reason.slice('Research file unreadable:'.length).trim();
+   const unmatched = reading?.correctedFiles?.reduce((text, name) => text.replace(name, ''), listed);
+   if (reading && unmatched !== undefined && /^[\s,;.]*$/.test(unmatched)) {
+    changes.push({ status: 'Reporting correction', previous: old.reason, current: reading.evidence, person: old.person ?? null }); continue;
+   }
+  }
   if (old.check === 'meetings' && /do not follow the shared Meeting Minutes Template/i.test(old.reason)) {
    const correction = observations.find(o => o.ruleId === 'meetings:minutes_template' && o.verified && o.correctedFiles?.length);
    const listed = /\(([^)]+)\)/.exec(old.reason)?.[1]?.split(/(?<=\.pdf|\.docx|\.doc|\.odt)\s*,\s*/i) ?? [];

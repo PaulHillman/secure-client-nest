@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Draft ClearPath student email and confirm exact-version readability with acknowledgment in the next unsaved report
 - [x] Add audited reversible instructor withdrawal control and crossed-out team roster entries
 - [x] Stop withdrawn-student email delivery including copies
 - [x] Exclude withdrawals from current participation checks while retaining history and verify behavior

@@ -468,7 +468,11 @@ export async function computeHealthReview(
         const taId = techAdmin?.user_id ?? null;
         const required = pastDue ? rules.research_required_late : rules.research_required_early;
         const readableConfirmed = confirmedHealthFiles(t.teamId, 'research_readable', teamFiles, fileVerifications ?? []);
-        if (readableConfirmed.length && !checksOff.has('vault:research:format')) observations.push({ ruleId: 'vault:research:format', evidence: `Instructor verified that ${readableConfirmed.join(', ')} is an acceptable, readable PDF. This concern is cleared; no re-upload required. Automatic extraction limitations are not a student deficiency.`, verified: true, remaining: 0, reportingCorrection: true });
+        if (readableConfirmed.length && !checksOff.has('vault:research:format')) {
+          const evidence = `File-reading issue resolved: ${readableConfirmed.join(', ')} is confirmed readable; no re-upload required. Thank you for following up and helping resolve the issue—well done. The earlier readability warning was a reporting error, not a student deficiency or student-earned grading improvement. Research-topic coverage is assessed separately.`;
+          observations.push({ ruleId: 'vault:research:format', evidence, correctedFiles: readableConfirmed, verified: true, remaining: 0, reportingCorrection: true });
+          notes.vault.push(evidence);
+        }
         notes.vault.push(`Required research topics: ${operational.research_topics.map(t => t.topic).join(", ")}. Topics may be combined in one document; file count alone does not establish missing research.`);
         if (total < required) {
           const { inspectResearch } = await import("./health-research.server");
