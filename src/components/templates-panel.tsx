@@ -19,6 +19,7 @@ import { FileText, Upload, Trash2, Send, Download, Plus, Lock, Undo2 } from "luc
 import { VAULT_STRUCTURE, findSubsection } from "@/lib/vault-structure";
 import { safeStorageFileName } from "@/lib/storage-path";
 import { openVaultFileInNewTab } from "@/lib/file-download";
+import { templateCoverageComplete, type TemplateDistribution } from "@/lib/template-distribution";
 
 type TemplateRow = {
   id: string;
@@ -42,6 +43,21 @@ type VersionRow = {
 export function TemplatesPanel() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const [coverageTemplate, setCoverageTemplate] = useState<TemplateRow | null>(null);
+  const coverage = useQuery({
+    queryKey: ["admin", "templates", "distribution"],
+    queryFn: async () => {
+      const [{ data: status, error }, { data: checks, error: checkError }] = await Promise.all([
+        supabase.rpc("admin_template_distribution_status"),
+        supabase.from("template_distribution_checks").select("checked_at").order("checked_at", { ascending: false }).limit(1),
+      ]);
+      if (error) throw error;
+      if (checkError) throw checkError;
+      return { status: status as unknown as TemplateDistribution, weeklyAt: checks?.[0]?.checked_at };
+    },
+    refetchInterval: 60_000,
+  });
+  const selectedCoverage = coverage.data?.status.templates.find((item) => item.template_id === coverageTemplate?.id);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "templates"],
@@ -148,6 +164,9 @@ export function TemplatesPanel() {
           </div>
         </CardHeader>
         <CardContent>
+          <p className="mb-3 text-xs text-muted-foreground">
+            {coverage.isError ? "Could not check team coverage." : coverage.data ? `${coverage.data.status.team_count} class teams · Test teams excluded · Weekly check: ${coverage.data.weeklyAt ? new Date(coverage.data.weeklyAt).toLocaleString("en-US", { timeZone: "America/Detroit" }) + " Detroit" : "Not run yet"}` : "Checking team coverage…"}
+          </p>
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading templates…</p>
           ) : templates.length === 0 ? (
@@ -168,10 +187,10 @@ export function TemplatesPanel() {
                         return (
                           <div
                             key={t.id}
-                            className="flex items-center gap-2 rounded-md border bg-card/40 px-3 py-2"
+                            className="flex flex-wrap items-center gap-2 rounded-md border bg-card/40 px-3 py-2"
                           >
                             <FileText className="h-4 w-4 text-gold shrink-0" />
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-[180px]">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="text-sm font-medium truncate">{t.file_name}</span>
                                 <Badge variant="outline" className="text-[10px]">
@@ -182,6 +201,14 @@ export function TemplatesPanel() {
                                     v{cur.version_number}
                                   </Badge>
                                 )}
+                                {coverage.data && (() => {
+                                  const status = coverage.data.status.templates.find((item) => item.template_id === t.id);
+                                  if (!status) return null;
+                                  const complete = templateCoverageComplete(status.distributed, coverage.data.status.team_count);
+                                  return <Button variant="ghost" size="sm" className={`h-7 shrink-0 font-semibold ${complete ? "text-success" : "text-destructive"}`} onClick={() => setCoverageTemplate(t)} title="Show missing or out-of-sync teams" aria-label={`Team coverage for ${t.file_name}: ${status.distributed} of ${coverage.data.status.team_count}`}>
+                                    {status.distributed}/{coverage.data.status.team_count} teams
+                                  </Button>;
+                                })()}
                               </div>
                               {t.description && (
                                 <p className="text-xs text-muted-foreground line-clamp-1">
@@ -243,6 +270,18 @@ export function TemplatesPanel() {
           )}
         </CardContent>
       </Card>
+      <Dialog open={coverageTemplate !== null} onOpenChange={(open) => { if (!open) setCoverageTemplate(null); }}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{coverageTemplate?.file_name}</DialogTitle></DialogHeader>
+          <p className="text-sm">{selectedCoverage?.distributed ?? 0}/{coverage.data?.status.team_count ?? 14} teams have the current template in its matching File Vault folder.</p>
+          {selectedCoverage?.missing.length ? <ul className="divide-y divide-border">
+            {selectedCoverage.missing.map((team) => <li key={team.id} className="py-2">
+              <p className="text-sm font-medium">{team.name} · Section {team.section ?? "—"}</p>
+              <p className="text-xs text-destructive">{team.reason}</p>
+            </li>)}
+          </ul> : <p className="text-sm text-success">All class teams are in sync.</p>}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

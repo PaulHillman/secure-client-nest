@@ -1,4 +1,7 @@
 # Roadmap
+- [x] Add live template coverage counts and missing-team details excluding test teams
+- [x] Apply the same coverage checks to agendas, group norms, peer reviews, and every other template category
+- [x] Schedule and verify weekly template synchronization checks without distributing files
 - [x] Excuse Upper Mismanagement's one fall-break meeting without crediting student progress or altering shared history
 - [x] Inspect last shared concerns and verify a fresh unsaved review for the next report
 - [x] Draft ClearPath student email and confirm exact-version readability with acknowledgment in the next unsaved report

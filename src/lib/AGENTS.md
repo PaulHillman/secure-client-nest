@@ -1,2 +1,3 @@
 # Health Review meeting exceptions
 - Load instructor-approved meeting exemptions by team ID and semester start; offset agenda/minutes expectations only, without creating meetings or changing shared history, so an excused shortfall cannot earn progress or carry escalation.
+- Template coverage uses linked current versions, matching vault object fingerprints and folders, excludes test teams, and retains weekly read-only audit snapshots; presence alone cannot prove synchronization.

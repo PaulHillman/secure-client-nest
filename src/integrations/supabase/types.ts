@@ -2718,6 +2718,24 @@ export type Database = {
         }
         Relationships: []
       }
+      template_distribution_checks: {
+        Row: {
+          checked_at: string
+          id: number
+          payload: Json
+        }
+        Insert: {
+          checked_at?: string
+          id?: never
+          payload: Json
+        }
+        Update: {
+          checked_at?: string
+          id?: never
+          payload?: Json
+        }
+        Relationships: []
+      }
       usage_events: {
         Row: {
           created_at: string
@@ -2805,6 +2823,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_template_distribution_status: { Args: never; Returns: Json }
       auth_activity_since: {
         Args: { _since: string }
         Returns: {
@@ -2812,6 +2831,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      check_template_distribution: { Args: never; Returns: undefined }
       delete_vault_file: { Args: { _file_id: string }; Returns: string[] }
       dispatch_peer_calendar_validation: { Args: never; Returns: undefined }
       has_role: {
@@ -2849,6 +2869,7 @@ export type Database = {
           vault_version_id: string
         }[]
       }
+      template_distribution_status: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "student"
